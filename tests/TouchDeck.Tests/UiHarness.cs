@@ -58,7 +58,7 @@ public sealed class WpfHost : IDisposable
                 System.Diagnostics.PresentationTraceSources.Refresh();
                 PresentationTraceSources.DataBindingSource.Listeners.Add(Bindings);
                 PresentationTraceSources.DataBindingSource.Switch.Level = SourceLevels.Warning;
-                AppServices.Init();
+                AppServices.Init(simulate: true);   // aucun raccourci envoyé, aucun programme lancé pendant les tests
                 Dispatcher = Dispatcher.CurrentDispatcher;
             }
             catch (Exception ex) { failure = ex; }

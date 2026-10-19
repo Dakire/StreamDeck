@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Windows.Media;
 using Wpf.Ui.Controls;
@@ -31,7 +32,15 @@ public sealed class TileFaceData
 
     public static void ClearCache() => ImageBrushes.Clear();
 
-    public static TileFaceData From(DeckButton b)
+    /// <summary>Même face avec un autre titre (titre dynamique, minuteur) : l'image et les couleurs sont réutilisées.</summary>
+    public TileFaceData WithLabel(string label) => label == Label ? this : new TileFaceData
+    {
+        Label = label, Icon = Icon, Symbol = Symbol, HasSymbol = HasSymbol, ShowTitle = ShowTitle, TitleMode = TitleMode,
+        Foreground = Foreground, Background = Background, ImageBrush = ImageBrush, IsFolder = IsFolder, IsBlank = IsBlank,
+    };
+
+    /// <param name="timer">Temps restant du minuteur du bouton, s'il tourne : remplace « {timer} », ou le titre s'il n'en contient pas.</param>
+    public static TileFaceData From(DeckButton b, string? timer = null)
     {
         if (b.Blank) return Empty;
         bool hasSymbol = IconCatalog.TryResolve(b.Icon, out var symbol);
@@ -54,9 +63,16 @@ public sealed class TileFaceData
         var fg = Theme.TryBrush(b.TextColor, out var fgBrush) ? fgBrush : Brushes.White;
         return new TileFaceData
         {
-            Label = b.Label, Icon = b.Icon, Symbol = symbol, HasSymbol = hasSymbol,
+            Label = DisplayLabel(b, DateTime.Now, timer), Icon = b.Icon, Symbol = symbol, HasSymbol = hasSymbol,
             ShowTitle = !b.HideTitle, TitleMode = b.TitlePosition ?? "stack",
             Foreground = fg, Background = bg, ImageBrush = image, IsFolder = b.IsFolder,
         };
+    }
+
+    /// <summary>Titre affiché : modèles {time}/{date}/{timer} remplacés ; un minuteur en cours s'affiche même sans {timer}.</summary>
+    public static string DisplayLabel(DeckButton b, DateTime now, string? timer)
+    {
+        if (timer != null && !b.Label.Contains("{timer}", StringComparison.OrdinalIgnoreCase)) return timer;
+        return LabelTemplate.Render(b.Label, now, timer);
     }
 }

@@ -97,6 +97,25 @@
                          FontSize="{Binding DataContext.L.EditSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
             </StackPanel>
           </Border>
+          <!-- État d'exécution : anneau pendant une action longue, coche (réussie) ou alerte (échec, détail dans la barre d'état) -->
+          <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="6" CornerRadius="16" Background="#B3000000"
+                  Visibility="{Binding IsRunning, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Action en cours">
+            <ui:ProgressRing IsIndeterminate="True" Width="22" Height="22" Foreground="White"/>
+          </Border>
+          <Border Background="#8C000000" CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                  Visibility="{Binding IsSuccess, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Action réussie">
+            <ui:SymbolIcon Symbol="CheckmarkCircle24" Filled="True" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"
+                           FontSize="{Binding DataContext.L.IconSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+          </Border>
+          <Border Background="#EB0B0D12" CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                  Visibility="{Binding IsError, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Échec de l'action">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+              <ui:SymbolIcon Symbol="Warning24" Filled="True" Foreground="#FFFCD34D" HorizontalAlignment="Center"
+                             FontSize="{Binding DataContext.L.IconSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+              <TextBlock Text="Échec" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center"
+                         FontSize="{Binding DataContext.L.LabelSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+            </StackPanel>
+          </Border>
         </Grid>
       </Button>
     </DataTemplate>

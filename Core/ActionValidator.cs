@@ -12,9 +12,11 @@ public sealed record Issue(Severity Severity, string Message);
 /// <summary>Détecte les boutons mal configurés avant qu'ils échouent à l'exécution. Ne lance jamais rien.</summary>
 public static class ActionValidator
 {
-    public static readonly string[] KnownTypes = { "hotkey", "text", "media", "launch", "script", "url", "page", "profile", "delay", "focus" };
+    public static readonly string[] KnownTypes = { "hotkey", "text", "media", "launch", "script", "url", "page", "profile", "delay", "focus", "http", "audio", "timer" };
     public static readonly string[] MediaKeys = { "playpause", "prev", "next", "stop", "mute", "voldown", "volup" };
-    static readonly string[] BlockedSchemes = { "javascript", "vbscript", "data", "file" };
+    /// <summary>Commandes de l'action « audio » ; « volume » prend le niveau (0 à 100) dans Args.</summary>
+    public static readonly string[] AudioCommands = { "mic-toggle", "mic-mute", "mic-unmute", "out-toggle", "volume" };
+    public static readonly string[] BlockedSchemes = { "javascript", "vbscript", "data", "file" };
 
     /// <summary>Types qui exécutent du code ou lancent des programmes : à signaler avant d'importer un profil.</summary>
     public static bool IsRisky(DeckAction a) => a.Type.ToLowerInvariant() is "launch" or "script";
@@ -72,6 +74,23 @@ public static class ActionValidator
             case "focus":
                 if (string.IsNullOrWhiteSpace(value)) Err("Indique le programme ou le titre de la fenêtre");
                 break;
+            case "http":
+                if (string.IsNullOrWhiteSpace(value) || value.Trim() is "https://" or "http://") Err("Indique l'adresse à appeler");
+                else if (!Uri.TryCreate(value.Trim(), UriKind.Absolute, out var target) || target.Scheme is not ("http" or "https"))
+                    Err("L'adresse doit commencer par http:// ou https://");
+                else if (target.Scheme == "http" && !target.IsLoopback)
+                    Warn("Adresse non chiffrée (http://) : le contenu circule en clair sur le réseau");
+                break;
+            case "audio":
+                if (!AudioCommands.Contains(value.ToLowerInvariant())) Err("Choisis une commande audio dans la liste");
+                else if (value.Equals("volume", StringComparison.OrdinalIgnoreCase)
+                         && (!int.TryParse(a.Args, out var level) || level is < 0 or > 100))
+                    Err("Indique un volume entre 0 et 100");
+                break;
+            case "timer":
+                if (!int.TryParse(value, out var seconds) || seconds <= 0) Err("La durée doit être un nombre de secondes");
+                else if (seconds > 86_400) Warn("Minuteur de plus de 24 heures");
+                break;
             default:
                 Err($"Type d'action inconnu : « {a.Type} »");
                 break;
@@ -84,7 +103,8 @@ public static class ActionValidator
         var issues = new List<Issue>();
         if (b.Blank) return issues;
         if (b.IsFolder) return issues;
-        if (b.Actions.Count == 0) issues.Add(new Issue(Severity.Warning, "Ce bouton n'a aucune action"));
+        // Une horloge ({time}, {date}) n'a pas besoin d'action : elle sert d'affichage
+        if (b.Actions.Count == 0 && !LabelTemplate.IsDynamic(b.Label)) issues.Add(new Issue(Severity.Warning, "Ce bouton n'a aucune action"));
         foreach (var a in b.Actions) issues.AddRange(Validate(a, cfg, profile));
         if (!string.IsNullOrEmpty(b.ImagePath) && IconStore.Resolve(b.ImagePath) is { } path && !File.Exists(path))
             issues.Add(new Issue(Severity.Warning, "L'image du bouton est introuvable"));

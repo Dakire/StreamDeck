@@ -250,6 +250,11 @@
             <ItemsControl ItemsSource="{Binding MediaChoices}" Style="{StaticResource ChipWrap}"/>
           </StackPanel>
 
+          <StackPanel Visibility="{Binding ShowAudio, Converter={StaticResource BoolVis}}">
+            <TextBlock Text="Commande audio" Style="{StaticResource EditorCaption}"/>
+            <ItemsControl ItemsSource="{Binding AudioChoices}" Style="{StaticResource ChipWrap}"/>
+          </StackPanel>
+
           <StackPanel Visibility="{Binding ShowPage, Converter={StaticResource BoolVis}}">
             <TextBlock Text="Aller à la page" Style="{StaticResource EditorCaption}"/>
             <ItemsControl ItemsSource="{Binding PageChoices}" Style="{StaticResource ChipWrap}"/>

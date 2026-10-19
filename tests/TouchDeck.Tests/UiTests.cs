@@ -110,6 +110,51 @@ public class UiTests
         finally { _host.Run(win.Close); }
     }
 
+    [Fact]
+    public async Task DeckTilesShowRunStateClockAndTimerWithoutRebuildingTheGrid()
+    {
+        var cfg = ConfigStore.DefaultConfig();
+        var page = cfg.Profiles[0].Pages[0];
+        page.Buttons.Clear();
+        page.Buttons.Add(new DeckButton { Label = "{time}", Icon = "Clock24" });
+        page.Buttons.Add(new DeckButton { Label = "Cassé", Icon = "Keyboard24", Actions = { new DeckAction { Type = "hotkey", Value = "" } } });
+        page.Buttons.Add(new DeckButton { Label = "Thé", Icon = "Timer24", Actions = { new DeckAction { Type = "timer", Value = "300" } } });
+        page.Buttons.Add(new DeckButton { Label = "Copier", Icon = "Copy24", Actions = { new DeckAction { Type = "hotkey", Value = "ctrl+c" } } });
+        _host.Reset(cfg);
+        var win = _host.Run(() => new MainWindow());
+        try
+        {
+            _host.Settle();
+            _host.Render(win, "deck-etats", 1600, 900);
+            var vm = _host.Run(() => (MainViewModel)win.DataContext);
+            var tiles = _host.Run(() => vm.Tiles.OfType<DeckTileViewModel>().ToList());
+            Assert.Equal(4, tiles.Count);
+
+            // Horloge : le titre stocké reste « {time} », l'affichage est l'heure
+            var shown = _host.Run(() => tiles[0].Face.Label);
+            Assert.Matches(@"^\d\d:\d\d$", shown);
+            Assert.Equal("{time}", page.Buttons[0].Label);
+
+            // Échec : la tuile passe en erreur, puis revient au repos ; la grille n'est pas reconstruite
+            var failing = _host.Run(() => vm.RunTileAsync(tiles[1]));
+            await Task.Delay(200);
+            Assert.Equal(TileRunState.Error, _host.Run(() => tiles[1].RunState));
+            Assert.Contains("Cassé", _host.Run(() => vm.Status) ?? "");
+            _host.Render(win, "deck-erreur", 1600, 900);
+            await failing.WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.Equal(TileRunState.Idle, _host.Run(() => tiles[1].RunState));
+            Assert.Same(tiles[1], _host.Run(() => vm.Tiles.OfType<DeckTileViewModel>().ElementAt(1)));
+
+            // Minuteur : le temps restant remplace le titre ; toucher à nouveau l'arrête
+            await _host.Run(() => vm.RunTileAsync(tiles[2])).WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.Matches(@"^[45]:\d\d$", _host.Run(() => tiles[2].Face.Label));
+            await _host.Run(() => vm.RunTileAsync(tiles[2])).WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.Equal("Thé", _host.Run(() => tiles[2].Face.Label));
+            Assert.Empty(BindingProblems());
+        }
+        finally { _host.Run(win.Close); }
+    }
+
     static byte[] PackageTests_TinyPng()
     {
         var pixels = new byte[32 * 32 * 4];

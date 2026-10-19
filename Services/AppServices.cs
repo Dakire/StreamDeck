@@ -1,7 +1,11 @@
 using System;
 using System.IO;
+using System.Net.Http;
+using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
+using TouchDeck.Actions;
+using TouchDeck.Platform.Windows;
 
 namespace TouchDeck;
 
@@ -27,8 +31,29 @@ public static class AppServices
     public static EditorWindow? Editor { get; private set; }
     static SettingsWindow? _settings;
 
-    public static void Init()
+    /// <summary>Moteur d'actions du deck (plateforme Windows, ou simulée avec --simulate).</summary>
+    public static ActionEngine Engine { get; private set; } = null!;
+    /// <summary>Mode simulation : les actions sont consignées et affichées, jamais envoyées au système.</summary>
+    public static bool Simulated { get; private set; }
+    static HttpClient? _http;
+
+    /// <param name="simulate">true : aucune touche envoyée, aucun programme lancé (essais sans risque).</param>
+    public static void Init(bool simulate = false)
     {
+        Simulated = simulate;
+        _http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };   // le moteur gère le délai de chaque étape
+        _http.DefaultRequestHeaders.UserAgent.ParseAdd("TouchDeck/1.0");
+        PlatformServices platform;
+        if (simulate)
+        {
+            var sim = new SimulatedPlatform();
+            sim.Performed += what => Application.Current?.Dispatcher.BeginInvoke(() => Notifier.Info("Simulation : " + what));
+            platform = sim.Services;
+        }
+        else platform = WindowsPlatform.Create();
+        Engine = new ActionEngine(new ActionContext { Platform = platform, Http = _http });
+        Log.Info($"Démarrage (dossier {ConfigStore.Dir}{(simulate ? ", simulation" : "")})");
+
         DeckConfig cfg;
         try
         {
@@ -50,6 +75,7 @@ public static class AppServices
             catch { /* pas de fichier à conserver */ }
             cfg = ConfigStore.DefaultConfig();
             StartupMessage = "Config invalide : " + ex.Message + note;
+            Log.Error("Configuration invalide au démarrage", ex);
         }
 
         cfg.StartWithWindows = AutoStart.IsEnabled();   // le registre fait foi
@@ -68,6 +94,9 @@ public static class AppServices
         SaveTimer.Stop();
         Flush();
         _watcher?.Dispose();
+        Engine?.Dispose();       // interrompt les pauses, requêtes et minuteurs en cours
+        _http?.Dispose();
+        Log.Info("Arrêt");
     }
 
     // ---------- sauvegarde et rechargement ----------
@@ -93,6 +122,7 @@ public static class AppServices
         catch (Exception ex)
         {
             Notifier.Error("Sauvegarde impossible : " + ex.Message);
+            Log.Error("Sauvegarde impossible", ex);
             SaveTimer.Start();   // nouvel essai dans 300 ms
         }
     }

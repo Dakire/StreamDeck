@@ -7,15 +7,18 @@ namespace TouchDeck;
 /// <summary>Une entrée du catalogue : un bouton prêt à poser, avec ses actions pré-remplies.</summary>
 public sealed record CatalogAction(
     string Id, string Category, string Name, string Description, string Icon, string Color,
-    DeckAction[] Actions, string? Note = null, bool IsFolder = false, string Keywords = "")
+    DeckAction[] Actions, string? Note = null, bool IsFolder = false, string Keywords = "", string? Label = null)
 {
+    /// <summary>Titre du bouton créé (par défaut le nom ; « {time} » pour l'horloge).</summary>
+    public string ButtonLabel => Label ?? Name;
+
     /// <summary>Bouton neuf (copie indépendante du catalogue).</summary>
     public DeckButton CreateButton()
     {
         if (IsFolder) return DeckDocument.NewFolder(Name);
         return new DeckButton
         {
-            Label = Name, Icon = Icon, Color = Color,
+            Label = ButtonLabel, Icon = Icon, Color = Color,
             Actions = Actions.Select(a => new DeckAction { Type = a.Type, Value = a.Value, Args = a.Args }).ToList(),
         };
     }
@@ -64,6 +67,11 @@ public static class ActionCatalog
         C("sys.settings", SystemCategory, "Paramètres Windows", "Ouvre les Paramètres (Win+I).", "Settings24", "#334155", new[] { A("hotkey", "win+i") }),
         C("sys.search", SystemCategory, "Recherche Windows", "Ouvre la recherche (Win+S).", "Search24", "#334155", new[] { A("hotkey", "win+s") }),
         C("sys.switch", SystemCategory, "Changer de fenêtre", "Alt+Tab.", "Window24", "#334155", new[] { A("hotkey", "alt+tab") }, null, "alt tab"),
+        new("sys.clock", SystemCategory, "Horloge", "Affiche l'heure en direct.", "Clock24", "#334155", Array.Empty<DeckAction>(),
+            "Le titre « {time} » affiche l'heure ; « {time:HH:mm:ss} » ajoute les secondes. Ces modèles marchent dans n'importe quel titre.",
+            false, "heure temps", "{time}"),
+        new("sys.date", SystemCategory, "Date", "Affiche la date du jour.", "Calendar24", "#334155", Array.Empty<DeckAction>(),
+            "Le titre « {date:dddd d MMMM} » affiche par exemple « lundi 19 octobre » (formats de date .NET).", false, "jour calendrier", "{date:dddd d MMMM}"),
 
         // --- Applications ---
         C("app.launch", Apps, "Ouvrir un programme", "Lance un programme ou un dossier de ton choix.", "Rocket24", "#7C3AED", new[] { A("launch", "") }),
@@ -104,6 +112,10 @@ public static class ActionCatalog
         C("audio.mute", Audio, "Muet", "Coupe ou rétablit le son.", "SpeakerMute24", "#BE123C", new[] { A("media", "mute") }),
         C("audio.down", Audio, "Volume -", "Baisse le volume.", "Speaker124", "#334155", new[] { A("media", "voldown") }),
         C("audio.up", Audio, "Volume +", "Augmente le volume.", "Speaker224", "#334155", new[] { A("media", "volup") }),
+        C("audio.mic", Audio, "Micro", "Coupe ou rétablit le micro par défaut.", "Mic24", "#BE123C", new[] { A("audio", "mic-toggle") },
+            "Agit sur le micro de communication par défaut de Windows ; l'état s'affiche dans la barre du deck.", "microphone muet visio"),
+        C("audio.level", Audio, "Volume 50 %", "Règle le volume de sortie à un niveau précis.", "Speaker224", "#334155", new[] { A("audio", "volume", "50") },
+            "Change le niveau dans « Volume (0 à 100) ».", "niveau son"),
 
         // --- Raccourcis clavier ---
         C("key.hotkey", Keyboard, "Raccourci clavier", "Envoie une combinaison de touches.", "Keyboard24", "#334155", new[] { A("hotkey", "") }),
@@ -130,6 +142,10 @@ public static class ActionCatalog
         C("auto.multi", Automation, "Multi-actions", "Enchaîne plusieurs étapes : programme, pause, raccourci, lien…", "Layer24", "#7C3AED",
             new[] { A("launch", ""), A("delay", "500"), A("hotkey", "") }, "Ajoute, réordonne et supprime les étapes dans le panneau de propriétés.", "macro séquence"),
         C("auto.delay", Automation, "Pause", "Attend avant l'étape suivante (à utiliser dans un enchaînement).", "Timer24", "#334155", new[] { A("delay", "500") }),
+        C("auto.webhook", Automation, "Requête web", "Appelle une adresse (webhook, domotique, API) : GET, ou POST avec un corps.", "Send24", "#7C3AED",
+            new[] { A("http", "https://") }, "Le corps (facultatif) est envoyé en JSON s'il commence par { ou [. Délai maximal : 10 secondes.", "webhook api http post domotique"),
+        C("auto.timer", Automation, "Minuteur", "Compte à rebours affiché sur le bouton ; toucher à nouveau l'arrête.", "Timer24", "#B45309",
+            new[] { A("timer", "300") }, "Durée en secondes (300 = 5 minutes). Un son et un message signalent la fin.", "compte à rebours chrono"),
 
         // --- Profils et navigation ---
         new("nav.folder", Navigation, "Dossier", "Regroupe des boutons dans une grille imbriquée.", "Folder24", "#B45309", Array.Empty<DeckAction>(), null, true, "sous-dossier"),
@@ -169,6 +185,6 @@ public static class ActionCatalog
     /// <summary>Retrouve l'entrée du catalogue d'où vient un bouton (même libellé et mêmes actions), pour les infos et favoris.</summary>
     public static CatalogAction? Identify(DeckButton b) =>
         All.FirstOrDefault(a => a.IsFolder ? b.IsFolder
-            : !b.IsFolder && a.Name == b.Label && a.Actions.Length == b.Actions.Count
+            : !b.IsFolder && a.ButtonLabel == b.Label && a.Actions.Length == b.Actions.Count
               && a.Actions.Zip(b.Actions, (x, y) => x.Type == y.Type).All(t => t));
 }

@@ -35,6 +35,13 @@ public partial class ActionStepViewModel : ObservableObject
         ("hotkey", "Raccourci"), ("text", "Texte"), ("media", "Média"),
         ("launch", "Programme"), ("script", "Script"), ("url", "Lien web"),
         ("page", "Page"), ("profile", "Profil"), ("focus", "Fenêtre"), ("delay", "Pause"),
+        ("http", "Requête web"), ("audio", "Audio"), ("timer", "Minuteur"),
+    };
+
+    static readonly (string Key, string Label)[] AudioCommands =
+    {
+        ("mic-toggle", "Micro : couper / rétablir"), ("mic-mute", "Couper le micro"), ("mic-unmute", "Rétablir le micro"),
+        ("out-toggle", "Son : couper / rétablir"), ("volume", "Régler le volume"),
     };
 
     static readonly (string Key, string Label)[] MediaKeys =
@@ -51,7 +58,7 @@ public partial class ActionStepViewModel : ObservableObject
     readonly List<string> _profileKeys = new();
     bool _loading = true;
 
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowValue), nameof(ShowMedia), nameof(ShowPage), nameof(ShowProfile), nameof(ShowProcesses),
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowValue), nameof(ShowMedia), nameof(ShowAudio), nameof(ShowPage), nameof(ShowProfile), nameof(ShowProcesses),
         nameof(ShowBrowseValue), nameof(ShowBrowseArgs), nameof(ShowArgs), nameof(ValueCaption), nameof(ValueHint),
         nameof(ShowValueHint), nameof(ArgsCaption), nameof(ArgsHint), nameof(ShowArgsHint), nameof(TypeLabel))]
     string _type;
@@ -64,6 +71,7 @@ public partial class ActionStepViewModel : ObservableObject
 
     public ObservableCollection<ChoiceViewModel> TypeChoices { get; } = new();
     public ObservableCollection<ChoiceViewModel> MediaChoices { get; } = new();
+    public ObservableCollection<ChoiceViewModel> AudioChoices { get; } = new();
     public ObservableCollection<ChoiceViewModel> PageChoices { get; } = new();
     public ObservableCollection<ChoiceViewModel> ProfileChoices { get; } = new();
     public ObservableCollection<ChoiceViewModel> ProcessChoices { get; } = new();
@@ -81,6 +89,7 @@ public partial class ActionStepViewModel : ObservableObject
 
         foreach (var t in Types) TypeChoices.Add(new ChoiceViewModel(t.Label, () => SetType(t.Key)));
         foreach (var m in MediaKeys) MediaChoices.Add(new ChoiceViewModel(m.Label, () => Value = m.Key));
+        foreach (var c in AudioCommands) AudioChoices.Add(new ChoiceViewModel(c.Label, () => Value = c.Key));
         foreach (var name in new[] { "home", "back" }.Concat(owner.PageNames))
         {
             var n = name;
@@ -101,14 +110,15 @@ public partial class ActionStepViewModel : ObservableObject
 
     // ---------- affichage selon le type ----------
 
-    public bool ShowValue => Type is not ("media" or "page" or "profile");
+    public bool ShowValue => Type is not ("media" or "audio" or "page" or "profile");
     public bool ShowMedia => Type == "media";
+    public bool ShowAudio => Type == "audio";
     public bool ShowPage => Type == "page";
     public bool ShowProfile => Type == "profile";
     public bool ShowProcesses => Type == "focus";
     public bool ShowBrowseValue => Type is "launch" or "script";
     public bool ShowBrowseArgs => Type == "focus";
-    public bool ShowArgs => Type is "launch" or "script" or "focus";
+    public bool ShowArgs => Type is "launch" or "script" or "focus" or "http" || (Type == "audio" && Value == "volume");
 
     public string ValueCaption => Type switch
     {
@@ -119,6 +129,8 @@ public partial class ActionStepViewModel : ObservableObject
         "url" => "Adresse",
         "focus" => "Programme ou titre de la fenêtre",
         "delay" => "Durée (millisecondes)",
+        "http" => "Adresse à appeler (https://…)",
+        "timer" => "Durée (secondes)",
         _ => "",
     };
 
@@ -126,12 +138,20 @@ public partial class ActionStepViewModel : ObservableObject
     {
         "hotkey" => "Clique dans le champ puis appuie sur ta combinaison (ex. Ctrl+Maj+M, F13). Pour la touche Windows, tape-la : win+d, win+shift+s.",
         "focus" => "Nom du programme (chrome, 3CXDesktopApp…) ou texte présent dans le titre de la fenêtre. Fenêtres ouvertes en ce moment :",
+        "http" => "Webhook, domotique, API locale… Sans corps : requête GET ; avec un corps : POST. Délai maximal 10 s.",
+        "timer" => "Toucher le bouton lance le compte à rebours, le toucher à nouveau l'arrête. Le temps restant remplace le titre (ou s'insère à la place de {timer}).",
         _ => "",
     };
     public bool ShowValueHint => ValueHint.Length > 0;
 
-    public string ArgsCaption => Type == "focus" ? "Si absente, lancer (facultatif)"
-        : Type == "script" ? "Arguments (fichiers uniquement, facultatif)" : "Arguments (facultatif)";
+    public string ArgsCaption => Type switch
+    {
+        "focus" => "Si absente, lancer (facultatif)",
+        "script" => "Arguments (fichiers uniquement, facultatif)",
+        "http" => "Corps de la requête (facultatif, JSON ou texte)",
+        "audio" => "Volume (0 à 100)",
+        _ => "Arguments (facultatif)",
+    };
     public string ArgsHint => Type == "focus"
         ? "Astuce : place cette étape en premier, puis une Pause (≈150 ms), puis un Raccourci : il sera envoyé à cette fenêtre." : "";
     public bool ShowArgsHint => ArgsHint.Length > 0;
@@ -143,7 +163,7 @@ public partial class ActionStepViewModel : ObservableObject
         if (Type == key) return;
         _loading = true;
         Type = key;
-        Value = key switch { "delay" => "500", "url" => "https://", "page" => "home", _ => "" };
+        Value = key switch { "delay" => "500", "url" or "http" => "https://", "page" => "home", "audio" => "mic-toggle", "timer" => "300", _ => "" };
         Args = "";
         _loading = false;
         LoadProcesses();
@@ -153,11 +173,12 @@ public partial class ActionStepViewModel : ObservableObject
 
     partial void OnValueChanged(string value)
     {
-        if (Type == "delay" && value.Any(c => !char.IsDigit(c)))
+        if (Type is "delay" or "timer" && value.Any(c => !char.IsDigit(c)))
         {
             Value = new string(value.Where(char.IsDigit).ToArray());   // la durée n'accepte que des chiffres
             return;
         }
+        OnPropertyChanged(nameof(ShowArgs));   // « volume » est la seule commande audio avec un niveau
         RefreshSelection();
         Changed();
     }
@@ -194,6 +215,7 @@ public partial class ActionStepViewModel : ObservableObject
     {
         for (int i = 0; i < Types.Length; i++) TypeChoices[i].IsSelected = Types[i].Key == Type;
         for (int i = 0; i < MediaKeys.Length; i++) MediaChoices[i].IsSelected = MediaKeys[i].Key == Value;
+        for (int i = 0; i < AudioCommands.Length; i++) AudioChoices[i].IsSelected = AudioCommands[i].Key == Value;
         for (int i = 0; i < PageChoices.Count; i++)
             PageChoices[i].IsSelected = string.Equals(_pageKeys[i], Value, StringComparison.OrdinalIgnoreCase);
         for (int i = 0; i < ProfileChoices.Count; i++)

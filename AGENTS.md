@@ -28,7 +28,9 @@ Ajouter ou adapter un test pour tout changement de logique (`Core/`, `Services/`
   ne jamais renommer ni supprimer une clé sans migration (`ConfigNormalizer`) ni test.
 - **Sécurité** : ne pas ajouter d'exécution de code issu d'une source distante. Les actions `script` et `launch`
   s'exécutent avec les droits de l'utilisateur.
-- **Win32** : les appels P/Invoke restent dans `NativeInput.cs`, `WindowFocus.cs` et `MainWindow.xaml.cs`.
+- **Win32** : les appels P/Invoke et COM restent dans `NativeInput.cs`, `WindowFocus.cs`, `NativeAudio.cs` et `MainWindow.xaml.cs`.
+  Les actions n'y accèdent qu'à travers les interfaces de `Core/Actions/Platform.cs` (implémentation : `Platform/Windows/WindowsPlatform.cs`) ;
+  `Core/` ne référence ni WPF ni Win32.
 - **Pas de secrets** dans le dépôt, ni de binaires : `bin/` et `obj/` sont ignorés par git.
 
 ## Style de code

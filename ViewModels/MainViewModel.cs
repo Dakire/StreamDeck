@@ -3,25 +3,33 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TouchDeck.Actions;
 using Wpf.Ui.Controls;
 
 namespace TouchDeck.ViewModels;
 
 /// <summary>État du deck affiché en plein écran : profil, page, dossier, sous-page, mode édition tactile et menu.</summary>
-public partial class MainViewModel : ObservableObject
+public partial class MainViewModel : ObservableObject, INavigator
 {
     /// <summary>Case de la vue courante : un bouton de la grille, un emplacement vide ou la flèche « retour » d'un dossier.</summary>
     readonly record struct ViewItem(DeckButton? Button, int ListIndex, bool IsBack);
 
+    /// <summary>Délai avant d'afficher l'indicateur « en cours » : une action instantanée ne clignote pas.</summary>
+    public static readonly TimeSpan RunningDelay = TimeSpan.FromMilliseconds(250);
+
     readonly IShell _shell;
     readonly DeckDocument _doc = AppServices.Document;
+    readonly ActionEngine _engine = AppServices.Engine;
     readonly DispatcherTimer _statusTimer = new() { Interval = TimeSpan.FromSeconds(5) };
     readonly DispatcherTimer _appTimer = new() { Interval = TimeSpan.FromMilliseconds(800) };
+    readonly DispatcherTimer _liveTimer = new() { Interval = TimeSpan.FromSeconds(1) };   // horloges et minuteurs visibles
+    string _lastMinute = "";
     readonly List<int> _folder = new();     // chemin de dossiers ouverts
     string? _autoProfile;                   // profil imposé par l'application au premier plan (non enregistré)
     string? _lastForeground;
@@ -67,6 +75,8 @@ public partial class MainViewModel : ObservableObject
         _statusTimer.Tick += (_, _) => { _statusTimer.Stop(); SetStatus(null); };
         _appTimer.Tick += (_, _) => PollForeground();
         _appTimer.Start();
+        _liveTimer.Tick += (_, _) => RefreshLive();
+        _engine.Context.Countdowns.Finished += OnCountdownFinished;
         if (AppServices.StartupMessage != null) SetStatus(AppServices.StartupMessage, error: false);
     }
 
@@ -163,7 +173,7 @@ public partial class MainViewModel : ObservableObject
             if (_autoProfile != null) { _autoProfile = null; ResetNavigation(); Rebuild(); }
             return;
         }
-        var fg = WindowFocus.ForegroundProcessName();
+        var fg = _engine.Context.Platform.Windows.ForegroundProcessName();
         if (fg == null || string.Equals(fg, _lastForeground, StringComparison.OrdinalIgnoreCase)) return;
         _lastForeground = fg;
 
@@ -186,6 +196,9 @@ public partial class MainViewModel : ObservableObject
     }
 
     // ---------- navigation ----------
+
+    void INavigator.GoToPage(string name) => NavigateTo(name);
+    void INavigator.SwitchProfile(string name) => SwitchProfile(name);
 
     void NavigateTo(string name)
     {
@@ -320,22 +333,103 @@ public partial class MainViewModel : ObservableObject
             }
             var def = item.Button;
             int idx = item.ListIndex;
-            Tiles.Add(new DeckTileViewModel
+            DeckTileViewModel? tile = null;
+            tile = new DeckTileViewModel
             {
-                Face = TileFaceData.From(def), Label = def.Label, IsEdit = IsEdit,
-                AccessibleName = def.IsFolder ? $"Dossier {def.Label}" : def.Label,
+                Button = def, Label = def.Label, IsEdit = IsEdit,
                 Click = IsEdit
                     ? new RelayCommand(() => AppServices.OpenEditor(place, idx))
                     : def.IsFolder
                         ? new RelayCommand(() => EnterFolder(idx))
-                        : new AsyncRelayCommand(
-                            () => ActionRunner.RunAsync(def, Hooks),
-                            AsyncRelayCommandOptions.AllowConcurrentExecutions),
-            });
+                        : new AsyncRelayCommand(() => RunTileAsync(tile!), AsyncRelayCommandOptions.AllowConcurrentExecutions),
+            };
+            UpdateFace(tile);
+            Tiles.Add(tile);
+        }
+        UpdateLiveTimer();
+    }
+
+    // ---------- exécution et retour visuel ----------
+
+    /// <summary>Exécute le bouton et affiche son état sur la tuile : en cours (si l'action dure), réussi ou en erreur.</summary>
+    public async Task RunTileAsync(DeckTileViewModel tile)
+    {
+        var def = tile.Button!;
+        var run = _engine.RunAsync(def, this);
+        if (await Task.WhenAny(run, Task.Delay(RunningDelay)) != run) tile.RunState = TileRunState.Running;
+        var result = await run;
+        UpdateFace(tile);          // un minuteur vient peut-être de démarrer ou de s'arrêter
+        UpdateLiveTimer();
+        if (result.Outcome == ActionOutcome.Cancelled) { tile.RunState = TileRunState.Idle; return; }
+
+        var state = result.Ok ? TileRunState.Success : TileRunState.Error;
+        tile.RunState = state;
+        if (!result.Ok)
+        {
+            var step = def.Actions.Count > 1 ? $" (étape {result.Step + 1})" : "";
+            SetStatus($"{def.Label}{step} : {result.Message}");
+            Log.Warn($"Bouton « {def.Label} »{step} : {result.Outcome} — {result.Message}");
+        }
+        else if (result.Message != null) SetStatus(result.Message, error: false);
+
+        await Task.Delay(result.Ok ? 600 : 1800);
+        if (tile.RunState == state) tile.RunState = TileRunState.Idle;
+    }
+
+    void UpdateFace(DeckTileViewModel tile)
+    {
+        var def = tile.Button;
+        if (def == null) return;
+        var left = _engine.Context.Countdowns.Remaining(def);
+        tile.Face = TileFaceData.From(def, left is { } t ? Countdowns.Format(t) : null);
+        tile.AccessibleName = def.IsFolder ? $"Dossier {tile.Face.Label}" : tile.Face.Label;
+    }
+
+    bool IsLive(DeckTileViewModel t) =>
+        t.Button is { } b && (LabelTemplate.IsDynamic(b.Label) || _engine.Context.Countdowns.Remaining(b) != null);
+
+    /// <summary>L'horloge ne tourne que si une tuile visible l'utilise (ou qu'un minuteur est en cours).</summary>
+    void UpdateLiveTimer()
+    {
+        bool needed = _engine.Context.Countdowns.Any || Tiles.OfType<DeckTileViewModel>().Any(IsLive);
+        if (needed && !_liveTimer.IsEnabled) _liveTimer.Start();
+        else if (!needed) _liveTimer.Stop();
+    }
+
+    /// <summary>Met à jour uniquement les tuiles dynamiques ; une horloge sans secondes n'est redessinée qu'au changement de minute.</summary>
+    void RefreshLive()
+    {
+        _engine.Context.Countdowns.Tick();
+        var minute = DateTime.Now.ToString("yyyyMMddHHmm");
+        bool newMinute = minute != _lastMinute;
+        _lastMinute = minute;
+        foreach (var t in Tiles.OfType<DeckTileViewModel>())
+        {
+            if (t.Button is not { } b) continue;
+            if (_engine.Context.Countdowns.Remaining(b) != null || LabelTemplate.NeedsSeconds(b.Label)
+                || (newMinute && LabelTemplate.IsDynamic(b.Label)))
+                UpdateFace(t);
+        }
+        UpdateLiveTimer();
+    }
+
+    void OnCountdownFinished(DeckButton button)
+    {
+        SetStatus($"Minuteur terminé : {button.Label.Replace("{timer}", "").Trim()}", error: false);
+        System.Media.SystemSounds.Asterisk.Play();
+        foreach (var t in Tiles.OfType<DeckTileViewModel>().Where(t => ReferenceEquals(t.Button, button)))
+        {
+            UpdateFace(t);
+            _ = FlashAsync(t);
         }
     }
 
-    ActionRunner.Hooks Hooks => new(NavigateTo, SwitchProfile, msg => Application.Current.Dispatcher.Invoke(() => SetStatus(msg)));
+    static async Task FlashAsync(DeckTileViewModel tile)
+    {
+        tile.RunState = TileRunState.Success;
+        await Task.Delay(1500);
+        if (tile.RunState == TileRunState.Success) tile.RunState = TileRunState.Idle;
+    }
 
     void BuildTabs()
     {
