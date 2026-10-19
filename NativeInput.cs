@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace TouchDeck;
@@ -85,6 +86,21 @@ public static class NativeInput
             if (r != -1) return (ushort)(r & 0xFF);
         }
         throw new ArgumentException($"Touche inconnue : « {k} »");
+    }
+
+    /// <summary>Vérifie une combinaison sans l'envoyer. error = raison en français si invalide.</summary>
+    public static bool TryValidateHotkey(string combo, out string error)
+    {
+        error = "";
+        var parts = (combo ?? "").Split('+', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) { error = "Le raccourci est vide"; return false; }
+        if (parts.All(p => Modifiers.Contains(p))) { error = "Ajoute une touche en plus des modificateurs"; return false; }
+        foreach (var p in parts)
+        {
+            try { ParseKey(p); }
+            catch (ArgumentException) { error = $"Touche inconnue : « {p} »"; return false; }
+        }
+        return true;
     }
 
     /// <summary>Ex : "ctrl+shift+m", "win+d", "f13", "alt+tab".</summary>

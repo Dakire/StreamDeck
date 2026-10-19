@@ -1,22 +1,20 @@
 using System.Windows.Input;
 using System.Windows.Media;
-using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace TouchDeck.ViewModels;
 
-/// <summary>Bouton de la grille.</summary>
+/// <summary>Bouton de la grille du deck.</summary>
 public sealed class DeckTileViewModel
 {
-    public string Icon { get; init; } = "";
+    public required TileFaceData Face { get; init; }
     public string Label { get; init; } = "";
-    public Brush Background { get; init; } = Brushes.Gray;
+    public string AccessibleName { get; init; } = "";
     public bool IsEdit { get; init; }
-    public Wpf.Ui.Controls.SymbolRegular Symbol { get; init; }
-    public bool HasSymbol { get; init; }
-    public bool HasIcon => !HasSymbol && Icon.Length > 0;
-    public bool HasLabel => Label.Length > 0;
     public required ICommand Click { get; init; }
 }
+
+/// <summary>Case vide hors édition : réserve la place pour que les voisins gardent leur position.</summary>
+public sealed class SpacerTileViewModel { }
 
 /// <summary>Emplacement « + » affiché en mode édition.</summary>
 public sealed class AddTileViewModel

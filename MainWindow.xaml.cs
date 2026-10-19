@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -35,12 +34,15 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
 
     public MainWindow()
     {
-        _vm = new MainViewModel(this);   // charge la config et applique le thème avant la création des vues
+        _vm = new MainViewModel(this);   // la configuration et le thème sont déjà chargés par AppServices
         DataContext = _vm;
         InitializeComponent();
         _onTop = _vm.Config.AlwaysOnTop;
         Topmost = _onTop;
         Root.SizeChanged += (_, _) => _vm.Resize(Root.ActualWidth, Root.ActualHeight);
+        // Écran branché ou débranché : le deck suit (ou revient sur l'écran principal si le sien disparaît)
+        DisplayService.Start();
+        DisplayService.Changed += () => PlaceOnScreen(displayChanged: true);
     }
 
     // ---------- fenêtre : sans focus, dans la barre des tâches, placée sur l'écran tactile ----------
@@ -63,19 +65,16 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         return IntPtr.Zero;
     }
 
-    void PlaceOnScreen()
+    void PlaceOnScreen(bool displayChanged = false)
     {
         var cfg = _vm.Config;
         if (!cfg.Fullscreen) return;
-        var screens = System.Windows.Forms.Screen.AllScreens;
-        System.Windows.Forms.Screen target;
-        if (cfg.Monitor >= 0 && cfg.Monitor < screens.Length) target = screens[cfg.Monitor];
-        else
+        var target = DisplayService.ResolveTarget(cfg.Monitor);
+        if (target == null)
         {
-            // Auto : plein écran sur l'écran secondaire ; sans second écran, on reste en fenêtre
-            var secondary = screens.FirstOrDefault(s => !s.Primary);
-            if (secondary == null) return;
-            target = secondary;
+            // Pas d'écran cible : au démarrage on reste en fenêtre ; si l'écran vient de disparaître, on revient sur l'écran principal
+            if (displayChanged && _full) GoWindowed(System.Windows.Forms.Screen.PrimaryScreen ?? System.Windows.Forms.Screen.AllScreens[0]);
+            return;
         }
         GoFullscreen(target);
     }
@@ -132,28 +131,21 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         if (_full) GoWindowed(CurrentScreen()); else GoFullscreen(CurrentScreen());
     }
 
-    public void ToggleOnTop()
+    public void SetOnTop(bool onTop)
     {
-        _onTop = !_onTop;
+        if (_onTop == onTop) return;
+        _onTop = onTop;
         Topmost = _onTop;
         SetWindowPos(Hwnd, ZOrder, 0, 0, 0, 0, 0x0001 | 0x0002 | SWP_NOACTIVATE); // NOSIZE | NOMOVE
     }
 
     public void Minimize() => WindowState = WindowState.Minimized;
 
-    public void ReapplyPlacement() => PlaceOnScreen();
-
-    public ButtonEditResult? EditButton(DeckButton source, List<string> pageNames, bool isNew)
+    public void ReapplyPlacement()
     {
-        var dlg = new ButtonEditorWindow(this, source, pageNames, isNew);
-        if (dlg.ShowDialog() != true) return null;
-        return new ButtonEditResult(dlg.Result, dlg.Deleted, dlg.Move);
-    }
-
-    public PageEditResult? EditPage(DeckPage page, bool canDelete)
-    {
-        var dlg = new PageEditorWindow(this, page, canDelete);
-        if (dlg.ShowDialog() != true) return null;
-        return new PageEditResult(dlg.PageName, dlg.Hidden, dlg.Deleted, dlg.Move);
+        SetOnTop(_vm.Config.AlwaysOnTop);
+        // Plein écran coupé dans les paramètres : on repasse en fenêtre sans attendre le prochain lancement
+        if (!_vm.Config.Fullscreen) { if (_full) GoWindowed(CurrentScreen()); }
+        else PlaceOnScreen();
     }
 }

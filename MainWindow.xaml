@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:vm="clr-namespace:TouchDeck.ViewModels"
+        xmlns:controls="clr-namespace:TouchDeck.Controls"
         Title="TouchDeck" Width="1100" Height="650" Icon="Assets/icon.ico"
         ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica" WindowCornerPreference="Round"
         ResizeMode="NoResize" Topmost="False" ShowInTaskbar="True"
@@ -76,33 +77,29 @@
 
     <!-- Bouton du deck -->
     <DataTemplate DataType="{x:Type vm:DeckTileViewModel}">
-      <Button Style="{StaticResource DeckButton}" Command="{Binding Click}" AutomationProperties.Name="{Binding Label}"
-              Background="{Binding Background}"
+      <Button Style="{DynamicResource DeckTileStyle}" Command="{Binding Click}" AutomationProperties.Name="{Binding AccessibleName}"
+              Background="{Binding Face.Background}"
               Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
               Tag="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-          <ui:SymbolIcon Symbol="{Binding Symbol}" Foreground="White" HorizontalAlignment="Center"
-                         FontSize="{Binding DataContext.L.IconSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                         Visibility="{Binding HasSymbol, Converter={StaticResource BoolVis}}"/>
-          <TextBlock Text="{Binding Icon}" FontFamily="Segoe UI Emoji, Segoe UI" Foreground="White"
-                     TextAlignment="Center" HorizontalAlignment="Center"
-                     FontSize="{Binding DataContext.L.IconSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                     Visibility="{Binding HasIcon, Converter={StaticResource BoolVis}}"/>
-          <TextBlock Text="{Binding Label}" FontWeight="SemiBold" Foreground="#EBFFFFFF"
-                     TextWrapping="Wrap" TextAlignment="Center"
-                     FontSize="{Binding DataContext.L.LabelSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                     Margin="{Binding DataContext.L.LabelMargin, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                     Visibility="{Binding HasLabel, Converter={StaticResource BoolVis}}"/>
-          <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
-                      Margin="{Binding DataContext.L.EditMargin, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                      Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
-            <ui:SymbolIcon Symbol="Edit24" Foreground="White" Margin="0,0,6,0"
-                       FontSize="{Binding DataContext.L.EditSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
-            <TextBlock Text="Modifier" Foreground="White" VerticalAlignment="Center"
-                       FontSize="{Binding DataContext.L.EditSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
-          </StackPanel>
-        </StackPanel>
+        <Grid>
+          <controls:TileFace Face="{Binding Face}"
+                             CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+          <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0" Padding="8,4" CornerRadius="10"
+                  Background="#B3000000" Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
+            <StackPanel Orientation="Horizontal">
+              <ui:SymbolIcon Symbol="Edit24" Foreground="White" Margin="0,0,6,0"
+                             FontSize="{Binding DataContext.L.EditSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+              <TextBlock Text="Modifier" Foreground="White" VerticalAlignment="Center"
+                         FontSize="{Binding DataContext.L.EditSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+            </StackPanel>
+          </Border>
+        </Grid>
       </Button>
+    </DataTemplate>
+
+    <!-- Case vide hors édition : garde la place -->
+    <DataTemplate DataType="{x:Type vm:SpacerTileViewModel}">
+      <Border IsHitTestVisible="False"/>
     </DataTemplate>
 
     <!-- Emplacement vide du mode édition -->
@@ -246,20 +243,54 @@
           </ItemsControl>
           <StackPanel Orientation="Horizontal" Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
             <Button Style="{StaticResource BarChip}" Command="{Binding AddPageCommand}" Content="＋ Page"/>
-            <Button Style="{StaticResource BarChip}" Command="{Binding EditCurrentPageCommand}" Content="Modifier la page"/>
+            <Button Style="{StaticResource BarChip}" Command="{Binding OpenEditorHereCommand}" Content="Ouvrir l'éditeur"/>
           </StackPanel>
         </StackPanel>
 
-        <!-- message d'état (erreurs) -->
+        <!-- message d'état : erreur (rouge) ou information (accent) -->
         <Border HorizontalAlignment="Left" BorderThickness="1" CornerRadius="{Binding L.BarRadius}"
-                Background="{DynamicResource DeckStatusBg}" BorderBrush="{DynamicResource DeckStatusLine}"
-                Padding="{Binding L.StatusPadding}"
-                Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}">
+                Padding="{Binding L.StatusPadding}" MaxWidth="900"
+                Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}"
+                AutomationProperties.LiveSetting="Polite">
+          <Border.Style>
+            <Style TargetType="Border">
+              <Setter Property="Background" Value="{DynamicResource DeckStatusBg}"/>
+              <Setter Property="BorderBrush" Value="{DynamicResource DeckStatusLine}"/>
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding StatusIsError}" Value="False">
+                  <Setter Property="Background" Value="{DynamicResource DeckSurface}"/>
+                  <Setter Property="BorderBrush" Value="{DynamicResource DeckLine}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Border.Style>
           <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-            <ui:SymbolIcon Symbol="Warning24" Foreground="{DynamicResource DeckStatusText}"
-                       FontSize="{Binding L.SubFont}" Margin="0,0,10,0"/>
-            <TextBlock Text="{Binding Status}" Foreground="{DynamicResource DeckStatusText}"
-                       FontSize="{Binding L.SubFont}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+            <ui:SymbolIcon FontSize="{Binding L.SubFont}" Margin="0,0,10,0">
+              <ui:SymbolIcon.Style>
+                <Style TargetType="ui:SymbolIcon">
+                  <Setter Property="Symbol" Value="Warning24"/>
+                  <Setter Property="Foreground" Value="{DynamicResource DeckStatusText}"/>
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding StatusIsError}" Value="False">
+                      <Setter Property="Symbol" Value="Info24"/>
+                      <Setter Property="Foreground" Value="{DynamicResource DeckAccentText}"/>
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </ui:SymbolIcon.Style>
+            </ui:SymbolIcon>
+            <TextBlock Text="{Binding Status}" FontSize="{Binding L.SubFont}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                  <Setter Property="Foreground" Value="{DynamicResource DeckStatusText}"/>
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding StatusIsError}" Value="False">
+                      <Setter Property="Foreground" Value="{DynamicResource DeckText}"/>
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
           </StackPanel>
         </Border>
       </Grid>

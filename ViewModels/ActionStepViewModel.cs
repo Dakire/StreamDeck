@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -6,14 +7,34 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace TouchDeck.ViewModels;
 
-/// <summary>Édition d'une action d'un bouton : type, valeur et arguments, avec les choix propres à chaque type.</summary>
-public partial class ActionEditorViewModel : ObservableObject
+/// <summary>Ce que l'éditeur d'étape demande au panneau de propriétés qui le contient.</summary>
+public interface IStepOwner
 {
-    static readonly (string Key, string Label, string Icon)[] Types =
+    void StepChanged(ActionStepViewModel step);
+    void MoveStep(ActionStepViewModel step, int delta);
+    void RemoveStep(ActionStepViewModel step);
+    IReadOnlyList<string> PageNames { get; }
+    IReadOnlyList<string> ProfileNames { get; }
+    DeckConfig Config { get; }
+    DeckProfile? Profile { get; }
+}
+
+public sealed record IssueViewModel(Severity Severity, string Message)
+{
+    /// <summary>Le niveau est écrit en toutes lettres : la couleur ne porte jamais seule l'information.</summary>
+    public string Prefix => Severity == Severity.Error ? "Erreur : " : "Attention : ";
+    public Wpf.Ui.Controls.SymbolRegular Symbol => Severity == Severity.Error
+        ? Wpf.Ui.Controls.SymbolRegular.ErrorCircle24 : Wpf.Ui.Controls.SymbolRegular.Warning24;
+}
+
+/// <summary>Une étape d'un bouton : type, valeur et arguments, avec les choix propres à chaque type et la validation en direct.</summary>
+public partial class ActionStepViewModel : ObservableObject
+{
+    static readonly (string Key, string Label)[] Types =
     {
-        ("hotkey", "Raccourci", "⌨️"), ("text", "Texte", "🔤"), ("media", "Média", "🎵"),
-        ("launch", "Programme", "🚀"), ("script", "Script", "⚡"), ("url", "Lien web", "🌐"),
-        ("page", "Page", "📄"), ("focus", "Fenêtre", "🪟"), ("delay", "Pause", "⏱️"),
+        ("hotkey", "Raccourci"), ("text", "Texte"), ("media", "Média"),
+        ("launch", "Programme"), ("script", "Script"), ("url", "Lien web"),
+        ("page", "Page"), ("profile", "Profil"), ("focus", "Fenêtre"), ("delay", "Pause"),
     };
 
     static readonly (string Key, string Label)[] MediaKeys =
@@ -25,11 +46,14 @@ public partial class ActionEditorViewModel : ObservableObject
     const string ProgramFilter = "Programmes|*.exe;*.lnk;*.bat;*.cmd|Tous les fichiers|*.*";
     const string ScriptFilter = "Scripts|*.ps1;*.bat;*.cmd|Tous les fichiers|*.*";
 
-    readonly ButtonEditorViewModel _owner;
+    readonly IStepOwner _owner;
+    readonly List<string> _pageKeys = new();
+    readonly List<string> _profileKeys = new();
+    bool _loading = true;
 
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowValue), nameof(ShowMedia), nameof(ShowPage), nameof(ShowProcesses),
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowValue), nameof(ShowMedia), nameof(ShowPage), nameof(ShowProfile), nameof(ShowProcesses),
         nameof(ShowBrowseValue), nameof(ShowBrowseArgs), nameof(ShowArgs), nameof(ValueCaption), nameof(ValueHint),
-        nameof(ShowValueHint), nameof(ArgsCaption), nameof(ArgsHint), nameof(ShowArgsHint))]
+        nameof(ShowValueHint), nameof(ArgsCaption), nameof(ArgsHint), nameof(ShowArgsHint), nameof(TypeLabel))]
     string _type;
     [ObservableProperty] string _value;
     [ObservableProperty] string _args;
@@ -41,9 +65,14 @@ public partial class ActionEditorViewModel : ObservableObject
     public ObservableCollection<ChoiceViewModel> TypeChoices { get; } = new();
     public ObservableCollection<ChoiceViewModel> MediaChoices { get; } = new();
     public ObservableCollection<ChoiceViewModel> PageChoices { get; } = new();
+    public ObservableCollection<ChoiceViewModel> ProfileChoices { get; } = new();
     public ObservableCollection<ChoiceViewModel> ProcessChoices { get; } = new();
+    public ObservableCollection<IssueViewModel> Issues { get; } = new();
 
-    public ActionEditorViewModel(DeckAction source, ButtonEditorViewModel owner, string[] pageNames)
+    public bool HasIssues => Issues.Count > 0;
+    public string TypeLabel => Types.FirstOrDefault(t => t.Key == Type).Label ?? Type;
+
+    public ActionStepViewModel(DeckAction source, IStepOwner owner)
     {
         _owner = owner;
         _type = source.Type;
@@ -52,24 +81,30 @@ public partial class ActionEditorViewModel : ObservableObject
 
         foreach (var t in Types) TypeChoices.Add(new ChoiceViewModel(t.Label, () => SetType(t.Key)));
         foreach (var m in MediaKeys) MediaChoices.Add(new ChoiceViewModel(m.Label, () => Value = m.Key));
-        foreach (var name in new[] { "home", "back" }.Concat(pageNames))
+        foreach (var name in new[] { "home", "back" }.Concat(owner.PageNames))
         {
             var n = name;
-            string text = n == "home" ? "Accueil" : n == "back" ? "Retour" : n;
-            PageChoices.Add(new ChoiceViewModel(text, () => Value = n) { });
+            PageChoices.Add(new ChoiceViewModel(n == "home" ? "Accueil" : n == "back" ? "Retour" : n, () => Value = n));
             _pageKeys.Add(n);
+        }
+        foreach (var name in owner.ProfileNames)
+        {
+            var n = name;
+            ProfileChoices.Add(new ChoiceViewModel(n, () => Value = n));
+            _profileKeys.Add(n);
         }
         LoadProcesses();
         RefreshSelection();
+        Revalidate();
+        _loading = false;
     }
-
-    readonly System.Collections.Generic.List<string> _pageKeys = new();
 
     // ---------- affichage selon le type ----------
 
-    public bool ShowValue => Type is not ("media" or "page");
+    public bool ShowValue => Type is not ("media" or "page" or "profile");
     public bool ShowMedia => Type == "media";
     public bool ShowPage => Type == "page";
+    public bool ShowProfile => Type == "profile";
     public bool ShowProcesses => Type == "focus";
     public bool ShowBrowseValue => Type is "launch" or "script";
     public bool ShowBrowseArgs => Type == "focus";
@@ -77,13 +112,13 @@ public partial class ActionEditorViewModel : ObservableObject
 
     public string ValueCaption => Type switch
     {
-        "hotkey" => "COMBINAISON",
-        "text" => "TEXTE À SAISIR",
-        "launch" => "PROGRAMME OU DOSSIER",
-        "script" => "COMMANDE POWERSHELL OU FICHIER .ps1 / .bat / .cmd",
-        "url" => "ADRESSE",
-        "focus" => "PROGRAMME OU TITRE DE LA FENÊTRE",
-        "delay" => "DURÉE (MILLISECONDES)",
+        "hotkey" => "Combinaison",
+        "text" => "Texte à saisir",
+        "launch" => "Programme ou dossier",
+        "script" => "Commande PowerShell ou fichier .ps1 / .bat / .cmd",
+        "url" => "Adresse",
+        "focus" => "Programme ou titre de la fenêtre",
+        "delay" => "Durée (millisecondes)",
         _ => "",
     };
 
@@ -95,10 +130,10 @@ public partial class ActionEditorViewModel : ObservableObject
     };
     public bool ShowValueHint => ValueHint.Length > 0;
 
-    public string ArgsCaption => Type == "focus" ? "SI ABSENTE, LANCER (FACULTATIF)"
-        : Type == "script" ? "ARGUMENTS (FICHIERS UNIQUEMENT, FACULTATIF)" : "ARGUMENTS (FACULTATIF)";
+    public string ArgsCaption => Type == "focus" ? "Si absente, lancer (facultatif)"
+        : Type == "script" ? "Arguments (fichiers uniquement, facultatif)" : "Arguments (facultatif)";
     public string ArgsHint => Type == "focus"
-        ? "Astuce : place cette action en premier, puis une Pause (≈150 ms), puis un Raccourci : il sera envoyé à cette fenêtre." : "";
+        ? "Astuce : place cette étape en premier, puis une Pause (≈150 ms), puis un Raccourci : il sera envoyé à cette fenêtre." : "";
     public bool ShowArgsHint => ArgsHint.Length > 0;
 
     // ---------- état ----------
@@ -106,11 +141,14 @@ public partial class ActionEditorViewModel : ObservableObject
     void SetType(string key)
     {
         if (Type == key) return;
+        _loading = true;
         Type = key;
-        Value = key == "delay" ? "500" : "";
+        Value = key switch { "delay" => "500", "url" => "https://", "page" => "home", _ => "" };
         Args = "";
+        _loading = false;
         LoadProcesses();
         RefreshSelection();
+        Changed();
     }
 
     partial void OnValueChanged(string value)
@@ -121,6 +159,24 @@ public partial class ActionEditorViewModel : ObservableObject
             return;
         }
         RefreshSelection();
+        Changed();
+    }
+
+    partial void OnArgsChanged(string value) => Changed();
+
+    void Changed()
+    {
+        if (_loading) return;
+        Revalidate();
+        _owner.StepChanged(this);
+    }
+
+    public void Revalidate()
+    {
+        Issues.Clear();
+        foreach (var i in ActionValidator.Validate(ToDeckAction(), _owner.Config, _owner.Profile))
+            Issues.Add(new IssueViewModel(i.Severity, i.Message));
+        OnPropertyChanged(nameof(HasIssues));
     }
 
     void LoadProcesses()
@@ -140,6 +196,8 @@ public partial class ActionEditorViewModel : ObservableObject
         for (int i = 0; i < MediaKeys.Length; i++) MediaChoices[i].IsSelected = MediaKeys[i].Key == Value;
         for (int i = 0; i < PageChoices.Count; i++)
             PageChoices[i].IsSelected = string.Equals(_pageKeys[i], Value, StringComparison.OrdinalIgnoreCase);
+        for (int i = 0; i < ProfileChoices.Count; i++)
+            ProfileChoices[i].IsSelected = string.Equals(_profileKeys[i], Value, StringComparison.OrdinalIgnoreCase);
         foreach (var p in ProcessChoices) p.IsSelected = string.Equals(p.Text, Value, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -150,9 +208,9 @@ public partial class ActionEditorViewModel : ObservableObject
 
     // ---------- commandes ----------
 
-    [RelayCommand] void MoveUp() => _owner.MoveAction(this, -1);
-    [RelayCommand] void MoveDown() => _owner.MoveAction(this, 1);
-    [RelayCommand] void Remove() => _owner.RemoveAction(this);
+    [RelayCommand] void MoveUp() => _owner.MoveStep(this, -1);
+    [RelayCommand] void MoveDown() => _owner.MoveStep(this, 1);
+    [RelayCommand] void Remove() => _owner.RemoveStep(this);
 
     [RelayCommand]
     void BrowseValue()

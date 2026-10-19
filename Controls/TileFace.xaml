@@ -1,0 +1,40 @@
+<UserControl x:Class="TouchDeck.Controls.TileFace"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             Focusable="False" IsHitTestVisible="False" SnapsToDevicePixels="True">
+  <!-- Face d'un bouton : image ou icône, titre (sous l'icône ou superposé), badge de dossier. Dessin seul, aucune interaction. -->
+  <Grid>
+    <Border x:Name="ImageLayer" Visibility="Collapsed"/>
+    <Border x:Name="Scrim" Visibility="Collapsed" VerticalAlignment="Bottom" Height="60">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+          <GradientStop Color="#00000000" Offset="0"/>
+          <GradientStop Color="#B0000000" Offset="1"/>
+        </LinearGradientBrush>
+      </Border.Background>
+    </Border>
+
+    <!-- Titre sous l'icône -->
+    <StackPanel x:Name="StackLayer" HorizontalAlignment="Center" VerticalAlignment="Center">
+      <ui:SymbolIcon x:Name="StackSymbol" HorizontalAlignment="Center"/>
+      <TextBlock x:Name="StackIconText" FontFamily="Segoe UI Emoji, Segoe UI" TextAlignment="Center" HorizontalAlignment="Center"/>
+      <TextBlock x:Name="StackTitle" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Center" TextTrimming="CharacterEllipsis"/>
+    </StackPanel>
+
+    <!-- Titre superposé (haut, milieu, bas) -->
+    <Grid x:Name="OverlayLayer" Visibility="Collapsed">
+      <ui:SymbolIcon x:Name="OverlaySymbol" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      <TextBlock x:Name="OverlayIconText" FontFamily="Segoe UI Emoji, Segoe UI" TextAlignment="Center"
+                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      <TextBlock x:Name="OverlayTitle" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Center"
+                 TextTrimming="CharacterEllipsis" HorizontalAlignment="Center"/>
+    </Grid>
+
+    <!-- Badge « dossier » -->
+    <Border x:Name="FolderBadge" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+            Background="#99000000" CornerRadius="10">
+      <ui:SymbolIcon x:Name="FolderGlyph" Symbol="ChevronRight20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </Border>
+  </Grid>
+</UserControl>

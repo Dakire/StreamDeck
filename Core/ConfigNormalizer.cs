@@ -1,0 +1,143 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace TouchDeck;
+
+/// <summary>Résultat d'une normalisation : la configuration a-t-elle été migrée, et ce qui a été corrigé.</summary>
+public sealed record NormalizeResult(bool Migrated, IReadOnlyList<string> Warnings);
+
+/// <summary>
+/// Migre l'ancien format (version 1, <c>Pages</c> à la racine) vers les profils, puis répare ce qui pourrait corrompre
+/// l'application : listes nulles, noms vides ou en double, bornes. Ne supprime jamais de bouton.
+/// </summary>
+public static class ConfigNormalizer
+{
+    public const int CurrentVersion = 2;
+    public const int MaxFolderDepth = 8;
+    public const int MaxRecents = 12;
+    public static readonly string[] Themes = { "system", "dark", "light" };
+
+    public static NormalizeResult Normalize(DeckConfig cfg)
+    {
+        var warnings = new List<string>();
+        bool migrated = false;
+
+        cfg.Profiles ??= new List<DeckProfile>();
+        cfg.Favorites ??= new List<string>();
+        cfg.Recents ??= new List<string>();
+
+        if (cfg.Version < CurrentVersion)
+        {
+            if (cfg.Profiles.Count == 0)
+                cfg.Profiles.Add(new DeckProfile { Name = "Principal", Pages = cfg.Pages ?? new List<DeckPage>() });
+            else if (cfg.Pages is { Count: > 0 })
+                warnings.Add("La clé « Pages » est ignorée parce que « Profiles » est présente.");
+            cfg.Pages = null;
+            cfg.Version = CurrentVersion;
+            migrated = true;
+        }
+        else if (cfg.Pages != null)
+        {
+            if (cfg.Pages.Count > 0 && cfg.Profiles.Count == 0)
+                cfg.Profiles.Add(new DeckProfile { Name = "Principal", Pages = cfg.Pages });
+            else if (cfg.Pages.Count > 0)
+                warnings.Add("La clé « Pages » est ignorée parce que « Profiles » est présente.");
+            cfg.Pages = null;
+        }
+
+        if (cfg.Profiles.Count == 0) cfg.Profiles.Add(new DeckProfile { Name = "Principal" });
+
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        int n = 0;
+        foreach (var profile in cfg.Profiles)
+        {
+            n++;
+            if (string.IsNullOrWhiteSpace(profile.Name)) profile.Name = $"Profil {n}";
+            profile.Name = Unique(profile.Name.Trim(), names, warnings, "profil");
+            profile.Columns = Math.Clamp(profile.Columns, 0, 20);
+            profile.Rows = Math.Clamp(profile.Rows, 0, 20);
+            if (string.IsNullOrWhiteSpace(profile.AppMatch)) profile.AppMatch = null;
+            NormalizePages(profile, warnings);
+        }
+
+        cfg.Columns = Math.Clamp(cfg.Columns, 0, 20);
+        cfg.Rows = Math.Clamp(cfg.Rows, 0, 20);
+        cfg.Spacing = double.IsFinite(cfg.Spacing) ? Math.Clamp(cfg.Spacing, 0, 80) : 14;
+        var theme = (cfg.Theme ?? "").ToLowerInvariant();
+        cfg.Theme = Themes.Contains(theme) ? theme : "system";
+        cfg.Background = string.IsNullOrWhiteSpace(cfg.Background) ? Theme.DefaultBackground : cfg.Background;
+        cfg.IconStyle = string.Equals(cfg.IconStyle, "emoji", StringComparison.OrdinalIgnoreCase) ? "emoji" : "fluent";
+
+        if (string.IsNullOrEmpty(cfg.ActiveProfile) || FindProfile(cfg, cfg.ActiveProfile) == null)
+            cfg.ActiveProfile = cfg.Profiles[0].Name;
+        else
+            cfg.ActiveProfile = FindProfile(cfg, cfg.ActiveProfile)!.Name;
+
+        cfg.Favorites = cfg.Favorites.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
+        cfg.Recents = cfg.Recents.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().Take(MaxRecents).ToList();
+        return new NormalizeResult(migrated, warnings);
+    }
+
+    public static DeckProfile? FindProfile(DeckConfig cfg, string? name) =>
+        name == null ? null : cfg.Profiles.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+    static void NormalizePages(DeckProfile profile, List<string> warnings)
+    {
+        profile.Pages ??= new List<DeckPage>();
+        if (profile.Pages.Count == 0) profile.Pages.Add(new DeckPage { Name = "Page 1" });
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        int n = 0;
+        foreach (var page in profile.Pages)
+        {
+            n++;
+            if (string.IsNullOrWhiteSpace(page.Name)) page.Name = $"Page {n}";
+            page.Name = Unique(page.Name.Trim(), names, warnings, "page");
+            page.Buttons = NormalizeButtons(page.Buttons, 0, warnings);
+        }
+    }
+
+    public static List<DeckButton> NormalizeButtons(List<DeckButton>? buttons, int depth, List<string> warnings)
+    {
+        var list = (buttons ?? new List<DeckButton>()).Where(b => b != null).ToList();
+        foreach (var b in list)
+        {
+            b.Label ??= "";
+            b.Icon ??= "";
+            b.Color = string.IsNullOrWhiteSpace(b.Color) ? "#2B2F3A" : b.Color;
+            b.Actions = (b.Actions ?? new List<DeckAction>()).Where(a => a != null).ToList();
+            foreach (var a in b.Actions) { a.Type ??= ""; a.Value ??= ""; }
+            if (b.TitlePosition is not (null or "top" or "middle" or "bottom")) b.TitlePosition = null;
+            if (b.ImageFit is not (null or "cover" or "contain")) b.ImageFit = null;
+            if (string.IsNullOrWhiteSpace(b.ImagePath)) b.ImagePath = null;
+            if (string.IsNullOrWhiteSpace(b.TextColor)) b.TextColor = null;
+
+            if (b.IsFolder)
+            {
+                if (depth >= MaxFolderDepth)
+                {
+                    warnings.Add($"Dossier « {b.Label} » trop profond : son contenu est ignoré.");
+                    b.Children = new List<DeckButton>();
+                }
+                else b.Children = NormalizeButtons(b.Children, depth + 1, warnings);
+            }
+            else b.Children = null;
+        }
+        // Les cases vides de fin ne servent à rien
+        while (list.Count > 0 && list[^1].Blank) list.RemoveAt(list.Count - 1);
+        return list;
+    }
+
+    /// <summary>Rend un nom unique (insensible à la casse) en ajoutant « (2) », « (3 ) »…</summary>
+    public static string Unique(string name, ISet<string> taken, List<string>? warnings = null, string kind = "élément")
+    {
+        string result = name;
+        int i = 2;
+        while (!taken.Add(result))
+        {
+            result = $"{name} ({i++})";
+        }
+        if (result != name) warnings?.Add($"Nom de {kind} en double : « {name} » renommé en « {result} ».");
+        return result;
+    }
+}

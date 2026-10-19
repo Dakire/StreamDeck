@@ -1,0 +1,129 @@
+using System;
+using System.Collections.Concurrent;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text.RegularExpressions;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+
+namespace TouchDeck;
+
+/// <summary>
+/// Images de boutons : importées, redimensionnées (512 px max) et stockées en PNG sous un nom dérivé de leur contenu,
+/// dans le dossier Icons de la configuration. La configuration ne contient que ce nom : aucun chemin arbitraire.
+/// </summary>
+public static class IconStore
+{
+    public const long MaxSourceBytes = 15 * 1024 * 1024;
+    public const int MaxPixels = 8192;
+    public const int StoredSize = 512;
+    public const long MaxStoredBytes = 2 * 1024 * 1024;
+
+    static readonly Regex NameRx = new("^[0-9a-f]{32}\\.png$", RegexOptions.Compiled);
+    static readonly byte[] PngSignature = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+    static readonly ConcurrentDictionary<string, ImageSource?> Cache = new();
+
+    public static readonly string[] Extensions = { ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".ico", ".tif", ".tiff", ".webp" };
+    public const string DialogFilter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.ico;*.tif;*.tiff;*.webp|Tous les fichiers|*.*";
+
+    public static bool IsValidName(string? name) => name != null && NameRx.IsMatch(name);
+
+    /// <summary>Chemin complet d'une image stockée, ou null si le nom n'est pas un nom d'image valide (jamais de chemin libre).</summary>
+    public static string? Resolve(string? name) => IsValidName(name) ? Path.Combine(ConfigStore.IconsDir, name!) : null;
+
+    public static bool LooksLikePng(ReadOnlySpan<byte> data)
+    {
+        if (data.Length < PngSignature.Length) return false;
+        for (int i = 0; i < PngSignature.Length; i++) if (data[i] != PngSignature[i]) return false;
+        return true;
+    }
+
+    /// <summary>Importe une image depuis le disque. Lève <see cref="InvalidDataException"/> avec un message affichable.</summary>
+    public static string Import(string sourcePath)
+    {
+        var info = new FileInfo(sourcePath);
+        if (!info.Exists) throw new InvalidDataException("Le fichier n'existe plus");
+        if (info.Length > MaxSourceBytes) throw new InvalidDataException("Image trop volumineuse (15 Mo maximum)");
+        if (Array.IndexOf(Extensions, info.Extension.ToLowerInvariant()) < 0)
+            throw new InvalidDataException("Format non pris en charge (PNG, JPEG, BMP, GIF, ICO, TIFF ou WebP)");
+        try
+        {
+            using var stream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+            if (decoder.Frames.Count == 0) throw new InvalidDataException("Image vide");
+            return Store(decoder.Frames[0]);
+        }
+        catch (InvalidDataException) { throw; }
+        catch (Exception ex) when (ex is NotSupportedException or FileFormatException or IOException or ArgumentException or InvalidOperationException)
+        {
+            throw new InvalidDataException("Impossible de lire cette image : fichier corrompu ou format non pris en charge", ex);
+        }
+    }
+
+    /// <summary>Redimensionne, encode en PNG et enregistre une image déjà décodée.</summary>
+    public static string Store(BitmapSource frame)
+    {
+        if (frame.PixelWidth <= 0 || frame.PixelHeight <= 0 || frame.PixelWidth > MaxPixels || frame.PixelHeight > MaxPixels)
+            throw new InvalidDataException($"Dimensions non acceptées (maximum {MaxPixels} px)");
+        BitmapSource source = frame;
+        int longest = Math.Max(frame.PixelWidth, frame.PixelHeight);
+        if (longest > StoredSize)
+        {
+            double k = (double)StoredSize / longest;
+            source = new TransformedBitmap(frame, new ScaleTransform(k, k));
+        }
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(source));
+        using var ms = new MemoryStream();
+        encoder.Save(ms);
+        return StoreBytes(ms.ToArray());
+    }
+
+    /// <summary>Enregistre un PNG déjà encodé (import de paquet) après vérification de son contenu.</summary>
+    public static string StoreBytes(byte[] png)
+    {
+        if (png.Length > MaxStoredBytes) throw new InvalidDataException("Image trop volumineuse");
+        if (!LooksLikePng(png)) throw new InvalidDataException("Image non valide (PNG attendu)");
+        try
+        {
+            using var check = new MemoryStream(png);
+            var decoder = BitmapDecoder.Create(check, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+            var f = decoder.Frames[0];
+            if (f.PixelWidth > MaxPixels || f.PixelHeight > MaxPixels) throw new InvalidDataException("Dimensions non acceptées");
+        }
+        catch (InvalidDataException) { throw; }
+        catch (Exception ex) { throw new InvalidDataException("Image PNG corrompue", ex); }
+
+        var name = Convert.ToHexString(SHA256.HashData(png))[..32].ToLowerInvariant() + ".png";
+        Directory.CreateDirectory(ConfigStore.IconsDir);
+        var path = Path.Combine(ConfigStore.IconsDir, name);
+        if (!File.Exists(path)) File.WriteAllBytes(path, png);
+        Cache.TryRemove(name, out _);
+        return name;
+    }
+
+    /// <summary>Image prête à afficher (figée, mise en cache), ou null si absente ou illisible.</summary>
+    public static ImageSource? Load(string? name)
+    {
+        if (!IsValidName(name)) return null;
+        return Cache.GetOrAdd(name!, n =>
+        {
+            try
+            {
+                var path = Path.Combine(ConfigStore.IconsDir, n);
+                if (!File.Exists(path)) return null;
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                bmp.UriSource = new Uri(path);
+                bmp.EndInit();
+                bmp.Freeze();
+                return bmp;
+            }
+            catch { return null; }
+        });
+    }
+
+    public static void ClearCache() => Cache.Clear();
+}

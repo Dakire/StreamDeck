@@ -10,19 +10,22 @@ Namespace racine `TouchDeck`, nullable activé, `ImplicitUsings` désactivé (é
 ## Commandes
 
 ```powershell
-dotnet build -c Release      # compilation
-dotnet run -c Release        # lancement
+dotnet build -c Release                 # compilation
+dotnet run -c Release                   # lancement (--edit ouvre aussi l'éditeur)
+dotnet test tests/TouchDeck.Tests       # tests automatisés
 ```
 
-Il n'y a pas encore de tests automatisés. Vérifier un changement en lançant l'application.
+Variable `TOUCHDECK_DATA_DIR` : utiliser un autre dossier de configuration pour les essais (ne pas toucher à `%APPDATA%\TouchDeck`).
+Ajouter ou adapter un test pour tout changement de logique (`Core/`, `Services/`, ViewModels) ; les tests UI rendent les fenêtres hors écran.
 
 ## Règles à respecter
 
 - **Fenêtre sans focus** : `WS_EX_NOACTIVATE` et `WM_MOUSEACTIVATE` dans `MainWindow.xaml.cs` ne doivent
   pas être retirés. Sans eux, les raccourcis envoyés ne parviennent plus à l'application active.
-- **Cibles tactiles** : minimum 48 px de haut pour tout contrôle interactif.
+- **Cibles tactiles** : minimum 48 px de haut pour tout contrôle interactif (deck et éditeur).
 - **Compatibilité de configuration** : `config.json` d'utilisateurs existants doit rester lisible.
-  Ajouter des propriétés avec valeur par défaut, ne jamais renommer ni supprimer une clé sans migration.
+  Ajouter des propriétés avec valeur par défaut (et `JsonIgnore(WhenWritingDefault/Null)` pour ne pas alourdir le fichier),
+  ne jamais renommer ni supprimer une clé sans migration (`ConfigNormalizer`) ni test.
 - **Sécurité** : ne pas ajouter d'exécution de code issu d'une source distante. Les actions `script` et `launch`
   s'exécutent avec les droits de l'utilisateur.
 - **Win32** : les appels P/Invoke restent dans `NativeInput.cs`, `WindowFocus.cs` et `MainWindow.xaml.cs`.
@@ -42,6 +45,6 @@ Voir `CLAUDE.md` pour le détail.
 
 ## Avant de livrer
 
-1. `dotnet build -c Release` sans avertissement nouveau.
-2. Lancer l'application et exercer le chemin modifié (clic, édition, rechargement de config).
+1. `dotnet build -c Release` sans avertissement nouveau, `dotnet test tests/TouchDeck.Tests` au vert.
+2. Lancer l'application (avec `TOUCHDECK_DATA_DIR`) et exercer le chemin modifié (clic, édition, rechargement de config).
 3. Mettre à jour `README.md` si un comportement ou une clé de configuration change.

@@ -60,17 +60,30 @@ public sealed class LayoutMetrics
 
     public static readonly LayoutMetrics Initial = Compute(1100, 650, new DeckConfig());
 
-    public static LayoutMetrics Compute(double W, double H, DeckConfig cfg)
+    /// <summary>Taille de la grille (colonnes, lignes) pour une fenêtre donnée : format du profil, sinon réglage global, sinon automatique.</summary>
+    public static (int Columns, int Rows) GridSize(double W, double H, DeckConfig cfg, int colsOverride = 0, int rowsOverride = 0)
+    {
+        double scale = Math.Clamp(H / 1080.0, 0.6, 1.6);
+        double gap = Math.Max(6, cfg.Spacing * scale);
+        double barH = Math.Clamp(H * 0.085, 52, 92);
+        double topH = Math.Clamp(H * 0.05, 36, 56);
+        double availW = W - gap * 2, availH = H - topH - barH - gap * 1.5 - gap;
+
+        // ≈ 20 cases en FHD, moins sur petit écran, plus sur grand
+        int cols = colsOverride > 0 ? colsOverride : cfg.Columns > 0 ? cfg.Columns : (int)Math.Max(2, Math.Round(availW / 360, MidpointRounding.AwayFromZero));
+        int rows = rowsOverride > 0 ? rowsOverride : cfg.Rows > 0 ? cfg.Rows : (int)Math.Max(2, Math.Round(availH / 230, MidpointRounding.AwayFromZero));
+        return (cols, rows);
+    }
+
+    /// <summary>colsOverride / rowsOverride : format imposé par le profil (0 = réglage global, puis automatique).</summary>
+    public static LayoutMetrics Compute(double W, double H, DeckConfig cfg, int colsOverride = 0, int rowsOverride = 0)
     {
         double scale = Math.Clamp(H / 1080.0, 0.6, 1.6);
         double gap = Math.Max(6, cfg.Spacing * scale);
         double barH = Math.Clamp(H * 0.085, 52, 92);   // cibles tactiles >= 48 px
         double topH = Math.Clamp(H * 0.05, 36, 56);
         double availW = W - gap * 2, availH = H - topH - barH - gap * 1.5 - gap;
-
-        // ≈ 20 cases en FHD, moins sur petit écran, plus sur grand
-        int cols = cfg.Columns > 0 ? cfg.Columns : (int)Math.Max(2, Math.Round(availW / 360, MidpointRounding.AwayFromZero));
-        int rows = cfg.Rows > 0 ? cfg.Rows : (int)Math.Max(2, Math.Round(availH / 230, MidpointRounding.AwayFromZero));
+        var (cols, rows) = GridSize(W, H, cfg, colsOverride, rowsOverride);
 
         double cellMin = Math.Min(availW / cols, availH / rows);
         double radius = Math.Clamp(cellMin * 0.12, 12, 30);

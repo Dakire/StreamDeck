@@ -7,26 +7,34 @@ namespace TouchDeck;
 
 public static class ActionRunner
 {
-    public static async Task RunAsync(DeckButton button, Action<string> navigate, Action<string> onError)
+    /// <summary>Ce que les actions de navigation demandent à l'application.</summary>
+    public sealed record Hooks(Action<string> GoToPage, Action<string> SwitchProfile, Action<string> OnError);
+
+    public static async Task RunAsync(DeckButton button, Hooks hooks)
     {
         foreach (var action in button.Actions)
         {
-            try { await RunOne(action, navigate); }
-            catch (Exception ex) { onError($"{button.Label} : {ex.Message}"); return; }
+            try { await RunOne(action, hooks); }
+            catch (Exception ex) { hooks.OnError($"{button.Label} : {ex.Message}"); return; }
         }
     }
 
-    static async Task RunOne(DeckAction a, Action<string> navigate)
+    static async Task RunOne(DeckAction a, Hooks hooks)
     {
         switch (a.Type.ToLowerInvariant())
         {
             case "hotkey": NativeInput.Hotkey(a.Value); break;
             case "media": NativeInput.Media(a.Value); break;
             case "text": NativeInput.TypeText(a.Value); break;
-            case "page": navigate(a.Value); break;
+            case "page": hooks.GoToPage(a.Value); break;
+            case "profile": hooks.SwitchProfile(a.Value); break;
             case "delay": await Task.Delay(int.TryParse(a.Value, out var ms) ? ms : 100); break;
             case "url":
-                Process.Start(new ProcessStartInfo(a.Value) { UseShellExecute = true });
+                // Ces protocoles n'ont rien à faire dans un bouton : ils servent à exécuter du code ou lire des fichiers par détour
+                if (Uri.TryCreate(a.Value.Trim(), UriKind.Absolute, out var uri)
+                    && uri.Scheme.ToLowerInvariant() is "javascript" or "vbscript" or "data" or "file")
+                    throw new InvalidOperationException($"Protocole « {uri.Scheme}: » non autorisé");
+                Process.Start(new ProcessStartInfo(a.Value.Trim()) { UseShellExecute = true });
                 break;
             case "launch":
                 Process.Start(new ProcessStartInfo(a.Value) { UseShellExecute = true, Arguments = a.Args ?? "" });

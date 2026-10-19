@@ -9,20 +9,22 @@ Le projet s'appelle `TouchDeck` (assembly et namespace), le dépôt `StreamDeck`
 
 ## Architecture actuelle
 
-- **MVVM** avec CommunityToolkit.Mvvm. `MainWindow.xaml` décrit toute l'interface principale ; `ViewModels/MainViewModel.cs`
-  porte l'état (pages, mode édition, menu, statut, rechargement de config) ; `ViewModels/LayoutMetrics.cs` calcule les
-  dimensions à partir de la taille de la fenêtre ; `ViewModels/Items.cs` contient les éléments affichés (boutons, onglets, menu).
-- `MainWindow.xaml.cs` ne garde que Win32 et le placement (NOACTIVATE, plein écran multi-écran, déplacement) et implémente
-  `IShell` (`ViewModels/IShell.cs`), l'interface par laquelle le ViewModel demande ces actions et les boîtes de dialogue.
-- Thème : `Theme.cs` (clair/sombre/système) publie les brushes `Deck*` comme ressources d'application ; le XAML les consomme en `DynamicResource`.
-- Icônes de l'interface : `ui:SymbolIcon` (Fluent System Icons fournis par WPF-UI). Les icônes des boutons utilisateur restent des emojis.
-- Fenêtres d'édition en XAML + MVVM : `ButtonEditorWindow.xaml`, `PageEditorWindow.xaml` (code-behind dans `EditorWindows.cs`),
-  `ButtonEditorViewModel`, `ActionEditorViewModel`, `PageEditorViewModel`, `ChoiceViewModel`. Styles partagés (pastilles, champs) dans `App.xaml`.
-  `Behaviors/HotkeyCapture.cs` capture les raccourcis clavier.
-- Icônes des boutons : `IconCatalog.cs`. Le champ `Icon` accepte un nom Fluent (`Play24`), un emoji ou un texte court ;
-  les emojis connus sont affichés en Fluent (option `IconStyle` : `fluent` par défaut, `emoji` pour les garder tels quels).
-- Styles XAML dans `App.xaml` : `DeckButton`, `FlatButton`, `AddTileButton`.
-- Configuration : `Models.cs`, `ConfigStore.cs` (JSON dans `%APPDATA%\TouchDeck`) ; actions : `ActionRunner.cs`.
+- **MVVM** avec CommunityToolkit.Mvvm. Un seul `DeckDocument` (`Core/DeckDocument.cs`, sans WPF) porte la configuration, l'historique
+  annuler/rétablir et le presse-papiers ; deck, éditeur et paramètres le partagent via `AppServices.Document`.
+  Toute modification de contenu passe par ses méthodes (annulables) ou `UpdateSettings` (réglages, hors historique).
+- `AppServices` : chargement, sauvegarde automatique (300 ms, écriture atomique), rechargement à chaud (ignore nos propres écritures),
+  thème / animations, ouverture de l'éditeur et des paramètres.
+- Deck : `MainWindow.xaml` + `MainViewModel` (profil, page, dossier, sous-page, menu) + `LayoutMetrics`. `MainWindow.xaml.cs` ne garde que
+  Win32 et le placement (NOACTIVATE, plein écran multi-écran) et implémente `IShell`.
+- Éditeur : `EditorWindow` (fenêtre activable normale, séparée du deck qui ne prend jamais le focus) + `EditorViewModel`,
+  `PropertiesViewModel`, `CatalogViewModel`, `ActionStepViewModel`. Les menus contextuels sont décrits en `MenuSpec` par les ViewModels
+  et construits par `ContextMenuFactory`. `Controls/TileFace` dessine un bouton partout (deck, grille, aperçu).
+- Format de config : `Version` 2, `Profiles[].Pages[].Buttons[]` ; l'ancien format (`Pages` racine) est migré par `ConfigNormalizer`.
+  Les images vivent dans `Icons\` et ne sont référencées que par un nom de hachage validé (`IconStore`).
+- Thème : `Theme.cs` (palettes `DarkPalette` / `LightPalette`, contrastes testés) publie les brushes `Deck*` ; le XAML les consomme en `DynamicResource`.
+- Icônes de l'interface : `ui:SymbolIcon` (Fluent System Icons fournis par WPF-UI). Les icônes des boutons utilisateur : nom Fluent, emoji ou image.
+- Tests : `tests/TouchDeck.Tests` (xUnit). `UiHarness` démarre une vraie application WPF sur un thread STA et rend les fenêtres hors écran
+  (aucune fenêtre affichée, dossier de config temporaire) ; il capte aussi les erreurs de liaison de données. Définir `TOUCHDECK_SHOTS` pour garder les PNG.
 
 ## Chantier : modernisation Fluent / Windows 11
 
@@ -50,4 +52,5 @@ Contraintes spécifiques à ne pas casser pendant la migration :
 - Réponses et messages de commit en français.
 - Petits commits ciblés, un par étape de migration.
 - Ne pas committer `bin/` ni `obj/`.
-- Demander avant tout changement du format de `config.json`.
+- Demander avant tout changement du format de `config.json` (le passage à la version 2 a été validé : clés ajoutées, `Pages` migré dans `Profiles`).
+- Ne pas piloter le vrai bureau de l'utilisateur (captures d'écran, clics simulés) : utiliser le harnais de tests hors écran.

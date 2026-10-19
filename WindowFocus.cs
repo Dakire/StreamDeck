@@ -55,6 +55,20 @@ public static class WindowFocus
         return list;
     }
 
+    /// <summary>Nom du programme (sans .exe) de la fenêtre au premier plan, ou null (aucune, ou TouchDeck lui-même).</summary>
+    public static string? ForegroundProcessName()
+    {
+        try
+        {
+            var h = GetForegroundWindow();
+            if (h == IntPtr.Zero) return null;
+            GetWindowThreadProcessId(h, out uint pid);
+            if (pid == 0 || pid == (uint)Environment.ProcessId) return null;
+            return Process.GetProcessById((int)pid).ProcessName;
+        }
+        catch { return null; }
+    }
+
     /// <summary>Distinct par programme, pour proposer un choix dans l'éditeur.</summary>
     public static List<string> OpenProcessNames() =>
         OpenWindows().Select(w => w.Process).Where(p => !p.Equals("explorer", StringComparison.OrdinalIgnoreCase))

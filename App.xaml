@@ -11,7 +11,11 @@
       <ui:ControlsDictionary/>
     </ResourceDictionary.MergedDictionaries>
 
-    <!-- Bouton de grille : carte arrondie, léger relief, retour visuel au toucher -->
+    <BooleanToVisibilityConverter x:Key="BoolVis"/>
+
+    <!-- ===== Deck tactile ===== -->
+
+    <!-- Bouton de grille : carte arrondie, léger relief, retour visuel au toucher (avec animation) -->
     <Style x:Key="DeckButton" TargetType="Button">
       <Setter Property="Focusable" Value="False"/>
       <Setter Property="Foreground" Value="White"/>
@@ -36,8 +40,8 @@
                   </LinearGradientBrush>
                 </Border.Background>
               </Border>
+              <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
               <Border x:Name="Press" CornerRadius="{TemplateBinding Tag}" Background="White" Opacity="0" IsHitTestVisible="False"/>
-              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Grid>
             <ControlTemplate.Triggers>
               <Trigger Property="IsPressed" Value="True">
@@ -65,13 +69,45 @@
                 </Trigger.ExitActions>
               </Trigger>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Card" Property="BorderBrush" Value="#44FFFFFF"/>
+                <Setter TargetName="Card" Property="BorderBrush" Value="#66FFFFFF"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
       </Setter>
     </Style>
+
+    <!-- Même bouton sans animation (réduction des animations) : l'appui est indiqué par un voile et une bordure -->
+    <Style x:Key="DeckButtonStatic" TargetType="Button">
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="Tag"><Setter.Value><CornerRadius>22</CornerRadius></Setter.Value></Setter>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Grid>
+              <Border x:Name="Card" CornerRadius="{TemplateBinding Tag}" Background="{TemplateBinding Background}"
+                      BorderBrush="#26FFFFFF" BorderThickness="1"/>
+              <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+              <Border x:Name="Press" CornerRadius="{TemplateBinding Tag}" Background="White" Opacity="0" IsHitTestVisible="False"/>
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Press" Property="Opacity" Value="0.25"/>
+                <Setter TargetName="Card" Property="BorderBrush" Value="White"/>
+                <Setter TargetName="Card" Property="BorderThickness" Value="3"/>
+              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Card" Property="BorderBrush" Value="#66FFFFFF"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- Style effectif des boutons du deck : Motion le remplace par la variante statique si les animations sont coupées -->
+    <Style x:Key="DeckTileStyle" TargetType="Button" BasedOn="{StaticResource DeckButton}"/>
 
     <!-- Boutons de barre (onglets, menus, actions discrètes) : à plat, sans ombre -->
     <Style x:Key="FlatButton" TargetType="Button">
@@ -113,7 +149,7 @@
             </Grid>
             <ControlTemplate.Triggers>
               <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="Frame" Property="Stroke" Value="{DynamicResource DeckAccent}"/>
+                <Setter TargetName="Frame" Property="Stroke" Value="{DynamicResource DeckAccentText}"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -121,72 +157,99 @@
       </Setter>
     </Style>
 
-    <!-- ===== Fenêtres d'édition ===== -->
-    <BooleanToVisibilityConverter x:Key="BoolVis"/>
+    <!-- ===== Éditeur : styles partagés ===== -->
 
-  <!-- Pastille tactile : la pastille sélectionnée prend la couleur d'accent -->
-  <Style x:Key="EditorChip" TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
-    <Setter Property="MinHeight" Value="42"/>
-    <Setter Property="CornerRadius" Value="21"/>
-    <Setter Property="Padding" Value="16,0"/>
-    <Setter Property="Margin" Value="0,0,8,8"/>
-    <Setter Property="FontSize" Value="15"/>
-    <Setter Property="Focusable" Value="False"/>
-  </Style>
+    <!-- Anneau de focus clavier visible (WCAG 2.4.7 / 2.4.11) -->
+    <Style x:Key="DeckFocusVisual">
+      <Setter Property="Control.Template">
+        <Setter.Value>
+          <ControlTemplate>
+            <Rectangle Margin="-3" RadiusX="12" RadiusY="12" Stroke="{DynamicResource DeckFocus}" StrokeThickness="2" StrokeDashArray="3 2"
+                       SnapsToDevicePixels="True" IsHitTestVisible="False"/>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
 
-  <!-- Pastilles liées à un ChoiceViewModel -->
-  <DataTemplate DataType="{x:Type vm:ChoiceViewModel}">
-    <ui:Button Command="{Binding Command}" Content="{Binding Text}">
-      <ui:Button.Style>
-        <Style TargetType="ui:Button" BasedOn="{StaticResource EditorChip}">
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-              <Setter Property="Appearance" Value="Primary"/>
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </ui:Button.Style>
-    </ui:Button>
-  </DataTemplate>
+    <!-- Pastille tactile : la pastille sélectionnée prend la couleur d'accent -->
+    <Style x:Key="EditorChip" TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+      <Setter Property="MinHeight" Value="48"/>
+      <Setter Property="CornerRadius" Value="24"/>
+      <Setter Property="Padding" Value="16,0"/>
+      <Setter Property="Margin" Value="0,0,8,8"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="FocusVisualStyle" Value="{StaticResource DeckFocusVisual}"/>
+    </Style>
 
-  <!-- Pastille de couleur -->
-  <DataTemplate DataType="{x:Type vm:SwatchViewModel}">
-    <ui:Button Width="44" Height="44" Padding="0" CornerRadius="22" Margin="0,0,8,0" Focusable="False"
-               Command="{Binding Command}" Background="{Binding Brush}" MouseOverBackground="{Binding Brush}"
-               PressedBackground="{Binding Brush}" BorderThickness="1" BorderBrush="#40808080"
-               HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
-      <ui:SymbolIcon Symbol="Checkmark24" Foreground="White" FontSize="22"
-                     Visibility="{Binding IsSelected, Converter={StaticResource BoolVis}}"/>
-    </ui:Button>
-  </DataTemplate>
+    <!-- Pastilles liées à un ChoiceViewModel -->
+    <DataTemplate DataType="{x:Type vm:ChoiceViewModel}">
+      <ui:Button Command="{Binding Command}" Content="{Binding Text}" AutomationProperties.Name="{Binding Text}">
+        <ui:Button.Style>
+          <Style TargetType="ui:Button" BasedOn="{StaticResource EditorChip}">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                <Setter Property="Appearance" Value="Primary"/>
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </ui:Button.Style>
+      </ui:Button>
+    </DataTemplate>
 
-  <!-- Liste de pastilles qui passent à la ligne -->
-  <Style x:Key="ChipWrap" TargetType="ItemsControl">
-    <Setter Property="Focusable" Value="False"/>
-    <Setter Property="ItemsPanel">
-      <Setter.Value><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></Setter.Value>
-    </Setter>
-  </Style>
+    <!-- Pastille de couleur : la case cochée est signalée par un repère en plus de la couleur -->
+    <DataTemplate DataType="{x:Type vm:SwatchViewModel}">
+      <ui:Button Width="48" Height="48" Padding="0" CornerRadius="24" Margin="0,0,8,8"
+                 Command="{Binding Command}" Background="{Binding Brush}" MouseOverBackground="{Binding Brush}"
+                 PressedBackground="{Binding Brush}" BorderThickness="2" BorderBrush="#80808080"
+                 FocusVisualStyle="{StaticResource DeckFocusVisual}"
+                 AutomationProperties.Name="{Binding Color, StringFormat='Couleur {0}'}"
+                 HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+        <ui:SymbolIcon Symbol="Checkmark24" Foreground="White" FontSize="22"
+                       Visibility="{Binding IsSelected, Converter={StaticResource BoolVis}}">
+          <ui:SymbolIcon.Effect><DropShadowEffect ShadowDepth="0" BlurRadius="4" Color="Black" Opacity="1"/></ui:SymbolIcon.Effect>
+        </ui:SymbolIcon>
+      </ui:Button>
+    </DataTemplate>
 
-  <Style x:Key="EditorCaption" TargetType="TextBlock">
-    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
-    <Setter Property="FontSize" Value="13"/>
-    <Setter Property="FontWeight" Value="SemiBold"/>
-    <Setter Property="Margin" Value="2,12,0,6"/>
-  </Style>
+    <!-- Liste de pastilles qui passent à la ligne -->
+    <Style x:Key="ChipWrap" TargetType="ItemsControl">
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="ItemsPanel">
+        <Setter.Value><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></Setter.Value>
+      </Setter>
+    </Style>
 
-  <Style x:Key="EditorHint" TargetType="TextBlock">
-    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
-    <Setter Property="FontSize" Value="12"/>
-    <Setter Property="TextWrapping" Value="Wrap"/>
-    <Setter Property="Margin" Value="2,6,0,0"/>
-  </Style>
+    <Style x:Key="EditorCaption" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource DeckDim}"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Margin" Value="2,14,0,6"/>
+    </Style>
 
-  <Style x:Key="EditorInput" TargetType="ui:TextBox" BasedOn="{StaticResource {x:Type ui:TextBox}}">
-    <Setter Property="MinHeight" Value="44"/>
-    <Setter Property="FontSize" Value="16"/>
-    <Setter Property="Padding" Value="12,10"/>
-  </Style>
+    <Style x:Key="EditorHint" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource DeckDim}"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+      <Setter Property="Margin" Value="2,6,0,0"/>
+    </Style>
+
+    <Style x:Key="EditorInput" TargetType="ui:TextBox" BasedOn="{StaticResource {x:Type ui:TextBox}}">
+      <Setter Property="MinHeight" Value="48"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="Padding" Value="12,10"/>
+      <Setter Property="FocusVisualStyle" Value="{StaticResource DeckFocusVisual}"/>
+    </Style>
+
+    <!-- Bouton icône seul (barre d'outils, panneaux) -->
+    <Style x:Key="IconButton" TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+      <Setter Property="Width" Value="48"/>
+      <Setter Property="Height" Value="48"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Margin" Value="4,0,0,0"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="FocusVisualStyle" Value="{StaticResource DeckFocusVisual}"/>
+    </Style>
 
     </ResourceDictionary>
   </Application.Resources>
