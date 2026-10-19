@@ -41,7 +41,7 @@ public static class HotkeyCapture
     {
         var tb = (TextBox)sender;
         // le champ « valeur » sert à tous les types d'action : la capture ne vaut que pour les raccourcis
-        if (tb.DataContext is ActionStepViewModel { Type: not "hotkey" }) return;
+        if (tb.DataContext is ActionStepViewModel { Type: not ActionTypes.Hotkey }) return;
 
         var key = e.Key == Key.System ? e.SystemKey : e.Key == Key.ImeProcessed ? e.ImeProcessedKey : e.Key;
         var name = KeyName(key);

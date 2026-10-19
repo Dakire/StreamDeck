@@ -428,7 +428,7 @@ public sealed class DeckDocument
             if (p.Pages.Where(x => !ReferenceEquals(x, pg)).Any(x => x.Name.Equals(newName, StringComparison.OrdinalIgnoreCase)))
                 return OpResult.Fail($"Une page « {newName} » existe déjà");
             foreach (var a in AllActions(p.Pages.SelectMany(x => x.Buttons)))
-                if (a.Type.Equals("page", StringComparison.OrdinalIgnoreCase) && a.Value.Equals(pg.Name, StringComparison.OrdinalIgnoreCase))
+                if (a.Type.Equals(ActionTypes.Page, StringComparison.OrdinalIgnoreCase) && a.Value.Equals(pg.Name, StringComparison.OrdinalIgnoreCase))
                     a.Value = newName;
             pg.Name = newName;
             return OpResult.Success(page);
@@ -510,7 +510,7 @@ public sealed class DeckDocument
             if (cfg.Profiles.Where(x => !ReferenceEquals(x, p)).Any(x => x.Name.Equals(newName, StringComparison.OrdinalIgnoreCase)))
                 return OpResult.Fail($"Un profil « {newName} » existe déjà");
             foreach (var a in AllActions(cfg.Profiles.SelectMany(x => x.Pages).SelectMany(x => x.Buttons)))
-                if (a.Type.Equals("profile", StringComparison.OrdinalIgnoreCase) && a.Value.Equals(p.Name, StringComparison.OrdinalIgnoreCase))
+                if (a.Type.Equals(ActionTypes.Profile, StringComparison.OrdinalIgnoreCase) && a.Value.Equals(p.Name, StringComparison.OrdinalIgnoreCase))
                     a.Value = newName;
             if (string.Equals(cfg.ActiveProfile, p.Name, StringComparison.OrdinalIgnoreCase)) cfg.ActiveProfile = newName;
             p.Name = newName;

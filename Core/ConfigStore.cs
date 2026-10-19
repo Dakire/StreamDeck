@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -175,16 +175,16 @@ public static class ConfigStore
                         Name = "Média",
                         Buttons = new List<DeckButton>
                         {
-                            B("Play24", "Lecture / Pause", "#047857", "media", "playpause"),
-                            B("Previous24", "Précédent", "#334155", "media", "prev"),
-                            B("Next24", "Suivant", "#334155", "media", "next"),
-                            B("SpeakerMute24", "Muet", "#BE123C", "media", "mute"),
-                            B("Speaker124", "Volume -", "#334155", "media", "voldown"),
-                            B("Speaker224", "Volume +", "#334155", "media", "volup"),
-                            B("Desktop24", "Bureau", "#2563EB", "hotkey", "win+d"),
-                            B("Cut24", "Capture", "#2563EB", "hotkey", "win+shift+s"),
-                            B("DataBarVertical24", "Gestionnaire", "#2563EB", "hotkey", "ctrl+shift+esc"),
-                            B("Wrench24", "Outils", "#7C3AED", "page", "Outils"),
+                            B("Play24", "Lecture / Pause", "#047857", ActionTypes.Media, "playpause"),
+                            B("Previous24", "Précédent", "#334155", ActionTypes.Media, "prev"),
+                            B("Next24", "Suivant", "#334155", ActionTypes.Media, "next"),
+                            B("SpeakerMute24", "Muet", "#BE123C", ActionTypes.Media, "mute"),
+                            B("Speaker124", "Volume -", "#334155", ActionTypes.Media, "voldown"),
+                            B("Speaker224", "Volume +", "#334155", ActionTypes.Media, "volup"),
+                            B("Desktop24", "Bureau", "#2563EB", ActionTypes.Hotkey, "win+d"),
+                            B("Cut24", "Capture", "#2563EB", ActionTypes.Hotkey, "win+shift+s"),
+                            B("DataBarVertical24", "Gestionnaire", "#2563EB", ActionTypes.Hotkey, "ctrl+shift+esc"),
+                            B("Wrench24", "Outils", "#7C3AED", ActionTypes.Page, "Outils"),
                         }
                     },
                     new()
@@ -192,13 +192,13 @@ public static class ConfigStore
                         Name = "Outils",
                         Buttons = new List<DeckButton>
                         {
-                            B("Notepad24", "Bloc-notes", "#334155", "launch", "notepad.exe"),
-                            B("Calculator24", "Calculatrice", "#334155", "launch", "calc.exe"),
-                            B("Folder24", "Explorateur", "#334155", "hotkey", "win+e"),
-                            B("Globe24", "Google", "#2563EB", "url", "https://www.google.com"),
-                            B("Keyboard24", "Texte", "#334155", "text", "Bonjour !"),
-                            B("Flash24", "Script PS", "#7C3AED", "script", "Get-Date | Out-File \"$env:TEMP\\touchdeck.txt\"; notepad \"$env:TEMP\\touchdeck.txt\""),
-                            B("Home24", "Retour", "#B45309", "page", "home"),
+                            B("Notepad24", "Bloc-notes", "#334155", ActionTypes.Launch, "notepad.exe"),
+                            B("Calculator24", "Calculatrice", "#334155", ActionTypes.Launch, "calc.exe"),
+                            B("Folder24", "Explorateur", "#334155", ActionTypes.Hotkey, "win+e"),
+                            B("Globe24", "Google", "#2563EB", ActionTypes.Url, "https://www.google.com"),
+                            B("Keyboard24", "Texte", "#334155", ActionTypes.Text, "Bonjour !"),
+                            B("Flash24", "Script PS", "#7C3AED", ActionTypes.Script, "Get-Date | Out-File \"$env:TEMP\\touchdeck.txt\"; notepad \"$env:TEMP\\touchdeck.txt\""),
+                            B("Home24", "Retour", "#B45309", ActionTypes.Page, PageTargets.Home),
                         }
                     },
                 }

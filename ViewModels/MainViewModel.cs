@@ -220,8 +220,8 @@ public partial class MainViewModel : ObservableObject, INavigator
     void NavigateTo(string name)
     {
         var pages = CurrentProfile.Pages;
-        int idx = name.Equals("home", StringComparison.OrdinalIgnoreCase) ? 0
-            : name.Equals("back", StringComparison.OrdinalIgnoreCase) ? Math.Min(_previousPage, pages.Count - 1)
+        int idx = name.Equals(PageTargets.Home, StringComparison.OrdinalIgnoreCase) ? 0
+            : name.Equals(PageTargets.Back, StringComparison.OrdinalIgnoreCase) ? Math.Min(_previousPage, pages.Count - 1)
             : pages.FindIndex(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         if (idx < 0) { SetStatus($"Page introuvable : {name}"); return; }
         GoTo(idx);

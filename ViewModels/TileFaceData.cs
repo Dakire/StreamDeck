@@ -72,8 +72,8 @@ public sealed class TileFaceData
     {
         if (hasImage) return TileKind.Image;
         if (counting || (b.Actions.Count == 0 && LabelTemplate.IsDynamic(b.Label))) return TileKind.Display;
-        if (b.IsFolder || (b.Actions.Count > 0 && b.Actions.All(a => a.Type is "page" or "profile"))) return TileKind.Navigation;
-        if (b.Actions.Count > 0 && b.Actions[0].Type is "media" or "audio") return TileKind.Media;
+        if (b.IsFolder || (b.Actions.Count > 0 && b.Actions.All(a => a.Type is ActionTypes.Page or ActionTypes.Profile))) return TileKind.Navigation;
+        if (b.Actions.Count > 0 && b.Actions[0].Type is ActionTypes.Media or ActionTypes.Audio) return TileKind.Media;
         return TileKind.Standard;
     }
 

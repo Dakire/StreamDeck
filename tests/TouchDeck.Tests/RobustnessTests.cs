@@ -50,3 +50,16 @@ public class RobustnessTests
         Assert.Contains("Sauvegarde de la configuration impossible", File.ReadAllText(Log.FilePath));
     }
 }
+
+/// <summary>Les identifiants d'action sont des clés de config.json : leur valeur ne doit jamais changer.</summary>
+public class FormatKeysTests
+{
+    [Fact]
+    public void ActionTypeIdentifiersAreStableConfigKeys()
+    {
+        Assert.Equal(new[] { "hotkey", "text", "media", "launch", "script", "url", "page", "profile", "delay", "focus", "http", "audio", "timer" },
+            ActionTypes.All);
+        Assert.Equal(new[] { "mic-toggle", "mic-mute", "mic-unmute", "out-toggle", "volume" }, AudioCommands.All);
+        Assert.Equal(("home", "back"), (PageTargets.Home, PageTargets.Back));
+    }
+}

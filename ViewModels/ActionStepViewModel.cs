@@ -31,20 +31,20 @@ public sealed record IssueViewModel(Severity Severity, string Message)
 public partial class ActionStepViewModel : ObservableObject
 {
     /// <summary>Destinations spéciales de l'action « page », proposées avant les pages du profil.</summary>
-    static readonly string[] SpecialPages = { "home", "back" };
+    static readonly string[] SpecialPages = { PageTargets.Home, PageTargets.Back };
 
     static readonly (string Key, string Label)[] Types =
     {
-        ("hotkey", "Raccourci"), ("text", "Texte"), ("media", "Média"),
-        ("launch", "Programme"), ("script", "Script"), ("url", "Lien web"),
-        ("page", "Page"), ("profile", "Profil"), ("focus", "Fenêtre"), ("delay", "Pause"),
-        ("http", "Requête web"), ("audio", "Audio"), ("timer", "Minuteur"),
+        (ActionTypes.Hotkey, "Raccourci"), (ActionTypes.Text, "Texte"), (ActionTypes.Media, "Média"),
+        (ActionTypes.Launch, "Programme"), (ActionTypes.Script, "Script"), (ActionTypes.Url, "Lien web"),
+        (ActionTypes.Page, "Page"), (ActionTypes.Profile, "Profil"), (ActionTypes.Focus, "Fenêtre"), (ActionTypes.Delay, "Pause"),
+        (ActionTypes.Http, "Requête web"), (ActionTypes.Audio, "Audio"), (ActionTypes.Timer, "Minuteur"),
     };
 
-    static readonly (string Key, string Label)[] AudioCommands =
+    static readonly (string Key, string Label)[] AudioOptions =
     {
-        ("mic-toggle", "Micro : couper / rétablir"), ("mic-mute", "Couper le micro"), ("mic-unmute", "Rétablir le micro"),
-        ("out-toggle", "Son : couper / rétablir"), ("volume", "Régler le volume"),
+        (AudioCommands.MicToggle, "Micro : couper / rétablir"), (AudioCommands.MicMute, "Couper le micro"), (AudioCommands.MicUnmute, "Rétablir le micro"),
+        (AudioCommands.OutToggle, "Son : couper / rétablir"), (AudioCommands.Volume, "Régler le volume"),
     };
 
     static readonly (string Key, string Label)[] MediaKeys =
@@ -92,11 +92,11 @@ public partial class ActionStepViewModel : ObservableObject
 
         foreach (var t in Types) TypeChoices.Add(new ChoiceViewModel(t.Label, () => SetType(t.Key)));
         foreach (var m in MediaKeys) MediaChoices.Add(new ChoiceViewModel(m.Label, () => Value = m.Key));
-        foreach (var c in AudioCommands) AudioChoices.Add(new ChoiceViewModel(c.Label, () => Value = c.Key));
+        foreach (var c in AudioOptions) AudioChoices.Add(new ChoiceViewModel(c.Label, () => Value = c.Key));
         foreach (var name in SpecialPages.Concat(owner.PageNames))
         {
             var n = name;
-            PageChoices.Add(new ChoiceViewModel(n == "home" ? "Accueil" : n == "back" ? "Retour" : n, () => Value = n));
+            PageChoices.Add(new ChoiceViewModel(n == PageTargets.Home ? "Accueil" : n == PageTargets.Back ? "Retour" : n, () => Value = n));
             _pageKeys.Add(n);
         }
         foreach (var name in owner.ProfileNames)
@@ -113,49 +113,49 @@ public partial class ActionStepViewModel : ObservableObject
 
     // ---------- affichage selon le type ----------
 
-    public bool ShowValue => Type is not ("media" or "audio" or "page" or "profile");
-    public bool ShowMedia => Type == "media";
-    public bool ShowAudio => Type == "audio";
-    public bool ShowPage => Type == "page";
-    public bool ShowProfile => Type == "profile";
-    public bool ShowProcesses => Type == "focus";
-    public bool ShowBrowseValue => Type is "launch" or "script";
-    public bool ShowBrowseArgs => Type == "focus";
-    public bool ShowArgs => Type is "launch" or "script" or "focus" or "http" || (Type == "audio" && Value == "volume");
+    public bool ShowValue => Type is not (ActionTypes.Media or ActionTypes.Audio or ActionTypes.Page or ActionTypes.Profile);
+    public bool ShowMedia => Type == ActionTypes.Media;
+    public bool ShowAudio => Type == ActionTypes.Audio;
+    public bool ShowPage => Type == ActionTypes.Page;
+    public bool ShowProfile => Type == ActionTypes.Profile;
+    public bool ShowProcesses => Type == ActionTypes.Focus;
+    public bool ShowBrowseValue => Type is ActionTypes.Launch or ActionTypes.Script;
+    public bool ShowBrowseArgs => Type == ActionTypes.Focus;
+    public bool ShowArgs => Type is ActionTypes.Launch or ActionTypes.Script or ActionTypes.Focus or ActionTypes.Http || (Type == ActionTypes.Audio && Value == AudioCommands.Volume);
 
     public string ValueCaption => Type switch
     {
-        "hotkey" => "Combinaison",
-        "text" => "Texte à saisir",
-        "launch" => "Programme ou dossier",
-        "script" => "Commande PowerShell ou fichier .ps1 / .bat / .cmd",
-        "url" => "Adresse",
-        "focus" => "Programme ou titre de la fenêtre",
-        "delay" => "Durée (millisecondes)",
-        "http" => "Adresse à appeler (https://…)",
-        "timer" => "Durée (secondes)",
+        ActionTypes.Hotkey => "Combinaison",
+        ActionTypes.Text => "Texte à saisir",
+        ActionTypes.Launch => "Programme ou dossier",
+        ActionTypes.Script => "Commande PowerShell ou fichier .ps1 / .bat / .cmd",
+        ActionTypes.Url => "Adresse",
+        ActionTypes.Focus => "Programme ou titre de la fenêtre",
+        ActionTypes.Delay => "Durée (millisecondes)",
+        ActionTypes.Http => "Adresse à appeler (https://…)",
+        ActionTypes.Timer => "Durée (secondes)",
         _ => "",
     };
 
     public string ValueHint => Type switch
     {
-        "hotkey" => "Clique dans le champ puis appuie sur ta combinaison (ex. Ctrl+Maj+M, F13). Pour la touche Windows, tape-la : win+d, win+shift+s.",
-        "focus" => "Nom du programme (chrome, 3CXDesktopApp…) ou texte présent dans le titre de la fenêtre. Fenêtres ouvertes en ce moment :",
-        "http" => "Webhook, domotique, API locale… Sans corps : requête GET ; avec un corps : POST. Délai maximal 10 s.",
-        "timer" => "Toucher le bouton lance le compte à rebours, le toucher à nouveau l'arrête. Le temps restant remplace le titre (ou s'insère à la place de {timer}).",
+        ActionTypes.Hotkey => "Clique dans le champ puis appuie sur ta combinaison (ex. Ctrl+Maj+M, F13). Pour la touche Windows, tape-la : win+d, win+shift+s.",
+        ActionTypes.Focus => "Nom du programme (chrome, 3CXDesktopApp…) ou texte présent dans le titre de la fenêtre. Fenêtres ouvertes en ce moment :",
+        ActionTypes.Http => "Webhook, domotique, API locale… Sans corps : requête GET ; avec un corps : POST. Délai maximal 10 s.",
+        ActionTypes.Timer => "Toucher le bouton lance le compte à rebours, le toucher à nouveau l'arrête. Le temps restant remplace le titre (ou s'insère à la place de {timer}).",
         _ => "",
     };
     public bool ShowValueHint => ValueHint.Length > 0;
 
     public string ArgsCaption => Type switch
     {
-        "focus" => "Si absente, lancer (facultatif)",
-        "script" => "Arguments (fichiers uniquement, facultatif)",
-        "http" => "Corps de la requête (facultatif, JSON ou texte)",
-        "audio" => "Volume (0 à 100)",
+        ActionTypes.Focus => "Si absente, lancer (facultatif)",
+        ActionTypes.Script => "Arguments (fichiers uniquement, facultatif)",
+        ActionTypes.Http => "Corps de la requête (facultatif, JSON ou texte)",
+        ActionTypes.Audio => "Volume (0 à 100)",
         _ => "Arguments (facultatif)",
     };
-    public string ArgsHint => Type == "focus"
+    public string ArgsHint => Type == ActionTypes.Focus
         ? "Astuce : place cette étape en premier, puis une Pause (≈150 ms), puis un Raccourci : il sera envoyé à cette fenêtre." : "";
     public bool ShowArgsHint => ArgsHint.Length > 0;
 
@@ -166,7 +166,7 @@ public partial class ActionStepViewModel : ObservableObject
         if (Type == key) return;
         _loading = true;
         Type = key;
-        Value = key switch { "delay" => "500", "url" or "http" => "https://", "page" => "home", "audio" => "mic-toggle", "timer" => "300", _ => "" };
+        Value = key switch { ActionTypes.Delay => "500", ActionTypes.Url or ActionTypes.Http => "https://", ActionTypes.Page => PageTargets.Home, ActionTypes.Audio => AudioCommands.MicToggle, ActionTypes.Timer => "300", _ => "" };
         Args = "";
         _loading = false;
         LoadProcesses();
@@ -176,7 +176,7 @@ public partial class ActionStepViewModel : ObservableObject
 
     partial void OnValueChanged(string value)
     {
-        if (Type is "delay" or "timer" && value.Any(c => !char.IsDigit(c)))
+        if (Type is ActionTypes.Delay or ActionTypes.Timer && value.Any(c => !char.IsDigit(c)))
         {
             Value = new string(value.Where(char.IsDigit).ToArray());   // la durée n'accepte que des chiffres
             return;
@@ -206,7 +206,7 @@ public partial class ActionStepViewModel : ObservableObject
     void LoadProcesses()
     {
         ProcessChoices.Clear();
-        if (Type != "focus") return;
+        if (Type != ActionTypes.Focus) return;
         foreach (var proc in WindowFocus.OpenProcessNames())
         {
             var pn = proc;
@@ -218,7 +218,7 @@ public partial class ActionStepViewModel : ObservableObject
     {
         for (int i = 0; i < Types.Length; i++) TypeChoices[i].IsSelected = Types[i].Key == Type;
         for (int i = 0; i < MediaKeys.Length; i++) MediaChoices[i].IsSelected = MediaKeys[i].Key == Value;
-        for (int i = 0; i < AudioCommands.Length; i++) AudioChoices[i].IsSelected = AudioCommands[i].Key == Value;
+        for (int i = 0; i < AudioOptions.Length; i++) AudioChoices[i].IsSelected = AudioOptions[i].Key == Value;
         for (int i = 0; i < PageChoices.Count; i++)
             PageChoices[i].IsSelected = string.Equals(_pageKeys[i], Value, StringComparison.OrdinalIgnoreCase);
         for (int i = 0; i < ProfileChoices.Count; i++)
@@ -240,7 +240,7 @@ public partial class ActionStepViewModel : ObservableObject
     [RelayCommand]
     void BrowseValue()
     {
-        var path = PickFile(Type == "script" ? ScriptFilter : ProgramFilter);
+        var path = PickFile(Type == ActionTypes.Script ? ScriptFilter : ProgramFilter);
         if (path != null) Value = path;
     }
 

@@ -38,27 +38,27 @@ public static class BuiltInActions
 
     public static readonly IReadOnlyList<IActionHandler> All = new IActionHandler[]
     {
-        Sync("hotkey", (a, c) => c.Services.Platform.Keyboard.SendHotkey(a.Value)),
-        Sync("media", (a, c) =>
+        Sync(ActionTypes.Hotkey, (a, c) => c.Services.Platform.Keyboard.SendHotkey(a.Value)),
+        Sync(ActionTypes.Media, (a, c) =>
         {
             if (!ActionValidator.MediaKeys.Contains(a.Value.ToLowerInvariant())) throw new ArgumentException($"Touche média inconnue : « {a.Value} »");
             c.Services.Platform.Keyboard.SendHotkey(a.Value);
         }),
-        Sync("text", (a, c) => c.Services.Platform.Keyboard.TypeText(a.Value)),
-        Sync("page", (a, c) => c.Navigator.GoToPage(a.Value)),
-        Sync("profile", (a, c) => c.Navigator.SwitchProfile(a.Value)),
-        new Handler("delay", null, async (a, c, ct) =>
+        Sync(ActionTypes.Text, (a, c) => c.Services.Platform.Keyboard.TypeText(a.Value)),
+        Sync(ActionTypes.Page, (a, c) => c.Navigator.GoToPage(a.Value)),
+        Sync(ActionTypes.Profile, (a, c) => c.Navigator.SwitchProfile(a.Value)),
+        new Handler(ActionTypes.Delay, null, async (a, c, ct) =>
         {
             await c.Services.Delay(TimeSpan.FromMilliseconds(int.TryParse(a.Value, out var ms) && ms >= 0 ? ms : 100), ct);
             return null;
         }),
-        Background("url", Launch, (a, c) => c.Services.Platform.Launcher.Open(CheckUrl(a.Value), null)),
-        Background("launch", Launch, (a, c) => c.Services.Platform.Launcher.Open(a.Value, a.Args)),
-        Background("script", Launch, (a, c) => c.Services.Platform.Launcher.RunScript(a.Value, a.Args)),
-        new Handler("focus", TimeSpan.FromSeconds(10), Focus),
-        new Handler("http", HttpTimeout, Http),
-        new Handler("audio", Quick, (a, c, _) => Task.FromResult(Audio(a, c))),
-        new Handler("timer", null, (a, c, _) => Task.FromResult<string?>(Timer(a, c))),
+        Background(ActionTypes.Url, Launch, (a, c) => c.Services.Platform.Launcher.Open(CheckUrl(a.Value), null)),
+        Background(ActionTypes.Launch, Launch, (a, c) => c.Services.Platform.Launcher.Open(a.Value, a.Args)),
+        Background(ActionTypes.Script, Launch, (a, c) => c.Services.Platform.Launcher.RunScript(a.Value, a.Args)),
+        new Handler(ActionTypes.Focus, TimeSpan.FromSeconds(10), Focus),
+        new Handler(ActionTypes.Http, HttpTimeout, Http),
+        new Handler(ActionTypes.Audio, Quick, (a, c, _) => Task.FromResult(Audio(a, c))),
+        new Handler(ActionTypes.Timer, null, (a, c, _) => Task.FromResult<string?>(Timer(a, c))),
     };
 
     /// <summary>Ces protocoles n'ont rien à faire dans un bouton : ils servent à exécuter du code ou lire des fichiers par détour.</summary>
@@ -105,17 +105,17 @@ public static class BuiltInActions
         var audio = c.Services.Platform.Audio;
         switch (a.Value.ToLowerInvariant())
         {
-            case "mic-toggle":
+            case AudioCommands.MicToggle:
                 bool mic = !audio.IsMuted(AudioDevice.Microphone);
                 audio.SetMute(AudioDevice.Microphone, mic);
                 return mic ? "Micro coupé" : "Micro actif";
-            case "mic-mute": audio.SetMute(AudioDevice.Microphone, true); return "Micro coupé";
-            case "mic-unmute": audio.SetMute(AudioDevice.Microphone, false); return "Micro actif";
-            case "out-toggle":
+            case AudioCommands.MicMute: audio.SetMute(AudioDevice.Microphone, true); return "Micro coupé";
+            case AudioCommands.MicUnmute: audio.SetMute(AudioDevice.Microphone, false); return "Micro actif";
+            case AudioCommands.OutToggle:
                 bool muted = !audio.IsMuted(AudioDevice.Output);
                 audio.SetMute(AudioDevice.Output, muted);
                 return muted ? "Son coupé" : "Son rétabli";
-            case "volume":
+            case AudioCommands.Volume:
                 if (!int.TryParse(a.Args, NumberStyles.Integer, CultureInfo.InvariantCulture, out var level) || level is < 0 or > 100)
                     throw new ArgumentException("Le volume doit être un nombre entre 0 et 100");
                 audio.SetVolume(AudioDevice.Output, level);

@@ -166,9 +166,9 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
 
     static string TypeName(string type) => type switch
     {
-        "hotkey" => "Raccourci clavier", "text" => "Saisie de texte", "media" => "Touche média", "launch" => "Ouvrir un programme",
-        "script" => "Script", "url" => "Ouvrir un site web", "page" => "Aller à une page", "profile" => "Changer de profil",
-        "delay" => "Pause", "focus" => "Fenêtre au premier plan", _ => "Action",
+        ActionTypes.Hotkey => "Raccourci clavier", ActionTypes.Text => "Saisie de texte", ActionTypes.Media => "Touche média", ActionTypes.Launch => "Ouvrir un programme",
+        ActionTypes.Script => "Script", ActionTypes.Url => "Ouvrir un site web", ActionTypes.Page => "Aller à une page", ActionTypes.Profile => "Changer de profil",
+        ActionTypes.Delay => "Pause", ActionTypes.Focus => "Fenêtre au premier plan", _ => "Action",
     };
 
     // ---------- application au document ----------
@@ -274,7 +274,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     [RelayCommand]
     void AddStep()
     {
-        Steps.Add(new ActionStepViewModel(new DeckAction { Type = "hotkey" }, this));
+        Steps.Add(new ActionStepViewModel(new DeckAction { Type = ActionTypes.Hotkey }, this));
         RefreshOrder();
         CommitSteps("Ajouter une étape", null);
     }
