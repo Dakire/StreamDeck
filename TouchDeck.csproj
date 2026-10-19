@@ -17,14 +17,17 @@
     <Compile Remove="Core\**" />
     <Compile Remove="Platform\Windows\**" />
     <Compile Remove="Integrations\**" />
+    <Compile Remove="samples\**" />
     <EmbeddedResource Remove="tests\**" />
     <EmbeddedResource Remove="Core\**" />
     <EmbeddedResource Remove="Platform\Windows\**" />
     <EmbeddedResource Remove="Integrations\**" />
+    <EmbeddedResource Remove="samples\**" />
     <None Remove="tests\**" />
     <None Remove="Core\**" />
     <None Remove="Platform\Windows\**" />
     <None Remove="Integrations\**" />
+    <None Remove="samples\**" />
     <Page Remove="tests\**" />
   </ItemGroup>
   <ItemGroup>

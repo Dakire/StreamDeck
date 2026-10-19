@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Windows;
@@ -96,13 +98,16 @@ public static class AppHost
         services.AddSingleton<ISecretStore>(_ => new DpapiSecretStore(ConfigStore.Dir));
         services.AddSingleton(sp => new IntegrationManager(sp.GetServices<IIntegration>(), sp.GetRequiredService<DeckDocument>(), sp.GetRequiredService<ISecretStore>()));
 
-        AddIntegration<ObsIntegration>(services);
-        AddIntegration<VmixIntegration>(services);
-        AddIntegration<ElgatoLightIntegration>(services);
-        AddIntegration<HueIntegration>(services);
-        AddIntegration<WindowsSystemIntegration>(services);
-        AddIntegration<XPlaneIntegration>(services);
-        AddIntegration<TeamsIntegration>(services);
+        // Identifiants déjà pris (types d'action de TouchDeck et intégrations livrées) : un plugin ne peut pas les reprendre
+        var takenIds = new HashSet<string>(BuiltInActions.All.Select(h => h.Type), StringComparer.OrdinalIgnoreCase);
+        AddIntegration<ObsIntegration>(services, takenIds);
+        AddIntegration<VmixIntegration>(services, takenIds);
+        AddIntegration<ElgatoLightIntegration>(services, takenIds);
+        AddIntegration<HueIntegration>(services, takenIds);
+        AddIntegration<WindowsSystemIntegration>(services, takenIds);
+        AddIntegration<XPlaneIntegration>(services, takenIds);
+        AddIntegration<TeamsIntegration>(services, takenIds);
+        AddPlugins(services, takenIds);
 
         services.AddSingleton<IDisplayService, WindowsDisplayService>();
         services.AddSingleton<DisplayService>();
@@ -133,11 +138,38 @@ public static class AppHost
     }
 
     /// <summary>Enregistre un connecteur : lui-même, comme <see cref="IIntegration"/>, et son type d'action.</summary>
-    static void AddIntegration<T>(IServiceCollection services) where T : class, IIntegration
+    static void AddIntegration<T>(IServiceCollection services, HashSet<string> takenIds) where T : class, IIntegration
     {
         services.AddSingleton<T>();
         services.AddSingleton<IIntegration>(sp => sp.GetRequiredService<T>());
         services.AddSingleton<IActionHandler>(sp => new IntegrationAction(sp.GetRequiredService<T>()));
+        takenIds.Add(IdOf(typeof(T)));
+    }
+
+
+    static string IdOf(Type type)
+    {
+        var probe = (IIntegration)Activator.CreateInstance(type)!;
+        try { return probe.Id; }
+        finally { (probe as IDisposable)?.Dispose(); }
+    }
+
+    /// <summary>Ajoute les intégrations des plugins posés dans le dossier <c>plugins</c> (code de confiance, voir <see cref="PluginLoader"/>).</summary>
+    static void AddPlugins(IServiceCollection services, HashSet<string> takenIds)
+    {
+        foreach (var plugin in PluginLoader.Load(Path.Combine(ConfigStore.Dir, PluginLoader.FolderName)))
+        {
+            foreach (var type in plugin.Integrations)
+            {
+                string id;
+                try { id = IdOf(type); }
+                catch (Exception ex) { Log.Warn($"Plugin « {plugin.Name} » : {type.Name} ignoré, construction impossible ({ex.Message})"); continue; }
+                if (!takenIds.Add(id)) { Log.Warn($"Plugin « {plugin.Name} » : {type.Name} ignoré, l'identifiant « {id} » est déjà pris"); continue; }
+                services.AddSingleton(type);
+                services.AddSingleton<IIntegration>(sp => (IIntegration)sp.GetRequiredService(type));
+                services.AddSingleton<IActionHandler>(sp => new IntegrationAction((IIntegration)sp.GetRequiredService(type)));
+            }
+        }
     }
 
     static PlatformServices CreatePlatform(AppOptions options)

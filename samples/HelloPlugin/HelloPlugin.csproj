@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Exemple de plugin TouchDeck : une intégration « hello ». Après compilation, copier le contenu de bin\Release\net9.0\
+       dans %APPDATA%\TouchDeck\plugins\HelloPlugin\ (le dossier et la bibliothèque portent le même nom). -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>HelloPlugin</AssemblyName>
+    <RootNamespace>HelloPlugin</RootNamespace>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Hors dépôt : <Reference Include="TouchDeck.Core"><HintPath>chemin\vers\TouchDeck.Core.dll</HintPath></Reference> -->
+    <ProjectReference Include="..\..\Core\TouchDeck.Core.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+</Project>
