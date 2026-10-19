@@ -128,6 +128,9 @@ public class ConfigStoreTests
         for (var c = root; c.Children!.Count > 0; c = c.Children[0]) depth++;
         Assert.True(depth <= ConfigNormalizer.MaxFolderDepth);
         Assert.NotEmpty(warnings);
+        // Rien ne se perd : les dossiers trop profonds sont vidés, leur contenu est remonté dans le dernier dossier autorisé
+        Assert.Equal(20, DeckDocument.AllButtons(new[] { root }).Count(b => b.IsFolder));
+        Assert.Contains(DeckDocument.AllButtons(new[] { root }), b => b.Label == "profond");
     }
 
     [Fact]

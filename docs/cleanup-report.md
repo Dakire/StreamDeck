@@ -130,9 +130,8 @@ que des mesures prises dans les mêmes conditions.
 - **Exceptions filtrées par type.** Une exception d'un type imprévu, auparavant avalée, remonte désormais au
   gestionnaire global : elle est consignée et affichée, l'application continue. Les types retenus couvrent les cas
   documentés.
-- **Dossiers trop profonds.** Au-delà de 8 niveaux, le contenu d'un dossier est ignoré au chargement. Comportement
-  antérieur, non modifié. Il ne concerne qu'un fichier édité à la main, mais contredit la promesse « ne supprime jamais
-  de bouton » de `ConfigNormalizer` : à décider.
+- **Dossiers trop profonds.** Corrigé en phase 2 : le contenu est remonté dans le dernier dossier autorisé au lieu
+  d'être ignoré.
 - **Interrupteur « Afficher le titre ».** Dans la capture de l'éditeur, il paraît décoché alors que le titre s'affiche.
   C'est probablement un artefact du rendu hors écran (l'animation de WPF-UI n'avance pas sans rendu réel). À confirmer à
   l'écran.

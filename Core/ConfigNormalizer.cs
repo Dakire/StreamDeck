@@ -15,7 +15,7 @@ public static class ConfigNormalizer
 {
     /// <summary>Version du format écrite par cette version de TouchDeck.</summary>
     public const int CurrentVersion = 2;
-    /// <summary>Profondeur maximale des dossiers imbriqués : au-delà, le contenu du dossier est ignoré (avec un avertissement).</summary>
+    /// <summary>Profondeur maximale des dossiers imbriqués : au-delà, le contenu est remonté dans le dernier dossier autorisé (avec un avertissement).</summary>
     public const int MaxFolderDepth = 8;
     /// <summary>Nombre d'actions récentes conservées dans le catalogue.</summary>
     public const int MaxRecents = 12;
@@ -105,10 +105,11 @@ public static class ConfigNormalizer
         }
     }
 
-    /// <summary>Répare une liste de boutons (valeurs nulles, positions de titre ou d'image inconnues, dossiers trop profonds) ; <paramref name="depth"/> : profondeur du dossier courant.</summary>
+    /// <summary>Répare une liste de boutons (valeurs nulles, positions de titre ou d'image inconnues, dossiers trop profonds dont le contenu est remonté) ; <paramref name="depth"/> : profondeur du dossier courant.</summary>
     public static List<DeckButton> NormalizeButtons(List<DeckButton>? buttons, int depth, List<string> warnings)
     {
         var list = (buttons ?? new List<DeckButton>()).Where(b => b != null).ToList();
+        List<DeckButton>? overflow = null;
         foreach (var b in list)
         {
             b.Label ??= "";
@@ -125,16 +126,35 @@ public static class ConfigNormalizer
             {
                 if (depth >= MaxFolderDepth)
                 {
-                    warnings.Add($"Dossier « {b.Label} » trop profond : son contenu est ignoré.");
+                    // Rien ne se perd : le contenu est remonté à la fin de ce dossier (les positions existantes ne bougent pas)
+                    var moved = Flatten(b.Children);
+                    if (moved.Count > 0) (overflow ??= new List<DeckButton>()).AddRange(moved);
+                    warnings.Add($"Dossier « {b.Label} » trop profond : ses {moved.Count} bouton(s) ont été remontés dans le dossier qui le contient.");
                     b.Children = new List<DeckButton>();
                 }
                 else b.Children = NormalizeButtons(b.Children, depth + 1, warnings);
             }
             else b.Children = null;
         }
+        if (overflow != null) list.AddRange(NormalizeButtons(overflow, MaxFolderDepth, warnings));
         // Les cases vides de fin ne servent à rien
         while (list.Count > 0 && list[^1].Blank) list.RemoveAt(list.Count - 1);
         return list;
+    }
+
+    /// <summary>Tous les boutons descendants d'un dossier, à plat ; les sous-dossiers sont gardés, vidés de leur contenu.</summary>
+    static List<DeckButton> Flatten(List<DeckButton>? children)
+    {
+        var result = new List<DeckButton>();
+        foreach (var c in children ?? new List<DeckButton>())
+        {
+            if (c == null || c.Blank) continue;
+            var inner = c.IsFolder ? c.Children : null;
+            if (c.IsFolder) c.Children = new List<DeckButton>();
+            result.Add(c);
+            if (inner != null) result.AddRange(Flatten(inner));
+        }
+        return result;
     }
 
     /// <summary>Rend un nom unique (insensible à la casse) en ajoutant « (2) », « (3 ) »…</summary>

@@ -180,13 +180,16 @@ Réparations faites à chaque chargement, sans rien supprimer de valide :
 - les grilles et l'espacement sont bornés ;
 - un thème inconnu devient `system` ;
 - le profil actif est rattaché à un profil existant ;
-- une position de titre ou un ajustement d'image inconnu est retiré.
+- une position de titre ou un ajustement d'image inconnu est retiré ;
+- un dossier plus profond que 8 niveaux est vidé dans le dernier dossier autorisé.
 
 Les noms rendus uniques et les dossiers ignorés produisent un avertissement ; le premier est affiché au démarrage.
 Les autres réparations sont silencieuses.
 
-> **Limite connue** : le contenu d'un dossier situé au-delà du 8ᵉ niveau d'imbrication est ignoré au chargement, avec
-> un avertissement. L'éditeur ne permet pas de créer une telle profondeur ; le cas ne concerne qu'un fichier modifié à la main.
+> **Dossiers trop profonds** : au-delà du 8ᵉ niveau d'imbrication, le contenu est remonté à la fin du dernier dossier
+> autorisé (les boutons existants gardent leur position, les dossiers excédentaires sont vidés), avec un avertissement.
+> Aucun bouton n'est supprimé. L'éditeur ne permet pas de créer une telle profondeur ; le cas ne concerne qu'un fichier
+> modifié à la main.
 
 ## Faire évoluer le format
 
