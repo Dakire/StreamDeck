@@ -6,6 +6,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using TouchDeck.Actions;
+using TouchDeck.Integrations;
 using TouchDeck.Platform.Windows;
 
 namespace TouchDeck;
@@ -84,6 +85,10 @@ public static class AppHost
             Http = sp.GetRequiredService<HttpClient>(),
         }, sp.GetRequiredService<ActionRegistry>()));
 
+        // Intégrations : chaque connecteur est un IIntegration du conteneur et fournit son type d'action
+        services.AddSingleton<ISecretStore>(_ => new DpapiSecretStore(ConfigStore.Dir));
+        services.AddSingleton(sp => new IntegrationManager(sp.GetServices<IIntegration>(), sp.GetRequiredService<DeckDocument>(), sp.GetRequiredService<ISecretStore>()));
+
         services.AddSingleton<IDisplayService, WindowsDisplayService>();
         services.AddSingleton<DisplayService>();
         services.AddSingleton<ConfigPersistence>();
@@ -97,10 +102,25 @@ public static class AppHost
         // dans cet ordre, avant l'ouverture de la première fenêtre
         Log.Info($"Démarrage (dossier {ConfigStore.Dir}{(options.Simulate ? ", simulation" : "")})");
         ActionValidator.Keyboard = sp.GetRequiredService<PlatformServices>().Keyboard;
+        foreach (var integration in sp.GetServices<IIntegration>())
+        {
+            var captured = integration;
+            ActionValidator.RegisterExternalType(captured.Id, a => IntegrationAction.Validate(captured, a));
+            ActionCatalog.Register(captured.Category, captured.Icon, IntegrationCatalog.Entries(captured));
+        }
         sp.GetRequiredService<AppearanceService>();
         sp.GetRequiredService<ConfigPersistence>();
+        sp.GetRequiredService<IntegrationManager>().Start();
         Log.Info($"Services prêts en {clock.ElapsedMilliseconds} ms (journal {tLog}, déclarations {tRegistered - tLog}, conteneur {tBuilt - tRegistered})");
         return sp;
+    }
+
+    /// <summary>Enregistre un connecteur : lui-même, comme <see cref="IIntegration"/>, et son type d'action.</summary>
+    static void AddIntegration<T>(IServiceCollection services) where T : class, IIntegration
+    {
+        services.AddSingleton<T>();
+        services.AddSingleton<IIntegration>(sp => sp.GetRequiredService<T>());
+        services.AddSingleton<IActionHandler>(sp => new IntegrationAction(sp.GetRequiredService<T>()));
     }
 
     static PlatformServices CreatePlatform(AppOptions options)

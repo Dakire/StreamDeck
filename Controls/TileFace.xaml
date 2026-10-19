@@ -53,6 +53,9 @@
       </StackPanel>
     </Border>
 
+    <!-- Voyant d'une commande d'intégration : rond plein = actif, rond vide = inactif (jamais la couleur seule) -->
+    <Ellipse x:Name="StateLed" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top" StrokeThickness="2"/>
+
     <!-- Badge « dossier » -->
     <Border x:Name="FolderBadge" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="{DynamicResource DeckTileBadge}">
       <ui:SymbolIcon x:Name="FolderGlyph" Symbol="ChevronRight20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>

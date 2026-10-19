@@ -23,6 +23,7 @@ public partial class TileFace : UserControl
     /// <summary>Rayon des coins (celui de la touche), repris par l'image et le dégradé du titre.</summary>
     public CornerRadius CornerRadius { get => (CornerRadius)GetValue(CornerRadiusProperty); set => SetValue(CornerRadiusProperty, value); }
 
+    static readonly Brush DimRing = Freeze(new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF)));
     static readonly Brush DimLight = Freeze(new SolidColorBrush(Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF)));
 
     /// <summary>Ombre du titre posé sur une image : partagée et figée plutôt que recréée à chaque dessin de la face.</summary>
@@ -96,6 +97,17 @@ public partial class TileFace : UserControl
         StepGlyph.FontSize = badge * 0.6;
         StepText.FontSize = badge * 0.55;
         StepText.Text = f.Steps.ToString(CultureInfo.CurrentCulture);
+
+        // Voyant d'état : plein et vert quand la commande est active, simple anneau quand elle ne l'est pas
+        StateLed.Visibility = f.State == null ? Visibility.Collapsed : Visibility.Visible;
+        if (f.State is { } on)
+        {
+            StateLed.Width = StateLed.Height = Math.Max(10, badge * 0.6);
+            StateLed.Margin = new Thickness(pad, pad, 0, 0);
+            var color = TryFindResource("DeckSuccess") as Brush ?? Brushes.LimeGreen;
+            StateLed.Stroke = on ? color : DimRing;
+            StateLed.Fill = on ? color : Brushes.Transparent;
+        }
 
         // Barre de progression du minuteur, posée au bas de la touche
         ProgressTrack.Visibility = f.Progress != null ? Visibility.Visible : Visibility.Collapsed;

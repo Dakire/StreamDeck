@@ -51,7 +51,7 @@ public class ArchitectureTests
     public void OnlyWindowsPlatformIsPublicInThePlatformAssembly()
     {
         var exported = Platform.GetExportedTypes().Select(t => t.Name).OrderBy(n => n).ToArray();
-        Assert.Equal(new[] { "AutoStart", "WindowsPlatform" }, exported);   // le reste (SendInput, COM, fenêtres) est interne
+        Assert.Equal(new[] { "AutoStart", "DpapiSecretStore", "WindowsPlatform" }, exported);   // le reste (SendInput, COM, fenêtres) est interne
     }
 
     [Fact]

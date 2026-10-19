@@ -10,6 +10,7 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TouchDeck.Actions;
+using TouchDeck.Integrations;
 using Wpf.Ui.Controls;
 
 namespace TouchDeck.ViewModels;
@@ -30,6 +31,9 @@ public partial class MainViewModel : ObservableObject, INavigator
     readonly GridState _grid;
     readonly IAppWindows _windows;
     readonly ConfigPersistence _persistence;
+    readonly IntegrationManager _integrations;
+    readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
+    bool _integrationRefreshPending;
     readonly DispatcherTimer _statusTimer = new() { Interval = TimeSpan.FromSeconds(5) };
     readonly DispatcherTimer _appTimer = new() { Interval = TimeSpan.FromMilliseconds(800) };
     readonly DispatcherTimer _liveTimer = new() { Interval = TimeSpan.FromSeconds(1) };   // horloges et minuteurs visibles
@@ -93,8 +97,9 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     /// <summary>Deck sur le document partagé ; <paramref name="shell"/> fournit le placement Win32.</summary>
     public MainViewModel(IShell shell, DeckDocument doc, ActionEngine engine, AppOptions options, StartupResult startup,
-        GridState grid, IAppWindows windows, ConfigPersistence persistence)
+        GridState grid, IAppWindows windows, ConfigPersistence persistence, IntegrationManager integrations)
     {
+        _integrations = integrations;
         _shell = shell;
         _doc = doc;
         _engine = engine;
@@ -114,6 +119,8 @@ public partial class MainViewModel : ObservableObject, INavigator
         _appTimer.Start();
         _liveTimer.Tick += (_, _) => RefreshLive();
         _engine.Context.Countdowns.Finished += OnCountdownFinished;
+        _integrations.ValuesChanged += _ => QueueIntegrationRefresh();
+        _integrations.StateChanged += _ => QueueIntegrationRefresh();
         if (startup.Message != null) SetStatus(startup.Message, error: false);
     }
 
@@ -479,12 +486,31 @@ public partial class MainViewModel : ObservableObject, INavigator
         if (def == null) return;
         var countdowns = _engine.Context.Countdowns;
         var left = countdowns.Remaining(def);
-        tile.Face = TileFaceData.From(def, left is { } t ? Countdowns.Format(t) : null, countdowns.Progress(def));
-        tile.AccessibleName = def.IsFolder ? $"Dossier {tile.Face.Label}" : tile.Face.Label;
+        var state = def.IsFolder ? null : def.Actions.Select(_integrations.StateOf).FirstOrDefault(s => s != null);
+        tile.Face = TileFaceData.From(def, left is { } t ? Countdowns.Format(t) : null, countdowns.Progress(def), _integrations.GetValue, state);
+        tile.AccessibleName = def.IsFolder ? $"Dossier {tile.Face.Label}"
+            : state is { } on ? $"{tile.Face.Label}, {(on ? "actif" : "inactif")}" : tile.Face.Label;
+    }
+
+    /// <summary>Les intégrations notifient depuis leurs threads : on regroupe les changements et on redessine sur le thread d'interface.</summary>
+    void QueueIntegrationRefresh()
+    {
+        lock (_ui)
+        {
+            if (_integrationRefreshPending) return;
+            _integrationRefreshPending = true;
+        }
+        _ui.BeginInvoke(DispatcherPriority.Background, () =>
+        {
+            lock (_ui) _integrationRefreshPending = false;
+            foreach (var t in Tiles.OfType<DeckTileViewModel>())
+                if (t.Button is { IsFolder: false } b && (LabelTemplate.ValueKeys(b.Label).Count > 0 || b.Actions.Any(a => _integrations.Find(a.Type) != null)))
+                    UpdateFace(t);
+        });
     }
 
     bool IsLive(DeckTileViewModel t) =>
-        t.Button is { } b && (LabelTemplate.IsDynamic(b.Label) || _engine.Context.Countdowns.Remaining(b) != null);
+        t.Button is { } b && (LabelTemplate.HasClockTokens(b.Label) || _engine.Context.Countdowns.Remaining(b) != null);
 
     /// <summary>L'horloge ne tourne que si une tuile visible l'utilise (ou qu'un minuteur est en cours).</summary>
     void UpdateLiveTimer()
@@ -505,7 +531,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         {
             if (t.Button is not { } b) continue;
             if (_engine.Context.Countdowns.Remaining(b) != null || LabelTemplate.NeedsSeconds(b.Label)
-                || (newMinute && LabelTemplate.IsDynamic(b.Label)))
+                || (newMinute && LabelTemplate.HasClockTokens(b.Label)))
                 UpdateFace(t);
         }
         UpdateLiveTimer();

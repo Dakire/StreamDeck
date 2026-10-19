@@ -64,6 +64,8 @@ public sealed class TileFaceData
     public int Steps { get; init; }
     /// <summary>Touche sans action : affichée atténuée.</summary>
     public bool IsDisabled { get; init; }
+    /// <summary>Voyant d'une commande d'intégration : vrai (actif, rond plein), faux (inactif, rond vide), null (aucun voyant).</summary>
+    public bool? State { get; init; }
     /// <summary>Variante affichage : petite légende sous la valeur (nom du minuteur), sinon vide.</summary>
     public string Caption { get; init; } = "";
     /// <summary>Progression d'un minuteur en cours (0 à 1), sinon null.</summary>
@@ -98,7 +100,9 @@ public sealed class TileFaceData
     /// <param name="b">Bouton à dessiner.</param>
     /// <param name="timer">Temps restant du minuteur du bouton, s'il tourne : remplace « {timer} », ou le titre s'il n'en contient pas.</param>
     /// <param name="progress">Part écoulée de ce minuteur (0 à 1).</param>
-    public static TileFaceData From(DeckButton b, string? timer = null, double? progress = null)
+    /// <param name="values">Valeur d'état d'une intégration d'après sa clé (« obs.scene »), pour les titres dynamiques.</param>
+    /// <param name="state">Voyant d'une commande d'intégration (actif, inactif), ou null s'il n'y en a pas.</param>
+    public static TileFaceData From(DeckButton b, string? timer = null, double? progress = null, Func<string, string?>? values = null, bool? state = null)
     {
         if (b.Blank) return Empty;
         bool hasSymbol = IconCatalog.TryResolve(b.Icon, out var symbol);
@@ -133,7 +137,7 @@ public sealed class TileFaceData
         bool custom = Theme.TryBrush(b.TextColor, out var fgBrush);
         return new TileFaceData
         {
-            Label = DisplayLabel(b, DateTime.Now, timer), Icon = b.Icon, Symbol = symbol, HasSymbol = hasSymbol,
+            Label = DisplayLabel(b, DateTime.Now, timer, values), State = state, Icon = b.Icon, Symbol = symbol, HasSymbol = hasSymbol,
             ShowTitle = !b.HideTitle, TitleMode = b.TitlePosition ?? "stack",
             Foreground = custom ? fgBrush : Brushes.White,
             LabelBrush = custom ? fgBrush : image != null ? Brushes.White : Theme.B(Theme.Current.Text),
@@ -146,9 +150,9 @@ public sealed class TileFaceData
     }
 
     /// <summary>Titre affiché : modèles {time}/{date}/{timer} remplacés ; un minuteur en cours s'affiche même sans {timer}.</summary>
-    public static string DisplayLabel(DeckButton b, DateTime now, string? timer)
+    public static string DisplayLabel(DeckButton b, DateTime now, string? timer, Func<string, string?>? values = null)
     {
         if (timer != null && !b.Label.Contains("{timer}", StringComparison.OrdinalIgnoreCase)) return timer;
-        return LabelTemplate.Render(b.Label, now, timer);
+        return LabelTemplate.Render(b.Label, now, timer, values);
     }
 }

@@ -37,6 +37,14 @@ public static partial class LabelTemplate
         return false;
     }
 
+    /// <summary>true si le titre contient une heure, une date ou un minuteur (à redessiner avec l'horloge), pas seulement des valeurs d'intégration.</summary>
+    public static bool HasClockTokens(string? label)
+    {
+        if (string.IsNullOrEmpty(label)) return false;
+        foreach (Match m in Token().Matches(label)) if (m.Groups["kind"].Success) return true;
+        return false;
+    }
+
     /// <summary>Clés des valeurs d'intégration citées par le titre (« obs.scene »).</summary>
     public static IReadOnlyList<string> ValueKeys(string? label)
     {
