@@ -9,7 +9,18 @@ using Wpf.Ui.Controls;
 
 namespace TouchDeck.ViewModels;
 
-public enum PropertiesMode { None, Empty, Button, Folder }
+/// <summary>Contenu du panneau de propriétés selon la sélection.</summary>
+public enum PropertiesMode
+{
+    /// <summary>Aucune case sélectionnée.</summary>
+    None,
+    /// <summary>Case vide : propositions pour la remplir.</summary>
+    Empty,
+    /// <summary>Bouton : apparence et étapes.</summary>
+    Button,
+    /// <summary>Dossier : apparence seulement.</summary>
+    Folder,
+}
 
 /// <summary>
 /// Panneau de propriétés du bouton sélectionné. Chaque modification est appliquée tout de suite au document
@@ -17,6 +28,7 @@ public enum PropertiesMode { None, Empty, Button, Folder }
 /// </summary>
 public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
 {
+    /// <summary>Couleurs proposées pour les boutons (texte blanc lisible sur chacune, testé).</summary>
     public static readonly string[] Palette =
         { "#334155", "#047857", "#BE123C", "#2563EB", "#7C3AED", "#B45309", "#0E7490", "#C2410C", "#BE185D", "#4F46E5" };
     static readonly string[] TextPalette = { "#FFFFFF", "#000000", "#FFD166", "#9FB1FF", "#7CF2C1", "#FF8A97" };
@@ -31,6 +43,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     bool _loading;
     List<SymbolRegular>? _allSymbols;
 
+    /// <summary>true pendant l'écriture d'une modification dans le document : l'éditeur ne recharge pas les propriétés en retour.</summary>
     public bool IsApplying { get; private set; }
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsNone), nameof(IsEmpty), nameof(IsButton), nameof(IsFolder), nameof(IsEditable))] PropertiesMode _mode;
@@ -53,24 +66,41 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     [ObservableProperty] bool _canPaste;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasSteps), nameof(StepsCaption))] int _stepCount;
 
+    /// <summary>true si aucune case n'est sélectionnée.</summary>
     public bool IsNone => Mode == PropertiesMode.None;
+    /// <summary>true pour une case vide.</summary>
     public bool IsEmpty => Mode == PropertiesMode.Empty;
+    /// <summary>true pour un bouton.</summary>
     public bool IsButton => Mode == PropertiesMode.Button;
+    /// <summary>true pour un dossier.</summary>
     public bool IsFolder => Mode == PropertiesMode.Folder;
+    /// <summary>true si l'apparence est modifiable (bouton ou dossier).</summary>
     public bool IsEditable => Mode is PropertiesMode.Button or PropertiesMode.Folder;
+    /// <summary>true si le bouton a une image importée.</summary>
     public bool HasImage => !string.IsNullOrEmpty(ImageName);
+    /// <summary>true si le bouton a des problèmes de configuration.</summary>
     public bool HasButtonIssues => ButtonIssueCount > 0;
+    /// <summary>true si le bouton a au moins une étape.</summary>
     public bool HasSteps => StepCount > 0;
+    /// <summary>Titre de la section des étapes (« Action » ou « Étapes »).</summary>
     public string StepsCaption => StepCount > 1 ? "Étapes (exécutées dans l'ordre)" : "Action";
 
+    /// <summary>Étapes éditables du bouton.</summary>
     public ObservableCollection<ActionStepViewModel> Steps { get; } = new();
+    /// <summary>Problèmes du bouton lui-même (image manquante, aucune action).</summary>
     public ObservableCollection<IssueViewModel> ButtonIssues { get; } = new();
+    /// <summary>Positions du titre proposées.</summary>
     public ObservableCollection<ChoiceViewModel> PositionChoices { get; } = new();
+    /// <summary>Ajustements d'image proposés (remplir, contenir).</summary>
     public ObservableCollection<ChoiceViewModel> FitChoices { get; } = new();
+    /// <summary>Nuancier de la couleur du bouton.</summary>
     public ObservableCollection<SwatchViewModel> Swatches { get; } = new();
+    /// <summary>Nuancier de la couleur du texte.</summary>
     public ObservableCollection<SwatchViewModel> TextSwatches { get; } = new();
+    /// <summary>Icônes Fluent proposées.</summary>
     public ObservableCollection<IconPickViewModel> IconChoices { get; } = new();
 
+    /// <summary>Panneau de propriétés de l'éditeur.</summary>
     public PropertiesViewModel(DeckDocument doc, EditorViewModel editor, IEditorShell shell)
     {
         _doc = doc; _editor = editor; _shell = shell;
@@ -95,6 +125,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         Reload();
     }
 
+    /// <summary>Recharge les propriétés depuis le document (modification externe, annuler).</summary>
     public void Reload()
     {
         _loading = true;
@@ -241,10 +272,14 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
 
     // ---------- étapes (IStepOwner) ----------
 
+    /// <inheritdoc/>
     public IReadOnlyList<string> PageNames => _place == null ? Array.Empty<string>()
         : _doc.FindProfile(_place.Profile)?.Pages.Select(p => p.Name).ToList() ?? new List<string>();
+    /// <inheritdoc/>
     public IReadOnlyList<string> ProfileNames => _doc.Config.Profiles.Select(p => p.Name).ToList();
+    /// <inheritdoc/>
     public DeckConfig Config => _doc.Config;
+    /// <inheritdoc/>
     public DeckProfile? Profile => _place == null ? null : _doc.FindProfile(_place.Profile);
 
     void CommitSteps(string label, string? coalesce)
@@ -253,8 +288,10 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         Apply(b => b.Actions = actions, label, coalesce);
     }
 
+    /// <inheritdoc/>
     public void StepChanged(ActionStepViewModel step) => CommitSteps("Modifier l'action", "steps");
 
+    /// <inheritdoc/>
     public void MoveStep(ActionStepViewModel step, int delta)
     {
         int i = Steps.IndexOf(step), j = i + delta;
@@ -264,6 +301,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         CommitSteps("Réordonner les étapes", null);
     }
 
+    /// <inheritdoc/>
     public void RemoveStep(ActionStepViewModel step)
     {
         if (!Steps.Remove(step)) return;

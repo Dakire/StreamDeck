@@ -15,6 +15,7 @@ public partial class App : Application
     /// </summary>
     public bool Headless { get; init; }
 
+    /// <summary>Démarrage : gestion des erreurs non traitées, services (configuration, thème, sauvegarde), puis fenêtre du deck.</summary>
     protected override void OnStartup(StartupEventArgs e)
     {
         if (Headless) return;
@@ -34,6 +35,7 @@ public partial class App : Application
 
     static bool HasArg(StartupEventArgs e, string name) => e.Args.Contains(name, StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Arrêt : enregistre et libère les services.</summary>
     protected override void OnExit(ExitEventArgs e)
     {
         AppServices.Shutdown();

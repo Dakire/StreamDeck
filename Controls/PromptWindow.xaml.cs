@@ -11,6 +11,7 @@ public partial class PromptWindow : Wpf.Ui.Controls.FluentWindow
     readonly Mode _mode;
     readonly bool _allowEmpty;
 
+    /// <summary>Texte saisi, si la fenêtre a été validée.</summary>
     public string? Value { get; private set; }
 
     PromptWindow(Window? owner, Mode mode, string title, string message, string initial, string confirmText, bool allowEmpty, bool danger)
@@ -43,9 +44,11 @@ public partial class PromptWindow : Wpf.Ui.Controls.FluentWindow
         return w.ShowDialog() == true ? w.Value : null;
     }
 
+    /// <summary>Demande une confirmation ; true si l'utilisateur accepte. <paramref name="danger"/> : bouton de confirmation rouge.</summary>
     public static bool Confirm(Window? owner, string title, string message, string confirmText, bool danger = false) =>
         new PromptWindow(owner, Mode.Confirm, title, message, "", confirmText, true, danger).ShowDialog() == true;
 
+    /// <summary>Affiche une information avec un seul bouton.</summary>
     public static void Info(Window? owner, string title, string message) =>
         new PromptWindow(owner, Mode.Info, title, message, "", "Fermer", true, false).ShowDialog();
 

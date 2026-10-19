@@ -21,9 +21,12 @@ public partial class SlotViewModel : ObservableObject
     [ObservableProperty] bool _isDragSource;
     [ObservableProperty] bool _isOverflow;
 
+    /// <summary>Case à cette position de la grille de l'éditeur.</summary>
     public SlotViewModel(int position) { Position = position; }
 
+    /// <summary>true si la case a un problème de configuration.</summary>
     public bool HasIssue => Issue != null;
+    /// <summary>Icône du badge de problème (erreur ou avertissement).</summary>
     public Wpf.Ui.Controls.SymbolRegular IssueSymbol => Issue == Severity.Error
         ? Wpf.Ui.Controls.SymbolRegular.ErrorCircle24 : Wpf.Ui.Controls.SymbolRegular.Warning24;
 }

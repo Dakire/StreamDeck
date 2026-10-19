@@ -10,10 +10,13 @@ namespace TouchDeck.Behaviors;
 /// <summary>Sur un TextBox : une combinaison clavier (Ctrl/Alt/Win + touche, ou touche F) est écrite sous la forme « ctrl+shift+m ».</summary>
 public static class HotkeyCapture
 {
+    /// <summary>Propriété attachée : true pour qu'un TextBox capture les combinaisons au lieu de les saisir.</summary>
     public static readonly DependencyProperty EnabledProperty =
         DependencyProperty.RegisterAttached("Enabled", typeof(bool), typeof(HotkeyCapture), new PropertyMetadata(false, OnChanged));
 
+    /// <summary>Lit <see cref="EnabledProperty"/>.</summary>
     public static bool GetEnabled(DependencyObject d) => (bool)d.GetValue(EnabledProperty);
+    /// <summary>Écrit <see cref="EnabledProperty"/>.</summary>
     public static void SetEnabled(DependencyObject d, bool v) => d.SetValue(EnabledProperty, v);
 
     static void OnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

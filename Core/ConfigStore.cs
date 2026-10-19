@@ -11,20 +11,25 @@ namespace TouchDeck;
 /// <summary>Lecture et écriture de config.json : migration, écriture atomique, sauvegardes automatiques.</summary>
 public static class ConfigStore
 {
+    /// <summary>Nombre de sauvegardes conservées ; les plus anciennes sont supprimées.</summary>
     public const int MaxBackups = 15;
 
     /// <summary>Dossier de configuration : %APPDATA%\TouchDeck, ou le dossier de la variable TOUCHDECK_DATA_DIR (essais, installation portable).</summary>
     public static string Dir { get; private set; } = Environment.GetEnvironmentVariable("TOUCHDECK_DATA_DIR") is { Length: > 0 } custom
         ? Path.GetFullPath(custom)
         : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TouchDeck");
+    /// <summary>Chemin de config.json.</summary>
     public static string FilePath => Path.Combine(Dir, "config.json");
+    /// <summary>Dossier des images importées (noms de hachage, voir IconStore).</summary>
     public static string IconsDir => Path.Combine(Dir, "Icons");
+    /// <summary>Dossier des sauvegardes automatiques.</summary>
     public static string BackupsDir => Path.Combine(Dir, "Backups");
     static string LegacyBackupPath => Path.Combine(Dir, "config.v1.backup.json");
 
     /// <summary>Change le dossier de configuration (tests).</summary>
     public static void UseDirectory(string dir) { Dir = dir; _lastWrittenHash = null; }
 
+    /// <summary>Options JSON du format : indentation, clés tolérées sans distinction de casse, valeurs par défaut omises (voir les JsonIgnore de Models.cs).</summary>
     public static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
@@ -34,12 +39,18 @@ public static class ConfigStore
         MaxDepth = 64,
     };
 
+    /// <summary>Résultat du chargement de config.json.</summary>
+    /// <param name="Config">Configuration normalisée.</param>
+    /// <param name="Migrated">true si l'ancien format vient d'être converti (et réécrit).</param>
+    /// <param name="Warnings">Réparations effectuées, à signaler à l'utilisateur.</param>
     public sealed record LoadResult(DeckConfig Config, bool Migrated, IReadOnlyList<string> Warnings);
 
     static string? _lastWrittenHash;
 
+    /// <summary>Charge config.json (créé avec <see cref="DefaultConfig"/> s'il n'existe pas). Lève <see cref="System.IO.InvalidDataException"/> si le fichier est invalide.</summary>
     public static DeckConfig Load() => LoadWithInfo().Config;
 
+    /// <summary>Comme <see cref="Load"/>, en indiquant aussi la migration et les réparations.</summary>
     public static LoadResult LoadWithInfo()
     {
         Directory.CreateDirectory(Dir);
@@ -65,6 +76,9 @@ public static class ConfigStore
     /// <summary>Analyse un JSON de configuration (ancien ou nouveau format) et le normalise. Lève <see cref="InvalidDataException"/>.</summary>
     public static DeckConfig Parse(string json) => Parse(json, out _);
 
+    /// <summary>Analyse un JSON de configuration et le normalise. Lève <see cref="System.IO.InvalidDataException"/>.</summary>
+    /// <param name="json">Contenu du fichier (ancien ou nouveau format).</param>
+    /// <param name="info">Migration et réparations effectuées.</param>
     public static DeckConfig Parse(string json, out NormalizeResult info)
     {
         DeckConfig? cfg;
@@ -75,6 +89,7 @@ public static class ConfigStore
         return cfg;
     }
 
+    /// <summary>JSON du format config.json (mêmes options que l'écriture sur disque).</summary>
     public static string Serialize(DeckConfig cfg) => JsonSerializer.Serialize(cfg, Options);
 
     /// <summary>Écrit dans un fichier temporaire puis le substitue : un arrêt en cours d'écriture ne corrompt jamais config.json.</summary>
@@ -99,13 +114,19 @@ public static class ConfigStore
 
     static string Hash(string s) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(s)));
 
+    /// <summary>Copie profonde par sérialisation JSON : la copie ne partage aucune liste avec l'original (annuler, presse-papiers).</summary>
     public static T Clone<T>(T value) =>
         JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value, Options), Options)!;
 
     // ---------- sauvegardes ----------
 
+    /// <summary>Fichier de sauvegarde du dossier Backups.</summary>
+    /// <param name="Path">Chemin complet.</param>
+    /// <param name="Time">Date de dernière écriture.</param>
+    /// <param name="Size">Taille en octets.</param>
     public sealed record BackupInfo(string Path, DateTime Time, long Size)
     {
+        /// <summary>Nom du fichier, affiché dans les paramètres.</summary>
         public string Name => System.IO.Path.GetFileName(Path);
     }
 
@@ -134,6 +155,7 @@ public static class ConfigStore
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Log.Error("Sauvegarde de la configuration impossible", ex); return null; }
     }
 
+    /// <summary>Sauvegardes, de la plus récente à la plus ancienne.</summary>
     public static List<BackupInfo> ListBackups()
     {
         if (!Directory.Exists(BackupsDir)) return new List<BackupInfo>();
@@ -143,6 +165,7 @@ public static class ConfigStore
             .ToList();
     }
 
+    /// <summary>Lit une sauvegarde ; refuse tout fichier situé hors du dossier Backups (le chemin peut venir de l'interface).</summary>
     public static DeckConfig LoadBackup(string path)
     {
         if (!string.Equals(Path.GetDirectoryName(Path.GetFullPath(path)), Path.GetFullPath(BackupsDir), StringComparison.OrdinalIgnoreCase))
@@ -158,6 +181,7 @@ public static class ConfigStore
         Actions = new List<DeckAction> { new() { Type = type, Value = value, Args = args } },
     };
 
+    /// <summary>Configuration du premier lancement : un profil « Principal » avec une page de raccourcis et une page masquée.</summary>
     public static DeckConfig DefaultConfig() => new()
     {
         Version = ConfigNormalizer.CurrentVersion,

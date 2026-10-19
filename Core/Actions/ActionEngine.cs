@@ -7,26 +7,43 @@ using System.Threading.Tasks;
 
 namespace TouchDeck.Actions;
 
-public enum ActionOutcome { Success, Failed, Cancelled, TimedOut }
+/// <summary>Issue de l'exécution d'un bouton.</summary>
+public enum ActionOutcome
+{
+    /// <summary>Toutes les étapes ont réussi.</summary>
+    Success,
+    /// <summary>Une étape a échoué (type inconnu, erreur du système) ; les suivantes n'ont pas été exécutées.</summary>
+    Failed,
+    /// <summary>Exécution interrompue (fermeture de l'application ou annulation de l'appelant).</summary>
+    Cancelled,
+    /// <summary>Une étape a dépassé son délai maximal.</summary>
+    TimedOut,
+}
 
 /// <summary>Résultat de l'exécution d'un bouton. <see cref="Step"/> : étape en échec (0 = première), -1 sinon.</summary>
 public sealed record ActionResult(ActionOutcome Outcome, string? Message = null, int Step = -1)
 {
+    /// <summary>true si toutes les étapes ont réussi.</summary>
     public bool Ok => Outcome == ActionOutcome.Success;
 }
 
 /// <summary>Navigation demandée par les actions « page » et « profil » : c'est le deck qui l'applique.</summary>
 public interface INavigator
 {
+    /// <summary>Affiche une page du profil courant : nom de page, <see cref="PageTargets.Home"/> ou <see cref="PageTargets.Back"/>.</summary>
     void GoToPage(string name);
+    /// <summary>Affiche le profil indiqué (et l'enregistre comme profil actif).</summary>
     void SwitchProfile(string name);
 }
 
 /// <summary>Services partagés par toutes les exécutions.</summary>
 public sealed class ActionContext
 {
+    /// <summary>Clavier, programmes, fenêtres et audio du système (réels ou simulés).</summary>
     public required PlatformServices Platform { get; init; }
+    /// <summary>Client HTTP partagé ; le délai de chaque requête est fixé par le moteur, pas par le client.</summary>
     public required HttpClient Http { get; init; }
+    /// <summary>Minuteurs en cours, partagés par tous les boutons.</summary>
     public Countdowns Countdowns { get; init; } = new();
     /// <summary>Attente annulable (remplaçable dans les tests pour ne pas attendre réellement).</summary>
     public Func<TimeSpan, CancellationToken, Task> Delay { get; init; } = Task.Delay;
@@ -38,6 +55,7 @@ public sealed record StepContext(DeckButton Button, INavigator Navigator, Action
 /// <summary>Un type d'action (« hotkey », « http »…). Le type est l'identifiant stable écrit dans config.json.</summary>
 public interface IActionHandler
 {
+    /// <summary>Identifiant du type, tel qu'écrit dans config.json (voir <see cref="ActionTypes"/>).</summary>
     string Type { get; }
     /// <summary>Durée maximale d'une étape ; null = sans limite (pause, minuteur).</summary>
     TimeSpan? Timeout { get; }
@@ -54,16 +72,25 @@ public sealed class ActionEngine : IDisposable
     readonly Dictionary<string, IActionHandler> _handlers;
     CancellationTokenSource _life = new();
 
+    /// <summary>Services partagés par toutes les exécutions.</summary>
     public ActionContext Context { get; }
 
+    /// <summary>Crée le moteur.</summary>
+    /// <param name="context">Services de plateforme, HTTP et minuteurs.</param>
+    /// <param name="handlers">Types d'action disponibles ; par défaut <see cref="BuiltInActions.All"/> (les tests en fournissent d'autres).</param>
     public ActionEngine(ActionContext context, IEnumerable<IActionHandler>? handlers = null)
     {
         Context = context;
         _handlers = (handlers ?? BuiltInActions.All).ToDictionary(h => h.Type, StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>Types d'action pris en charge (sans distinction de casse).</summary>
     public IReadOnlyCollection<string> Types => _handlers.Keys;
 
+    /// <summary>Exécute les étapes du bouton dans l'ordre. Ne lève jamais d'exception : l'échec, l'annulation ou le dépassement de délai sont décrits par le résultat.</summary>
+    /// <param name="button">Bouton pressé ; ses étapes sont copiées avant l'exécution.</param>
+    /// <param name="navigator">Applique les actions de page et de profil (le deck).</param>
+    /// <param name="cancellation">Annulation demandée par l'appelant.</param>
     public async Task<ActionResult> RunAsync(DeckButton button, INavigator navigator, CancellationToken cancellation = default)
     {
         using var run = CancellationTokenSource.CreateLinkedTokenSource(_life.Token, cancellation);
@@ -109,6 +136,7 @@ public sealed class ActionEngine : IDisposable
         old.Dispose();
     }
 
+    /// <summary>Annule les exécutions en cours ; le moteur n'est plus utilisable ensuite (arrêt de l'application).</summary>
     public void Dispose()
     {
         _life.Cancel();

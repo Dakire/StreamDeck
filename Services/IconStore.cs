@@ -14,23 +14,31 @@ namespace TouchDeck;
 /// </summary>
 public static class IconStore
 {
+    /// <summary>Taille maximale d'un fichier image importé.</summary>
     public const long MaxSourceBytes = 15 * 1024 * 1024;
+    /// <summary>Dimension maximale (largeur ou hauteur) d'une image importée : au-delà, elle est refusée.</summary>
     public const int MaxPixels = 8192;
+    /// <summary>Côté maximal de l'image enregistrée : les images plus grandes sont réduites à l'import.</summary>
     public const int StoredSize = 512;
+    /// <summary>Taille maximale d'une image enregistrée (PNG).</summary>
     public const long MaxStoredBytes = 2 * 1024 * 1024;
 
     static readonly Regex NameRx = new("^[0-9a-f]{32}\\.png$", RegexOptions.Compiled);
     static readonly byte[] PngSignature = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
     static readonly ConcurrentDictionary<string, ImageSource?> Cache = new();
 
+    /// <summary>Extensions proposées à l'import.</summary>
     public static readonly string[] Extensions = { ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".ico", ".tif", ".tiff", ".webp" };
+    /// <summary>Filtre de la boîte de dialogue d'import.</summary>
     public const string DialogFilter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.ico;*.tif;*.tiff;*.webp|Tous les fichiers|*.*";
 
+    /// <summary>true pour un nom produit par IconStore (hachage + .png) : seul ce format est jamais lu, aucun chemin libre.</summary>
     public static bool IsValidName(string? name) => name != null && NameRx.IsMatch(name);
 
     /// <summary>Chemin complet d'une image stockée, ou null si le nom n'est pas un nom d'image valide (jamais de chemin libre).</summary>
     public static string? Resolve(string? name) => IsValidName(name) ? Path.Combine(ConfigStore.IconsDir, name!) : null;
 
+    /// <summary>true si les octets commencent par la signature PNG (contrôle des archives importées).</summary>
     public static bool LooksLikePng(ReadOnlySpan<byte> data)
     {
         if (data.Length < PngSignature.Length) return false;
@@ -132,5 +140,6 @@ public static class IconStore
         });
     }
 
+    /// <summary>Vide le cache des images chargées (changement de dossier de configuration dans les tests).</summary>
     public static void ClearCache() => Cache.Clear();
 }

@@ -14,67 +14,120 @@ public sealed class LayoutMetrics
     /// <summary>Marge intérieure du dock autour de ses commandes.</summary>
     public const double DockInset = 6;
 
+    /// <summary>Espacement de base entre les touches (réglage Spacing × échelle de l'écran, 6 au minimum).</summary>
     public double Gap { get; init; }
+    /// <summary>Hauteur de la barre du haut.</summary>
     public double TopH { get; init; }
+    /// <summary>Hauteur des commandes du dock (52 à 84 : cible tactile confortable).</summary>
     public double BarH { get; init; }
+    /// <summary>Hauteur de la rangée du dock, marges comprises.</summary>
     public double BarRowH { get; init; }
+    /// <summary>Colonnes de la grille affichée.</summary>
     public int Columns { get; init; }
+    /// <summary>Lignes de la grille affichée.</summary>
     public int Rows { get; init; }
 
     // barre du haut
+    /// <summary>Marges de la barre du haut.</summary>
     public Thickness TopMargin { get; init; }
+    /// <summary>Taille du logo.</summary>
     public double LogoSize { get; init; }
+    /// <summary>Taille du texte de la barre du haut.</summary>
     public double TopFont { get; init; }
+    /// <summary>Marges du nom de l'application.</summary>
     public Thickness BrandTextMargin { get; init; }
+    /// <summary>Largeur de la poignée de déplacement.</summary>
     public double GripW { get; init; }
+    /// <summary>Épaisseur de la poignée de déplacement.</summary>
     public double GripH { get; init; }
+    /// <summary>Largeur des boutons de fenêtre (réduire, plein écran, fermer).</summary>
     public double MinW { get; init; }
+    /// <summary>Hauteur des boutons de fenêtre.</summary>
     public double MinH { get; init; }
+    /// <summary>Taille des icônes des boutons de fenêtre.</summary>
     public double MinFont { get; init; }
+    /// <summary>Hauteur des pastilles de la barre du haut (profil, modes).</summary>
     public double PillH { get; init; }
+    /// <summary>Rayon des pastilles (forme de pilule).</summary>
     public CornerRadius PillRadius { get; init; }
+    /// <summary>Taille du texte des pastilles.</summary>
     public double PillFont { get; init; }
 
     // grille de boutons : centrée, de la taille exacte des touches
+    /// <summary>Marges de la grille.</summary>
     public Thickness GridMargin { get; init; }
+    /// <summary>Largeur exacte de la grille (colonnes × largeur de touche) : le surplus est réparti autour.</summary>
     public double GridW { get; init; }
+    /// <summary>Hauteur exacte de la grille.</summary>
     public double GridH { get; init; }
+    /// <summary>Marge autour de chaque touche (moitié de l'espacement).</summary>
     public Thickness TilePad { get; init; }
+    /// <summary>Rayon des touches (16 % de la touche, de 12 à 34).</summary>
     public CornerRadius TileRadius { get; init; }
+    /// <summary>Taille de référence des icônes de touche.</summary>
     public double IconSize { get; init; }
+    /// <summary>Taille des textes posés sur les touches (état d'échec).</summary>
     public double LabelSize { get; init; }
+    /// <summary>Marges du titre sous l'icône.</summary>
     public Thickness LabelMargin { get; init; }
+    /// <summary>Taille du badge « Modifier » du mode édition.</summary>
     public double EditSize { get; init; }
+    /// <summary>Marges du badge « Modifier ».</summary>
     public Thickness EditMargin { get; init; }
+    /// <summary>Taille du « + » des cases vides en mode édition.</summary>
     public double AddGlyphSize { get; init; }
+    /// <summary>Rayon du cadre des cases vides en mode édition.</summary>
     public double AddRadius { get; init; }
 
     // dock du bas
+    /// <summary>Marges du dock.</summary>
     public Thickness BarMargin { get; init; }
+    /// <summary>Rayon des commandes du dock (pilule).</summary>
     public CornerRadius BarRadius { get; init; }
+    /// <summary>Rayon du dock lui-même.</summary>
     public CornerRadius DockRadius { get; init; }
+    /// <summary>Taille du texte du dock.</summary>
     public double BarFont { get; init; }
+    /// <summary>Taille du texte de la sous-page (« 1 / 3 »).</summary>
     public double SubFont { get; init; }
+    /// <summary>Taille de l'icône du menu.</summary>
     public double GearFont { get; init; }
+    /// <summary>Largeur minimale d'un onglet de page.</summary>
     public double TabMinW { get; init; }
+    /// <summary>Marges entre les onglets.</summary>
     public Thickness TabMargin { get; init; }
+    /// <summary>Marges intérieures des onglets.</summary>
     public Thickness TabPadding { get; init; }
+    /// <summary>Marges entre les pastilles du dock.</summary>
     public Thickness ChipMargin { get; init; }
+    /// <summary>Marges intérieures des pastilles du dock.</summary>
     public Thickness ChipPadding { get; init; }
+    /// <summary>Marges intérieures de la barre d'état.</summary>
     public Thickness StatusPadding { get; init; }
+    /// <summary>Marges du texte de sous-page.</summary>
     public Thickness SubTextMargin { get; init; }
+    /// <summary>Diamètre des points de sous-page.</summary>
     public double DotSize { get; init; }
+    /// <summary>Largeur du point de la sous-page affichée.</summary>
     public double DotActiveW { get; init; }
+    /// <summary>Position des messages, au-dessus du dock.</summary>
     public Thickness ToastMargin { get; init; }
 
     // menu
+    /// <summary>Hauteur d'une entrée du menu (52 à 76).</summary>
     public double MenuRowH { get; init; }
+    /// <summary>Taille du texte du menu.</summary>
     public double MenuFont { get; init; }
+    /// <summary>Taille des icônes du menu.</summary>
     public double MenuIconFont { get; init; }
+    /// <summary>Largeur de la colonne d'icônes du menu.</summary>
     public double MenuIconW { get; init; }
+    /// <summary>Largeur du menu (bornée par la fenêtre).</summary>
     public double MenuWidth { get; init; }
+    /// <summary>Position du menu, au-dessus du dock.</summary>
     public Thickness MenuMargin { get; init; }
 
+    /// <summary>Dimensions d'une fenêtre de 1100 × 650 avant la première mise en page.</summary>
     public static readonly LayoutMetrics Initial = Compute(1100, 650, new DeckConfig());
 
     readonly record struct Frame(double Scale, double Gap, double BarH, double TopH, double AvailW, double AvailH);

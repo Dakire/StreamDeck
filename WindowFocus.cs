@@ -29,6 +29,10 @@ public static class WindowFocus
     const int WS_EX_TOOLWINDOW = 0x80;
     const int SW_RESTORE = 9;
 
+    /// <summary>Fenêtre de premier niveau d'une autre application.</summary>
+    /// <param name="Handle">Handle Win32.</param>
+    /// <param name="Title">Titre de la fenêtre.</param>
+    /// <param name="Process">Nom du programme, sans .exe.</param>
     public record Win(IntPtr Handle, string Title, string Process);
 
     /// <summary>Fenêtres de premier niveau visibles, de la plus haute à la plus basse dans l'ordre Z (hors TouchDeck).</summary>

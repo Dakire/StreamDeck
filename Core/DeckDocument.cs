@@ -8,28 +8,45 @@ namespace TouchDeck;
 /// <summary>Emplacement d'une grille : profil, page et chemin de dossiers (indices successifs) ; chemin vide = racine de la page.</summary>
 public sealed class Place : IEquatable<Place>
 {
+    /// <summary>Nom du profil.</summary>
     public string Profile { get; }
+    /// <summary>Index de la page dans le profil.</summary>
     public int Page { get; }
+    /// <summary>Index des dossiers ouverts depuis la racine de la page (vide : la page elle-même).</summary>
     public IReadOnlyList<int> Path { get; }
 
+    /// <summary>Emplacement d'une grille.</summary>
+    /// <param name="profile">Nom du profil.</param>
+    /// <param name="page">Index de la page.</param>
+    /// <param name="path">Dossiers ouverts depuis la racine ; null ou vide : la page.</param>
     public Place(string profile, int page, IReadOnlyList<int>? path = null)
     {
         Profile = profile; Page = page; Path = path ?? Array.Empty<int>();
     }
 
+    /// <summary>true pour la grille de la page elle-même (aucun dossier ouvert).</summary>
     public bool IsRoot => Path.Count == 0;
+    /// <summary>Emplacement du dossier situé à cet index de la grille.</summary>
     public Place Enter(int folderIndex) => new(Profile, Page, Path.Append(folderIndex).ToArray());
+    /// <summary>Dossier parent, ou null à la racine de la page.</summary>
     public Place? Parent => IsRoot ? null : new Place(Profile, Page, Path.Take(Path.Count - 1).ToArray());
+    /// <summary>Même page et même chemin dans un autre profil (profil renommé).</summary>
     public Place WithProfile(string profile) => new(profile, Page, Path);
+    /// <summary>Racine d'une autre page du même profil.</summary>
     public Place WithPage(int page) => new(Profile, page, Array.Empty<int>());
 
+    /// <summary>Même profil (sans distinction de casse), même page, même chemin de dossiers.</summary>
     public bool Equals(Place? o) =>
         o != null && Profile.Equals(o.Profile, StringComparison.OrdinalIgnoreCase) && Page == o.Page && Path.SequenceEqual(o.Path);
+    /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as Place);
+    /// <inheritdoc/>
     public override int GetHashCode() => HashCode.Combine(Profile.ToLowerInvariant(), Page, Path.Count);
+    /// <summary>Forme lisible pour le journal : « profil/page/dossiers ».</summary>
     public override string ToString() => $"{Profile}/{Page}/{string.Join(".", Path)}";
 }
 
+/// <summary>Nature d'une modification du document : les vues choisissent ce qu'elles redessinent.</summary>
 public enum ChangeKind
 {
     /// <summary>Boutons, pages ou profils modifiés (annulable).</summary>
@@ -40,11 +57,20 @@ public enum ChangeKind
     Replaced,
 }
 
+/// <summary>Modification signalée par <see cref="DeckDocument.Changed"/>.</summary>
+/// <param name="Kind">Nature de la modification.</param>
+/// <param name="Label">Libellé affiché dans « Annuler … ».</param>
 public sealed record DocumentChange(ChangeKind Kind, string Label);
 
+/// <summary>Résultat d'une opération du document.</summary>
+/// <param name="Ok">true si l'opération a été faite.</param>
+/// <param name="Message">Raison du refus, à afficher.</param>
+/// <param name="Index">Index créé ou déplacé, -1 sinon.</param>
 public sealed record OpResult(bool Ok, string? Message = null, int Index = -1)
 {
+    /// <summary>Opération réussie, avec l'index concerné.</summary>
     public static OpResult Success(int index = -1) => new(true, null, index);
+    /// <summary>Opération refusée, avec la raison.</summary>
     public static OpResult Fail(string message) => new(false, message);
 }
 
@@ -62,17 +88,26 @@ public sealed class DeckDocument
     string? _lastCoalesceKey;
     DateTime _lastCoalesceAt;
 
+    /// <summary>Configuration courante ; remplacée par <see cref="Reset"/>, modifiée par les méthodes du document.</summary>
     public DeckConfig Config { get; private set; }
+    /// <summary>Presse-papiers interne (copie indépendante d'un bouton), partagé par le deck et l'éditeur.</summary>
     public DeckButton? Clipboard { get; private set; }
 
+    /// <summary>Chaque modification, après coup : sauvegarde automatique, deck, éditeur et paramètres s'y abonnent.</summary>
     public event Action<DocumentChange>? Changed;
 
+    /// <summary>Document sur une configuration déjà normalisée.</summary>
     public DeckDocument(DeckConfig config) { Config = config; }
 
+    /// <summary>true s'il y a une modification à annuler.</summary>
     public bool CanUndo => _undo.Count > 0;
+    /// <summary>true s'il y a une modification à rétablir.</summary>
     public bool CanRedo => _redo.Count > 0;
+    /// <summary>Libellé de la modification que « Annuler » défera, ou null.</summary>
     public string? UndoLabel => _undo.Count > 0 ? _undo[^1].Label : null;
+    /// <summary>Libellé de la modification que « Rétablir » refera, ou null.</summary>
     public string? RedoLabel => _redo.Count > 0 ? _redo[^1].Label : null;
+    /// <summary>true si le presse-papiers interne contient un bouton.</summary>
     public bool HasClipboard => Clipboard != null;
 
     // ---------- historique ----------
@@ -106,6 +141,7 @@ public sealed class DeckDocument
         return result;
     }
 
+    /// <summary>Annule la dernière modification de contenu ; false s'il n'y a rien à annuler.</summary>
     public bool Undo()
     {
         if (_undo.Count == 0) return false;
@@ -118,6 +154,7 @@ public sealed class DeckDocument
         return true;
     }
 
+    /// <summary>Rétablit la dernière modification annulée ; false s'il n'y a rien à rétablir.</summary>
     public bool Redo()
     {
         if (_redo.Count == 0) return false;
@@ -157,9 +194,12 @@ public sealed class DeckDocument
 
     // ---------- lecture ----------
 
+    /// <summary>Profil de ce nom (sans distinction de casse), ou null.</summary>
     public DeckProfile? FindProfile(string? name) => ConfigNormalizer.FindProfile(Config, name);
+    /// <summary>Profil actif, ou le premier si le nom enregistré n'existe plus.</summary>
     public DeckProfile ActiveProfile => FindProfile(Config.ActiveProfile) ?? Config.Profiles[0];
 
+    /// <summary>Page d'un profil, ou null si le profil ou l'index n'existe pas.</summary>
     public DeckPage? FindPage(string profile, int page)
     {
         var p = FindProfile(profile);
@@ -189,6 +229,7 @@ public sealed class DeckDocument
         return parent != null && i >= 0 && i < parent.Count && parent[i].IsFolder ? parent[i] : null;
     }
 
+    /// <summary>Bouton à cet index de la grille, ou null (index hors liste ou case vide).</summary>
     public DeckButton? Get(Place place, int index)
     {
         var list = Container(place);
@@ -197,6 +238,7 @@ public sealed class DeckDocument
         return b.Blank ? null : b;
     }
 
+    /// <summary>Premier index libre (case vide ou fin de liste) à partir de <paramref name="from"/>.</summary>
     public int FirstEmptyIndex(Place place, int from = 0)
     {
         var list = Container(place);
@@ -238,6 +280,7 @@ public sealed class DeckDocument
 
     // ---------- boutons ----------
 
+    /// <summary>Place un bouton (copie) à cet index, en remplaçant le contenu éventuel ; annulable.</summary>
     public OpResult PutButton(Place place, int index, DeckButton button, string label = "Modifier le bouton") =>
         Edit(label, _ =>
         {
@@ -257,6 +300,7 @@ public sealed class DeckDocument
             return OpResult.Success(index);
         }, coalesceKey);
 
+    /// <summary>Vide la case (les voisines gardent leur position) ; annulable.</summary>
     public OpResult ClearButton(Place place, int index, string label = "Supprimer le bouton") =>
         Edit(label, _ =>
         {
@@ -333,6 +377,7 @@ public sealed class DeckDocument
         });
     }
 
+    /// <summary>Crée un dossier vide à cet index ; annulable.</summary>
     public OpResult CreateFolder(Place place, int index, string name = "Dossier") =>
         Edit("Créer un dossier", _ =>
         {
@@ -343,6 +388,7 @@ public sealed class DeckDocument
             return OpResult.Success(index);
         });
 
+    /// <summary>Nouveau bouton dossier (icône et couleur par défaut, aucun enfant).</summary>
     public static DeckButton NewFolder(string name = "Dossier") => new()
     {
         Label = name, Icon = "Folder24", Color = "#B45309", IsFolder = true, Children = new List<DeckButton>(),
@@ -350,6 +396,7 @@ public sealed class DeckDocument
 
     // ---------- presse-papiers ----------
 
+    /// <summary>Copie le bouton dans le presse-papiers interne ; false si la case est vide.</summary>
     public bool Copy(Place place, int index)
     {
         var b = Get(place, index);
@@ -358,6 +405,7 @@ public sealed class DeckDocument
         return true;
     }
 
+    /// <summary>Copie le bouton dans le presse-papiers interne puis vide la case ; annulable.</summary>
     public OpResult Cut(Place place, int index)
     {
         var b = Get(place, index);
@@ -368,6 +416,7 @@ public sealed class DeckDocument
         return result;
     }
 
+    /// <summary>Colle une copie du presse-papiers à cet index ; annulable.</summary>
     public OpResult Paste(Place place, int index)
     {
         if (Clipboard == null) return OpResult.Fail("Le presse-papiers est vide");
@@ -375,6 +424,7 @@ public sealed class DeckDocument
         return PutButton(place, index, copy, "Coller le bouton");
     }
 
+    /// <summary>Copie le bouton dans la prochaine case libre ; annulable.</summary>
     public OpResult Duplicate(Place place, int index)
     {
         var b = Get(place, index);
@@ -390,6 +440,7 @@ public sealed class DeckDocument
 
     // ---------- pages ----------
 
+    /// <summary>Ajoute une page (nom unique) à la fin du profil ; l'index de la page est dans le résultat.</summary>
     public OpResult AddPage(string profile, string? name = null)
     {
         return Edit("Ajouter une page", cfg =>
@@ -402,6 +453,7 @@ public sealed class DeckDocument
         });
     }
 
+    /// <summary>Duplique une page, boutons compris, juste après l'originale.</summary>
     public OpResult DuplicatePage(string profile, int page)
     {
         return Edit("Dupliquer la page", _ =>
@@ -416,6 +468,7 @@ public sealed class DeckDocument
         });
     }
 
+    /// <summary>Renomme une page (nom unique, non vide) et met à jour les actions « page » qui la visent dans le profil.</summary>
     public OpResult RenamePage(string profile, int page, string newName)
     {
         newName = (newName ?? "").Trim();
@@ -435,6 +488,7 @@ public sealed class DeckDocument
         });
     }
 
+    /// <summary>Masque ou affiche une page dans la barre d'onglets du deck (elle reste accessible par une action « page »).</summary>
     public OpResult SetPageHidden(string profile, int page, bool hidden) =>
         Edit(hidden ? "Masquer la page" : "Afficher la page", _ =>
         {
@@ -445,6 +499,7 @@ public sealed class DeckDocument
             return OpResult.Success(page);
         });
 
+    /// <summary>Supprime une page ; la dernière page d'un profil est protégée.</summary>
     public OpResult DeletePage(string profile, int page) =>
         Edit("Supprimer la page", _ =>
         {
@@ -455,6 +510,7 @@ public sealed class DeckDocument
             return OpResult.Success(Math.Min(page, p.Pages.Count - 1));
         });
 
+    /// <summary>Déplace une page de <paramref name="delta"/> rangs dans le profil.</summary>
     public OpResult MovePage(string profile, int page, int delta) =>
         Edit("Déplacer la page", _ =>
         {
@@ -469,6 +525,7 @@ public sealed class DeckDocument
 
     // ---------- profils ----------
 
+    /// <summary>Ajoute un profil vide (nom unique) avec une page ; format de grille facultatif (0 : réglage global).</summary>
     public OpResult AddProfile(string? name = null, int columns = 0, int rows = 0)
     {
         return Edit("Créer un profil", cfg =>
@@ -485,6 +542,7 @@ public sealed class DeckDocument
         });
     }
 
+    /// <summary>Duplique un profil (nom unique) ; l'association à une application n'est pas copiée, elle doit rester unique.</summary>
     public OpResult DuplicateProfile(string name) =>
         Edit("Dupliquer le profil", cfg =>
         {
@@ -498,6 +556,7 @@ public sealed class DeckDocument
             return OpResult.Success(cfg.Profiles.IndexOf(copy));
         });
 
+    /// <summary>Renomme un profil et met à jour le profil actif et les actions « profile » qui le visent.</summary>
     public OpResult RenameProfile(string name, string newName)
     {
         newName = (newName ?? "").Trim();
@@ -518,6 +577,7 @@ public sealed class DeckDocument
         });
     }
 
+    /// <summary>Supprime un profil ; le dernier est protégé et le profil actif passe au premier restant.</summary>
     public OpResult DeleteProfile(string name) =>
         Edit("Supprimer le profil", cfg =>
         {
@@ -529,6 +589,7 @@ public sealed class DeckDocument
             return OpResult.Success(0);
         });
 
+    /// <summary>Déplace un profil de <paramref name="delta"/> rangs.</summary>
     public OpResult MoveProfile(string name, int delta) =>
         Edit("Déplacer le profil", cfg =>
         {
@@ -541,6 +602,7 @@ public sealed class DeckDocument
             return OpResult.Success(to);
         });
 
+    /// <summary>Fixe le format de grille du profil (colonnes × lignes, de 0 à 20 ; 0 : réglage global).</summary>
     public OpResult SetProfileLayout(string name, int columns, int rows) =>
         Edit("Format du profil", _ =>
         {
@@ -592,11 +654,13 @@ public sealed class DeckDocument
 
     // ---------- favoris et récents ----------
 
+    /// <summary>Ajoute ou retire une action du catalogue des favoris (réglage, hors historique).</summary>
     public void ToggleFavorite(string id) => UpdateSettings(c =>
     {
         if (!c.Favorites.Remove(id)) c.Favorites.Add(id);
     }, "Favoris");
 
+    /// <summary>Place une action du catalogue en tête des récents (réglage, hors historique).</summary>
     public void AddRecent(string id) => UpdateSettings(c =>
     {
         c.Recents.Remove(id);
@@ -617,6 +681,7 @@ public sealed class DeckDocument
         }
     }
 
+    /// <summary>Tous les boutons de la liste, contenu des dossiers compris (parcours en profondeur).</summary>
     public static IEnumerable<DeckButton> AllButtons(IEnumerable<DeckButton> buttons)
     {
         foreach (var b in buttons)

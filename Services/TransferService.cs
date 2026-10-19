@@ -7,14 +7,17 @@ using System.Threading.Tasks;
 
 namespace TouchDeck;
 
+/// <summary>Demande de confirmation à l'utilisateur (fenêtre de l'éditeur ou des paramètres, faux dans les tests).</summary>
 public interface IConfirm
 {
+    /// <summary>Affiche une confirmation ; true si l'utilisateur accepte.</summary>
     Task<bool> ConfirmAsync(string title, string message, string confirmText, bool danger = false);
 }
 
 /// <summary>Import et export de profils et de configurations : lecture vérifiée, confirmation, sauvegarde préalable, opération annulable.</summary>
 public static class TransferService
 {
+    /// <summary>Exporte un profil et signale le résultat à l'utilisateur.</summary>
     public static void ExportProfile(DeckProfile profile, string path)
     {
         try
@@ -28,6 +31,7 @@ public static class TransferService
         }
     }
 
+    /// <summary>Exporte la configuration complète et signale le résultat à l'utilisateur.</summary>
     public static void ExportConfig(DeckConfig cfg, string path)
     {
         try
@@ -111,6 +115,7 @@ public static class TransferService
         return true;
     }
 
+    /// <summary>Remplace la configuration par une sauvegarde (après une nouvelle sauvegarde de l'actuelle) ; false si elle est illisible.</summary>
     public static bool RestoreBackup(DeckDocument doc, string backupPath)
     {
         try

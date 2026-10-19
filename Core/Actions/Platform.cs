@@ -8,6 +8,7 @@ public interface IKeyboardService
 {
     /// <summary>Envoie une combinaison (« ctrl+shift+m », « win+d », « playpause »). Lève <see cref="System.ArgumentException"/> si une touche est inconnue.</summary>
     void SendHotkey(string combo);
+    /// <summary>Tape le texte caractère par caractère dans l'application active (Unicode, sans dépendre de la disposition du clavier).</summary>
     void TypeText(string text);
 }
 
@@ -29,12 +30,21 @@ public interface IWindowService
     string? ForegroundProcessName();
 }
 
-public enum AudioDevice { Output, Microphone }
+/// <summary>Périphérique audio par défaut visé par une commande.</summary>
+public enum AudioDevice
+{
+    /// <summary>Sortie (haut-parleurs, casque).</summary>
+    Output,
+    /// <summary>Micro de communication par défaut.</summary>
+    Microphone,
+}
 
 /// <summary>Périphériques audio par défaut (sortie et micro).</summary>
 public interface IAudioService
 {
+    /// <summary>true si le périphérique par défaut est coupé.</summary>
     bool IsMuted(AudioDevice device);
+    /// <summary>Coupe ou rétablit le périphérique par défaut.</summary>
     void SetMute(AudioDevice device, bool muted);
     /// <summary>Volume en pourcentage (0 à 100).</summary>
     void SetVolume(AudioDevice device, int percent);

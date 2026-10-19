@@ -33,6 +33,7 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
     PageTabViewModel? _hoverPage;
     DragGhost? _ghost;
 
+    /// <summary>Éditeur sur le document partagé ; s'ouvre sur l'écran du pointeur, enregistre à la fermeture.</summary>
     public EditorWindow()
     {
         _vm = new EditorViewModel(this);
@@ -43,6 +44,7 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
         SourceInitialized += (_, _) => PlaceOnCursorScreen();
     }
 
+    /// <summary>Sélectionne un emplacement (profil, page, dossier) et éventuellement une case.</summary>
     public void GoTo(Place? place, int index) => _vm.GoTo(place, index);
 
     /// <summary>S'ouvre sur l'écran où se trouve le curseur (l'éditeur se pilote à la souris et au clavier, pas sur l'écran tactile du deck).</summary>
@@ -59,24 +61,29 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
 
     // ---------- IEditorShell : dialogues ----------
 
+    /// <inheritdoc/>
     public Task<string?> PromptAsync(string title, string message, string initial, string confirmText = "OK", bool allowEmpty = false) =>
         Task.FromResult(PromptWindow.Ask(this, title, message, initial, confirmText, allowEmpty));
 
+    /// <inheritdoc/>
     public Task<bool> ConfirmAsync(string title, string message, string confirmText, bool danger = false) =>
         Task.FromResult(PromptWindow.Confirm(this, title, message, confirmText, danger));
 
+    /// <inheritdoc/>
     public Task InfoAsync(string title, string message)
     {
         PromptWindow.Info(this, title, message);
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc/>
     public string? PickOpenFile(string title, string filter)
     {
         var dlg = new Microsoft.Win32.OpenFileDialog { Title = title, Filter = filter };
         return dlg.ShowDialog(this) == true ? dlg.FileName : null;
     }
 
+    /// <inheritdoc/>
     public string? PickSaveFile(string title, string filter, string defaultName)
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Title = title, Filter = filter, FileName = defaultName, OverwritePrompt = true };
@@ -87,6 +94,7 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
 
     void Later(Action a) => Dispatcher.BeginInvoke(DispatcherPriority.Background, a);
 
+    /// <inheritdoc/>
     public void FocusProperties() => Later(() =>
     {
         // Première étape à compléter, sinon le titre
@@ -97,10 +105,14 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
         else PropertiesScroll.Focus();
     });
 
+    /// <inheritdoc/>
     public void FocusTitle() => Later(() => { if (TitleBox.IsVisible) { TitleBox.Focus(); TitleBox.SelectAll(); } });
+    /// <inheritdoc/>
     public void FocusIcon() => Later(() => { if (IconBox.IsVisible) { IconBox.Focus(); IconBox.SelectAll(); IconBox.BringIntoView(); } });
+    /// <inheritdoc/>
     public void FocusCatalogSearch() => Later(() => { CatalogSearch.Focus(); CatalogSearch.SelectAll(); });
 
+    /// <inheritdoc/>
     public void FocusSlot(int listIndex) => Later(() =>
     {
         var slot = listIndex >= 0 ? _vm.Slots.FirstOrDefault(s => !s.IsBack && s.Index == listIndex) : _vm.SelectedSlot ?? _vm.Slots.FirstOrDefault(s => !s.IsBack);

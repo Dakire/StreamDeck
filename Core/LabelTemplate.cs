@@ -10,11 +10,13 @@ namespace TouchDeck;
 /// </summary>
 public static partial class LabelTemplate
 {
+    /// <summary>Culture des dates et heures affichées (interface en français).</summary>
     public static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
 
     [GeneratedRegex(@"\{(time|date|timer)(?::([^{}]+))?\}", RegexOptions.IgnoreCase)]
     private static partial Regex Token();
 
+    /// <summary>true si le titre contient un modèle ({time}, {date}, {timer}…) : il doit être recalculé à l'affichage.</summary>
     public static bool IsDynamic(string? label) => !string.IsNullOrEmpty(label) && Token().IsMatch(label);
 
     /// <summary>Le titre a-t-il besoin d'être redessiné chaque seconde (secondes affichées ou minuteur) ?</summary>
@@ -26,6 +28,10 @@ public static partial class LabelTemplate
         return false;
     }
 
+    /// <summary>Titre affiché : modèles remplacés par leur valeur à l'instant <paramref name="now"/>.</summary>
+    /// <param name="label">Titre enregistré.</param>
+    /// <param name="now">Instant à afficher.</param>
+    /// <param name="timer">Temps restant du minuteur du bouton, s'il tourne (remplace {timer}).</param>
     public static string Render(string label, DateTime now, string? timer = null)
     {
         if (!IsDynamic(label)) return label;

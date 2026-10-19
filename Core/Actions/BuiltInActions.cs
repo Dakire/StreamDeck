@@ -26,6 +26,7 @@ public static class BuiltInActions
 
     static readonly TimeSpan Quick = TimeSpan.FromSeconds(5);
     static readonly TimeSpan Launch = TimeSpan.FromSeconds(15);
+    /// <summary>Délai maximal d'une requête web (l'éditeur l'indique à l'utilisateur).</summary>
     public static readonly TimeSpan HttpTimeout = TimeSpan.FromSeconds(10);
     static readonly Task<string?> Done = Task.FromResult<string?>(null);
 
@@ -36,6 +37,7 @@ public static class BuiltInActions
     static Handler Background(string type, TimeSpan timeout, Action<DeckAction, StepContext> run) =>
         new(type, timeout, async (a, c, ct) => { await Task.Run(() => run(a, c), ct).WaitAsync(ct); return null; });
 
+    /// <summary>Un gestionnaire par type d'action de <see cref="ActionTypes"/>.</summary>
     public static readonly IReadOnlyList<IActionHandler> All = new IActionHandler[]
     {
         Sync(ActionTypes.Hotkey, (a, c) => c.Services.Platform.Keyboard.SendHotkey(a.Value)),

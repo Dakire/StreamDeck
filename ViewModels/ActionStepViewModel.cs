@@ -10,19 +10,30 @@ namespace TouchDeck.ViewModels;
 /// <summary>Ce que l'éditeur d'étape demande au panneau de propriétés qui le contient.</summary>
 public interface IStepOwner
 {
+    /// <summary>L'étape a changé : le propriétaire l'enregistre dans le bouton (annulable).</summary>
     void StepChanged(ActionStepViewModel step);
+    /// <summary>Déplace l'étape de <paramref name="delta"/> rangs.</summary>
     void MoveStep(ActionStepViewModel step, int delta);
+    /// <summary>Supprime l'étape.</summary>
     void RemoveStep(ActionStepViewModel step);
+    /// <summary>Pages du profil, proposées pour l'action « page ».</summary>
     IReadOnlyList<string> PageNames { get; }
+    /// <summary>Profils, proposés pour l'action « profile ».</summary>
     IReadOnlyList<string> ProfileNames { get; }
+    /// <summary>Configuration, pour la validation.</summary>
     DeckConfig Config { get; }
+    /// <summary>Profil du bouton, pour vérifier les noms de page (null : non vérifiés).</summary>
     DeckProfile? Profile { get; }
 }
 
+/// <summary>Problème affiché sous une étape.</summary>
+/// <param name="Severity">Gravité.</param>
+/// <param name="Message">Explication.</param>
 public sealed record IssueViewModel(Severity Severity, string Message)
 {
     /// <summary>Le niveau est écrit en toutes lettres : la couleur ne porte jamais seule l'information.</summary>
     public string Prefix => Severity == Severity.Error ? "Erreur : " : "Attention : ";
+    /// <summary>Icône selon la gravité.</summary>
     public Wpf.Ui.Controls.SymbolRegular Symbol => Severity == Severity.Error
         ? Wpf.Ui.Controls.SymbolRegular.ErrorCircle24 : Wpf.Ui.Controls.SymbolRegular.Warning24;
 }
@@ -72,17 +83,27 @@ public partial class ActionStepViewModel : ObservableObject
     [ObservableProperty] bool _canMoveDown;
     [ObservableProperty] bool _canRemove;
 
+    /// <summary>Types d'action proposés.</summary>
     public ObservableCollection<ChoiceViewModel> TypeChoices { get; } = new();
+    /// <summary>Touches média proposées.</summary>
     public ObservableCollection<ChoiceViewModel> MediaChoices { get; } = new();
+    /// <summary>Commandes audio proposées.</summary>
     public ObservableCollection<ChoiceViewModel> AudioChoices { get; } = new();
+    /// <summary>Pages proposées (accueil, retour, puis pages du profil).</summary>
     public ObservableCollection<ChoiceViewModel> PageChoices { get; } = new();
+    /// <summary>Profils proposés.</summary>
     public ObservableCollection<ChoiceViewModel> ProfileChoices { get; } = new();
+    /// <summary>Programmes ouverts, proposés pour la fenêtre au premier plan.</summary>
     public ObservableCollection<ChoiceViewModel> ProcessChoices { get; } = new();
+    /// <summary>Problèmes de l'étape.</summary>
     public ObservableCollection<IssueViewModel> Issues { get; } = new();
 
+    /// <summary>true si l'étape a au moins un problème.</summary>
     public bool HasIssues => Issues.Count > 0;
+    /// <summary>Nom du type affiché (« Raccourci », « Requête web »…).</summary>
     public string TypeLabel => Types.FirstOrDefault(t => t.Key == Type).Label ?? Type;
 
+    /// <summary>Étape éditable, copie de <paramref name="source"/> ; les changements remontent à <paramref name="owner"/>.</summary>
     public ActionStepViewModel(DeckAction source, IStepOwner owner)
     {
         _owner = owner;
@@ -113,16 +134,26 @@ public partial class ActionStepViewModel : ObservableObject
 
     // ---------- affichage selon le type ----------
 
+    /// <summary>true si la valeur se saisit au clavier (sinon elle se choisit dans une liste).</summary>
     public bool ShowValue => Type is not (ActionTypes.Media or ActionTypes.Audio or ActionTypes.Page or ActionTypes.Profile);
+    /// <summary>true pour choisir une touche média.</summary>
     public bool ShowMedia => Type == ActionTypes.Media;
+    /// <summary>true pour choisir une commande audio.</summary>
     public bool ShowAudio => Type == ActionTypes.Audio;
+    /// <summary>true pour choisir une page.</summary>
     public bool ShowPage => Type == ActionTypes.Page;
+    /// <summary>true pour choisir un profil.</summary>
     public bool ShowProfile => Type == ActionTypes.Profile;
+    /// <summary>true pour proposer les programmes ouverts (fenêtre au premier plan).</summary>
     public bool ShowProcesses => Type == ActionTypes.Focus;
+    /// <summary>true pour proposer « Parcourir » sur la valeur (programme, script).</summary>
     public bool ShowBrowseValue => Type is ActionTypes.Launch or ActionTypes.Script;
+    /// <summary>true pour proposer « Parcourir » sur les arguments (programme à lancer si la fenêtre manque).</summary>
     public bool ShowBrowseArgs => Type == ActionTypes.Focus;
+    /// <summary>true si le type utilise les arguments (le volume n'en a que pour la commande « volume »).</summary>
     public bool ShowArgs => Type is ActionTypes.Launch or ActionTypes.Script or ActionTypes.Focus or ActionTypes.Http || (Type == ActionTypes.Audio && Value == AudioCommands.Volume);
 
+    /// <summary>Libellé du champ de valeur selon le type.</summary>
     public string ValueCaption => Type switch
     {
         ActionTypes.Hotkey => "Combinaison",
@@ -137,6 +168,7 @@ public partial class ActionStepViewModel : ObservableObject
         _ => "",
     };
 
+    /// <summary>Aide affichée sous le champ de valeur, selon le type.</summary>
     public string ValueHint => Type switch
     {
         ActionTypes.Hotkey => "Clique dans le champ puis appuie sur ta combinaison (ex. Ctrl+Maj+M, F13). Pour la touche Windows, tape-la : win+d, win+shift+s.",
@@ -145,8 +177,10 @@ public partial class ActionStepViewModel : ObservableObject
         ActionTypes.Timer => "Toucher le bouton lance le compte à rebours, le toucher à nouveau l'arrête. Le temps restant remplace le titre (ou s'insère à la place de {timer}).",
         _ => "",
     };
+    /// <summary>true si une aide est disponible pour la valeur.</summary>
     public bool ShowValueHint => ValueHint.Length > 0;
 
+    /// <summary>Libellé du champ d'arguments selon le type.</summary>
     public string ArgsCaption => Type switch
     {
         ActionTypes.Focus => "Si absente, lancer (facultatif)",
@@ -155,8 +189,10 @@ public partial class ActionStepViewModel : ObservableObject
         ActionTypes.Audio => "Volume (0 à 100)",
         _ => "Arguments (facultatif)",
     };
+    /// <summary>Conseil d'enchaînement pour la fenêtre au premier plan.</summary>
     public string ArgsHint => Type == ActionTypes.Focus
         ? "Astuce : place cette étape en premier, puis une Pause (≈150 ms), puis un Raccourci : il sera envoyé à cette fenêtre." : "";
+    /// <summary>true si un conseil est disponible pour les arguments.</summary>
     public bool ShowArgsHint => ArgsHint.Length > 0;
 
     // ---------- état ----------
@@ -195,6 +231,7 @@ public partial class ActionStepViewModel : ObservableObject
         _owner.StepChanged(this);
     }
 
+    /// <summary>Recalcule les problèmes de l'étape (validation en direct).</summary>
     public void Revalidate()
     {
         Issues.Clear();
@@ -226,6 +263,7 @@ public partial class ActionStepViewModel : ObservableObject
         foreach (var p in ProcessChoices) p.IsSelected = string.Equals(p.Text, Value, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>Étape telle qu'elle sera enregistrée (arguments vides omis).</summary>
     public DeckAction ToDeckAction() => new()
     {
         Type = Type, Value = Value, Args = string.IsNullOrEmpty(Args) ? null : Args,

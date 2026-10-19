@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace TouchDeck;
 
+/// <summary>Contenu de config.json (format <see cref="ConfigNormalizer.CurrentVersion"/>) : réglages globaux et profils.</summary>
 public class DeckConfig
 {
     /// <summary>Version du format. 1 (ou absente) : ancien format avec <c>Pages</c> à la racine ; 2 : <c>Profiles</c>.</summary>
@@ -18,8 +19,11 @@ public class DeckConfig
     public bool AlwaysOnTop { get; set; }
     /// <summary>Colonnes / lignes de la grille. 0 = automatique selon la résolution (≈ 20 cases en FHD).</summary>
     public int Columns { get; set; }
+    /// <summary>Lignes de la grille ; 0 = automatique selon la résolution.</summary>
     public int Rows { get; set; }
+    /// <summary>Espacement entre les touches, en unités indépendantes de la résolution (DIP).</summary>
     public double Spacing { get; set; } = 14;
+    /// <summary>Fond du deck ; la valeur par défaut (<see cref="Theme.DefaultBackground"/>) affiche le fond nuancé du thème.</summary>
     public string Background { get; set; } = "#0E1015";
     /// <summary>Thème : "system" (suit Windows), "dark" ou "light".</summary>
     public string Theme { get; set; } = "system";
@@ -35,6 +39,7 @@ public class DeckConfig
     public List<string> Favorites { get; set; } = new();
     /// <summary>Identifiants du catalogue d'actions récemment ajoutés (le plus récent en premier).</summary>
     public List<string> Recents { get; set; } = new();
+    /// <summary>Profils, dans l'ordre de l'éditeur ; au moins un après normalisation.</summary>
     public List<DeckProfile> Profiles { get; set; } = new();
 
     /// <summary>Ancien format (version 1). Lu pour migration vers <see cref="Profiles"/>, jamais réécrit.</summary>
@@ -42,22 +47,28 @@ public class DeckConfig
     public List<DeckPage>? Pages { get; set; }
 }
 
+/// <summary>Un profil : ses pages, son format de grille et l'application qui l'affiche automatiquement.</summary>
 public class DeckProfile
 {
+    /// <summary>Nom unique (sans distinction de casse), visé par les actions « profile ».</summary>
     public string Name { get; set; } = "Profil";
     /// <summary>Colonnes / lignes de ce profil (format de l'appareil). 0 = réglage global de la configuration.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int Columns { get; set; }
+    /// <summary>Lignes de la grille de ce profil ; 0 = réglage global.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int Rows { get; set; }
     /// <summary>Nom du programme (ex. « chrome ») : le profil s'affiche automatiquement quand cette application est au premier plan.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? AppMatch { get; set; }
+    /// <summary>Pages du profil, au moins une après normalisation.</summary>
     public List<DeckPage> Pages { get; set; } = new();
 }
 
+/// <summary>Une page : une grille de boutons, affichée en onglet sauf si elle est masquée.</summary>
 public class DeckPage
 {
+    /// <summary>Nom unique dans le profil, visé par les actions « page ».</summary>
     public string Name { get; set; } = "Page";
     /// <summary>Page non listée dans la barre d'onglets (accessible via une action "page").</summary>
     public bool Hidden { get; set; }
@@ -65,12 +76,16 @@ public class DeckPage
     public List<DeckButton> Buttons { get; set; } = new();
 }
 
+/// <summary>Un bouton du deck : apparence, étapes, ou contenu s'il s'agit d'un dossier.</summary>
 public class DeckButton
 {
+    /// <summary>Titre ; peut contenir des modèles dynamiques ({time}, {date}, {timer}).</summary>
     public string Label { get; set; } = "";
     /// <summary>Nom d'icône Fluent (« Play24 »), emoji ou court texte affiché au-dessus du libellé.</summary>
     public string Icon { get; set; } = "";
+    /// <summary>Couleur du bouton (#RRGGBB) : pastille pleine et corps teinté de la touche.</summary>
     public string Color { get; set; } = "#334155";
+    /// <summary>Étapes exécutées dans l'ordre ; vide pour une horloge ou un dossier.</summary>
     public List<DeckAction> Actions { get; set; } = new();
 
     /// <summary>Emplacement vide (conserve les positions des cases voisines).</summary>
@@ -94,14 +109,18 @@ public class DeckButton
     /// <summary>Dossier : ce bouton ouvre une grille de sous-boutons au lieu de lancer des actions.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool IsFolder { get; set; }
+    /// <summary>Contenu du dossier (dans l'ordre de la grille), si <see cref="IsFolder"/>.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<DeckButton>? Children { get; set; }
 }
 
+/// <summary>Une étape d'un bouton. <see cref="Type"/> est l'un des identifiants de <see cref="ActionTypes"/>.</summary>
 public class DeckAction
 {
     /// <summary>hotkey | text | media | launch | script | url | page | profile | delay | focus (Value = programme ou titre ; Args = programme à lancer si absent)</summary>
     public string Type { get; set; } = "";
+    /// <summary>Paramètre principal (combinaison, programme, adresse, nom de page…) ; son sens dépend du type.</summary>
     public string Value { get; set; } = "";
+    /// <summary>Paramètre secondaire facultatif (arguments, corps de requête, niveau de volume…).</summary>
     public string? Args { get; set; }
 }

@@ -19,5 +19,6 @@ public sealed record MenuItemSpec(
     IReadOnlyList<MenuItemSpec>? Children = null,
     bool Checked = false)
 {
+    /// <summary>Séparateur de menu.</summary>
     public static MenuItemSpec Separator { get; } = new("", IsSeparator: true);
 }

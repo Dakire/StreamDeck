@@ -32,6 +32,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     bool _full;
     bool _onTop;
 
+    /// <summary>Deck sur le document partagé ; la configuration et le thème sont déjà chargés par <see cref="AppServices.Init"/>.</summary>
     public MainWindow()
     {
         _vm = new MainViewModel(this);   // la configuration et le thème sont déjà chargés par AppServices
@@ -61,6 +62,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     IntPtr Hwnd => new WindowInteropHelper(this).Handle;
     IntPtr ZOrder => _onTop ? HWND_TOPMOST : HWND_NOTOPMOST;
 
+    /// <summary>Applique WS_EX_NOACTIVATE et le filtre WM_MOUSEACTIVATE (la fenêtre ne prend jamais le focus), puis place le deck sur son écran.</summary>
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
@@ -140,9 +142,12 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
 
     // ---------- IShell : ce que le ViewModel demande à la fenêtre ----------
 
+    /// <inheritdoc/>
     public bool IsFullscreen => _full;
+    /// <inheritdoc/>
     public bool IsOnTop => _onTop;
 
+    /// <inheritdoc/>
     public void NextScreen()
     {
         var all = DisplayService.All();
@@ -151,11 +156,13 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         if (_full) GoFullscreen(next); else GoWindowed(next);
     }
 
+    /// <inheritdoc/>
     public void ToggleFullscreen()
     {
         if (_full) GoWindowed(CurrentScreen()); else GoFullscreen(CurrentScreen());
     }
 
+    /// <inheritdoc/>
     public void SetOnTop(bool onTop)
     {
         if (_onTop == onTop) return;
@@ -164,8 +171,10 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         SetWindowPos(Hwnd, ZOrder, 0, 0, 0, 0, 0x0001 | 0x0002 | SWP_NOACTIVATE); // NOSIZE | NOMOVE
     }
 
+    /// <inheritdoc/>
     public void Minimize() => WindowState = WindowState.Minimized;
 
+    /// <inheritdoc/>
     public void ReapplyPlacement()
     {
         SetOnTop(_vm.Config.AlwaysOnTop);

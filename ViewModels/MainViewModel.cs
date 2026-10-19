@@ -41,8 +41,11 @@ public partial class MainViewModel : ObservableObject, INavigator
     double _w, _h;
     bool _profileMenu;
 
+    /// <summary>Cases de la grille affichée : <see cref="DeckTileViewModel"/>, <see cref="AddTileViewModel"/> ou <see cref="SpacerTileViewModel"/>.</summary>
     public ObservableCollection<object> Tiles { get; } = new();
+    /// <summary>Onglets des pages du profil affiché.</summary>
     public ObservableCollection<TabViewModel> Tabs { get; } = new();
+    /// <summary>Entrées du menu : <see cref="MenuEntryViewModel"/> ou <see cref="MenuSeparatorViewModel"/>.</summary>
     public ObservableCollection<object> MenuEntries { get; } = new();
 
     [ObservableProperty] LayoutMetrics l = LayoutMetrics.Initial;
@@ -57,7 +60,9 @@ public partial class MainViewModel : ObservableObject, INavigator
     [ObservableProperty] bool inFolder;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(BrandText))] string pathText = "";
 
+    /// <summary>true si un message est affiché dans la barre d'état.</summary>
     public bool HasStatus => Status != null;
+    /// <summary>Texte de la barre du haut : mode, profil et chemin des dossiers ouverts.</summary>
     public string BrandText => (IsEdit ? "TouchDeck  ·  Mode édition" : "TouchDeck")
         + (ProfileCount > 1 ? "  ·  " + CurrentProfile.Name : "") + (PathText.Length > 0 ? "  ›  " + PathText : "");
 
@@ -65,8 +70,11 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     /// <summary>Profil affiché (pastille de la barre du haut) ; « auto » s'il est imposé par l'application au premier plan.</summary>
     public string ProfileName => CurrentProfile.Name;
+    /// <summary>true si le profil affiché vient de l'application au premier plan (non enregistré).</summary>
     public bool IsAutoProfile => _autoProfile != null;
+    /// <summary>true s'il y a plusieurs profils (la pastille de profil est alors utile).</summary>
     public bool HasProfiles => ProfileCount > 1;
+    /// <summary>true en mode --simulate (badge « Simulation »).</summary>
     public bool IsSimulated => AppServices.Simulated;
     /// <summary>Points des sous-pages (indicateur du dock).</summary>
     public ObservableCollection<PageDotViewModel> Dots { get; } = new();
@@ -75,9 +83,11 @@ public partial class MainViewModel : ObservableObject, INavigator
     public event Action<int>? Navigated;
     int _shownPage = -1, _shownSub, _shownDepth;
     string _shownProfile = "";
+    /// <summary>Configuration courante (placement de la fenêtre).</summary>
     public DeckConfig Config => _doc.Config;
     int ProfileCount => _doc.Config.Profiles.Count;
 
+    /// <summary>Deck sur le document partagé ; <paramref name="shell"/> fournit le placement Win32.</summary>
     public MainViewModel(IShell shell)
     {
         _shell = shell;

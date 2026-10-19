@@ -11,11 +11,18 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace TouchDeck.ViewModels;
 
+/// <summary>Sauvegarde listée dans les paramètres.</summary>
+/// <param name="Path">Chemin du fichier.</param>
+/// <param name="Display">Date et taille affichées.</param>
+/// <param name="RestoreCommand">Restaure cette sauvegarde (après confirmation).</param>
 public sealed record BackupItemViewModel(string Path, string Display, ICommand RestoreCommand);
 
+/// <summary>Ce que les paramètres demandent à leur fenêtre : confirmations et sélecteurs de fichiers.</summary>
 public interface ISettingsShell : IConfirm
 {
+    /// <summary>Choisit un fichier à ouvrir ; null si l'utilisateur annule.</summary>
     string? PickOpenFile(string title, string filter);
+    /// <summary>Choisit un fichier à écrire ; null si l'utilisateur annule.</summary>
     string? PickSaveFile(string title, string filter, string defaultName);
 }
 
@@ -42,17 +49,24 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] bool _deviceConnected;
     [ObservableProperty] bool _systemReducesMotion;
 
+    /// <summary>Choix du thème : système, sombre, clair.</summary>
     public ObservableCollection<ChoiceViewModel> ThemeChoices { get; } = new();
+    /// <summary>Écrans proposés pour le deck.</summary>
     public ObservableCollection<ScreenChoice> Screens { get; } = new();
+    /// <summary>Sauvegardes disponibles, de la plus récente à la plus ancienne.</summary>
     public ObservableCollection<BackupItemViewModel> Backups { get; } = new();
+    /// <summary>Description des écrans branchés.</summary>
     public ObservableCollection<string> Displays { get; } = new();
 
+    /// <summary>Version de l'application (assembly).</summary>
     public string VersionText { get; } =
         $"TouchDeck {Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?"} · .NET {Environment.Version.ToString(3)} · Windows {Environment.OSVersion.Version}";
+    /// <summary>Dossier de configuration (affiché, ouvrable).</summary>
     public string ConfigDirectory => ConfigStore.Dir;
 
     static readonly (string Key, string Label)[] Themes = { ("system", "Suivre Windows"), ("dark", "Sombre"), ("light", "Clair") };
 
+    /// <summary>Raccourcis clavier de l'éditeur, affichés dans les paramètres.</summary>
     public static readonly (string Keys, string What)[] Shortcuts =
     {
         ("Ctrl + Z", "Annuler la dernière modification"),
@@ -70,6 +84,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ("Échap", "Fermer un menu, annuler un glisser-déposer"),
     };
 
+    /// <summary>Paramètres sur le document partagé ; suit ses modifications et les changements d'écran.</summary>
     public SettingsViewModel(ISettingsShell shell)
     {
         _shell = shell;
@@ -83,6 +98,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         DisplayService.Changed += RefreshDevices;
     }
 
+    /// <summary>Se désabonne du document et des écrans (fermeture de la fenêtre).</summary>
     public void Dispose()
     {
         _doc.Changed -= OnChanged;

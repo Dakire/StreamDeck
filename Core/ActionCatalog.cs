@@ -27,17 +27,27 @@ public sealed record CatalogAction(
 /// <summary>Catalogue d'actions façon Stream Deck : catégories, recherche, favoris. Les identifiants sont stables (stockés dans la config).</summary>
 public static class ActionCatalog
 {
+    /// <summary>Catégorie : raccourcis de Windows.</summary>
     public const string SystemCategory = "Système";
+    /// <summary>Catégorie : lancement et mise au premier plan de programmes.</summary>
     public const string Apps = "Applications";
+    /// <summary>Catégorie : touches multimédia.</summary>
     public const string Multimedia = "Multimédia";
+    /// <summary>Catégorie : son et micro.</summary>
     public const string Audio = "Audio";
+    /// <summary>Catégorie : combinaisons de touches courantes.</summary>
     public const string Keyboard = "Raccourcis clavier";
+    /// <summary>Catégorie : sites web.</summary>
     public const string Web = "Sites web";
+    /// <summary>Catégorie : scripts, enchaînements, requêtes web et minuteurs.</summary>
     public const string Automation = "Automatisation";
+    /// <summary>Catégorie : changement de page et de profil.</summary>
     public const string Navigation = "Profils et navigation";
 
+    /// <summary>Catégories dans l'ordre d'affichage du catalogue.</summary>
     public static readonly string[] Categories = { SystemCategory, Apps, Multimedia, Audio, Keyboard, Web, Automation, Navigation };
 
+    /// <summary>Icône Fluent de chaque catégorie (titre de section du catalogue).</summary>
     public static readonly Dictionary<string, string> CategoryIcons = new()
     {
         [SystemCategory] = "Desktop24", [Apps] = "Apps24", [Multimedia] = "Play24", [Audio] = "Speaker224",
@@ -55,6 +65,7 @@ public static class ActionCatalog
     static CatalogAction C(string id, string cat, string name, string desc, string icon, string color, DeckAction[] actions,
         string? note = null, string keywords = "") => new(id, cat, name, desc, icon, color, actions, note, false, keywords);
 
+    /// <summary>Toutes les actions prêtes à l'emploi, dans l'ordre d'affichage.</summary>
     public static readonly IReadOnlyList<CatalogAction> All = new[]
     {
         // --- Système ---
@@ -157,6 +168,7 @@ public static class ActionCatalog
 
     static readonly Dictionary<string, CatalogAction> ById = All.ToDictionary(a => a.Id);
 
+    /// <summary>Action du catalogue d'après son identifiant stable (« sys.desktop »), ou null : les favoris et récents d'une ancienne version peuvent ne plus exister.</summary>
     public static CatalogAction? Find(string? id) => id != null && ById.TryGetValue(id, out var a) ? a : null;
 
     /// <summary>Recherche instantanée : tous les mots doivent figurer dans le nom, la description, la catégorie ou les mots-clés (sans accents ni casse).</summary>
@@ -172,6 +184,7 @@ public static class ActionCatalog
         });
     }
 
+    /// <summary>Texte sans accents ni majuscules, pour une recherche tolérante (« reseau » trouve « Réseau »).</summary>
     public static string Fold(string s)
     {
         var d = s.Normalize(System.Text.NormalizationForm.FormD);

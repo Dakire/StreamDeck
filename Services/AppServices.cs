@@ -15,6 +15,7 @@ namespace TouchDeck;
 /// </summary>
 public static class AppServices
 {
+    /// <summary>Document unique (configuration, annuler, presse-papiers) partagé par toutes les fenêtres.</summary>
     public static DeckDocument Document { get; private set; } = null!;
     /// <summary>Message à afficher au démarrage (configuration invalide, migration…), ou null.</summary>
     public static string? StartupMessage { get; private set; }
@@ -28,6 +29,7 @@ public static class AppServices
     /// <summary>Grille automatique du deck (colonnes, lignes) pour l'écran actuel : l'éditeur s'en sert pour les profils en format « Automatique ».</summary>
     public static (int Columns, int Rows) AutoGrid { get; set; } = (5, 4);
 
+    /// <summary>Éditeur ouvert, ou null.</summary>
     public static EditorWindow? Editor { get; private set; }
     static SettingsWindow? _settings;
 
@@ -89,6 +91,7 @@ public static class AppServices
         StartWatcher();
     }
 
+    /// <summary>Enregistre ce qui reste, arrête le surveillant et annule les actions en cours (fermeture de l'application).</summary>
     public static void Shutdown()
     {
         SaveTimer.Stop();
@@ -197,6 +200,7 @@ public static class AppServices
         Editor.Activate();
     }
 
+    /// <summary>Ouvre les paramètres (une seule fenêtre), au-dessus de l'éditeur s'il est ouvert.</summary>
     public static void OpenSettings()
     {
         if (_settings == null)

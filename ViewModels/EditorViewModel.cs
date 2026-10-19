@@ -12,10 +12,28 @@ namespace TouchDeck.ViewModels;
 /// <summary>Ce qu'on fait glisser : une case de la grille ou une entrée du catalogue.</summary>
 public sealed record DragPayload(Place? Source, int SourceIndex, string? CatalogId)
 {
+    /// <summary>true si l'élément glissé vient du catalogue (sinon d'une case de la grille).</summary>
     public bool IsCatalog => CatalogId != null;
 }
 
-public enum DropKind { None, Move, Copy, Swap, IntoFolder, ToParent, Replace }
+/// <summary>Effet d'un glisser-déposer sur la case survolée (indiqué pendant le survol, appliqué au dépôt).</summary>
+public enum DropKind
+{
+    /// <summary>Dépôt impossible ici.</summary>
+    None,
+    /// <summary>Déplace le bouton dans une case vide.</summary>
+    Move,
+    /// <summary>Copie le bouton (Ctrl enfoncé) dans une case vide.</summary>
+    Copy,
+    /// <summary>Échange les deux boutons.</summary>
+    Swap,
+    /// <summary>Range le bouton dans le dossier survolé.</summary>
+    IntoFolder,
+    /// <summary>Sort le bouton du dossier courant (case « retour »).</summary>
+    ToParent,
+    /// <summary>Remplace le bouton par l'action du catalogue.</summary>
+    Replace,
+}
 
 /// <summary>
 /// État de l'éditeur : profil, page et dossier en cours de modification, grille, sélection, presse-papiers,
@@ -23,6 +41,7 @@ public enum DropKind { None, Move, Copy, Swap, IntoFolder, ToParent, Replace }
 /// </summary>
 public sealed partial class EditorViewModel : ObservableObject, IDisposable
 {
+    /// <summary>Formats de grille proposés (le format « Automatique » suit l'écran du deck).</summary>
     public static readonly FormatChoice[] FormatPresets =
     {
         new("Automatique (selon l'écran)", 0, 0),
@@ -44,14 +63,22 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     bool _refreshingLists;
     Notice? _toast;
 
+    /// <summary>Cases de la grille affichée (avec la case « retour » dans un dossier).</summary>
     public ObservableCollection<SlotViewModel> Slots { get; } = new();
+    /// <summary>Onglets des pages du profil affiché.</summary>
     public ObservableCollection<PageTabViewModel> Pages { get; } = new();
+    /// <summary>Fil d'Ariane : profil, page, dossiers ouverts.</summary>
     public ObservableCollection<CrumbViewModel> Crumbs { get; } = new();
+    /// <summary>Profils de la liste déroulante.</summary>
     public ObservableCollection<ProfileItemViewModel> Profiles { get; } = new();
+    /// <summary>Formats de grille proposés pour le profil.</summary>
     public ObservableCollection<FormatChoice> Formats { get; } = new();
+    /// <summary>Écrans proposés pour le deck.</summary>
     public ObservableCollection<ScreenChoice> Screens { get; } = new();
 
+    /// <summary>Catalogue d'actions (panneau de gauche).</summary>
     public CatalogViewModel Catalog { get; }
+    /// <summary>Propriétés de la case sélectionnée (panneau de droite).</summary>
     public PropertiesViewModel Properties { get; }
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(GridMaxWidth))] int _columns = 5;
@@ -76,20 +103,30 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
 
     /// <summary>Taille maximale de la grille à l'écran : les cases ne grossissent pas indéfiniment sur un grand écran.</summary>
     public double GridMaxWidth => Columns * 180 + 24;
+    /// <summary>Hauteur maximale de la grille (le reste défile).</summary>
     public double GridMaxHeight => Rows * 180 + 24;
+    /// <summary>true si des boutons dépassent la capacité de la grille (sous-pages sur le deck).</summary>
     public bool HasOverflow => OverflowText.Length > 0;
 
+    /// <summary>true s'il y a une modification à annuler.</summary>
     public bool CanUndo => _doc.CanUndo;
+    /// <summary>true s'il y a une modification à rétablir.</summary>
     public bool CanRedo => _doc.CanRedo;
+    /// <summary>Info-bulle d'« Annuler » : ce qui sera défait.</summary>
     public string UndoTooltip => _doc.CanUndo ? $"Annuler : {_doc.UndoLabel} (Ctrl+Z)" : "Rien à annuler";
+    /// <summary>Info-bulle de « Rétablir » : ce qui sera refait.</summary>
     public string RedoTooltip => _doc.CanRedo ? $"Rétablir : {_doc.RedoLabel} (Ctrl+Y)" : "Rien à rétablir";
+    /// <summary>true si une case est sélectionnée.</summary>
     public bool HasSelection => _selectedIndex >= 0;
+    /// <summary>true si le presse-papiers interne contient un bouton.</summary>
     public bool CanPasteHere => _doc.HasClipboard;
 
+    /// <summary>Emplacement affiché : profil, page, dossiers ouverts.</summary>
     public Place Place => new(_profile, _page, _folder.ToArray());
     DeckProfile Profile => _doc.FindProfile(_profile) ?? _doc.ActiveProfile;
     int Offset => _folder.Count > 0 ? 1 : 0;
 
+    /// <summary>Éditeur sur le document partagé ; <paramref name="shell"/> fournit dialogues et focus.</summary>
     public EditorViewModel(IEditorShell shell)
     {
         _shell = shell;
@@ -105,6 +142,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         RefreshAll();
     }
 
+    /// <summary>Se désabonne du document, des messages et des écrans (fermeture de la fenêtre).</summary>
     public void Dispose()
     {
         _doc.Changed -= OnDocumentChanged;
@@ -165,6 +203,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         SelectIndex(-1);
     }
 
+    /// <summary>Ouvre le dossier sélectionné (Entrée, double-clic).</summary>
     public void OpenSelectedFolder()
     {
         if (_selectedIndex < 0 || _doc.Get(Place, _selectedIndex) is not { IsFolder: true }) return;
@@ -175,6 +214,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         _shell.FocusSlot(-1);
     }
 
+    /// <summary>Remonte d'un dossier en sélectionnant celui qu'on quitte (Retour arrière).</summary>
     [RelayCommand]
     public void GoUp()
     {
@@ -380,6 +420,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Foreground = System.Windows.Media.Brushes.White, Background = Theme.B("#37373D"),
     };
 
+    /// <summary>Recharge la liste des écrans (branchement, débranchement).</summary>
     public void RefreshDevices()
     {
         _refreshingLists = true;
@@ -402,6 +443,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(HasSelection));
     }
 
+    /// <summary>Sélectionne une case (index de liste, -1 : aucune) et met à jour les propriétés.</summary>
     public void SelectIndex(int index)
     {
         _selectedIndex = index;
@@ -506,6 +548,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Notifier.Success("Bouton dupliqué");
     }
 
+    /// <summary>Supprime le bouton sélectionné (confirmation pour un dossier non vide) ; annulable.</summary>
     [RelayCommand]
     public void DeleteSelection()
     {
@@ -529,6 +572,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         _shell.FocusSlot(idx);
     }
 
+    /// <summary>Crée un dossier dans la case sélectionnée, ou dans la première case libre.</summary>
     public void CreateFolderHere()
     {
         int target = TargetIndex();
@@ -579,6 +623,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
 
     // ---------- catalogue ----------
 
+    /// <summary>Ajoute une action du catalogue dans la case visée, sinon sélectionnée, sinon la première libre.</summary>
     public void AddCatalogAction(CatalogAction action, int? targetIndex = null)
     {
         int target = targetIndex ?? (_selectedIndex >= 0 && _doc.Get(Place, _selectedIndex) == null ? _selectedIndex : FirstFree());
@@ -598,6 +643,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         else Notifier.Success($"« {action.Name} » ajouté", replacing ? "Annuler" : null, replacing ? () => _doc.Undo() : null);
     }
 
+    /// <summary>Comme <see cref="AddCatalogAction"/>, d'après l'identifiant du catalogue.</summary>
     public void AddCatalogActionById(string id, int? targetIndex = null)
     {
         if (ActionCatalog.Find(id) is { } a) AddCatalogAction(a, targetIndex);
@@ -626,6 +672,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         return DropKind.Swap;
     }
 
+    /// <summary>Applique un glisser-déposer sur une case (voir <see cref="DropKind"/>) ; <paramref name="copy"/> : Ctrl enfoncé.</summary>
     public void Drop(DragPayload payload, SlotViewModel target, bool copy)
     {
         var kind = EvaluateDrop(payload, target, copy);
@@ -672,6 +719,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         !payload.IsCatalog && payload.Source != null && _doc.Get(payload.Source, payload.SourceIndex) != null
         && !(payload.Source.Equals(new Place(_profile, page.Index)));
 
+    /// <summary>Envoie l'élément glissé dans une autre page (première case libre).</summary>
     public void DropOnPage(DragPayload payload, PageTabViewModel page)
     {
         if (!CanDropOnPage(payload, page)) return;
@@ -695,6 +743,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Notifier.Success("Page ajoutée");
     }
 
+    /// <summary>Demande un nouveau nom de page.</summary>
     public async System.Threading.Tasks.Task RenamePageAsync(PageTabViewModel page)
     {
         var name = await _shell.PromptAsync("Renommer la page", "Nouveau nom", page.Name, "Renommer");
@@ -703,24 +752,28 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         if (!r.Ok && r.Message != "Nom inchangé") Notifier.Error(r.Message ?? "Renommage impossible");
     }
 
+    /// <summary>Duplique la page.</summary>
     public void DuplicatePage(PageTabViewModel page)
     {
         var r = _doc.DuplicatePage(_profile, page.Index);
         if (r.Ok) { SwitchPage(r.Index); Notifier.Success("Page dupliquée"); }
     }
 
+    /// <summary>Masque ou affiche la page dans les onglets du deck.</summary>
     public void TogglePageHidden(PageTabViewModel page)
     {
         var r = _doc.SetPageHidden(_profile, page.Index, !page.Hidden);
         if (r.Ok) Notifier.Info(page.Hidden ? "Page affichée dans les onglets du deck" : "Page masquée : accessible par une action « Page »");
     }
 
+    /// <summary>Déplace la page de <paramref name="delta"/> rangs.</summary>
     public void MovePage(PageTabViewModel page, int delta)
     {
         var r = _doc.MovePage(_profile, page.Index, delta);
         if (r.Ok) { _page = r.Index; RefreshAll(); }
     }
 
+    /// <summary>Supprime la page après confirmation (si elle contient des boutons) ; annulable.</summary>
     public async System.Threading.Tasks.Task DeletePageAsync(PageTabViewModel page)
     {
         if (Profile.Pages.Count <= 1) { Notifier.Info("Un profil doit garder au moins une page"); return; }
@@ -746,6 +799,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Notifier.Success("Profil créé");
     }
 
+    /// <summary>Demande un nouveau nom de profil.</summary>
     public async System.Threading.Tasks.Task RenameProfileAsync(string name)
     {
         var newName = await _shell.PromptAsync("Renommer le profil", "Nouveau nom", name, "Renommer");
@@ -756,6 +810,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         if (wasEdited) { _profile = newName.Trim(); RefreshAll(); }
     }
 
+    /// <summary>Duplique le profil.</summary>
     public void DuplicateProfile(string name)
     {
         var r = _doc.DuplicateProfile(name);
@@ -764,6 +819,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Notifier.Success("Profil dupliqué");
     }
 
+    /// <summary>Supprime le profil après confirmation ; annulable.</summary>
     public async System.Threading.Tasks.Task DeleteProfileAsync(string name)
     {
         var p = _doc.FindProfile(name);
@@ -778,11 +834,13 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Notifier.Success("Profil supprimé", "Annuler", () => _doc.Undo());
     }
 
+    /// <summary>Affiche ce profil sur le deck.</summary>
     public void SetActive(string name)
     {
         if (_doc.SetActiveProfile(name)) Notifier.Success($"« {name} » est maintenant le profil affiché sur le deck");
     }
 
+    /// <summary>Associe le profil à un programme (choisi parmi les fenêtres ouvertes ou saisi).</summary>
     public async System.Threading.Tasks.Task SetAppMatchAsync(string name)
     {
         var p = _doc.FindProfile(name);
@@ -797,6 +855,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Notifier.Success(string.IsNullOrWhiteSpace(app) ? "Association retirée" : $"Profil associé à « {app.Trim()} »");
     }
 
+    /// <summary>Exporte le profil en .touchdeck.</summary>
     public void ExportProfile(string name)
     {
         var p = _doc.FindProfile(name);
@@ -822,6 +881,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
 
     // ---------- menus contextuels ----------
 
+    /// <summary>Menu contextuel d'une case, selon son contenu et le presse-papiers.</summary>
     public IReadOnlyList<MenuItemSpec> BuildSlotMenu(SlotViewModel slot)
     {
         if (slot.IsBack)
@@ -915,6 +975,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Notifier.Success("Bouton sorti du dossier", "Annuler", () => _doc.Undo());
     }
 
+    /// <summary>Menu contextuel d'un profil.</summary>
     public IReadOnlyList<MenuItemSpec> BuildProfileMenu(string name)
     {
         bool active = name.Equals(_doc.Config.ActiveProfile, StringComparison.OrdinalIgnoreCase);
@@ -934,6 +995,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         };
     }
 
+    /// <summary>Menu contextuel d'un onglet de page.</summary>
     public IReadOnlyList<MenuItemSpec> BuildPageMenu(PageTabViewModel page)
     {
         int count = Pages.Count;
@@ -950,6 +1012,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         };
     }
 
+    /// <summary>Menu contextuel d'une action du catalogue.</summary>
     public IReadOnlyList<MenuItemSpec> BuildCatalogMenu(CatalogItemViewModel item)
     {
         var a = item.Action;
@@ -966,6 +1029,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         };
     }
 
+    /// <summary>Décrit une action du catalogue (description, catégorie, étapes).</summary>
     public async System.Threading.Tasks.Task ShowInfoAsync(CatalogAction a)
     {
         var steps = a.IsFolder ? "Ouvre une grille de sous-boutons." : string.Join("\n", a.Actions.Select((s, i) =>

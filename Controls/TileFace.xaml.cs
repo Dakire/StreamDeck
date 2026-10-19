@@ -10,13 +10,17 @@ namespace TouchDeck.Controls;
 /// <summary>Dessine la face d'un bouton à partir d'un <see cref="TileFaceData"/>, avec des tailles proportionnelles à la case.</summary>
 public partial class TileFace : UserControl
 {
+    /// <summary>Propriété de dépendance de <see cref="Face"/>.</summary>
     public static readonly DependencyProperty FaceProperty = DependencyProperty.Register(
         nameof(Face), typeof(TileFaceData), typeof(TileFace), new PropertyMetadata(null, (d, _) => ((TileFace)d).Render()));
 
+    /// <summary>Propriété de dépendance de <see cref="CornerRadius"/>.</summary>
     public static readonly DependencyProperty CornerRadiusProperty = DependencyProperty.Register(
         nameof(CornerRadius), typeof(CornerRadius), typeof(TileFace), new PropertyMetadata(new CornerRadius(12), (d, _) => ((TileFace)d).Render()));
 
+    /// <summary>Contenu à dessiner ; null ou vide : rien n'est affiché.</summary>
     public TileFaceData? Face { get => (TileFaceData?)GetValue(FaceProperty); set => SetValue(FaceProperty, value); }
+    /// <summary>Rayon des coins (celui de la touche), repris par l'image et le dégradé du titre.</summary>
     public CornerRadius CornerRadius { get => (CornerRadius)GetValue(CornerRadiusProperty); set => SetValue(CornerRadiusProperty, value); }
 
     static readonly Brush DimLight = Freeze(new SolidColorBrush(Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF)));
@@ -26,6 +30,7 @@ public partial class TileFace : UserControl
 
     static System.Windows.Media.Effects.Effect FreezeEffect(System.Windows.Media.Effects.Effect e) { e.Freeze(); return e; }
 
+    /// <summary>Redessine la face à chaque changement de taille : toutes les dimensions sont proportionnelles à la case.</summary>
     public TileFace()
     {
         InitializeComponent();

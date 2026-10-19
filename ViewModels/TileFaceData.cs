@@ -11,16 +11,34 @@ namespace TouchDeck.ViewModels;
 /// standard (pastille carrée), média et audio (pastille ronde), navigation (pastille en contour, chevron),
 /// affichage (horloge, minuteur : la valeur en grand), image (plein cadre).
 /// </summary>
-public enum TileKind { Standard, Media, Navigation, Display, Image }
+public enum TileKind
+{
+    /// <summary>Pastille carrée et titre.</summary>
+    Standard,
+    /// <summary>Touche média ou audio : pastille ronde.</summary>
+    Media,
+    /// <summary>Dossier, page ou profil : pastille en contour.</summary>
+    Navigation,
+    /// <summary>Horloge ou minuteur : la valeur en grand.</summary>
+    Display,
+    /// <summary>Image importée en plein cadre.</summary>
+    Image,
+}
 
 /// <summary>Tout ce qu'il faut pour dessiner la face d'un bouton (deck, éditeur, aperçu) : même rendu partout.</summary>
 public sealed class TileFaceData
 {
+    /// <summary>Titre affiché (modèles déjà remplacés).</summary>
     public string Label { get; init; } = "";
+    /// <summary>Icône enregistrée (nom Fluent, emoji ou texte).</summary>
     public string Icon { get; init; } = "";
+    /// <summary>Icône Fluent résolue, si <see cref="HasSymbol"/>.</summary>
     public SymbolRegular Symbol { get; init; }
+    /// <summary>true si l'icône est une icône Fluent connue.</summary>
     public bool HasSymbol { get; init; }
+    /// <summary>true si l'icône est un emoji ou un texte court.</summary>
     public bool HasIconText => !HasSymbol && Icon.Length > 0;
+    /// <summary>false si le titre est masqué.</summary>
     public bool ShowTitle { get; init; } = true;
     /// <summary>"stack" (sous l'icône), "top", "middle" ou "bottom".</summary>
     public string TitleMode { get; init; } = "stack";
@@ -30,12 +48,17 @@ public sealed class TileFaceData
     public Brush LabelBrush { get; init; } = Brushes.White;
     /// <summary>Corps de la touche : surface teintée par la couleur du bouton.</summary>
     public Brush Background { get; init; } = Brushes.Gray;
+    /// <summary>Liseré de la touche.</summary>
     public Brush Border { get; init; } = Brushes.Transparent;
     /// <summary>Pastille d'icône : la couleur du bouton, pleine.</summary>
     public Brush Plate { get; init; } = Brushes.Gray;
+    /// <summary>Image importée, ou null.</summary>
     public Brush? ImageBrush { get; init; }
+    /// <summary>true pour un dossier (badge chevron).</summary>
     public bool IsFolder { get; init; }
+    /// <summary>true pour une case vide.</summary>
     public bool IsBlank { get; init; }
+    /// <summary>Variante de dessin.</summary>
     public TileKind Kind { get; init; }
     /// <summary>Nombre d'étapes (badge affiché à partir de 2).</summary>
     public int Steps { get; init; }
@@ -46,14 +69,19 @@ public sealed class TileFaceData
     /// <summary>Progression d'un minuteur en cours (0 à 1), sinon null.</summary>
     public double? Progress { get; init; }
 
+    /// <summary>true si une image est affichée.</summary>
     public bool HasImage => ImageBrush != null;
+    /// <summary>true si le titre est affiché.</summary>
     public bool HasTitle => ShowTitle && Label.Length > 0;
+    /// <summary>true s'il y a quelque chose à afficher dans la pastille (image, icône ou texte).</summary>
     public bool HasVisual => HasImage || HasSymbol || HasIconText;
 
+    /// <summary>Case vide.</summary>
     public static readonly TileFaceData Empty = new() { IsBlank = true, Background = Brushes.Transparent };
 
     static readonly ConcurrentDictionary<(string, bool), Brush?> ImageBrushes = new();
 
+    /// <summary>Oublie les images chargées (thème changé, image remplacée).</summary>
     public static void ClearCache() => ImageBrushes.Clear();
 
     /// <summary>Même face avec un autre titre (titre dynamique, minuteur) : l'image et les couleurs sont réutilisées.</summary>

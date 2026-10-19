@@ -66,8 +66,8 @@ dotnet_naming_style.underscore_camel.capitalization = camel_case
 dotnet_diagnostic.CA1716.severity = none
 # CA1848 / CA1873 : pas de Microsoft.Extensions.Logging dans le projet (journal maison, Services/Log.cs).
 dotnet_diagnostic.CA1848.severity = none
-# CS1591 (documentation XML des membres publics) : activé dossier par dossier au fil de la documentation, voir plus bas.
-dotnet_diagnostic.CS1591.severity = none
+# CS1591 : toute API publique porte un commentaire XML (le « pourquoi » quand il n'est pas évident).
+dotnet_diagnostic.CS1591.severity = warning
 
 [ViewModels/**.cs]
 # CA1822 : commandes [RelayCommand] et propriétés liées au XAML ; elles doivent rester des membres d'instance.

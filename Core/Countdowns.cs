@@ -16,8 +16,11 @@ public sealed class Countdowns
     /// <summary>Un compte à rebours vient d'arriver à zéro (signalé par <see cref="Tick"/>).</summary>
     public event Action<DeckButton>? Finished;
 
+    /// <summary>Aucun minuteur en cours.</summary>
+    /// <param name="now">Horloge (UTC) ; remplaçable dans les tests.</param>
     public Countdowns(Func<DateTime>? now = null) { _now = now ?? (() => DateTime.UtcNow); }
 
+    /// <summary>true si au moins un minuteur tourne (le deck rafraîchit alors l'affichage chaque seconde).</summary>
     public bool Any => _ends.Count > 0;
 
     /// <summary>Démarre le compte à rebours de ce bouton, ou l'arrête s'il tourne. Retourne true s'il vient de démarrer.</summary>
@@ -28,6 +31,7 @@ public sealed class Countdowns
         return true;
     }
 
+    /// <summary>Arrête le minuteur du bouton, s'il tourne.</summary>
     public void Stop(DeckButton button) => _ends.Remove(button);
 
     /// <summary>Temps restant (arrondi à la seconde supérieure), ou null si le bouton n'a pas de minuteur en cours.</summary>

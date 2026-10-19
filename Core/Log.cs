@@ -9,13 +9,18 @@ namespace TouchDeck;
 /// </summary>
 public static class Log
 {
+    /// <summary>Taille au-delà de laquelle le journal est renommé en .old et recommencé.</summary>
     public const long MaxBytes = 1_000_000;
     static readonly object Gate = new();
 
+    /// <summary>Chemin du journal (dossier de configuration).</summary>
     public static string FilePath => Path.Combine(ConfigStore.Dir, "touchdeck.log");
 
+    /// <summary>Événement normal (démarrage, changement d'écran).</summary>
     public static void Info(string message) => Write("INFO ", message);
+    /// <summary>Anomalie sans conséquence grave (action en échec, image illisible).</summary>
     public static void Warn(string message) => Write("WARN ", message);
+    /// <summary>Erreur, avec l'exception complète si elle est fournie.</summary>
     public static void Error(string message, Exception? ex = null) => Write("ERROR", ex == null ? message : $"{message}\n{ex}");
 
     static void Write(string level, string message)

@@ -12,6 +12,7 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow, ISettingsShe
 {
     readonly SettingsViewModel _vm;
 
+    /// <summary>Paramètres sur le document partagé ; le ViewModel est libéré à la fermeture.</summary>
     public SettingsWindow()
     {
         _vm = new SettingsViewModel(this);
@@ -22,15 +23,18 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow, ISettingsShe
         Closed += (_, _) => _vm.Dispose();
     }
 
+    /// <inheritdoc/>
     public Task<bool> ConfirmAsync(string title, string message, string confirmText, bool danger = false) =>
         Task.FromResult(PromptWindow.Confirm(this, title, message, confirmText, danger));
 
+    /// <inheritdoc/>
     public string? PickOpenFile(string title, string filter)
     {
         var dlg = new Microsoft.Win32.OpenFileDialog { Title = title, Filter = filter };
         return dlg.ShowDialog(this) == true ? dlg.FileName : null;
     }
 
+    /// <inheritdoc/>
     public string? PickSaveFile(string title, string filter, string defaultName)
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Title = title, Filter = filter, FileName = defaultName, OverwritePrompt = true };

@@ -13,11 +13,16 @@ public sealed record NormalizeResult(bool Migrated, IReadOnlyList<string> Warnin
 /// </summary>
 public static class ConfigNormalizer
 {
+    /// <summary>Version du format écrite par cette version de TouchDeck.</summary>
     public const int CurrentVersion = 2;
+    /// <summary>Profondeur maximale des dossiers imbriqués : au-delà, le contenu du dossier est ignoré (avec un avertissement).</summary>
     public const int MaxFolderDepth = 8;
+    /// <summary>Nombre d'actions récentes conservées dans le catalogue.</summary>
     public const int MaxRecents = 12;
+    /// <summary>Valeurs acceptées pour <see cref="DeckConfig.Theme"/>.</summary>
     public static readonly string[] Themes = { "system", "dark", "light" };
 
+    /// <summary>Migre l'ancien format et répare une configuration lue sur disque, sans rien supprimer de valide ; décrit ce qui a changé.</summary>
     public static NormalizeResult Normalize(DeckConfig cfg)
     {
         var warnings = new List<string>();
@@ -81,6 +86,7 @@ public static class ConfigNormalizer
         return new NormalizeResult(migrated, warnings);
     }
 
+    /// <summary>Profil de ce nom (sans distinction de casse), ou null.</summary>
     public static DeckProfile? FindProfile(DeckConfig cfg, string? name) =>
         name == null ? null : cfg.Profiles.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 
@@ -99,6 +105,7 @@ public static class ConfigNormalizer
         }
     }
 
+    /// <summary>Répare une liste de boutons (valeurs nulles, positions de titre ou d'image inconnues, dossiers trop profonds) ; <paramref name="depth"/> : profondeur du dossier courant.</summary>
     public static List<DeckButton> NormalizeButtons(List<DeckButton>? buttons, int depth, List<string> warnings)
     {
         var list = (buttons ?? new List<DeckButton>()).Where(b => b != null).ToList();

@@ -10,18 +10,26 @@ public readonly record struct PixelRect(int X, int Y, int Width, int Height);
 /// <summary>Un écran : <see cref="Device"/> est l'identifiant Windows (\\.\DISPLAY2), stable tant que l'écran reste sur la même sortie.</summary>
 public sealed record DisplayInfo(int Index, string Device, PixelRect Bounds, PixelRect WorkArea, bool Primary)
 {
+    /// <summary>Largeur en pixels physiques.</summary>
     public int Width => Bounds.Width;
+    /// <summary>Hauteur en pixels physiques.</summary>
     public int Height => Bounds.Height;
+    /// <summary>true si l'écran est plus haut que large.</summary>
     public bool IsPortrait => Height > Width;
+    /// <summary>Nom affiché : « Écran 2 », « Écran 1 (principal) ».</summary>
     public string Name => Primary ? $"Écran {Index + 1} (principal)" : $"Écran {Index + 1}";
+    /// <summary>Résolution affichée : « 1920×1080 », avec « portrait » le cas échéant.</summary>
     public string Resolution => $"{Width}×{Height}" + (IsPortrait ? " portrait" : "");
+    /// <summary>Nom et résolution, pour les listes de choix.</summary>
     public override string ToString() => $"{Name} · {Resolution}";
 }
 
 /// <summary>Écrans disponibles. L'implémentation Windows signale tout branchement, débranchement ou changement de résolution.</summary>
 public interface IDisplayService
 {
+    /// <summary>Écrans branchés, dans l'ordre de Windows.</summary>
     IReadOnlyList<DisplayInfo> All();
+    /// <summary>Un écran a été branché, débranché ou reconfiguré (sur le thread d'interface).</summary>
     event Action? Changed;
 }
 

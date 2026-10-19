@@ -13,6 +13,7 @@ namespace TouchDeck.Controls;
 /// </summary>
 public static class ContextMenuFactory
 {
+    /// <summary>Construit un menu WPF à partir de sa description par le ViewModel (sous-menus, séparateurs, raccourcis affichés).</summary>
     public static ContextMenu Build(IEnumerable<MenuItemSpec> specs)
     {
         var menu = new ContextMenu { Placement = PlacementMode.MousePoint };

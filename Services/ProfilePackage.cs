@@ -19,22 +19,34 @@ public sealed record PackageContents(
 /// </summary>
 public static class ProfilePackage
 {
+    /// <summary>Extension des archives de profil ou de configuration.</summary>
     public const string Extension = ".touchdeck";
+    /// <summary>Filtre de la boîte de dialogue des profils.</summary>
     public const string DialogFilter = "Profil ou configuration TouchDeck|*.touchdeck|Tous les fichiers|*.*";
+    /// <summary>Filtre de la boîte de dialogue de configuration (archive ou JSON brut).</summary>
     public const string ConfigDialogFilter = "Configuration TouchDeck|*.touchdeck;*.json|Tous les fichiers|*.*";
 
+    /// <summary>Taille maximale du JSON d'une archive (protection contre les archives piégées).</summary>
     public const long MaxJsonBytes = 10 * 1024 * 1024;
+    /// <summary>Taille maximale d'une archive.</summary>
     public const long MaxFileBytes = 60 * 1024 * 1024;
+    /// <summary>Nombre maximal d'images dans une archive.</summary>
     public const int MaxIcons = 600;
+    /// <summary>Nombre maximal de boutons importés.</summary>
     public const int MaxButtons = 5000;
+    /// <summary>Nombre maximal de pages importées.</summary>
     public const int MaxPages = 200;
+    /// <summary>Nombre maximal de profils importés.</summary>
     public const int MaxProfiles = 100;
+    /// <summary>Longueur maximale d'un texte importé (titre, valeur, arguments).</summary>
     public const int MaxStringLength = 8192;
 
+    /// <summary>Écrit un profil et ses images dans une archive .touchdeck.</summary>
     public static void ExportProfile(DeckProfile profile, string path) =>
         Write(path, "profile", "profile.json", JsonSerializer.Serialize(profile, ConfigStore.Options),
             IconNames(new[] { profile }));
 
+    /// <summary>Écrit toute la configuration et ses images dans une archive .touchdeck.</summary>
     public static void ExportConfig(DeckConfig cfg, string path) =>
         Write(path, "config", "config.json", ConfigStore.Serialize(cfg), IconNames(cfg.Profiles));
 

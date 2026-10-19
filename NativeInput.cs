@@ -125,6 +125,7 @@ public static class NativeInput
     /// <summary>Touche média / simple (playpause, mute, volup…).</summary>
     public static void Media(string name) => Hotkey(name);
 
+    /// <summary>Tape un texte en caractères Unicode (indépendant de la disposition du clavier).</summary>
     public static void TypeText(string text)
     {
         var seq = new List<INPUT>();

@@ -5,22 +5,36 @@ using System.Linq;
 
 namespace TouchDeck;
 
-public enum Severity { Warning, Error }
+/// <summary>Gravité d'un problème de configuration.</summary>
+public enum Severity
+{
+    /// <summary>Le bouton fonctionne probablement, mais quelque chose est à vérifier.</summary>
+    Warning,
+    /// <summary>Le bouton échouera à l'exécution.</summary>
+    Error,
+}
 
+/// <summary>Problème de configuration d'une étape ou d'un bouton.</summary>
+/// <param name="Severity">Gravité : une erreur empêche l'exécution, un avertissement non.</param>
+/// <param name="Message">Explication affichée dans l'éditeur.</param>
 public sealed record Issue(Severity Severity, string Message);
 
 /// <summary>Détecte les boutons mal configurés avant qu'ils échouent à l'exécution. Ne lance jamais rien.</summary>
 public static class ActionValidator
 {
+    /// <summary>Types d'action reconnus (voir <see cref="ActionTypes"/>) : tout autre type est refusé à l'import.</summary>
     public static readonly string[] KnownTypes = ActionTypes.All.ToArray();
+    /// <summary>Valeurs acceptées par l'action « media ».</summary>
     public static readonly string[] MediaKeys = { "playpause", "prev", "next", "stop", "mute", "voldown", "volup" };
     /// <summary>Commandes de l'action « audio » ; « volume » prend le niveau (0 à 100) dans Args.</summary>
     public static readonly string[] AudioCommands = TouchDeck.AudioCommands.All.ToArray();
+    /// <summary>Protocoles jamais ouverts par l'action « url » : ils permettent d'exécuter du code ou de lire des fichiers par détour.</summary>
     public static readonly string[] BlockedSchemes = { "javascript", "vbscript", "data", "file" };
 
     /// <summary>Types qui exécutent du code ou lancent des programmes : à signaler avant d'importer un profil.</summary>
     public static bool IsRisky(DeckAction a) => a.Type.ToLowerInvariant() is ActionTypes.Launch or ActionTypes.Script;
 
+    /// <summary>Problèmes d'une étape, sans rien exécuter ; <paramref name="profile"/> sert à vérifier les noms de page (null : non vérifiés).</summary>
     public static List<Issue> Validate(DeckAction a, DeckConfig cfg, DeckProfile? profile)
     {
         var issues = new List<Issue>();
@@ -98,6 +112,7 @@ public static class ActionValidator
         return issues;
     }
 
+    /// <summary>Problèmes d'un bouton : ses étapes, une image manquante, l'absence d'action (sauf horloge).</summary>
     public static List<Issue> Validate(DeckButton b, DeckConfig cfg, DeckProfile? profile)
     {
         var issues = new List<Issue>();

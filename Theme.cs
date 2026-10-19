@@ -15,6 +15,7 @@ public static class Theme
 {
     // Direction « graphite » : fond bleuté nuancé (jamais noir pur), trois profondeurs de surface, accent indigo propre à TouchDeck.
     // Accent : fond des boutons principaux (texte blanc, contraste ≥ 4,5) ; AccentText : accent utilisé comme texte ou contour sur fond de panneau.
+    /// <summary>Palette sombre (thème par défaut des nouvelles configurations).</summary>
     public static readonly Palette DarkPalette = new(
         Window: "#0F1218", Bar: "#171B24", TopBar: "#00000000", Panel: "#181C25", Surface: "#1F2430", SurfaceHi: "#2A303D",
         Line: "#313849", Grip: "#3C4456", Dim: "#A3ABBD", Text: "#F4F6FB", TextSoft: "#CDD3E0", Placeholder: "#737C90",
@@ -22,6 +23,7 @@ public static class Theme
         Input: "#12151C", EditorBg: "#12151B", Focus: "#FFFFFF", Success: "#5CD6A0",
         StatusBg: "#3A1F26", StatusLine: "#7A3340", StatusText: "#FFB4BE");
 
+    /// <summary>Palette claire.</summary>
     public static readonly Palette LightPalette = new(
         Window: "#F3F4F8", Bar: "#FFFFFF", TopBar: "#00FFFFFF", Panel: "#FFFFFF", Surface: "#FFFFFF", SurfaceHi: "#ECEEF4",
         Line: "#D5D9E3", Grip: "#C3C8D4", Dim: "#565C6E", Text: "#171A21", TextSoft: "#363B48", Placeholder: "#7A8092",
@@ -34,17 +36,23 @@ public static class Theme
     /// <summary>Part de la couleur du bouton dans le corps de la touche (haut, bas) : la couleur vive reste sur la pastille d'icône.</summary>
     public const double TintTop = 0.26, TintBottom = 0.16;
 
+    /// <summary>true si le thème sombre est appliqué.</summary>
     public static bool Dark { get; private set; } = true;
+    /// <summary>Palette du thème appliqué.</summary>
     public static Palette Current => Dark ? DarkPalette : LightPalette;
 
     // Raccourcis conservés pour le code existant
+    /// <summary>Surface du thème appliqué (raccourci).</summary>
     public static string Surface => Current.Surface;
+    /// <summary>Surface surélevée du thème appliqué (raccourci).</summary>
     public static string SurfaceHi => Current.SurfaceHi;
+    /// <summary>Accent du thème appliqué (raccourci).</summary>
     public static string Accent => Current.Accent;
 
     /// <summary>Teinte de fond Mica de repli : la couleur de config par défaut laisse Mica visible.</summary>
     public const string DefaultBackground = "#0E1015";
 
+    /// <summary>Le thème ou le style des icônes a changé : les vues qui ne passent pas par DynamicResource se redessinent.</summary>
     public static event Action? Changed;
 
     /// <summary>Signale un changement d'apparence qui n'est pas un changement de thème (style des icônes).</summary>
@@ -273,6 +281,7 @@ public static class Theme
         });
     }
 
+    /// <summary>Brush figé pour une couleur saisie ; false si elle est vide ou mal formée (validation, sans exception).</summary>
     public static bool TryBrush(string? hex, out Brush brush)
     {
         brush = Brushes.Transparent;
@@ -293,6 +302,7 @@ public static class Theme
         return (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
     }
 
+    /// <summary>Luminance relative WCAG d'une couleur (0 : noir, 1 : blanc).</summary>
     public static double Luminance(string hex)
     {
         var c = (Color)ColorConverter.ConvertFromString(hex);

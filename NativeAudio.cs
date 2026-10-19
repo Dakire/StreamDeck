@@ -60,18 +60,21 @@ public static class NativeAudio
         return (IAudioEndpointVolume)endpoint;
     }
 
+    /// <summary>true si le périphérique par défaut est coupé.</summary>
     public static bool IsMuted(AudioDevice device)
     {
         Marshal.ThrowExceptionForHR(Endpoint(device).GetMute(out var muted));
         return muted;
     }
 
+    /// <summary>Coupe ou rétablit le périphérique par défaut.</summary>
     public static void SetMute(AudioDevice device, bool muted)
     {
         var ctx = Guid.Empty;
         Marshal.ThrowExceptionForHR(Endpoint(device).SetMute(muted, ref ctx));
     }
 
+    /// <summary>Règle le volume du périphérique par défaut (0 à 100).</summary>
     public static void SetVolume(AudioDevice device, int percent)
     {
         var ctx = Guid.Empty;

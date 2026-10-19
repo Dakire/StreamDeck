@@ -9,6 +9,7 @@ public static class AutoStart
     const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
     const string ValueName = "TouchDeck";
 
+    /// <summary>true si TouchDeck est inscrit dans la clé Run de l'utilisateur (le registre fait foi, pas config.json).</summary>
     public static bool IsEnabled()
     {
         try
