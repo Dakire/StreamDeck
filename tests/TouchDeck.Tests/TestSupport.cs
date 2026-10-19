@@ -2,6 +2,10 @@ using System;
 using System.IO;
 using Xunit;
 
+// ConfigStore.Dir est global au processus : une collection qui en change (TempConfigDir) ne doit jamais tourner pendant que
+// l'hôte WPF sauvegarde (sinon des sauvegardes de l'interface atterrissent dans le dossier d'un autre test).
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+
 namespace TouchDeck.Tests;
 
 /// <summary>Les tests qui touchent au dossier de configuration partagent un répertoire temporaire et ne tournent pas en parallèle.</summary>
