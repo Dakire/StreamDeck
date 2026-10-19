@@ -1,115 +1,49 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Markup;
-using System.Windows.Media;
+using TouchDeck.ViewModels;
 
 namespace TouchDeck;
 
-/// <summary>Petits utilitaires de construction d'interface pour les fenêtres d'édition (thème sombre, cibles tactiles).</summary>
-static class Ui
+/// <summary>Édition d'un bouton. Toute la logique est dans ButtonEditorViewModel ; la fenêtre ne fait que se fermer.</summary>
+public partial class ButtonEditorWindow : Wpf.Ui.Controls.FluentWindow
 {
-    public static string Bg => Theme.EditorBg;
-    public static string Surface => Theme.Surface;
-    public static string SurfaceHi => Theme.SurfaceHi;
-    public static string Line => Theme.Line;
-    public static string Accent => Theme.Accent;
-    public static string Dim => Theme.Dim;
-    public const string Danger = "#B23A48";
+    readonly ButtonEditorViewModel _vm;
 
-    public static Brush B(string hex) => (Brush)new BrushConverter().ConvertFromString(hex)!;
+    public DeckButton Result => _vm.Result;
+    public bool Deleted => _vm.Deleted;
+    /// <summary>-1 / +1 : déplace le bouton d'une case avant / après.</summary>
+    public int Move => _vm.Move;
 
-    public static Brush? TryBrush(string hex)
+    public ButtonEditorWindow(Window owner, DeckButton source, List<string> pageNames, bool isNew)
     {
-        try { return (Brush)new BrushConverter().ConvertFromString(hex)!; }
-        catch { return null; }
+        _vm = new ButtonEditorViewModel(source, pageNames, isNew);
+        _vm.CloseRequested += ok => { DialogResult = ok; Close(); };
+        DataContext = _vm;
+        InitializeComponent();
+        Owner = owner;
+        Icon = owner.Icon;
+        Height = Math.Min(Height, SystemParameters.WorkArea.Height * 0.94);
     }
-
-    public static Style TextBoxStyle => (Style)XamlReader.Parse((@"
-<Style xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
-       xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' TargetType='TextBox'>
-  <Setter Property='Foreground' Value='@TEXT'/>
-  <Setter Property='CaretBrush' Value='@TEXT'/>
-  <Setter Property='SelectionBrush' Value='#5B7CFA'/>
-  <Setter Property='Background' Value='@INPUT'/>
-  <Setter Property='Padding' Value='12,10'/>
-  <Setter Property='FontSize' Value='16'/>
-  <Setter Property='Template'>
-    <Setter.Value>
-      <ControlTemplate TargetType='TextBox'>
-        <Border x:Name='Bd' Background='{TemplateBinding Background}' BorderBrush='@LINE' BorderThickness='1' CornerRadius='12'>
-          <ScrollViewer x:Name='PART_ContentHost' Margin='{TemplateBinding Padding}' VerticalAlignment='Center'/>
-        </Border>
-        <ControlTemplate.Triggers>
-          <Trigger Property='IsKeyboardFocused' Value='True'>
-            <Setter TargetName='Bd' Property='BorderBrush' Value='#5B7CFA'/>
-          </Trigger>
-        </ControlTemplate.Triggers>
-      </ControlTemplate>
-    </Setter.Value>
-  </Setter>
-</Style>").Replace("@TEXT", Theme.Text).Replace("@INPUT", Theme.Input).Replace("@LINE", Theme.Line));
-
-    static Style Flat => (Style)Application.Current.FindResource("FlatButton");
-
-    public static TextBox Input(string value, Action<string> onChange)
-    {
-        var tb = new TextBox { Style = TextBoxStyle, Text = value ?? "" };
-        tb.TextChanged += (_, _) => onChange(tb.Text);
-        return tb;
-    }
-
-    public static TextBlock Caption(string text) => new()
-    {
-        Text = text, Foreground = B(Dim), FontSize = 13, FontWeight = FontWeights.SemiBold,
-        Margin = new Thickness(2, 12, 0, 6),
-    };
-
-    public static TextBlock Hint(string text) => new()
-    {
-        Text = text, Foreground = B(Dim), FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, 6, 0, 0),
-    };
-
-    public static Button Chip(string text, bool selected, Action onClick, double height = 44, string? bg = null)
-    {
-        var b = new Button
-        {
-            Style = Flat, Height = height, MinWidth = height,
-            Background = B(bg ?? (selected ? Accent : SurfaceHi)), Tag = new CornerRadius(height / 2),
-            Margin = new Thickness(0, 0, 8, 8), Padding = new Thickness(16, 0, 16, 0),
-            HorizontalContentAlignment = HorizontalAlignment.Center,
-            Content = new TextBlock { Text = text, FontSize = 15, Foreground = (selected || bg != null) ? Brushes.White : B(Theme.Text) },
-        };
-        b.Click += (_, _) => onClick();
-        return b;
-    }
-
-    public static Button IconButton(string glyph, Action onClick) => Chip(glyph, false, onClick, 40);
-
 }
 
-/// <summary>Base des fenêtres d'édition : modale, au premier plan, centrée sur la fenêtre principale, thème sombre.</summary>
-public abstract class EditorBase : Window
+/// <summary>Édition d'une page : nom, visibilité dans les onglets, ordre, suppression.</summary>
+public partial class PageEditorWindow : Wpf.Ui.Controls.FluentWindow
 {
-    protected EditorBase(Window owner, string title, double width, double height)
-    {
-        Title = title; Owner = owner; Width = width;
-        Height = Math.Min(height, SystemParameters.WorkArea.Height * 0.94);
-        WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        ShowInTaskbar = false; Topmost = true; ResizeMode = ResizeMode.NoResize;
-        Background = Ui.B(Ui.Bg); Foreground = Ui.B(Theme.Text); Icon = owner.Icon;
-        FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI");
-    }
+    readonly PageEditorViewModel _vm;
 
-    protected Button Footer(string text, string bg, Action onClick)
-    {
-        var b = Ui.Chip(text, false, onClick, 48, bg);
-        b.Margin = new Thickness(8, 0, 0, 0);
-        return b;
-    }
+    public string PageName => _vm.Name;
+    public bool Hidden => _vm.Hidden;
+    public bool Deleted => _vm.Deleted;
+    public int Move => _vm.Move;
 
-    protected void Finish(bool ok) { DialogResult = ok; Close(); }
+    public PageEditorWindow(Window owner, DeckPage page, bool canDelete)
+    {
+        _vm = new PageEditorViewModel(page, canDelete);
+        _vm.CloseRequested += ok => { DialogResult = ok; Close(); };
+        DataContext = _vm;
+        InitializeComponent();
+        Owner = owner;
+        Icon = owner.Icon;
+    }
 }

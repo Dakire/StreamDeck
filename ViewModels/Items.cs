@@ -11,7 +11,9 @@ public sealed class DeckTileViewModel
     public string Label { get; init; } = "";
     public Brush Background { get; init; } = Brushes.Gray;
     public bool IsEdit { get; init; }
-    public bool HasIcon => Icon.Length > 0;
+    public Wpf.Ui.Controls.SymbolRegular Symbol { get; init; }
+    public bool HasSymbol { get; init; }
+    public bool HasIcon => !HasSymbol && Icon.Length > 0;
     public bool HasLabel => Label.Length > 0;
     public required ICommand Click { get; init; }
 }

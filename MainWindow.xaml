@@ -76,11 +76,14 @@
 
     <!-- Bouton du deck -->
     <DataTemplate DataType="{x:Type vm:DeckTileViewModel}">
-      <Button Style="{StaticResource DeckButton}" Command="{Binding Click}"
+      <Button Style="{StaticResource DeckButton}" Command="{Binding Click}" AutomationProperties.Name="{Binding Label}"
               Background="{Binding Background}"
               Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
               Tag="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+          <ui:SymbolIcon Symbol="{Binding Symbol}" Foreground="White" HorizontalAlignment="Center"
+                         FontSize="{Binding DataContext.L.IconSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                         Visibility="{Binding HasSymbol, Converter={StaticResource BoolVis}}"/>
           <TextBlock Text="{Binding Icon}" FontFamily="Segoe UI Emoji, Segoe UI" Foreground="White"
                      TextAlignment="Center" HorizontalAlignment="Center"
                      FontSize="{Binding DataContext.L.IconSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
@@ -104,7 +107,7 @@
 
     <!-- Emplacement vide du mode édition -->
     <DataTemplate DataType="{x:Type vm:AddTileViewModel}">
-      <Button Style="{StaticResource AddTileButton}" Command="{Binding Click}"
+      <Button Style="{StaticResource AddTileButton}" Command="{Binding Click}" AutomationProperties.Name="Ajouter un bouton"
               Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
               Tag="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
         <ui:SymbolIcon Symbol="Add24" Foreground="{DynamicResource DeckDim}"
@@ -114,7 +117,7 @@
 
     <!-- Entrées du menu -->
     <DataTemplate DataType="{x:Type vm:MenuEntryViewModel}">
-      <Button Style="{StaticResource MenuRow}" Command="{Binding Command}">
+      <Button Style="{StaticResource MenuRow}" Command="{Binding Command}" AutomationProperties.Name="{Binding Text}">
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="{Binding DataContext.L.MenuIconW, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
@@ -168,13 +171,39 @@
         </StackPanel>
         <Border Grid.Column="1" CornerRadius="10" VerticalAlignment="Center"
                 Width="{Binding L.GripW}" Height="{Binding L.GripH}" Background="{DynamicResource DeckGrip}"/>
-        <Button Grid.Column="2" Style="{StaticResource FlatButton}" Command="{Binding MinimizeCommand}"
-                HorizontalAlignment="Right" VerticalAlignment="Center" Background="Transparent"
-                Width="{Binding L.MinW}" Height="{Binding L.MinH}" Foreground="{DynamicResource DeckDim}"
-                HorizontalContentAlignment="Center">
-          <Button.Tag><CornerRadius>10</CornerRadius></Button.Tag>
-          <ui:SymbolIcon Symbol="Subtract24" FontSize="{Binding L.MinFont}"/>
-        </Button>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+          <StackPanel.Resources>
+            <Style x:Key="TopButton" TargetType="Button" BasedOn="{StaticResource FlatButton}">
+              <Setter Property="Width" Value="{Binding DataContext.L.MinW, RelativeSource={RelativeSource AncestorType=StackPanel}}"/>
+              <Setter Property="Height" Value="{Binding DataContext.L.MinH, RelativeSource={RelativeSource AncestorType=StackPanel}}"/>
+              <Setter Property="Background" Value="Transparent"/>
+              <Setter Property="Foreground" Value="{DynamicResource DeckDim}"/>
+              <Setter Property="HorizontalContentAlignment" Value="Center"/>
+              <Setter Property="Margin" Value="4,0,0,0"/>
+              <Setter Property="Tag"><Setter.Value><CornerRadius>10</CornerRadius></Setter.Value></Setter>
+            </Style>
+          </StackPanel.Resources>
+          <Button Style="{StaticResource TopButton}" Command="{Binding MinimizeCommand}" ToolTip="Réduire">
+            <ui:SymbolIcon Symbol="Subtract24" FontSize="{Binding L.MinFont}"/>
+          </Button>
+          <Button Style="{StaticResource TopButton}" Command="{Binding ToggleFullscreenCommand}">
+            <ui:SymbolIcon FontSize="{Binding L.MinFont}">
+              <ui:SymbolIcon.Style>
+                <Style TargetType="ui:SymbolIcon">
+                  <Setter Property="Symbol" Value="FullScreenMaximize24"/>
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsFullscreen}" Value="True">
+                      <Setter Property="Symbol" Value="FullScreenMinimize24"/>
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </ui:SymbolIcon.Style>
+            </ui:SymbolIcon>
+          </Button>
+          <Button Style="{StaticResource TopButton}" Command="{Binding CloseAppCommand}" ToolTip="Fermer">
+            <ui:SymbolIcon Symbol="Dismiss24" FontSize="{Binding L.MinFont}"/>
+          </Button>
+        </StackPanel>
       </Grid>
     </Border>
 
@@ -248,7 +277,7 @@
         </StackPanel>
         <Button Style="{StaticResource BarAccentChip}" Command="{Binding EndEditCommand}" Content="✓ Terminer"
                 Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}"/>
-        <Button Style="{StaticResource BarChip}" Command="{Binding OpenMenuCommand}" Margin="0" Padding="0"
+        <Button Style="{StaticResource BarChip}" Command="{Binding OpenMenuCommand}" Margin="0" AutomationProperties.Name="Menu" Padding="0"
                 Width="{Binding L.BarH}" Foreground="{DynamicResource DeckTextSoft}">
           <ui:SymbolIcon Symbol="Settings24" FontSize="{Binding L.GearFont}"/>
         </Button>

@@ -85,6 +85,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         var b = s.Bounds; // pixels physiques
         SetWindowPos(Hwnd, ZOrder, b.X, b.Y, b.Width, b.Height, SWP_NOACTIVATE);
         _full = true;
+        _vm?.NotifyWindowState();
     }
 
     /// <summary>Passe en fenêtre 1100×650 (DIP) ; avec cursorPx, la barre du haut est placée sous le doigt.</summary>
@@ -97,6 +98,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         if (cursorPx is { } c) { x = c.X - w / 2; y = c.Y - 12; }
         SetWindowPos(Hwnd, ZOrder, x, y, w, h, SWP_NOACTIVATE);
         _full = false;
+        _vm?.NotifyWindowState();
     }
 
     System.Windows.Forms.Screen CurrentScreen() => System.Windows.Forms.Screen.FromHandle(Hwnd);

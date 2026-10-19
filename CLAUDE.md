@@ -16,7 +16,11 @@ Le projet s'appelle `TouchDeck` (assembly et namespace), le dépôt `StreamDeck`
   `IShell` (`ViewModels/IShell.cs`), l'interface par laquelle le ViewModel demande ces actions et les boîtes de dialogue.
 - Thème : `Theme.cs` (clair/sombre/système) publie les brushes `Deck*` comme ressources d'application ; le XAML les consomme en `DynamicResource`.
 - Icônes de l'interface : `ui:SymbolIcon` (Fluent System Icons fournis par WPF-UI). Les icônes des boutons utilisateur restent des emojis.
-- **Pas encore migré (encore construit en C#)** : `ButtonEditorWindow.cs` et `EditorWindows.cs` (fenêtres d'édition).
+- Fenêtres d'édition en XAML + MVVM : `ButtonEditorWindow.xaml`, `PageEditorWindow.xaml` (code-behind dans `EditorWindows.cs`),
+  `ButtonEditorViewModel`, `ActionEditorViewModel`, `PageEditorViewModel`, `ChoiceViewModel`. Styles partagés (pastilles, champs) dans `App.xaml`.
+  `Behaviors/HotkeyCapture.cs` capture les raccourcis clavier.
+- Icônes des boutons : `IconCatalog.cs`. Le champ `Icon` accepte un nom Fluent (`Play24`), un emoji ou un texte court ;
+  les emojis connus sont affichés en Fluent (option `IconStyle` : `fluent` par défaut, `emoji` pour les garder tels quels).
 - Styles XAML dans `App.xaml` : `DeckButton`, `FlatButton`, `AddTileButton`.
 - Configuration : `Models.cs`, `ConfigStore.cs` (JSON dans `%APPDATA%\TouchDeck`) ; actions : `ActionRunner.cs`.
 
@@ -28,7 +32,7 @@ Cible technique :
 
 1. Ajouter le package **WPF-UI** (lepoco, `Wpf.Ui`) et ses `ThemesDictionary` / `ControlsDictionary` dans `App.xaml`.
 2. Passer `MainWindow` en `ui:FluentWindow` avec `WindowBackdropType="Mica"` et thème clair, sombre ou système.
-3. ~~Migrer l'interface principale en XAML + MVVM~~ (fait). Reste : les fenêtres d'édition.
+3. ~~Migrer l'interface (principale et éditeurs) en XAML + MVVM~~ (fait).
 4. Remplacer les couleurs en dur par des ressources de thème (`DynamicResource`).
 5. Remplacer les emojis des chrome UI par `Segoe Fluent Icons` (les icônes **des boutons utilisateur** restent libres : emoji ou texte).
 6. Navigation par pages : `NavigationView` à gauche, ou barre d'onglets en bas pour le mode tactile.

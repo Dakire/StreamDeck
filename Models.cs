@@ -17,6 +17,8 @@ public class DeckConfig
     public string Background { get; set; } = "#0E1015";
     /// <summary>Thème : "system" (suit Windows), "dark" ou "light".</summary>
     public string Theme { get; set; } = "system";
+    /// <summary>"fluent" : les emojis connus sont affichés avec l'icône Fluent équivalente ; "emoji" : tels quels.</summary>
+    public string IconStyle { get; set; } = "fluent";
     public List<DeckPage> Pages { get; set; } = new();
 }
 

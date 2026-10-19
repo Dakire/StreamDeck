@@ -34,6 +34,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] bool menuOpen;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasStatus))] string? status;
     [ObservableProperty] Brush rootBackground = Brushes.Transparent;
+    [ObservableProperty] bool isFullscreen;
     [ObservableProperty] bool hasSubs;
     [ObservableProperty] string subText = "";
 
@@ -48,6 +49,7 @@ public partial class MainViewModel : ObservableObject
         try { _cfg = ConfigStore.Load(); }
         catch (Exception ex) { _cfg = ConfigStore.DefaultConfig(); error = "Config invalide : " + ex.Message; }
 
+        IconCatalog.UseFluentForEmoji = _cfg.IconStyle != "emoji";
         Theme.Apply(_cfg.Theme);
         Theme.Changed += () => { ApplyBackground(); Rebuild(); };
         ApplyBackground();
@@ -95,6 +97,7 @@ public partial class MainViewModel : ObservableObject
         {
             _cfg = ConfigStore.Load();
             _page = Math.Min(_page, _cfg.Pages.Count - 1);
+            IconCatalog.UseFluentForEmoji = _cfg.IconStyle != "emoji";
             Theme.Apply(_cfg.Theme);
             ApplyBackground();
             if (_cfg.Fullscreen && _shell.IsFullscreen) _shell.ReapplyPlacement();
@@ -171,9 +174,10 @@ public partial class MainViewModel : ObservableObject
             int i = first + slot;
             if (i >= page.Buttons.Count) break;
             var def = page.Buttons[i];
+            bool hasSymbol = IconCatalog.TryResolve(def.Icon, out var symbol);
             Tiles.Add(new DeckTileViewModel
             {
-                Icon = def.Icon, Label = def.Label, IsEdit = IsEdit,
+                Icon = def.Icon, Label = def.Label, IsEdit = IsEdit, Symbol = symbol, HasSymbol = hasSymbol,
                 Background = ToBrush(def.Color, Theme.SurfaceHi),
                 Click = IsEdit
                     ? new RelayCommand(() => EditButton(page, i))
@@ -240,6 +244,11 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand] void CloseMenu() => MenuOpen = false;
     [RelayCommand] void EndEdit() { IsEdit = false; Rebuild(); }
     [RelayCommand] void Minimize() => _shell.Minimize();
+    [RelayCommand] void ToggleFullscreen() { _shell.ToggleFullscreen(); IsFullscreen = _shell.IsFullscreen; }
+    [RelayCommand] void CloseApp() => Application.Current.Shutdown();
+
+    /// <summary>La fenêtre signale un changement de placement (plein écran / fenêtre) pour mettre à jour l'icône.</summary>
+    public void NotifyWindowState() => IsFullscreen = _shell.IsFullscreen;
     [RelayCommand] void PrevSub() { int subs = SubPages(CurrentPage); _sub = (_sub - 1 + subs) % subs; Rebuild(); }
     [RelayCommand] void NextSub() { int subs = SubPages(CurrentPage); _sub = (_sub + 1) % subs; Rebuild(); }
     [RelayCommand] void EditCurrentPage() => EditPage(_page);

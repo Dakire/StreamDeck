@@ -44,7 +44,9 @@ Il est surveillé : toute modification enregistrée est appliquée sans redémar
 | `AlwaysOnTop` | Reste au-dessus des autres fenêtres | `false` |
 | `Columns` / `Rows` | Taille de la grille, `0` = automatique | `0` |
 | `Spacing` | Espacement entre boutons (DIP) | `14` |
-| `Background` | Couleur de fond | `#0E1015` |
+| `Background` | Couleur de fond (la valeur par défaut laisse voir l'effet Mica) | `#0E1015` |
+| `Theme` | `system` (suit Windows), `dark` ou `light` | `system` |
+| `IconStyle` | `fluent` : emojis connus affichés en icônes Fluent ; `emoji` : tels quels | `fluent` |
 | `Pages` | Liste de pages, chacune avec ses `Buttons` | |
 
 ### Types d'actions
@@ -65,18 +67,20 @@ Il est surveillé : toute modification enregistrée est appliquée sans redémar
 
 | Fichier | Contenu |
 |---|---|
-| `MainWindow.xaml(.cs)` | Fenêtre, placement multi-écran, construction de l'interface |
+| `MainWindow.xaml(.cs)` | Interface principale ; code-behind limité à Win32 et au placement multi-écran |
+| `ViewModels/` | MainViewModel, éditeurs, mise en page adaptative |
+| `Theme.cs`, `IconCatalog.cs` | Thème clair/sombre, icônes Fluent |
 | `App.xaml` | Styles des boutons |
 | `Models.cs` | Modèle de configuration |
 | `ConfigStore.cs` | Lecture, écriture et configuration par défaut |
 | `ActionRunner.cs` | Exécution des actions |
 | `NativeInput.cs`, `WindowFocus.cs` | Appels Win32 (clavier, médias, focus) |
-| `ButtonEditorWindow.cs`, `EditorWindows.cs` | Fenêtres d'édition |
+| `ButtonEditorWindow.xaml`, `PageEditorWindow.xaml` | Fenêtres d'édition |
 | `Templates.cs` | Modèles de boutons (Chrome, Google, 3CX…) |
 
 ## Feuille de route
 
-Refonte de l'interface vers Windows 11 (Fluent) : voir `CLAUDE.md` et `AGENTS.md` pour les conventions.
+Interface Windows 11 (Fluent, Mica, clair/sombre) en place. Voir `CLAUDE.md` et `AGENTS.md` pour les conventions.
 
 ## Sécurité
 

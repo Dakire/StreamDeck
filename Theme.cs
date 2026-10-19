@@ -40,6 +40,7 @@ public static class Theme
         };
         Dark = dark;
         ApplicationThemeManager.Apply(dark ? ApplicationTheme.Dark : ApplicationTheme.Light);
+        ApplicationAccentColorManager.Apply((Color)ColorConverter.ConvertFromString(Accent), dark ? ApplicationTheme.Dark : ApplicationTheme.Light);
         PublishResources();
         Changed?.Invoke();
     }
