@@ -1,0 +1,88 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+
+namespace TouchDeck;
+
+/// <summary>Recherche et mise au premier plan d'une fenêtre d'une autre application.</summary>
+public static class WindowFocus
+{
+    delegate bool EnumProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc cb, IntPtr lParam);
+    [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
+    [DllImport("user32.dll")] static extern bool IsIconic(IntPtr h);
+    [DllImport("user32.dll")] static extern bool ShowWindow(IntPtr h, int cmd);
+    [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
+    [DllImport("user32.dll")] static extern bool BringWindowToTop(IntPtr h);
+    [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] static extern int GetWindowTextLength(IntPtr h);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowText(IntPtr h, StringBuilder sb, int max);
+    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+    [DllImport("user32.dll")] static extern bool AttachThreadInput(uint from, uint to, bool attach);
+    [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int index);
+    [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
+
+    const int GWL_EXSTYLE = -20;
+    const int WS_EX_TOOLWINDOW = 0x80;
+    const int SW_RESTORE = 9;
+
+    public record Win(IntPtr Handle, string Title, string Process);
+
+    /// <summary>Fenêtres de premier niveau visibles, de la plus haute à la plus basse dans l'ordre Z (hors TouchDeck).</summary>
+    public static List<Win> OpenWindows()
+    {
+        var list = new List<Win>();
+        uint self = (uint)Environment.ProcessId;
+        EnumWindows((h, _) =>
+        {
+            if (!IsWindowVisible(h)) return true;
+            if ((GetWindowLong(h, GWL_EXSTYLE) & WS_EX_TOOLWINDOW) != 0) return true;
+            int len = GetWindowTextLength(h);
+            if (len == 0) return true;
+            var sb = new StringBuilder(len + 1);
+            GetWindowText(h, sb, sb.Capacity);
+            GetWindowThreadProcessId(h, out uint pid);
+            if (pid == self) return true;
+            string proc;
+            try { proc = Process.GetProcessById((int)pid).ProcessName; } catch { return true; }
+            list.Add(new Win(h, sb.ToString(), proc));
+            return true;
+        }, IntPtr.Zero);
+        return list;
+    }
+
+    /// <summary>Distinct par programme, pour proposer un choix dans l'éditeur.</summary>
+    public static List<string> OpenProcessNames() =>
+        OpenWindows().Select(w => w.Process).Where(p => !p.Equals("explorer", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase).Take(14).ToList();
+
+    /// <summary>Active la première fenêtre dont le programme porte ce nom, sinon dont le titre contient ce texte.</summary>
+    public static bool Activate(string query)
+    {
+        var q = (query ?? "").Trim();
+        if (q.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) q = q[..^4];
+        if (q.Length == 0) return false;
+
+        var wins = OpenWindows();
+        var match = wins.FirstOrDefault(w => w.Process.Equals(q, StringComparison.OrdinalIgnoreCase))
+                    ?? wins.FirstOrDefault(w => w.Title.Contains(q, StringComparison.OrdinalIgnoreCase))
+                    ?? wins.FirstOrDefault(w => w.Process.Contains(q, StringComparison.OrdinalIgnoreCase));
+        if (match == null) return false;
+
+        var h = match.Handle;
+        if (IsIconic(h)) ShowWindow(h, SW_RESTORE);
+
+        // Windows n'autorise SetForegroundWindow que pour le thread qui a le focus : on s'y rattache brièvement.
+        uint cur = GetCurrentThreadId();
+        uint fgThread = GetWindowThreadProcessId(GetForegroundWindow(), out _);
+        bool attached = fgThread != 0 && fgThread != cur && AttachThreadInput(cur, fgThread, true);
+        SetForegroundWindow(h);
+        BringWindowToTop(h);
+        if (attached) AttachThreadInput(cur, fgThread, false);
+        return true;
+    }
+}

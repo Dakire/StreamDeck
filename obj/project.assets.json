@@ -1,0 +1,75 @@
+{
+  "version": 3,
+  "targets": {
+    "net9.0-windows7.0": {}
+  },
+  "libraries": {},
+  "projectFileDependencyGroups": {
+    "net9.0-windows7.0": []
+  },
+  "packageFolders": {
+    "C:\\Users\\Guillaume\\.nuget\\packages\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "C:\\Users\\Guillaume\\AppData\\Roaming\\Claude\\scratch-workspaces\\10f27d19-3b7c-4b5a-9bbf-1da766dd90c8\\96f7bac4-2d80-4beb-92c4-74441c21393c\\scratch-2026-10-19-a98494\\TouchDeck\\TouchDeck.csproj",
+      "projectName": "TouchDeck",
+      "projectPath": "C:\\Users\\Guillaume\\AppData\\Roaming\\Claude\\scratch-workspaces\\10f27d19-3b7c-4b5a-9bbf-1da766dd90c8\\96f7bac4-2d80-4beb-92c4-74441c21393c\\scratch-2026-10-19-a98494\\TouchDeck\\TouchDeck.csproj",
+      "packagesPath": "C:\\Users\\Guillaume\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Guillaume\\AppData\\Roaming\\Claude\\scratch-workspaces\\10f27d19-3b7c-4b5a-9bbf-1da766dd90c8\\96f7bac4-2d80-4beb-92c4-74441c21393c\\scratch-2026-10-19-a98494\\TouchDeck\\obj\\",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "C:\\Users\\Guillaume\\AppData\\Roaming\\NuGet\\NuGet.Config"
+      ],
+      "originalTargetFrameworks": [
+        "net9.0-windows"
+      ],
+      "sources": {
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net9.0-windows7.0": {
+          "targetAlias": "net9.0-windows",
+          "projectReferences": {}
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "9.0.300"
+    },
+    "frameworks": {
+      "net9.0-windows7.0": {
+        "targetAlias": "net9.0-windows",
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          },
+          "Microsoft.WindowsDesktop.App": {
+            "privateAssets": "none"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.319/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}
