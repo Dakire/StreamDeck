@@ -40,7 +40,10 @@ public static class Theme
         };
         Dark = dark;
         ApplicationThemeManager.Apply(dark ? ApplicationTheme.Dark : ApplicationTheme.Light);
-        ApplicationAccentColorManager.Apply((Color)ColorConverter.ConvertFromString(Accent), dark ? ApplicationTheme.Dark : ApplicationTheme.Light);
+        // Même accent en clair et en sombre (WPF-UI l'éclaircit en sombre par défaut)
+        ApplicationAccentColorManager.Apply(
+            (Color)ColorConverter.ConvertFromString(Accent), (Color)ColorConverter.ConvertFromString(Accent),
+            (Color)ColorConverter.ConvertFromString("#4F6FE8"), (Color)ColorConverter.ConvertFromString("#435FD0"));
         PublishResources();
         Changed?.Invoke();
     }
@@ -49,6 +52,12 @@ public static class Theme
     static void PublishResources()
     {
         var r = System.Windows.Application.Current.Resources;
+        // Les boutons « Primary » de WPF-UI suivent notre accent (en sombre, WPF-UI l'éclaircit par défaut)
+        r["AccentFillColorDefaultBrush"] = B(Accent);
+        r["AccentFillColorSecondaryBrush"] = B("#E65B7CFA");
+        r["AccentFillColorTertiaryBrush"] = B("#CC5B7CFA");
+        r["TextOnAccentFillColorPrimaryBrush"] = B("#FFFFFF");
+        r["TextOnAccentFillColorSecondaryBrush"] = B("#CCFFFFFF");
         r["DeckBar"] = B(Bar);
         r["DeckTopBar"] = B(Dark ? "#33000000" : "#33FFFFFF");
         r["DeckSurface"] = B(Surface);

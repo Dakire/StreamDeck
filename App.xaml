@@ -153,7 +153,7 @@
   <DataTemplate DataType="{x:Type vm:SwatchViewModel}">
     <ui:Button Width="44" Height="44" Padding="0" CornerRadius="22" Margin="0,0,8,0" Focusable="False"
                Command="{Binding Command}" Background="{Binding Brush}" MouseOverBackground="{Binding Brush}"
-               PressedBackground="{Binding Brush}" BorderThickness="0"
+               PressedBackground="{Binding Brush}" BorderThickness="1" BorderBrush="#40808080"
                HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
       <ui:SymbolIcon Symbol="Checkmark24" Foreground="White" FontSize="22"
                      Visibility="{Binding IsSelected, Converter={StaticResource BoolVis}}"/>
