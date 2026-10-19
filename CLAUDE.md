@@ -23,6 +23,10 @@ Le projet s'appelle `TouchDeck` (assembly et namespace), le dépôt `StreamDeck`
   Les images vivent dans `Icons\` et ne sont référencées que par un nom de hachage validé (`IconStore`).
 - Thème : `Theme.cs` (palettes `DarkPalette` / `LightPalette`, contrastes testés) publie les brushes `Deck*` ; le XAML les consomme en `DynamicResource`.
 - Icônes de l'interface : `ui:SymbolIcon` (Fluent System Icons fournis par WPF-UI). Les icônes des boutons utilisateur : nom Fluent, emoji ou image.
+- Actions : `Core/Actions/ActionEngine` (délai par étape, annulation, `ActionResult`) ; appels système via les interfaces de
+  `Core/Actions/Platform.cs` (Windows : `Platform/Windows/`, tests et `--simulate` : `SimulatedPlatform`). Détail : `docs/ARCHITECTURE.md`.
+- Deck : touches dessinées par `TileFace` selon `TileKind` (corps teinté, pastille, variantes) ; seule la tuile change pendant une exécution.
+- Écran du deck : `MonitorDevice` (identifiant) prioritaire sur `Monitor` (index), résolu par `DisplayResolver`.
 - Tests : `tests/TouchDeck.Tests` (xUnit). `UiHarness` démarre une vraie application WPF sur un thread STA et rend les fenêtres hors écran
   (aucune fenêtre affichée, dossier de config temporaire) ; il capte aussi les erreurs de liaison de données. Définir `TOUCHDECK_SHOTS` pour garder les PNG.
 

@@ -4,17 +4,25 @@ Tableau de bord de raccourcis façon Stream Deck pour Windows, pensé pour un é
 Usage visé : perso, pro IT et gaming.
 
 Chaque bouton lance une ou plusieurs actions : raccourci clavier, saisie de texte, touche média,
-programme, script, URL, changement de page ou de profil, délai, mise au premier plan d'une fenêtre.
+programme, script, URL, requête web (webhook), micro et volume, minuteur, changement de page ou de profil, délai,
+mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la date.
+
+Documentation détaillée : [architecture](docs/ARCHITECTURE.md), [développement](docs/DEVELOPMENT.md),
+[parité avec Stream Deck](docs/FEATURE_PARITY.md), [rétro-ingénierie fonctionnelle](docs/REVERSE_ENGINEERING.md).
 
 ## Fonctionnalités
 
 **Le deck (écran tactile)**
 
-- Grille de boutons adaptative (nombre de cases selon la résolution) ou format fixe par profil, avec sous-pages automatiques.
+- Grille de boutons adaptative (nombre de cases selon la résolution) ou format fixe par profil, avec sous-pages automatiques ;
+  touches aux proportions bornées, grille centrée, emplacements libres dessinés « éteints ».
+- Touches modernes : corps teinté par la couleur du bouton, couleur pleine sur une pastille d'icône ; variantes média (pastille ronde),
+  navigation (contour + chevron), affichage (heure ou minuteur en grand), image plein cadre ; badge du nombre d'étapes.
+- Retour d'exécution sur la touche : anneau si l'action dure, coche si elle réussit, alerte et message si elle échoue (étape en cause).
+- Barre du haut : profil actif (toucher pour en changer), badges *Mode édition* et *Simulation*. Dock du bas : pages, sous-pages, menu.
 - Profils, pages en onglets, dossiers et sous-dossiers ; pages masquées accessibles par une action `page`.
 - Fenêtre qui ne prend pas le focus : les raccourcis arrivent à l'application active.
 - Plein écran sur l'écran secondaire ou mode fenêtre, sans masquer la barre des tâches (le deck occupe la zone de travail) ; le deck suit le branchement et le débranchement de l'écran, et se cale exactement même entre écrans de densités différentes.
-- Boutons à fond dégradé discret (la couleur choisie en haut, assombrie en bas), palette moderne par défaut, survol et appui nets.
 - Profil associé à une application : il s'affiche seul quand le programme est au premier plan.
 - Mode édition tactile (menu ⚙ › *Modifier au toucher*) : toucher un bouton ouvre l'éditeur dessus.
 
@@ -54,13 +62,15 @@ Ces raccourcis ne s'appliquent jamais pendant la saisie dans un champ de texte.
 
 ## Prérequis
 
-- Windows 10 ou 11 (Windows 11 recommandé : effet Mica, repli en fond uni sinon)
+- Windows 10 ou 11 (Windows 11 recommandé : effet Mica dans l'éditeur et les paramètres ; le deck a son propre fond, opaque)
+- Runtime Desktop .NET 9 pour exécuter
 - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) pour compiler, runtime Desktop pour exécuter
 
 ## Démarrage rapide
 
 ```powershell
 dotnet run -c Release
+dotnet run -c Release -- --simulate  # essai sans risque : les actions sont affichées, rien n'est envoyé au système
 dotnet test tests/TouchDeck.Tests    # tests automatisés
 ```
 
@@ -80,7 +90,7 @@ Dossier : `%APPDATA%\TouchDeck` (ou le dossier de la variable d'environnement `T
 | `Icons\` | Images des boutons (PNG, nommées d'après leur contenu). |
 | `Backups\` | Sauvegardes automatiques (15 conservées). |
 | `config.v1.backup.json` | Copie intacte de l'ancien fichier, faite une seule fois lors du passage aux profils. |
-| `error.log` | Erreurs inattendues de l'interface. |
+| `touchdeck.log` | Journal : démarrage, erreurs, actions en échec, changements d'écran (1 Mo, l'ancien est gardé en `.old`). |
 
 L'éditeur enregistre à chaque modification (écriture atomique : un arrêt en cours d'écriture ne corrompt pas le fichier).
 Un fichier `config.json` invalide n'est jamais écrasé sans copie : il est conservé sous `config.invalide-<date>.json`.
@@ -91,11 +101,12 @@ Un fichier `config.json` invalide n'est jamais écrasé sans copie : il est cons
 |---|---|---|
 | `Version` | Version du format (`2`) | `2` |
 | `Monitor` | Index de l'écran, `-1` = premier écran secondaire | `-1` |
+| `MonitorDevice` | Identifiant Windows de l'écran choisi (`\\.\DISPLAY2`), prioritaire sur `Monitor` dont l'index change au rebranchement ; facultatif | absent |
 | `Fullscreen` | Plein écran sur l'écran cible | `true` |
 | `AlwaysOnTop` | Reste au-dessus des autres fenêtres | `false` |
 | `Columns` / `Rows` | Taille de la grille pour les profils en format automatique, `0` = selon l'écran | `0` |
 | `Spacing` | Espacement entre boutons (DIP) | `14` |
-| `Background` | Couleur de fond (la valeur par défaut laisse voir l'effet Mica) | `#0E1015` |
+| `Background` | Couleur de fond ; la valeur par défaut affiche le fond nuancé du thème | `#0E1015` |
 | `Theme` | `system` (suit Windows), `dark` ou `light` | `dark` à la création, sinon inchangé |
 | `IconStyle` | `fluent` : emojis connus affichés en icônes Fluent ; `emoji` : tels quels | `fluent` |
 | `StartWithWindows` | Reflet du lancement à l'ouverture de session (le registre fait foi) | |
@@ -133,6 +144,16 @@ sauf `Pages` qui descend dans `Profiles[].Pages`. Les nouvelles clés sont facul
 | `profile` | Nom du profil à afficher | |
 | `delay` | Durée en millisecondes | |
 | `focus` | Titre ou processus de la fenêtre | Programme à lancer si absente |
+| `http` | Adresse `http://` ou `https://` (requête GET) | Corps facultatif : requête POST, en JSON s'il commence par `{` ou `[` |
+| `audio` | `mic-toggle`, `mic-mute`, `mic-unmute`, `out-toggle`, `volume` | Niveau 0 à 100 pour `volume` |
+| `timer` | Durée en secondes ; toucher à nouveau arrête le minuteur | |
+
+Chaque étape a un délai maximal (5 s pour le clavier, 10 s pour `http` et `focus`, 15 s pour lancer un programme ;
+aucun pour `delay` et `timer`). La première étape en échec arrête la séquence, et la touche affiche une alerte.
+
+**Titres dynamiques** : `{time}` (heure), `{date}` (date), `{time:HH:mm:ss}`, `{date:dddd d MMMM}` (formats .NET, en français) et
+`{timer}` (temps restant du minuteur du bouton). Le titre enregistré ne change pas ; seul l'affichage est calculé.
+Un bouton sans action dont le titre contient `{time}` ou `{date}` sert d'horloge.
 
 ## Import et export
 
@@ -147,14 +168,17 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 
 | Dossier / fichier | Contenu |
 |---|---|
-| `Core/` | Logique sans WPF : `DeckDocument` (opérations, historique), `ConfigStore`, `ConfigNormalizer` (migration), `ActionCatalog`, `ActionValidator` |
-| `Services/` | `AppServices` (sauvegarde auto, rechargement à chaud), `IconStore`, `ProfilePackage`, `TransferService`, `DisplayService`, `AutoStart`, `Notifier`, `Motion` |
+| `Core/` | Logique sans WPF : `DeckDocument` (opérations, historique), `ConfigStore`, `ConfigNormalizer` (migration), `ActionCatalog`, `ActionValidator`, `Displays`, `LabelTemplate`, `Countdowns` |
+| `Core/Actions/` | Moteur d'actions (`ActionEngine`, `BuiltInActions`), interfaces de plateforme, plateforme simulée |
+| `Platform/Windows/` | Implémentation Windows des interfaces de plateforme |
+| `Services/` | `AppServices` (sauvegarde auto, rechargement à chaud, moteur), `IconStore`, `ProfilePackage`, `TransferService`, `DisplayService`, `AutoStart`, `Notifier`, `Motion`, `Log` |
 | `ViewModels/` | `MainViewModel` (deck), `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `SettingsViewModel`, `MenuSpec` |
 | `Controls/` | `TileFace` (rendu d'un bouton), `ContextMenuFactory`, `PromptWindow` |
 | `MainWindow.xaml(.cs)` | Deck ; code-behind limité à Win32 et au placement multi-écran |
 | `EditorWindow.xaml(.cs)`, `SettingsWindow.xaml(.cs)` | Éditeur et paramètres (dialogues, focus, clavier, glisser-déposer) |
 | `Theme.cs`, `IconCatalog.cs`, `App.xaml` | Palettes claire / sombre (contrastes vérifiés), icônes, styles |
-| `ActionRunner.cs`, `NativeInput.cs`, `WindowFocus.cs` | Exécution des actions, appels Win32 |
+| `NativeInput.cs`, `WindowFocus.cs`, `NativeAudio.cs` | Appels Win32 et Core Audio |
+| `docs/` | Architecture, développement, parité fonctionnelle, rétro-ingénierie |
 | `tests/TouchDeck.Tests` | Tests xUnit : logique, migration, import, contrastes, rendu hors écran des fenêtres |
 
 ## Accessibilité
