@@ -20,6 +20,11 @@ public partial class TileFace : UserControl
 
     static readonly Brush DimLight = Freeze(new SolidColorBrush(Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF)));
 
+    /// <summary>Ombre du titre posé sur une image : partagée et figée plutôt que recréée à chaque dessin de la face.</summary>
+    static readonly System.Windows.Media.Effects.Effect TitleShadow = FreezeEffect(new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 6, ShadowDepth = 1, Opacity = 0.9 });
+
+    static System.Windows.Media.Effects.Effect FreezeEffect(System.Windows.Media.Effects.Effect e) { e.Freeze(); return e; }
+
     public TileFace()
     {
         InitializeComponent();
@@ -176,8 +181,6 @@ public partial class TileFace : UserControl
         OverlayTitle.MaxWidth = Math.Max(10, w - 2 * pad);
         OverlayTitle.MaxHeight = Math.Max(10, h - 2 * pad);
         OverlayTitle.VerticalAlignment = mode switch { "top" => VerticalAlignment.Top, "middle" => VerticalAlignment.Center, _ => VerticalAlignment.Bottom };
-        OverlayTitle.Effect = f.HasImage && hasTitle
-            ? new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 6, ShadowDepth = 1, Opacity = 0.9 }
-            : null;
+        OverlayTitle.Effect = f.HasImage && hasTitle ? TitleShadow : null;
     }
 }

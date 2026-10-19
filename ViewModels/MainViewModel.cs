@@ -82,7 +82,8 @@ public partial class MainViewModel : ObservableObject, INavigator
     {
         _shell = shell;
         ApplyBackground();
-        Theme.Changed += () => { ApplyBackground(); TileFaceData.ClearCache(); Rebuild(); };
+        // Changement de thème (rare) : toutes les tuiles sont recréées, y compris la case « retour » dont la face est fixe
+        Theme.Changed += () => { ApplyBackground(); TileFaceData.ClearCache(); Tiles.Clear(); _tileKeys.Clear(); Rebuild(); };
         _doc.Changed += OnDocumentChanged;
         Notifier.Posted += OnNotice;
         _lastActive = _doc.Config.ActiveProfile;
@@ -332,26 +333,40 @@ public partial class MainViewModel : ObservableObject, INavigator
         return string.Join(" › ", names);
     }
 
+    /// <summary>
+    /// Identité d'une case : tant qu'elle ne change pas, la tuile existante est gardée et seule sa face est recalculée.
+    /// Le bouton est comparé par référence (le document modifie les boutons en place) ; le titre et le dossier font partie
+    /// de la clé car ils fixent le nom de la tuile et sa commande.
+    /// </summary>
+    readonly record struct TileKey(string Kind, Place Place, int Index, DeckButton? Button, string? Label, bool IsFolder, bool IsEdit);
+
+    readonly List<TileKey> _tileKeys = new();
+
     void BuildTiles(List<ViewItem> view)
     {
-        Tiles.Clear();
+        // Réconciliation case par case plutôt que Clear + Add : une modification de document (titre tapé dans l'éditeur,
+        // réglage) ne régénère plus les 32 conteneurs de la grille, seulement les cases qui ont réellement changé.
         var place = CurrentPlace;
         int offset = _folder.Count > 0 ? 1 : 0;
         int first = _sub * _capacity;
         for (int slot = 0; slot < _capacity; slot++)
         {
             int i = first + slot;
+            TileKey key;
+            Func<object> create;
             if (i >= view.Count)
             {
                 // Au-delà du contenu : en édition, chaque case libre propose d'ajouter un bouton
-                if (IsEdit) { int at = i - offset; Tiles.Add(new AddTileViewModel { Click = new RelayCommand(() => AppServices.OpenEditor(place, at)) }); }
-                else Tiles.Add(new SpacerTileViewModel());   // touche libre, dessinée éteinte
-                continue;
+                int at = i - offset;
+                key = IsEdit ? new TileKey("add", place, at, null, null, false, true) : new TileKey("spacer", place, -1, null, null, false, false);
+                create = IsEdit
+                    ? () => new AddTileViewModel { Click = new RelayCommand(() => AppServices.OpenEditor(place, at)) }
+                    : () => new SpacerTileViewModel();   // touche libre, dessinée éteinte
             }
-            var item = view[i];
-            if (item.IsBack)
+            else if (view[i].IsBack)
             {
-                Tiles.Add(new DeckTileViewModel
+                key = new TileKey("back", place, -1, null, null, false, false);
+                create = () => new DeckTileViewModel
                 {
                     Face = new TileFaceData
                     {
@@ -360,30 +375,52 @@ public partial class MainViewModel : ObservableObject, INavigator
                     },
                     Label = "Retour", AccessibleName = "Retour au dossier parent", IsEdit = false,
                     Click = new RelayCommand(FolderUp),
-                });
+                };
+            }
+            else if (view[i].Button == null)
+            {
+                int at = view[i].ListIndex;
+                key = IsEdit ? new TileKey("add", place, at, null, null, false, true) : new TileKey("spacer", place, -1, null, null, false, false);
+                create = IsEdit
+                    ? () => new AddTileViewModel { Click = new RelayCommand(() => AppServices.OpenEditor(place, at)) }
+                    : () => new SpacerTileViewModel();
+            }
+            else
+            {
+                var def = view[i].Button!;
+                int idx = view[i].ListIndex;
+                bool edit = IsEdit;
+                key = new TileKey("button", place, idx, def, def.Label, def.IsFolder, edit);
+                create = () =>
+                {
+                    DeckTileViewModel? tile = null;
+                    tile = new DeckTileViewModel
+                    {
+                        Button = def, Label = def.Label, IsEdit = edit,
+                        Click = edit
+                            ? new RelayCommand(() => AppServices.OpenEditor(place, idx))
+                            : def.IsFolder
+                                ? new RelayCommand(() => EnterFolder(idx))
+                                : new AsyncRelayCommand(() => RunTileAsync(tile!), AsyncRelayCommandOptions.AllowConcurrentExecutions),
+                    };
+                    return tile;
+                };
+            }
+
+            if (slot < Tiles.Count && _tileKeys[slot] == key)
+            {
+                if (Tiles[slot] is DeckTileViewModel kept && key.Kind == "button") UpdateFace(kept);   // couleur, icône, thème…
                 continue;
             }
-            if (item.Button == null)
-            {
-                int at = item.ListIndex;
-                if (IsEdit) Tiles.Add(new AddTileViewModel { Click = new RelayCommand(() => AppServices.OpenEditor(place, at)) });
-                else Tiles.Add(new SpacerTileViewModel());
-                continue;
-            }
-            var def = item.Button;
-            int idx = item.ListIndex;
-            DeckTileViewModel? tile = null;
-            tile = new DeckTileViewModel
-            {
-                Button = def, Label = def.Label, IsEdit = IsEdit,
-                Click = IsEdit
-                    ? new RelayCommand(() => AppServices.OpenEditor(place, idx))
-                    : def.IsFolder
-                        ? new RelayCommand(() => EnterFolder(idx))
-                        : new AsyncRelayCommand(() => RunTileAsync(tile!), AsyncRelayCommandOptions.AllowConcurrentExecutions),
-            };
-            UpdateFace(tile);
-            Tiles.Add(tile);
+            var item = create();
+            if (item is DeckTileViewModel created && key.Kind == "button") UpdateFace(created);
+            if (slot < Tiles.Count) { Tiles[slot] = item; _tileKeys[slot] = key; }
+            else { Tiles.Add(item); _tileKeys.Add(key); }
+        }
+        while (Tiles.Count > _capacity)
+        {
+            Tiles.RemoveAt(Tiles.Count - 1);
+            _tileKeys.RemoveAt(_tileKeys.Count - 1);
         }
         UpdateLiveTimer();
     }

@@ -208,6 +208,39 @@ public class DeckNavigationTests
         finally { _host.Run(() => sim.Foreground = null); }
     }
 
+    [Fact]
+    public void EditingAButtonUpdatesOnlyItsTileWithoutRebuildingTheGrid()
+    {
+        var vm = NewDeck(Config());
+        var before = _host.Run(() => vm.Tiles.ToList());
+        var oldFace = _host.Run(() => Tile(vm, "Copier").Face);
+
+        _host.Run(() => AppServices.Document.UpdateButton(new Place("P", 0), 0, b => b.Color = "#BE123C", "Couleur"));
+        _host.Settle();
+        var after = _host.Run(() => vm.Tiles.ToList());
+        Assert.Equal(before.Count, after.Count);
+        for (int i = 0; i < before.Count; i++) Assert.Same(before[i], after[i]);   // aucune case régénérée
+        Assert.NotSame(oldFace, _host.Run(() => Tile(vm, "Copier").Face));        // la face, elle, est recalculée
+
+        // Renommer change le nom de la tuile : seule cette case est remplacée
+        _host.Run(() => AppServices.Document.UpdateButton(new Place("P", 0), 0, b => b.Label = "Copier tout", "Titre"));
+        _host.Settle();
+        var renamed = _host.Run(() => vm.Tiles.ToList());
+        Assert.NotSame(before[0], renamed[0]);
+        Assert.Equal("Copier tout", ((DeckTileViewModel)renamed[0]).Label);
+        for (int i = 1; i < before.Count; i++) Assert.Same(before[i], renamed[i]);
+    }
+
+    [Fact]
+    public void ChangingTheThemeRecreatesEveryTile()
+    {
+        var vm = NewDeck(Config());
+        var before = _host.Run(() => vm.Tiles.ToList());
+        _host.SetTheme("light");
+        var after = _host.Run(() => vm.Tiles.ToList());
+        Assert.All(after.Zip(before), p => Assert.NotSame(p.First, p.Second));
+    }
+
     static async Task WaitUntil(Func<bool> condition)
     {
         var limit = DateTime.UtcNow.AddSeconds(5);
