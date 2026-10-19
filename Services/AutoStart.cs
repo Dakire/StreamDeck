@@ -16,7 +16,11 @@ public static class AutoStart
             using var key = Registry.CurrentUser.OpenSubKey(RunKey);
             return key?.GetValue(ValueName) is string s && s.Length > 0;
         }
-        catch { return false; }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or System.IO.IOException)
+        {
+            Log.Warn("Lecture du lancement automatique impossible : " + ex.Message);
+            return false;
+        }
     }
 
     /// <summary>Active ou désactive. Retourne false si le registre refuse l'écriture.</summary>
@@ -34,6 +38,10 @@ public static class AutoStart
             else key.DeleteValue(ValueName, throwOnMissingValue: false);
             return true;
         }
-        catch { return false; }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or System.IO.IOException)
+        {
+            Log.Warn("Écriture du lancement automatique refusée : " + ex.Message);   // l'appelant prévient l'utilisateur
+            return false;
+        }
     }
 }

@@ -54,7 +54,9 @@ public static class ConfigStore
         if (info.Migrated)
         {
             // Première lecture d'un ancien fichier : copie intacte avant toute réécriture
-            try { if (!File.Exists(LegacyBackupPath)) File.WriteAllText(LegacyBackupPath, text); } catch { /* sauvegarde best-effort */ }
+            // Au mieux : la migration continue même si la copie échoue, mais l'échec est consigné
+            try { if (!File.Exists(LegacyBackupPath)) File.WriteAllText(LegacyBackupPath, text); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Log.Error("Copie de l'ancien fichier impossible avant migration", ex); }
             Save(cfg);
         }
         return new LoadResult(cfg, info.Migrated, info.Warnings);
@@ -91,7 +93,8 @@ public static class ConfigStore
     public static bool IsOwnWrite()
     {
         try { return _lastWrittenHash != null && Hash(File.ReadAllText(FilePath)) == _lastWrittenHash; }
-        catch { return false; }
+        // Fichier en cours de remplacement ou verrouillé par l'éditeur externe : on le relira (ce n'est pas une erreur)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
     }
 
     static string Hash(string s) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(s)));
@@ -120,10 +123,15 @@ public static class ConfigStore
             do { path = Path.Combine(BackupsDir, $"config-{DateTime.Now:yyyyMMdd-HHmmss-fff}-{n++:00}.json"); }
             while (File.Exists(path));
             File.WriteAllText(path, json, new UTF8Encoding(false));
-            foreach (var old in ListBackups().Skip(MaxBackups)) { try { File.Delete(old.Path); } catch { } }
+            foreach (var old in ListBackups().Skip(MaxBackups))
+            {
+                try { File.Delete(old.Path); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Log.Warn($"Ancienne sauvegarde non supprimée ({old.Name}) : {ex.Message}"); }
+            }
             return path;
         }
-        catch { return null; }
+        // La sauvegarde ne doit jamais empêcher l'opération qu'elle précède (import, démarrage) : on consigne et on continue
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Log.Error("Sauvegarde de la configuration impossible", ex); return null; }
     }
 
     public static List<BackupInfo> ListBackups()

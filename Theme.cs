@@ -177,7 +177,11 @@ public static class Theme
             using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
             return key?.GetValue("AppsUseLightTheme") is not int v || v == 0;
         }
-        catch { return true; }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or System.IO.IOException)
+        {
+            Log.Warn("Thème de Windows illisible, thème sombre utilisé : " + ex.Message);
+            return true;
+        }
     }
 
     static readonly BrushConverter Converter = new();
@@ -213,7 +217,10 @@ public static class Theme
         brush = Brushes.Transparent;
         if (string.IsNullOrWhiteSpace(hex)) return false;
         try { brush = B(hex.Trim()); return true; }
-        catch { return false; }
+        catch (Exception ex) when (ex is FormatException or NotSupportedException or ArgumentException or InvalidOperationException)
+        {
+            return false;   // validation de saisie : une couleur mal formée n'est pas une erreur à consigner
+        }
     }
 
     // ---------- contraste (WCAG) ----------

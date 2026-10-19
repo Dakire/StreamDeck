@@ -72,7 +72,7 @@ public static class AppServices
                 File.Copy(ConfigStore.FilePath, copy, true);
                 note = $" Ton fichier est conservé sous {Path.GetFileName(copy)}.";
             }
-            catch { /* pas de fichier à conserver */ }
+            catch (Exception copyEx) when (copyEx is IOException or UnauthorizedAccessException) { Log.Warn("Copie du fichier invalide impossible : " + copyEx.Message); }
             cfg = ConfigStore.DefaultConfig();
             StartupMessage = "Config invalide : " + ex.Message + note;
             Log.Error("Configuration invalide au démarrage", ex);
@@ -139,7 +139,11 @@ public static class AppServices
             FileSystemEventHandler h = (_, _) => Application.Current?.Dispatcher.BeginInvoke(() => { ReloadTimer.Stop(); ReloadTimer.Start(); });
             _watcher.Changed += h; _watcher.Created += h; _watcher.Renamed += (_, _) => h(null!, null!);
         }
-        catch { /* pas de rechargement automatique */ }
+        // Le deck fonctionne sans rechargement automatique (le menu « Recharger » reste disponible), mais on le consigne
+        catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException or PlatformNotSupportedException)
+        {
+            Log.Error("Surveillance de config.json impossible : rechargement à chaud désactivé", ex);
+        }
     }
 
     /// <summary>Relit config.json (modification externe ou demande de l'utilisateur) ; une configuration invalide est refusée sans rien perdre.</summary>
@@ -154,7 +158,11 @@ public static class AppServices
             finally { _suppressSave = false; }
             Notifier.Info("Configuration rechargée");
         }
-        catch (Exception ex) { Notifier.Error("Config invalide : " + ex.Message); }
+        catch (Exception ex)
+        {
+            Notifier.Error("Config invalide : " + ex.Message);
+            Log.Error("Rechargement de la configuration refusé", ex);
+        }
     }
 
     // ---------- apparence ----------

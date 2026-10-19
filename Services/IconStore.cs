@@ -121,7 +121,14 @@ public static class IconStore
                 bmp.Freeze();
                 return bmp;
             }
-            catch { return null; }
+            // Image effacée, tronquée ou format inconnu : le bouton s'affiche sans image (résultat mis en cache, consigné une fois)
+            // (WIC signale aussi les fichiers corrompus par COMException, d'où ExternalException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or FormatException
+                                       or ArgumentException or InvalidOperationException or System.Runtime.InteropServices.ExternalException)
+            {
+                Log.Warn($"Image de bouton illisible ({n}) : {ex.Message}");
+                return null;
+            }
         });
     }
 
