@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace TouchDeck;
@@ -52,8 +51,8 @@ public static class NativeInput
         0x2D, 0x2E, 0x24, 0x23, 0x21, 0x22, 0x25, 0x26, 0x27, 0x28, 0x5B,
     };
 
-    static readonly HashSet<string> Modifiers = new(StringComparer.OrdinalIgnoreCase)
-        { "ctrl", "control", "shift", "alt", "win" };
+    /// <summary>Noms de touches nommées reconnus par la plateforme (doivent être exactement <see cref="HotkeySyntax.KeyNames"/>).</summary>
+    public static IReadOnlyCollection<string> KnownNames => Named.Keys;
 
     static INPUT Key(ushort vk, bool up) => new()
     {
@@ -80,8 +79,7 @@ public static class NativeInput
     static ushort ParseKey(string k)
     {
         if (Named.TryGetValue(k, out var vk)) return vk;
-        if (k.Length >= 2 && (k[0] == 'f' || k[0] == 'F') && int.TryParse(k.AsSpan(1), out var n) && n is >= 1 and <= 24)
-            return (ushort)(0x6F + n);
+        if (HotkeySyntax.IsFunctionKey(k, out var n)) return (ushort)(0x6F + n);
         if (k.Length == 1)
         {
             var r = VkKeyScan(k[0]);
@@ -90,30 +88,19 @@ public static class NativeInput
         throw new ArgumentException($"Touche inconnue : « {k} »");
     }
 
-    /// <summary>Vérifie une combinaison sans l'envoyer. error = raison en français si invalide.</summary>
-    public static bool TryValidateHotkey(string combo, out string error)
-    {
-        error = "";
-        var parts = (combo ?? "").Split('+', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0) { error = "Le raccourci est vide"; return false; }
-        if (parts.All(p => Modifiers.Contains(p))) { error = "Ajoute une touche en plus des modificateurs"; return false; }
-        foreach (var p in parts)
-        {
-            try { ParseKey(p); }
-            catch (ArgumentException) { error = $"Touche inconnue : « {p} »"; return false; }
-        }
-        return true;
-    }
+    /// <summary>Vérifie une combinaison sans l'envoyer : syntaxe commune, les caractères seuls doivent exister sur le clavier courant.</summary>
+    public static bool TryValidateHotkey(string combo, out string error) =>
+        HotkeySyntax.TryValidate(combo, out error, ch => VkKeyScan(ch) != -1);
 
     /// <summary>Ex : "ctrl+shift+m", "win+d", "f13", "alt+tab".</summary>
     public static void Hotkey(string combo)
     {
-        var parts = combo.Split('+', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        var parts = HotkeySyntax.Split(combo);
         if (parts.Length == 0) throw new ArgumentException("Raccourci vide");
         var mods = new List<ushort>();
         var keys = new List<ushort>();
         foreach (var p in parts)
-            (Modifiers.Contains(p) ? mods : keys).Add(ParseKey(p));
+            (HotkeySyntax.Modifiers.Contains(p) ? mods : keys).Add(ParseKey(p));
 
         var seq = new List<INPUT>();
         foreach (var m in mods) seq.Add(Key(m, false));

@@ -14,13 +14,19 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="tests\**" />
+    <Compile Remove="Core\**" />
     <EmbeddedResource Remove="tests\**" />
+    <EmbeddedResource Remove="Core\**" />
     <None Remove="tests\**" />
+    <None Remove="Core\**" />
     <Page Remove="tests\**" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\icon.ico" />
     <Resource Include="Assets\logo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Core\TouchDeck.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />

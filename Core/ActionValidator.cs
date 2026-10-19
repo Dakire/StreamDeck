@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using TouchDeck.Actions;
 
 namespace TouchDeck;
 
@@ -22,6 +23,12 @@ public sealed record Issue(Severity Severity, string Message);
 /// <summary>Détecte les boutons mal configurés avant qu'ils échouent à l'exécution. Ne lance jamais rien.</summary>
 public static class ActionValidator
 {
+    /// <summary>
+    /// Clavier de la plateforme, pour valider les raccourcis exactement comme ils seront envoyés (caractères présents sur la
+    /// disposition courante). Renseigné par la racine de composition ; sans lui, la syntaxe commune seule est vérifiée.
+    /// </summary>
+    public static IKeyboardService? Keyboard { get; set; }
+
     /// <summary>Types d'action reconnus (voir <see cref="ActionTypes"/>) : tout autre type est refusé à l'import.</summary>
     public static readonly string[] KnownTypes = ActionTypes.All.ToArray();
     /// <summary>Valeurs acceptées par l'action « media ».</summary>
@@ -46,7 +53,7 @@ public static class ActionValidator
         switch (type)
         {
             case ActionTypes.Hotkey:
-                if (!NativeInput.TryValidateHotkey(value, out var why)) Err(why);
+                if (!(Keyboard?.TryValidateHotkey(value, out var why) ?? HotkeySyntax.TryValidate(value, out why))) Err(why);
                 break;
             case ActionTypes.Text:
                 if (value.Length == 0) Warn("Le texte à saisir est vide");
@@ -121,7 +128,7 @@ public static class ActionValidator
         // Une horloge ({time}, {date}) n'a pas besoin d'action : elle sert d'affichage
         if (b.Actions.Count == 0 && !LabelTemplate.IsDynamic(b.Label)) issues.Add(new Issue(Severity.Warning, "Ce bouton n'a aucune action"));
         foreach (var a in b.Actions) issues.AddRange(Validate(a, cfg, profile));
-        if (!string.IsNullOrEmpty(b.ImagePath) && IconStore.Resolve(b.ImagePath) is { } path && !File.Exists(path))
+        if (!string.IsNullOrEmpty(b.ImagePath) && IconNames.Resolve(b.ImagePath) is { } path && !File.Exists(path))
             issues.Add(new Issue(Severity.Warning, "L'image du bouton est introuvable"));
         return issues;
     }

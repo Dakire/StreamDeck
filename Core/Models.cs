@@ -23,7 +23,7 @@ public class DeckConfig
     public int Rows { get; set; }
     /// <summary>Espacement entre les touches, en unités indépendantes de la résolution (DIP).</summary>
     public double Spacing { get; set; } = 14;
-    /// <summary>Fond du deck ; la valeur par défaut (<see cref="Theme.DefaultBackground"/>) affiche le fond nuancé du thème.</summary>
+    /// <summary>Fond du deck ; la valeur par défaut (<see cref="ConfigNormalizer.DefaultBackground"/>) affiche le fond nuancé du thème.</summary>
     public string Background { get; set; } = "#0E1015";
     /// <summary>Thème : "system" (suit Windows), "dark" ou "light".</summary>
     public string Theme { get; set; } = "system";

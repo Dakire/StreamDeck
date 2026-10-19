@@ -41,6 +41,9 @@ public sealed class SimulatedPlatform : IKeyboardService, IAppLauncher, IWindowS
 
     /// <inheritdoc/>
     public void TypeText(string text) => Record("text " + text);
+
+    /// <inheritdoc/>
+    public bool TryValidateHotkey(string combo, out string error) => HotkeySyntax.TryValidate(combo, out error);
     /// <inheritdoc/>
     public void Open(string target, string? arguments) => Record("open " + target + (string.IsNullOrEmpty(arguments) ? "" : " " + arguments));
     /// <inheritdoc/>

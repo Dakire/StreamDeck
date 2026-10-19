@@ -50,7 +50,7 @@ public static class Theme
     public static string Accent => Current.Accent;
 
     /// <summary>Teinte de fond Mica de repli : la couleur de config par défaut laisse Mica visible.</summary>
-    public const string DefaultBackground = "#0E1015";
+    public const string DefaultBackground = ConfigNormalizer.DefaultBackground;
 
     /// <summary>Le thème ou le style des icônes a changé : les vues qui ne passent pas par DynamicResource se redessinent.</summary>
     public static event Action? Changed;

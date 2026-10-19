@@ -10,6 +10,8 @@ public interface IKeyboardService
     void SendHotkey(string combo);
     /// <summary>Tape le texte caractère par caractère dans l'application active (Unicode, sans dépendre de la disposition du clavier).</summary>
     void TypeText(string text);
+    /// <summary>Vérifie une combinaison sans l'envoyer ; <paramref name="error"/> : raison en français si invalide.</summary>
+    bool TryValidateHotkey(string combo, out string error);
 }
 
 /// <summary>Lancement de programmes, dossiers, adresses et scripts.</summary>

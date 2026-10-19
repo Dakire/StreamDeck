@@ -18,6 +18,8 @@ public sealed class WindowsPlatform : IKeyboardService, IAppLauncher, IWindowSer
     public void SendHotkey(string combo) => NativeInput.Hotkey(combo);
     /// <inheritdoc/>
     public void TypeText(string text) => NativeInput.TypeText(text);
+    /// <inheritdoc/>
+    public bool TryValidateHotkey(string combo, out string error) => NativeInput.TryValidateHotkey(combo, out error);
 
     /// <inheritdoc/>
     public void Open(string target, string? arguments)

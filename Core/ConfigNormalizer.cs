@@ -13,6 +13,8 @@ public sealed record NormalizeResult(bool Migrated, IReadOnlyList<string> Warnin
 /// </summary>
 public static class ConfigNormalizer
 {
+    /// <summary>Fond par défaut du deck : cette valeur affiche le fond nuancé du thème (voir <c>Theme</c>).</summary>
+    public const string DefaultBackground = "#0E1015";
     /// <summary>Version du format écrite par cette version de TouchDeck.</summary>
     public const int CurrentVersion = 2;
     /// <summary>Profondeur maximale des dossiers imbriqués : au-delà, le contenu est remonté dans le dernier dossier autorisé (avec un avertissement).</summary>
@@ -73,7 +75,7 @@ public static class ConfigNormalizer
         cfg.Spacing = double.IsFinite(cfg.Spacing) ? Math.Clamp(cfg.Spacing, 0, 80) : 14;
         var theme = (cfg.Theme ?? "").ToLowerInvariant();
         cfg.Theme = Themes.Contains(theme) ? theme : "system";
-        cfg.Background = string.IsNullOrWhiteSpace(cfg.Background) ? Theme.DefaultBackground : cfg.Background;
+        cfg.Background = string.IsNullOrWhiteSpace(cfg.Background) ? DefaultBackground : cfg.Background;
         cfg.IconStyle = string.Equals(cfg.IconStyle, "emoji", StringComparison.OrdinalIgnoreCase) ? "emoji" : "fluent";
 
         if (string.IsNullOrEmpty(cfg.ActiveProfile) || FindProfile(cfg, cfg.ActiveProfile) == null)
