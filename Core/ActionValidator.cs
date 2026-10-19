@@ -30,7 +30,15 @@ public static class ActionValidator
     public static IKeyboardService? Keyboard { get; set; }
 
     /// <summary>Types d'action reconnus (voir <see cref="ActionTypes"/>) : tout autre type est refusé à l'import.</summary>
-    public static readonly string[] KnownTypes = ActionTypes.All.ToArray();
+    public static IReadOnlyList<string> KnownTypes => ActionTypes.All.Concat(External.Keys).ToList();
+
+    static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Func<DeckAction, IEnumerable<Issue>>> External = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Déclare un type d'action fourni par une intégration : il devient valide (import, éditeur) et sa validation est déléguée
+    /// à <paramref name="validate"/>. Appelé au démarrage par la racine de composition.
+    /// </summary>
+    public static void RegisterExternalType(string type, Func<DeckAction, IEnumerable<Issue>> validate) => External[type] = validate;
     /// <summary>Valeurs acceptées par l'action « media ».</summary>
     public static readonly string[] MediaKeys = { "playpause", "prev", "next", "stop", "mute", "voldown", "volup" };
     /// <summary>Commandes de l'action « audio » ; « volume » prend le niveau (0 à 100) dans Args.</summary>
@@ -113,7 +121,8 @@ public static class ActionValidator
                 else if (seconds > 86_400) Warn("Minuteur de plus de 24 heures");
                 break;
             default:
-                Err($"Type d'action inconnu : « {a.Type} »");
+                if (External.TryGetValue(type, out var validateExternal)) issues.AddRange(validateExternal(a));
+                else Err($"Type d'action inconnu : « {a.Type} »");
                 break;
         }
         return issues;

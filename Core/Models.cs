@@ -41,10 +41,26 @@ public class DeckConfig
     public List<string> Recents { get; set; } = new();
     /// <summary>Profils, dans l'ordre de l'éditeur ; au moins un après normalisation.</summary>
     public List<DeckProfile> Profiles { get; set; } = new();
+    /// <summary>
+    /// Réglages des intégrations (OBS, vMix…) par identifiant. Absent tant qu'aucune n'est configurée. Les secrets (mots de
+    /// passe, jetons) n'y figurent jamais : ils sont dans le magasin chiffré de l'utilisateur.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, IntegrationConfig>? Integrations { get; set; }
 
     /// <summary>Ancien format (version 1). Lu pour migration vers <see cref="Profiles"/>, jamais réécrit.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<DeckPage>? Pages { get; set; }
+}
+
+/// <summary>Réglages non secrets d'une intégration.</summary>
+public class IntegrationConfig
+{
+    /// <summary>true : TouchDeck se connecte au démarrage et se reconnecte si la connexion se perd.</summary>
+    public bool Enabled { get; set; }
+    /// <summary>Valeurs des champs de l'intégration (adresse, port…), par clé de champ.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, string>? Values { get; set; }
 }
 
 /// <summary>Un profil : ses pages, son format de grille et l'application qui l'affiche automatiquement.</summary>

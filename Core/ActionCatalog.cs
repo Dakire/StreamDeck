@@ -44,11 +44,16 @@ public static class ActionCatalog
     /// <summary>Catégorie : changement de page et de profil.</summary>
     public const string Navigation = "Profils et navigation";
 
-    /// <summary>Catégories dans l'ordre d'affichage du catalogue.</summary>
-    public static readonly string[] Categories = { SystemCategory, Apps, Multimedia, Audio, Keyboard, Web, Automation, Navigation };
+    static readonly string[] BuiltInCategories = { SystemCategory, Apps, Multimedia, Audio, Keyboard, Web, Automation, Navigation };
+    static readonly object Gate = new();
+    static readonly List<string> ExtraCategories = new();
+    static readonly Dictionary<string, CatalogAction> Extra = new();
+
+    /// <summary>Catégories dans l'ordre d'affichage du catalogue : celles de TouchDeck, puis une par intégration enregistrée.</summary>
+    public static IReadOnlyList<string> Categories { get { lock (Gate) return BuiltInCategories.Concat(ExtraCategories).ToList(); } }
 
     /// <summary>Icône Fluent de chaque catégorie (titre de section du catalogue).</summary>
-    public static readonly Dictionary<string, string> CategoryIcons = new()
+    public static readonly Dictionary<string, string> CategoryIcons = new(StringComparer.Ordinal)
     {
         [SystemCategory] = "Desktop24", [Apps] = "Apps24", [Multimedia] = "Play24", [Audio] = "Speaker224",
         [Keyboard] = "Keyboard24", [Web] = "Globe24", [Automation] = "Flash24", [Navigation] = "Navigation24",
@@ -65,8 +70,24 @@ public static class ActionCatalog
     static CatalogAction C(string id, string cat, string name, string desc, string icon, string color, DeckAction[] actions,
         string? note = null, string keywords = "") => new(id, cat, name, desc, icon, color, actions, note, false, keywords);
 
-    /// <summary>Toutes les actions prêtes à l'emploi, dans l'ordre d'affichage.</summary>
-    public static readonly IReadOnlyList<CatalogAction> All = new[]
+    /// <summary>Toutes les actions prêtes à l'emploi, dans l'ordre d'affichage : celles de TouchDeck, puis celles des intégrations.</summary>
+    public static IReadOnlyList<CatalogAction> All { get { lock (Gate) return BuiltIn.Concat(Extra.Values).ToList(); } }
+
+    /// <summary>
+    /// Ajoute les actions d'une intégration dans leur propre catégorie. Idempotent : un identifiant déjà enregistré est remplacé.
+    /// Appelé au démarrage par la racine de composition.
+    /// </summary>
+    public static void Register(string category, string icon, IEnumerable<CatalogAction> actions)
+    {
+        lock (Gate)
+        {
+            if (!BuiltInCategories.Contains(category) && !ExtraCategories.Contains(category)) ExtraCategories.Add(category);
+            CategoryIcons[category] = icon;
+            foreach (var a in actions) Extra[a.Id] = a;
+        }
+    }
+
+    static readonly IReadOnlyList<CatalogAction> BuiltIn = new[]
     {
         // --- Système ---
         C("sys.desktop", SystemCategory, "Bureau", "Affiche ou masque le bureau (Win+D).", "Desktop24", "#2563EB", new[] { A(ActionTypes.Hotkey, "win+d") }),
@@ -166,10 +187,15 @@ public static class ActionCatalog
         C("nav.profile", Navigation, "Changer de profil", "Affiche un autre profil sur le deck.", "PersonSwap24", "#7C3AED", new[] { A(ActionTypes.Profile, "") }),
     };
 
-    static readonly Dictionary<string, CatalogAction> ById = All.ToDictionary(a => a.Id);
+    static readonly Dictionary<string, CatalogAction> ById = BuiltIn.ToDictionary(a => a.Id);
 
     /// <summary>Action du catalogue d'après son identifiant stable (« sys.desktop »), ou null : les favoris et récents d'une ancienne version peuvent ne plus exister.</summary>
-    public static CatalogAction? Find(string? id) => id != null && ById.TryGetValue(id, out var a) ? a : null;
+    public static CatalogAction? Find(string? id)
+    {
+        if (id == null) return null;
+        if (ById.TryGetValue(id, out var a)) return a;
+        lock (Gate) return Extra.GetValueOrDefault(id);
+    }
 
     /// <summary>Recherche instantanée : tous les mots doivent figurer dans le nom, la description, la catégorie ou les mots-clés (sans accents ni casse).</summary>
     public static IEnumerable<CatalogAction> Search(string? query, IEnumerable<CatalogAction>? source = null)

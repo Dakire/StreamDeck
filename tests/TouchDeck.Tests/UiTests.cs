@@ -507,7 +507,7 @@ ulle\part.exe" } } });
 
             var menu = ContextMenuFactory.Build(vm.BuildSlotMenu(vm.Slots[12]));
             var add = menu.Items.OfType<MenuItem>().First(i => (string)i.Header == "Ajouter une action");
-            Assert.Equal(ActionCatalog.Categories.Length, add.Items.Count);
+            Assert.Equal(ActionCatalog.Categories.Count, add.Items.Count);
             Assert.All(add.Items.OfType<MenuItem>(), c => Assert.NotEmpty(c.Items));
 
             var profile = Headers(ContextMenuFactory.Build(vm.BuildProfileMenu("Principal")));
@@ -570,7 +570,7 @@ ulle\part.exe" } } });
         var vm = NewVm();
         _host.Run(() =>
         {
-            Assert.Equal(ActionCatalog.Categories.Length, vm.Catalog.Sections.Count);
+            Assert.Equal(ActionCatalog.Categories.Count, vm.Catalog.Sections.Count);
             vm.Catalog.Search = "volume";
             Assert.All(vm.Catalog.Sections, s => Assert.True(s.IsExpanded));
             Assert.Contains(vm.Catalog.Sections.SelectMany(s => s.Items), i => i.Action.Id == "audio.up");

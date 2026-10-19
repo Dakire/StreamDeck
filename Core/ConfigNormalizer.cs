@@ -83,6 +83,16 @@ public static class ConfigNormalizer
         else
             cfg.ActiveProfile = FindProfile(cfg, cfg.ActiveProfile)!.Name;
 
+        if (cfg.Integrations != null)
+        {
+            cfg.Integrations = cfg.Integrations.Where(p => !string.IsNullOrWhiteSpace(p.Key) && p.Value != null)
+                .ToDictionary(p => p.Key.Trim().ToLowerInvariant(), p => p.Value, StringComparer.OrdinalIgnoreCase);
+            foreach (var integration in cfg.Integrations.Values)
+                if (integration.Values != null)
+                    integration.Values = integration.Values.Where(v => v.Value != null).ToDictionary(v => v.Key, v => v.Value.Trim(), StringComparer.OrdinalIgnoreCase);
+            if (cfg.Integrations.Count == 0) cfg.Integrations = null;
+        }
+
         cfg.Favorites = cfg.Favorites.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
         cfg.Recents = cfg.Recents.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().Take(MaxRecents).ToList();
         return new NormalizeResult(migrated, warnings);
