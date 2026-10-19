@@ -44,7 +44,7 @@ public static class ActionCatalog
     /// <summary>Catégorie : changement de page et de profil.</summary>
     public const string Navigation = "Profils et navigation";
 
-    static readonly string[] BuiltInCategories = { SystemCategory, Apps, Multimedia, Audio, Keyboard, Web, Automation, Navigation };
+    static readonly string[] BuiltInCategories = { SystemCategory, Apps, AppShortcutPresets.Category, Multimedia, Audio, Keyboard, Web, Automation, Navigation };
     static readonly object Gate = new();
     static readonly List<string> ExtraCategories = new();
     static readonly Dictionary<string, CatalogAction> Extra = new();
@@ -56,7 +56,7 @@ public static class ActionCatalog
     public static readonly Dictionary<string, string> CategoryIcons = new(StringComparer.Ordinal)
     {
         [SystemCategory] = "Desktop24", [Apps] = "Apps24", [Multimedia] = "Play24", [Audio] = "Speaker224",
-        [Keyboard] = "Keyboard24", [Web] = "Globe24", [Automation] = "Flash24", [Navigation] = "Navigation24",
+        [Keyboard] = "Keyboard24", [Web] = "Globe24", [Automation] = "Flash24", [Navigation] = "Navigation24", [AppShortcutPresets.Category] = AppShortcutPresets.CategoryIcon,
     };
 
     static DeckAction A(string type, string value, string? args = null) => new() { Type = type, Value = value, Args = args };
@@ -87,7 +87,7 @@ public static class ActionCatalog
         }
     }
 
-    static readonly IReadOnlyList<CatalogAction> BuiltIn = new[]
+    static readonly CatalogAction[] CoreEntries = new[]
     {
         // --- Système ---
         C("sys.desktop", SystemCategory, "Bureau", "Affiche ou masque le bureau (Win+D).", "Desktop24", "#2563EB", new[] { A(ActionTypes.Hotkey, "win+d") }),
@@ -186,6 +186,8 @@ public static class ActionCatalog
         C("nav.back", Navigation, "Retour", "Retourne à la page précédente.", "ArrowLeft24", "#B45309", new[] { A(ActionTypes.Page, PageTargets.Back) }),
         C("nav.profile", Navigation, "Changer de profil", "Affiche un autre profil sur le deck.", "PersonSwap24", "#7C3AED", new[] { A(ActionTypes.Profile, "") }),
     };
+
+    static readonly IReadOnlyList<CatalogAction> BuiltIn = CoreEntries.Concat(AppShortcutPresets.Entries).ToList();
 
     static readonly Dictionary<string, CatalogAction> ById = BuiltIn.ToDictionary(a => a.Id);
 

@@ -57,6 +57,25 @@ public class CatalogTests
     }
 
     [Fact]
+    public void AppShortcutPresetsFocusTheirAppThenSendAValidHotkey()
+    {
+        var cfg = ConfigStore.DefaultConfig();
+        Assert.True(AppShortcutPresets.Entries.Count >= 30);
+        foreach (var e in AppShortcutPresets.Entries)
+        {
+            Assert.Equal(AppShortcutPresets.Category, e.Category);
+            Assert.Equal(e.Name, e.ButtonLabel);
+            var b = e.CreateButton();
+            var errors = ActionValidator.Validate(b, cfg, cfg.Profiles[0]).Where(i => i.Severity == Severity.Error).ToList();
+            if (e.Id == "starcitizen.key") Assert.NotEmpty(errors);   // la touche dépend des assignations du joueur
+            else Assert.Empty(errors);
+        }
+        // Discord : raccourci global, sans mise au premier plan
+        Assert.Equal(new[] { ActionTypes.Hotkey }, ActionCatalog.Find("discord.mute")!.Actions.Select(a => a.Type));
+        Assert.Equal(new[] { ActionTypes.Focus, ActionTypes.Delay, ActionTypes.Hotkey }, ActionCatalog.Find("zoom.mute")!.Actions.Select(a => a.Type));
+    }
+
+    [Fact]
     public void CreateButtonReturnsIndependentCopies()
     {
         var a = ActionCatalog.Find("sys.desktop")!;
