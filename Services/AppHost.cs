@@ -7,7 +7,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using TouchDeck.Actions;
 using TouchDeck.Integrations;
+using TouchDeck.Integrations.ElgatoLight;
+using TouchDeck.Integrations.Hue;
 using TouchDeck.Integrations.Obs;
+using TouchDeck.Integrations.Vmix;
 using TouchDeck.Platform.Windows;
 
 namespace TouchDeck;
@@ -91,6 +94,9 @@ public static class AppHost
         services.AddSingleton(sp => new IntegrationManager(sp.GetServices<IIntegration>(), sp.GetRequiredService<DeckDocument>(), sp.GetRequiredService<ISecretStore>()));
 
         AddIntegration<ObsIntegration>(services);
+        AddIntegration<VmixIntegration>(services);
+        AddIntegration<ElgatoLightIntegration>(services);
+        AddIntegration<HueIntegration>(services);
 
         services.AddSingleton<IDisplayService, WindowsDisplayService>();
         services.AddSingleton<DisplayService>();

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Lampes Elgato (Key Light, Ring Light) par leur API HTTP locale (port 9123). Sans dépendance externe. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>TouchDeck.Integrations.ElgatoLight</AssemblyName>
+    <RootNamespace>TouchDeck.Integrations.ElgatoLight</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\TouchDeck.Core.csproj" />
+  </ItemGroup>
+</Project>

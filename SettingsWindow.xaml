@@ -181,7 +181,10 @@
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
+                      <TextBlock Text="{Binding PairHelp}" Style="{StaticResource EditorHint}" Visibility="{Binding CanPair, Converter={StaticResource BoolVis}}"/>
                       <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <ui:Button Content="{Binding PairLabel}" Icon="{ui:SymbolIcon Link24}" Command="{Binding PairCommand}" Style="{StaticResource EditorChip}"
+                                   Visibility="{Binding CanPair, Converter={StaticResource BoolVis}}"/>
                         <ui:Button Content="Tester la connexion" Icon="{ui:SymbolIcon PlugConnected24}" Command="{Binding TestCommand}" Style="{StaticResource EditorChip}"/>
                         <TextBlock Text="{Binding TestResult}" VerticalAlignment="Center" Margin="4,0,0,8" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
                       </StackPanel>

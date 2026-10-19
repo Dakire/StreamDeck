@@ -35,6 +35,9 @@
     <ProjectReference Include="Core\TouchDeck.Core.csproj" />
     <ProjectReference Include="Platform\Windows\TouchDeck.Platform.Windows.csproj" />
     <ProjectReference Include="Integrations\Obs\TouchDeck.Integrations.Obs.csproj" />
+    <ProjectReference Include="Integrations\Vmix\TouchDeck.Integrations.Vmix.csproj" />
+    <ProjectReference Include="Integrations\ElgatoLight\TouchDeck.Integrations.ElgatoLight.csproj" />
+    <ProjectReference Include="Integrations\Hue\TouchDeck.Integrations.Hue.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />

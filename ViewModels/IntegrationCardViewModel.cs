@@ -81,6 +81,13 @@ public sealed partial class IntegrationCardViewModel : ObservableObject, IDispos
     /// <summary>true s'il y a des réglages à renseigner.</summary>
     public bool HasFields => Fields.Count > 0;
 
+    /// <summary>true si l'intégration s'associe à un appareil par une démarche physique (bouton du pont Hue).</summary>
+    public bool CanPair => _integration is IPairableIntegration;
+    /// <summary>Texte du bouton d'association.</summary>
+    public string PairLabel => (_integration as IPairableIntegration)?.PairLabel ?? "";
+    /// <summary>Marche à suivre avant d'associer.</summary>
+    public string PairHelp => (_integration as IPairableIntegration)?.PairHelp ?? "";
+
     /// <summary>true si TouchDeck se connecte à cette intégration au démarrage et se reconnecte si besoin.</summary>
     [ObservableProperty] bool _isEnabled;
     /// <summary>État de la connexion, en toutes lettres (jamais la couleur seule).</summary>
@@ -130,6 +137,25 @@ public sealed partial class IntegrationCardViewModel : ObservableObject, IDispos
             ConnectionState.Disconnected => (SymbolRegular.PlugDisconnected24, "Déconnecté, nouvelle tentative automatique"),
             _ => (SymbolRegular.Circle24, "Désactivé"),
         };
+    }
+
+    /// <summary>Associe TouchDeck à l'appareil et enregistre la clé obtenue comme secret.</summary>
+    [RelayCommand]
+    async Task PairAsync()
+    {
+        if (_integration is not IPairableIntegration pairable) return;
+        IsTesting = true;
+        TestResult = "Association en cours…";
+        try
+        {
+            var current = new IntegrationSettings { Values = Fields.Where(f => !f.IsSecret).ToDictionary(f => f.Field.Key, f => f.Text.Trim()) };
+            var key = await pairable.PairAsync(current, default);
+            var field = Fields.First(f => f.Field.Key == pairable.PairedSecretField);
+            field.Text = key;   // enregistre le secret et relance la connexion
+            TestResult = "Association réussie.";
+        }
+        catch (Exception ex) { TestResult = "Échec : " + ex.Message; }
+        finally { IsTesting = false; }
     }
 
     /// <summary>Essaie de se connecter avec les réglages saisis et affiche le résultat.</summary>

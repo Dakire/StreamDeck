@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- vMix par son API web (HTTP, port 8088 par défaut). Sans dépendance externe. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>TouchDeck.Integrations.Vmix</AssemblyName>
+    <RootNamespace>TouchDeck.Integrations.Vmix</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\TouchDeck.Core.csproj" />
+  </ItemGroup>
+</Project>

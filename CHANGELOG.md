@@ -4,6 +4,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Ajouté (phase 8, connecteurs HTTP)
+- **vMix**, **lampes Elgato** et **Philips Hue** (association par le bouton du pont, clé chiffrée DPAPI) ; socle commun
+  `PolledHttpIntegration` (interrogation, perte après 3 échecs) et `IPairableIntegration` (bouton « Associer » des paramètres).
+- Documentation : `docs/integrations/{vmix,elgato,hue}.md`.
+
 ### Ajouté (phase 3)
 - **Thème AMOLED** (`Theme` = `"amoled"` : fond noir pur), choisi dans les paramètres et le menu du deck. Valeur ajoutée à
   une clé existante : un ancien fichier reste lisible, une valeur inconnue retombe sur « system ».

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Philips Hue par l'API CLIP v2 du pont (HTTPS local). Sans dépendance externe. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>TouchDeck.Integrations.Hue</AssemblyName>
+    <RootNamespace>TouchDeck.Integrations.Hue</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\TouchDeck.Core.csproj" />
+  </ItemGroup>
+</Project>
