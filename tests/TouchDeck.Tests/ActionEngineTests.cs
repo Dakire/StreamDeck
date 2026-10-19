@@ -237,7 +237,7 @@ public class ActionEngineTests
     public void EveryKnownTypeHasAHandler()
     {
         var engine = Engine();
-        Assert.Equal(ActionValidator.KnownTypes.OrderBy(t => t), engine.Types.OrderBy(t => t));
+        Assert.Equal(ActionTypes.All.OrderBy(t => t), engine.Types.OrderBy(t => t));   // les types des intégrations s'ajoutent via le conteneur
     }
 }
 

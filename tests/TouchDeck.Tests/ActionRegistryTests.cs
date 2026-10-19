@@ -76,6 +76,7 @@ public class ActionRegistryTests
     public void TheApplicationEngineUsesTheContainerRegistry()
     {
         Assert.Equal(_host.Services.GetRequiredService<ActionRegistry>().Types.OrderBy(t => t), _host.Engine.Types.OrderBy(t => t));
-        Assert.Equal(ActionTypes.All.OrderBy(t => t), _host.Engine.Types.OrderBy(t => t));
+        var integrations = _host.Services.GetServices<Integrations.IIntegration>().Select(i => i.Id);
+        Assert.Equal(ActionTypes.All.Concat(integrations).OrderBy(t => t), _host.Engine.Types.OrderBy(t => t));   // types intégrés + un par intégration
     }
 }
