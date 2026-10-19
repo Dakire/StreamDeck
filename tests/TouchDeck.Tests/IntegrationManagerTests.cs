@@ -292,8 +292,8 @@ public class IntegrationManagerTests
     public void CatalogEntriesOfIntegrationsAreSearchableAndIdempotent()
     {
         var entry = new CatalogAction("zzz.test", "Zzz", "Commande zzz", "Une commande", "Star24", "#334155", new[] { new DeckAction { Type = "zzz", Value = "x" } });
-        ActionCatalog.Register("Zzz", "Plug24", new[] { entry });
-        ActionCatalog.Register("Zzz", "Plug24", new[] { entry });
+        ActionCatalog.Register("Zzz", "Star24", new[] { entry });
+        ActionCatalog.Register("Zzz", "Star24", new[] { entry });
         Assert.Single(ActionCatalog.Categories, c => c == "Zzz");
         Assert.Same(entry, ActionCatalog.Find("zzz.test"));
         Assert.Single(ActionCatalog.Search("commande zzz"));
