@@ -15,5 +15,7 @@ effacée : elle passe au statut « Remplacée par … ».
 | [0008](0008-journal-serilog.md) | Journal Serilog derrière une façade du Core | Acceptée |
 | [0009](0009-trois-projets.md) | Trois projets (Core, plateforme Windows, application) aux frontières vérifiées | Acceptée |
 | [0010](0010-gestionnaires-d-action.md) | Un gestionnaire par type d'action, enregistrés dans un registre | Acceptée |
+| [0011](0011-cadre-d-integrations.md) | Cadre d'intégrations : un projet par connecteur, aucune nouvelle action | Acceptée |
+| [0012](0012-plugins-et-api-locale.md) | Plugins locaux et API locale par canal nommé | Acceptée |
 
 Modèle d'une nouvelle décision : contexte, décision, conséquences, statut et date.

@@ -15,7 +15,10 @@ Le projet s'appelle `TouchDeck` (assembly et namespace), le dépôt `StreamDeck`
 - **MVVM** avec CommunityToolkit.Mvvm. Un seul `DeckDocument` (`Core/DeckDocument.cs`, sans WPF) porte la configuration, l'historique
   annuler/rétablir et le presse-papiers ; deck, éditeur et paramètres le reçoivent par injection de dépendances.
   Toute modification de contenu passe par ses méthodes (annulables) ou `UpdateSettings` (réglages, hors historique).
-- **Injection de dépendances** (`Microsoft.Extensions.Hosting`) : `AppHost.Build` est la racine de composition (les tests construisent le même
+- **Intégrations** : `Core/Integrations/` (`IIntegration`, `IntegrationManager`, `IntegrationAction`), un projet par connecteur dans
+  `Integrations/<Nom>/` ; une étape de bouton = `{Type = id, Value = commande, Args = argument}`. Secrets en DPAPI (`ISecretStore`).
+  Plugins locaux (`Core/Plugins`) et API locale par canal nommé (`Core/Api`). Voir ADR 0011 et 0012, `docs/integrations/`.
+- **Injection de dépendances** (conteneur `Microsoft.Extensions.DependencyInjection` seul, sans hôte générique, ADR 0007) : `AppHost.Build` est la racine de composition (les tests construisent le même
   conteneur en simulation). `ConfigPersistence` : sauvegarde automatique (300 ms, écriture atomique) et rechargement à chaud (ignore nos propres
   écritures) ; `AppearanceService` : thème / animations ; `IAppWindows` : éditeur et paramètres. Plus de localisateur statique.
 - **Journal** : façade `Log` (Core) branchée sur Serilog (`touchdeck.log`) ; `ILogger<T>` pour les services injectés.

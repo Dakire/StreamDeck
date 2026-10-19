@@ -7,7 +7,8 @@ composée de **trois projets**, dont les frontières sont vérifiées par les te
 |---|---|---|---|
 | `Core/` (`TouchDeck.Core`) | `net9.0` | Modèle, document annulable, configuration, moteur d'actions, interfaces de plateforme, journal (façade) | Rien d'autre : ni WPF, ni Windows, ni les autres projets |
 | `Platform/Windows/` (`TouchDeck.Platform.Windows`) | `net9.0-windows`, sans WPF | `SendInput`, fenêtres Win32, Core Audio (COM), registre. Seul `WindowsPlatform` (et `AutoStart`) est public | Core |
-| racine (`TouchDeck`) | `net9.0-windows`, WPF | Fenêtres, ViewModels, services, composition (`AppHost`) | Core et plateforme Windows |
+| `Integrations/<Nom>/` (un projet par connecteur) | `net9.0` (`net9.0-windows10.0.19041.0` pour le système Windows) | Un logiciel ou service piloté : commandes, valeurs d'état, connexion | Core |
+| racine (`TouchDeck`) | `net9.0-windows10.0.19041.0`, WPF | Fenêtres, ViewModels, services, composition (`AppHost`), API locale côté interface | Core, plateforme Windows et connecteurs |
 
 ```mermaid
 flowchart TB
@@ -80,6 +81,36 @@ métier.
 
 Libérer le conteneur (`App.OnExit`) enregistre les modifications en attente, arrête la surveillance de `config.json` et
 interrompt les actions en cours.
+## Intégrations, plugins et API locale
+
+`IIntegration` (Core) décrit un connecteur : réglages, commandes, état de connexion, valeurs lisibles. `IntegrationManager` fait
+vivre une boucle par intégration activée (connexion avec délai, reprise après 2, 4… 60 s, redémarrage si les réglages changent).
+Une étape de bouton `{ Type = <id>, Value = <commande>, Args = <argument> }` est relayée par un gestionnaire générique,
+`IntegrationAction`, sans nouveau format d'action (ADR 0011).
+
+```mermaid
+flowchart LR
+    subgraph Core["TouchDeck.Core"]
+        IM["IntegrationManager<br/>boucle, reprise, secrets"]
+        IA["IntegrationAction<br/>(type d'action = id)"]
+        API["LocalApi · LocalApiServer<br/>canal nommé, utilisateur seul"]
+        PL["PluginLoader<br/>un contexte par plugin"]
+    end
+    subgraph Conn["Integrations/*"]
+        OBS[Obs] & VM[Vmix] & HU[Hue] & EL[Elgato] & SYS[WindowsSystem] & XP[XPlane] & TM[Teams] & TW[Twitch] & TS["ClickUp · Notion · Monday"]
+    end
+    PLG["plugins/Nom/Nom.dll<br/>(code local de confiance)"]
+    Deck["Deck · MainViewModel"] -- "valeurs, voyants" --> IM
+    Deck -- "exécute" --> IA --> IM
+    IM --> Conn
+    PL --> PLG --> IM
+    Script["Script, autre outil"] -- "JSON par ligne" --> API --> Deck
+```
+
+Les valeurs publiées (`obs.scene`, `sys.cpu`) alimentent les titres `{obs.scene:repli}` et les voyants des touches ; seule la
+tuile concernée est redessinée. Les secrets passent par `ISecretStore` (DPAPI), jamais par `config.json`. Les plugins et l'API
+locale sont décrits dans `docs/plugins.md` et `docs/local-api.md` (ADR 0012).
+
 ## Responsabilités
 
 | Domaine | Où | Notes |

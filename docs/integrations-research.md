@@ -1,7 +1,7 @@
 # Étude des intégrations
 
-État au 19 octobre 2026. Ce document recense, pour chaque logiciel cible, comment TouchDeck (WPF / .NET 9, Windows)
-peut s'y connecter. Il sert à choisir les intégrations à réaliser. **Aucune n'est implémentée à ce stade.**
+Étude du 19 octobre 2026, avec l'état de réalisation du 20 octobre 2026 (section 0). Ce document recense, pour chaque logiciel cible, comment TouchDeck (WPF / .NET 9, Windows)
+peut s'y connecter. Il a servi à choisir les intégrations à réaliser ; la section 0 dit lesquelles le sont.
 
 Règles de rédaction :
 
@@ -11,6 +11,30 @@ Règles de rédaction :
 - WPF ne fonctionne que sous Windows : un logiciel réservé à macOS est **non réalisable en natif**.
 
 Légende : effort **S** (quelques jours), **M** (une à deux semaines), **L** (plus, ou dépendance externe forte).
+
+## 0. État de réalisation (20 octobre 2026)
+
+| Intégration | État | Détail |
+|---|---|---|
+| OBS Studio | **Faite** | `docs/integrations/obs.md` — scènes, micro, direct, enregistrement, caméra virtuelle, sources, relecture ; voyants et valeurs |
+| vMix | **Faite** | `docs/integrations/vmix.md` — API HTTP, entrées active et aperçu, enregistrement, diffusion |
+| Lampes Elgato | **Faite** | `docs/integrations/elgato.md` |
+| Philips Hue | **Faite** | `docs/integrations/hue.md` — CLIP v2, association par le bouton du pont |
+| Windows (système, média, Spotify par SMTC) | **Faite** | `docs/integrations/windows.md` — processeur, mémoire, média en cours ; pas de GPU ni de températures (pilote noyau) |
+| Raccourcis d'applications (Zoom, Teams, Discord, Adobe, DaVinci, Blender, Office, Star Citizen) | **Faite** | `docs/integrations/raccourcis-applications.md` — 35 boutons prêts à l'emploi |
+| Microsoft Teams (API locale) | **Faite, à vérifier sur un vrai Teams** | `docs/integrations/teams.md` — testée contre un faux serveur |
+| X-Plane 12 | **Faite, à vérifier sur un vrai simulateur** | `docs/integrations/xplane.md` |
+| Twitch | **Faite** (commandes seulement) | `docs/integrations/twitch.md` — jeton fourni par l'utilisateur ; pas d'EventSub |
+| ClickUp, Notion, monday.com | **Faites** | `docs/integrations/gestionnaires-de-taches.md` |
+| Plugins locaux | **Faits** | `docs/plugins.md` — pour tout ce qui n'est pas livré |
+| Streamlabs Desktop | Non faite | Protocole peu documenté (**à vérifier**) ; OBS couvre la plupart des usages |
+| YouTube, Google Workspace | Non faites | Application Google à faire vérifier (plafond de 100 utilisateurs) : à décider par toi |
+| Microsoft 365 (Graph) | Non faite | Enregistrement d'une application Entra ID nécessaire |
+| Discord RPC | Non faite | Approbation de Discord requise : les raccourcis globaux sont proposés à la place |
+| Spotify Web API | Non faite | Premium et 5 utilisateurs maximum ; le média en cours passe déjà par SMTC |
+| Voicemod | Non faite | Clé `clientKey` à demander à Voicemod |
+| Wave Link, MSFS (SimConnect), LIFX, Adobe UXP, DaVinci scripting, Blender (add-on), cockpits | Non faites | Protocole non officiel, SDK à redistribuer, ou plugin externe à écrire : voir les sections suivantes ; réalisables en plugin |
+| Ecamm Live, macOS | **Impossibles** | WPF ne fonctionne que sous Windows |
 
 ## 1. Synthèse
 

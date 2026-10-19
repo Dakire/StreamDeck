@@ -29,6 +29,8 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 | [Étude des intégrations](docs/integrations-research.md) | OBS, Twitch, Discord, Hue… : faisabilité et ordre de réalisation |
 | [Bilan du nettoyage](docs/cleanup-report.md) | Corrections, mesures avant / après, risques restants (phase 1) |
 | [Bilan de l'architecture](docs/phase2-report.md) | Trois projets, injection de dépendances, Serilog, gestionnaires d'action (phase 2) |
+| [Intégrations](docs/integrations/) | OBS, vMix, Elgato, Hue, Windows, Teams, X-Plane, Twitch, ClickUp, Notion, monday, raccourcis d'applications |
+| [Plugins](docs/plugins.md), [API locale](docs/local-api.md) | Ajouter une intégration sans modifier TouchDeck ; piloter le deck depuis un script |
 
 ## Fonctionnalités
 
@@ -62,6 +64,18 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
   sauvegardes (export, import, restauration), raccourcis.
 
 Cliquer un bouton dans l'éditeur ne l'exécute jamais.
+
+**Intégrations** (Paramètres › Intégrations, chacune activée à la demande)
+
+- Connecteurs livrés : **OBS Studio**, **vMix**, **lampes Elgato**, **Philips Hue**, **Système Windows** (processeur, mémoire, média en cours,
+  donc Spotify sans compte), **Microsoft Teams**, **X-Plane 12**, **Twitch**, **ClickUp**, **Notion**, **monday.com**. 35 boutons de
+  raccourcis prêts à l'emploi pour Zoom, Teams, Discord, Premiere, Photoshop, DaVinci, Blender, Outlook, Word, Excel et Star Citizen.
+- Les commandes sont des actions du catalogue (une catégorie par intégration). L'état s'affiche sur les touches : voyant plein / vide
+  (micro coupé, direct en cours…) et valeurs dans les titres, par exemple `Scène : {obs.scene}`, `CPU {sys.cpu} %`.
+- Une intégration en panne ne gêne jamais le deck : reconnexion automatique (2, 4, 8… 60 s), état lisible dans les paramètres.
+- Mots de passe et jetons chiffrés pour ton compte Windows (`secrets.dat`), jamais dans `config.json` ni dans le journal.
+- Modèles de profils (réunions, streaming OBS, montage, simulation de vol, poste de travail), API locale par canal nommé, plugins
+  posés dans `plugins\`, instance unique et icône de la zone de notification.
 
 ### Raccourcis de l'éditeur
 
@@ -141,6 +155,7 @@ Les tableaux ci-dessous en donnent l'essentiel.
 | `ActiveProfile` | Profil affiché sur le deck | premier profil |
 | `Favorites`, `Recents` | Identifiants d'actions du catalogue | `[]` |
 | `Profiles` | Liste de profils : `Name`, `Columns`, `Rows`, `AppMatch`, `Pages` | |
+| `Integrations` | Par identifiant d'intégration : `Enabled` et `Values` (adresse, port…). Les secrets n'y sont jamais : `secrets.dat` | absent |
 
 Un profil contient des `Pages` ; une page, des `Buttons` dans l'ordre de la grille. Un bouton :
 
@@ -198,6 +213,9 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 | `Core/` (projet `TouchDeck.Core`, `net9.0`) | Logique sans WPF ni Windows : `Models`, `DeckDocument` (opérations, historique), `ConfigStore`, `ConfigNormalizer` (migration), `ActionTypes` (clés du format), `ActionCatalog`, `ActionValidator`, `HotkeySyntax`, `Displays`, `LabelTemplate`, `Countdowns`, `Log` (façade) |
 | `Core/Actions/` | Moteur d'actions (`ActionEngine`, `ActionRegistry`), un gestionnaire par type dans `Handlers/`, interfaces de plateforme, plateforme simulée |
 | `Platform/Windows/` (projet `TouchDeck.Platform.Windows`) | Implémentation Windows des interfaces de plateforme : `SendInput`, fenêtres Win32, Core Audio, registre. Seul `WindowsPlatform` est public |
+| `Core/Integrations/`, `Core/Api/`, `Core/Plugins/` | Cadre d'intégrations (`IIntegration`, `IntegrationManager`, bases HTTP et REST), API locale, chargeur de plugins |
+| `Integrations/<Nom>/` | Un projet par connecteur : Obs, Vmix, ElgatoLight, Hue, WindowsSystem, XPlane, Teams, Twitch, ClickUp, Notion, Monday |
+| `samples/HelloPlugin` | Exemple de plugin |
 | `Services/` | `AppHost` (racine de composition, journal Serilog), `ConfigPersistence` (sauvegarde auto, rechargement à chaud), `AppearanceService`, `AppWindows`, `DisplayService`, `IconStore`, `ProfilePackage`, `TransferService`, `Notifier`, `Motion` |
 | `ViewModels/` | `MainViewModel` (deck), `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `SettingsViewModel`, `MenuSpec` |
 | `Controls/` | `TileFace` (rendu d'un bouton), `ContextMenuFactory`, `PromptWindow` |
@@ -218,7 +236,7 @@ animations coupées par le réglage TouchDeck ou celui de Windows.
 ## Limites connues
 
 - Pas de périphérique matériel : TouchDeck n'est pas un pilote de Stream Deck Elgato. Le « périphérique » est l'écran du deck.
-- Pas de modules externes (plugins) : le code distant n'est jamais exécuté. La catégorie n'existe donc pas dans le catalogue.
+- Plugins : seulement du code local posé par l'utilisateur dans `plugins\` (jamais téléchargé), exécuté avec ses droits (voir `docs/plugins.md`).
 - Pas de traduction : l'interface est en français, il n'y a pas de sélecteur de langue.
 - Les profils par application se basent sur le nom du programme au premier plan, relevé toutes les 0,8 s.
 - Le glisser-déposer tactile dépend de la prise en charge de Windows ; le presse-papiers interne et `Alt+flèches` / le menu *Déplacer* offrent des alternatives.
