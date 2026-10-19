@@ -61,9 +61,9 @@ Ne jamais piloter le vrai bureau (captures, clics simulés) : utiliser le harnai
 
 | Jeton | Où | Valeur |
 |---|---|---|
-| Fond | `DeckBackdrop` (Theme.cs) | Dégradé radial, lueur en haut ; opaque |
-| Surfaces | `DeckPanel`, `DeckSurface`, `DeckSurfaceHi`, `DeckDock` | Trois profondeurs + dock translucide |
-| Accent | `DeckAccent` / `DeckAccentText` | Indigo `#5B4CF0` (texte blanc ≥ 4,5:1) |
+| Fond | `DeckBackdrop` (Theme.cs) | Dégradé radial `#161B2D` → `#0B0E17`, lueur en haut ; opaque |
+| Surfaces | `DeckWindow`, `DeckPanel`, `DeckSurface`, `DeckSurfaceHi`, `DeckDock` | Thème sombre : application `#0B0E17`, panneaux `#121624`, cartes `#1A1F30`, cartes surélevées `#252B40` ; dock translucide |
+| Accent | `DeckAccent` / `DeckAccentText` | Indigo `#6C5CE7` (texte blanc ≥ 4,5:1) |
 | Touche | `Theme.TileFill` / `TileBorder` / `TileGradient` | Corps teinté à 26 % puis 16 %, liseré 40 %, pastille pleine |
 | Espacement | `LayoutMetrics.Gap` | `Spacing` × échelle d'écran, 6 px minimum |
 | Cible tactile | `LayoutMetrics.BarH` | 52 à 84 DIP (≥ 48) |

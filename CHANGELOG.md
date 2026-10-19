@@ -4,6 +4,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Modifié (phase 3, début)
+- **Palette sombre** du cahier des charges : application `#0B0E17`, panneaux `#121624`, cartes `#1A1F30`, accent `#6C5CE7`
+  (clair et sombre). Contrastes WCAG AA revérifiés par les tests ; fond des touches, dock, fond du deck et champs alignés
+  sur la nouvelle palette. L'accent texte `#B0A8FF` est conservé : `#7C6CFF` n'atteint que 3,9:1 sur les cartes.
+
 ### Architecture (phase 2)
 - **Trois projets.** `TouchDeck.Core` (`net9.0`, sans WPF ni Windows), `TouchDeck.Platform.Windows` (Win32 interne, sans
   WPF) et l'application WPF. Les frontières sont vérifiées par `ArchitectureTests`.

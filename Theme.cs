@@ -13,26 +13,26 @@ public sealed record Palette(
 /// <summary>Palette claire / sombre de l'application ; sombre par défaut pour les nouvelles configurations, « système » suit Windows.</summary>
 public static class Theme
 {
-    // Direction « graphite » : fond bleuté nuancé (jamais noir pur), trois profondeurs de surface, accent indigo propre à TouchDeck.
+    // Direction « nuit indigo » : trois niveaux d'élévation (application #0B0E17, panneaux #121624, cartes #1A1F30), accent #6C5CE7.
     // Accent : fond des boutons principaux (texte blanc, contraste ≥ 4,5) ; AccentText : accent utilisé comme texte ou contour sur fond de panneau.
     /// <summary>Palette sombre (thème par défaut des nouvelles configurations).</summary>
     public static readonly Palette DarkPalette = new(
-        Window: "#0F1218", Bar: "#171B24", TopBar: "#00000000", Panel: "#181C25", Surface: "#1F2430", SurfaceHi: "#2A303D",
-        Line: "#313849", Grip: "#3C4456", Dim: "#A3ABBD", Text: "#F4F6FB", TextSoft: "#CDD3E0", Placeholder: "#737C90",
-        Accent: "#5B4CF0", AccentText: "#B0A8FF", Danger: "#FF8A97", Scrim: "#A6060810",
-        Input: "#12151C", EditorBg: "#12151B", Focus: "#FFFFFF", Success: "#5CD6A0",
+        Window: "#0B0E17", Bar: "#121624", TopBar: "#00000000", Panel: "#121624", Surface: "#1A1F30", SurfaceHi: "#252B40",
+        Line: "#2B3249", Grip: "#3A4260", Dim: "#A3ABBD", Text: "#F4F6FB", TextSoft: "#CDD3E0", Placeholder: "#737C90",
+        Accent: "#6C5CE7", AccentText: "#B0A8FF", Danger: "#FF8A97", Scrim: "#A6050710",
+        Input: "#0F1320", EditorBg: "#0E121D", Focus: "#FFFFFF", Success: "#5CD6A0",
         StatusBg: "#3A1F26", StatusLine: "#7A3340", StatusText: "#FFB4BE");
 
     /// <summary>Palette claire.</summary>
     public static readonly Palette LightPalette = new(
         Window: "#F3F4F8", Bar: "#FFFFFF", TopBar: "#00FFFFFF", Panel: "#FFFFFF", Surface: "#FFFFFF", SurfaceHi: "#ECEEF4",
         Line: "#D5D9E3", Grip: "#C3C8D4", Dim: "#565C6E", Text: "#171A21", TextSoft: "#363B48", Placeholder: "#7A8092",
-        Accent: "#5B4CF0", AccentText: "#4334D6", Danger: "#B3202F", Scrim: "#660B0D14",
+        Accent: "#6C5CE7", AccentText: "#4334D6", Danger: "#B3202F", Scrim: "#660B0D14",
         Input: "#FFFFFF", EditorBg: "#F3F4F8", Focus: "#171A21", Success: "#0F7A52",
         StatusBg: "#FBE3E6", StatusLine: "#E0A0A8", StatusText: "#8C1D2B");
 
     /// <summary>Fond des touches avant teinte (haut, bas) : un cran au-dessus des surfaces pour détacher la grille du fond.</summary>
-    static (string Top, string Bottom) TileBase => Dark ? ("#1D222D", "#161A23") : ("#FFFFFF", "#F5F6FA");
+    static (string Top, string Bottom) TileBase => Dark ? ("#202639", "#1A1F30") : ("#FFFFFF", "#F5F6FA");
     /// <summary>Part de la couleur du bouton dans le corps de la touche (haut, bas) : la couleur vive reste sur la pastille d'icône.</summary>
     public const double TintTop = 0.26, TintBottom = 0.16;
 
@@ -72,7 +72,7 @@ public static class Theme
         ApplicationThemeManager.Apply(dark ? ApplicationTheme.Dark : ApplicationTheme.Light);
         // Même accent en clair et en sombre (WPF-UI l'éclaircit en sombre par défaut)
         ApplicationAccentColorManager.Apply(accent, accent,
-            (Color)ColorConverter.ConvertFromString("#4E40DA"), (Color)ColorConverter.ConvertFromString("#4436C2"));
+            (Color)ColorConverter.ConvertFromString("#5A4AD1"), (Color)ColorConverter.ConvertFromString("#4C3DB8"));
         Fills.Clear();
         PublishResources();
         Changed?.Invoke();
@@ -85,8 +85,8 @@ public static class Theme
         var r = System.Windows.Application.Current.Resources;
         // Les boutons « Primary » de WPF-UI suivent notre accent (en sombre, WPF-UI l'éclaircit par défaut)
         r["AccentFillColorDefaultBrush"] = B(p.Accent);
-        r["AccentFillColorSecondaryBrush"] = B("#E65B4CF0");
-        r["AccentFillColorTertiaryBrush"] = B("#CC5B4CF0");
+        r["AccentFillColorSecondaryBrush"] = B("#E66C5CE7");
+        r["AccentFillColorTertiaryBrush"] = B("#CC6C5CE7");
         r["TextOnAccentFillColorPrimaryBrush"] = B("#FFFFFF");
         r["TextOnAccentFillColorSecondaryBrush"] = B("#CCFFFFFF");
         // En thème sombre WPF-UI écrit en noir sur l'accent ; notre accent est assez sombre pour du texte blanc (contraste ≥ 4,5)
@@ -114,8 +114,8 @@ public static class Theme
         r["DeckStatusBg"] = B(p.StatusBg);
         r["DeckStatusLine"] = B(p.StatusLine);
         r["DeckStatusText"] = B(p.StatusText);
-        r["DeckAccentSoft"] = B(Dark ? "#335B4CF0" : "#225B4CF0");
-        r["DeckDock"] = B(Dark ? "#E6171B24" : "#F2FFFFFF");
+        r["DeckAccentSoft"] = B(Dark ? "#336C5CE7" : "#226C5CE7");
+        r["DeckDock"] = B(Dark ? "#E6121624" : "#F2FFFFFF");
         r["DeckBackdrop"] = Backdrop();
 
         // Repères posés sur la face des touches (voiles d'état, badges, liseré, reflet) : mêmes valeurs dans les deux thèmes,
@@ -183,7 +183,7 @@ public static class Theme
     /// <summary>Fond de la fenêtre du deck : lueur douce en haut, plus profond en bas. Opaque : lisible quel que soit le fond d'écran.</summary>
     static RadialGradientBrush Backdrop()
     {
-        var (glow, mid, deep) = Dark ? ("#1C2233", "#12151D", "#0C0E13") : ("#FFFFFF", "#F3F4F8", "#E8EBF2");
+        var (glow, mid, deep) = Dark ? ("#161B2D", "#0E121D", "#0B0E17") : ("#FFFFFF", "#F3F4F8", "#E8EBF2");
         var brush = new RadialGradientBrush
         {
             Center = new System.Windows.Point(0.5, -0.15), GradientOrigin = new System.Windows.Point(0.5, -0.15),
