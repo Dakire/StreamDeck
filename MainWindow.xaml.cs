@@ -14,7 +14,7 @@ using System.Windows.Threading;
 
 namespace TouchDeck;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 {
     const int GWL_EXSTYLE = -20;
     const int WS_EX_NOACTIVATE = 0x08000000;
@@ -30,11 +30,11 @@ public partial class MainWindow : Window
     [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT p);
     [StructLayout(LayoutKind.Sequential)] struct POINT { public int X, Y; }
 
-    // Palette
-    const string Surface = "#1A1D26";
-    const string SurfaceHi = "#242835";
-    const string Accent = "#5B7CFA";
-    const string TextDim = "#8B93A7";
+    // Palette : voir Theme.cs (clair / sombre)
+    static string Surface => Theme.Surface;
+    static string SurfaceHi => Theme.SurfaceHi;
+    static string Accent => Theme.Accent;
+    static string TextDim => Theme.Dim;
 
     DeckConfig _cfg;
     int _page;
@@ -59,6 +59,8 @@ public partial class MainWindow : Window
         _onTop = _cfg.AlwaysOnTop;
         Topmost = _onTop;
 
+        Theme.Apply(_cfg.Theme);
+        Theme.Changed += () => Rebuild();
         ApplyBackground();
         Root.SizeChanged += (_, _) => Rebuild();
         _reloadTimer.Tick += (_, _) => { _reloadTimer.Stop(); Reload(); };
@@ -136,6 +138,13 @@ public partial class MainWindow : Window
         if (_full) GoWindowed(CurrentScreen()); else GoFullscreen(CurrentScreen());
     }
 
+    void CycleTheme()
+    {
+        _cfg.Theme = _cfg.Theme.ToLowerInvariant() switch { "system" => "dark", "dark" => "light", _ => "system" };
+        Persist();
+        Theme.Apply(_cfg.Theme);
+    }
+
     void ToggleOnTop()
     {
         _onTop = !_onTop;
@@ -158,8 +167,10 @@ public partial class MainWindow : Window
 
     void ApplyBackground()
     {
-        try { Background = Root.Background = (Brush)new BrushConverter().ConvertFromString(_cfg.Background)!; }
-        catch { /* couleur invalide : on garde la valeur par défaut */ }
+        // Couleur par défaut : Mica visible ; couleur personnalisée : fond uni par-dessus
+        if (string.Equals(_cfg.Background, Theme.DefaultBackground, StringComparison.OrdinalIgnoreCase)) { Root.Background = Brushes.Transparent; return; }
+        try { Root.Background = (Brush)new BrushConverter().ConvertFromString(_cfg.Background)!; }
+        catch { Root.Background = Brushes.Transparent; /* couleur invalide : Mica */ }
     }
 
     void StartWatcher()
@@ -183,6 +194,7 @@ public partial class MainWindow : Window
         {
             _cfg = ConfigStore.Load();
             _page = Math.Min(_page, _cfg.Pages.Count - 1);
+            Theme.Apply(_cfg.Theme);
             ApplyBackground();
             if (_cfg.Fullscreen && _full) PlaceOnScreen();
             SetStatus(null);
@@ -288,7 +300,7 @@ public partial class MainWindow : Window
         var grip = new Border
         {
             Width = Math.Max(60, topH * 1.8), Height = Math.Max(5, topH * 0.14), CornerRadius = new CornerRadius(10),
-            Background = Brush("#3A4052"), VerticalAlignment = VerticalAlignment.Center,
+            Background = Brush(Theme.Grip), VerticalAlignment = VerticalAlignment.Center,
         };
         Grid.SetColumn(grip, 1);
         grid.Children.Add(grip);
@@ -305,7 +317,7 @@ public partial class MainWindow : Window
         Grid.SetColumn(minimize, 2);
         grid.Children.Add(minimize);
 
-        var border = new Border { Background = Brush("#12141B"), Child = grid };
+        var border = new Border { Background = Brush(Theme.Dark ? "#33000000" : "#33FFFFFF"), Child = grid };
         border.MouseLeftButtonDown += OnDragBarDown;
         return border;
     }
@@ -367,7 +379,7 @@ public partial class MainWindow : Window
             if (_edit)
                 panel.Children.Add(new TextBlock
                 {
-                    Text = "✎ Modifier", Foreground = Brush("#CCFFFFFF"), FontSize = Math.Max(11, cellMin * 0.065),
+                    Text = "✎ Modifier", Foreground = Brushes.White, FontSize = Math.Max(11, cellMin * 0.065),
                     HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, cellMin * 0.03, 0, 0),
                 });
             btn.Content = panel;
@@ -388,18 +400,18 @@ public partial class MainWindow : Window
                 var add = new Button
                 {
                     Style = (Style)FindResource("FlatButton"), Margin = new Thickness(pad),
-                    Background = Brush("#12141B"), Tag = new CornerRadius(radius),
+                    Background = Brush(Theme.Bar), Tag = new CornerRadius(radius),
                     HorizontalContentAlignment = HorizontalAlignment.Center,
                 };
                 var g = new Grid { Width = Math.Max(10, availW / cols - pad * 2), Height = Math.Max(10, availH / rows - pad * 2) };
                 g.Children.Add(new System.Windows.Shapes.Rectangle
                 {
-                    RadiusX = radius, RadiusY = radius, Stroke = Brush("#4A5068"), StrokeThickness = 2,
+                    RadiusX = radius, RadiusY = radius, Stroke = Brush(Theme.Placeholder), StrokeThickness = 2,
                     StrokeDashArray = new DoubleCollection { 4, 4 }, Margin = new Thickness(2),
                 });
                 g.Children.Add(new TextBlock
                 {
-                    Text = "＋", Foreground = Brush("#6B7390"), FontSize = cellMin * 0.3,
+                    Text = "＋", Foreground = Brush(Theme.Dim), FontSize = cellMin * 0.3,
                     HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
                 });
                 add.Content = g;
@@ -453,7 +465,7 @@ public partial class MainWindow : Window
                     HorizontalContentAlignment = HorizontalAlignment.Center,
                     Content = new TextBlock
                     {
-                        Text = p.Hidden ? p.Name + " (masquée)" : p.Name, FontSize = Math.Max(15, barH * 0.33), Foreground = Brushes.White,
+                        Text = p.Hidden ? p.Name + " (masquée)" : p.Name, FontSize = Math.Max(15, barH * 0.33), Foreground = active ? Brushes.White : Brush(Theme.Text),
                         FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI"),
                         FontWeight = active ? FontWeights.SemiBold : FontWeights.Normal,
                     },
@@ -476,7 +488,7 @@ public partial class MainWindow : Window
             Style = (Style)FindResource("FlatButton"), Width = barH, Height = barH,
             Background = Brush(Surface), Tag = new CornerRadius(radius),
             HorizontalContentAlignment = HorizontalAlignment.Center,
-            Content = new TextBlock { Text = "⚙", FontSize = barH * 0.48, Foreground = Brush("#C6CCDB") },
+            Content = new TextBlock { Text = "⚙", FontSize = barH * 0.48, Foreground = Brush(Theme.TextSoft) },
         };
         gear.Click += (_, _) => SetMenu(true);
         var right = new StackPanel { Orientation = Orientation.Horizontal };
@@ -509,7 +521,7 @@ public partial class MainWindow : Window
             HorizontalContentAlignment = HorizontalAlignment.Center,
             Content = new TextBlock
             {
-                Text = text, FontSize = Math.Max(15, barH * 0.33), Foreground = Brushes.White,
+                Text = text, FontSize = Math.Max(15, barH * 0.33), Foreground = accent ? Brushes.White : Brush(Theme.Text),
                 FontWeight = accent ? FontWeights.SemiBold : FontWeights.Normal,
             },
         };
@@ -604,7 +616,7 @@ public partial class MainWindow : Window
     Grid BuildMenu(double W, double H, double barH, double gap)
     {
         var overlay = new Grid();
-        var scrim = new Border { Background = new SolidColorBrush(Color.FromArgb(150, 0, 0, 0)) };
+        var scrim = new Border { Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(Theme.Scrim)) };
         scrim.MouseLeftButtonDown += (_, _) => SetMenu(false);
         overlay.Children.Add(scrim);
 
@@ -621,13 +633,13 @@ public partial class MainWindow : Window
             row.Children.Add(new TextBlock
             {
                 Text = icon, FontSize = fs * 1.15, VerticalAlignment = VerticalAlignment.Center,
-                FontFamily = new FontFamily("Segoe UI Emoji, Segoe UI"), Foreground = Brushes.White,
+                FontFamily = new FontFamily("Segoe UI Emoji, Segoe UI"), Foreground = Brush(Theme.Text),
                 HorizontalAlignment = HorizontalAlignment.Center,
             });
             var t = new TextBlock
             {
                 Text = text, FontSize = fs, VerticalAlignment = VerticalAlignment.Center,
-                Foreground = danger ? Brush("#FF8A97") : Brushes.White,
+                Foreground = danger ? Brush(Theme.Danger) : Brush(Theme.Text),
                 FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI"),
             };
             Grid.SetColumn(t, 1); row.Children.Add(t);
@@ -653,15 +665,16 @@ public partial class MainWindow : Window
         Add("📝", "Ouvrir le fichier de configuration", () =>
             Process.Start(new ProcessStartInfo(ConfigStore.FilePath) { UseShellExecute = true }));
         Add("🔄", "Recharger la configuration", Reload);
+        Add(Theme.Dark ? "🌙" : "☀️", "Thème", CycleTheme, trailing: _cfg.Theme.ToLowerInvariant() switch { "dark" => "Sombre", "light" => "Clair", _ => "Auto" });
         Add("🖥️", "Changer d'écran", NextScreen);
         Add(_full ? "🪟" : "⛶", _full ? "Passer en fenêtre" : "Passer en plein écran", ToggleFullscreen);
         Add("📌", "Toujours au premier plan", ToggleOnTop, trailing: _onTop ? "✓" : null);
-        list.Children.Add(new Border { Height = 1, Background = Brush("#2C3142"), Margin = new Thickness(12, 6, 12, 6) });
+        list.Children.Add(new Border { Height = 1, Background = Brush(Theme.Line), Margin = new Thickness(12, 6, 12, 6) });
         Add("⏻", "Quitter TouchDeck", () => Application.Current.Shutdown(), danger: true);
 
         var card = new Border
         {
-            Background = Brush(Surface), BorderBrush = Brush("#2C3142"), BorderThickness = new Thickness(1),
+            Background = Brush(Surface), BorderBrush = Brush(Theme.Line), BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(22), Padding = new Thickness(10),
             Width = Math.Min(W - gap * 2, Math.Max(380, rowH * 7)),
             HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom,

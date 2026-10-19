@@ -12,8 +12,13 @@ namespace TouchDeck;
 /// <summary>Petits utilitaires de construction d'interface pour les fenêtres d'édition (thème sombre, cibles tactiles).</summary>
 static class Ui
 {
-    public const string Bg = "#14161D", Surface = "#1A1D26", SurfaceHi = "#242835", Line = "#2C3142",
-        Accent = "#5B7CFA", Dim = "#8B93A7", Danger = "#B23A48";
+    public static string Bg => Theme.EditorBg;
+    public static string Surface => Theme.Surface;
+    public static string SurfaceHi => Theme.SurfaceHi;
+    public static string Line => Theme.Line;
+    public static string Accent => Theme.Accent;
+    public static string Dim => Theme.Dim;
+    public const string Danger = "#B23A48";
 
     public static Brush B(string hex) => (Brush)new BrushConverter().ConvertFromString(hex)!;
 
@@ -23,20 +28,19 @@ static class Ui
         catch { return null; }
     }
 
-    static Style? _tb;
-    public static Style TextBoxStyle => _tb ??= (Style)XamlReader.Parse(@"
+    public static Style TextBoxStyle => (Style)XamlReader.Parse((@"
 <Style xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
        xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' TargetType='TextBox'>
-  <Setter Property='Foreground' Value='White'/>
-  <Setter Property='CaretBrush' Value='White'/>
+  <Setter Property='Foreground' Value='@TEXT'/>
+  <Setter Property='CaretBrush' Value='@TEXT'/>
   <Setter Property='SelectionBrush' Value='#5B7CFA'/>
-  <Setter Property='Background' Value='#0F1117'/>
+  <Setter Property='Background' Value='@INPUT'/>
   <Setter Property='Padding' Value='12,10'/>
   <Setter Property='FontSize' Value='16'/>
   <Setter Property='Template'>
     <Setter.Value>
       <ControlTemplate TargetType='TextBox'>
-        <Border x:Name='Bd' Background='{TemplateBinding Background}' BorderBrush='#2C3142' BorderThickness='1' CornerRadius='12'>
+        <Border x:Name='Bd' Background='{TemplateBinding Background}' BorderBrush='@LINE' BorderThickness='1' CornerRadius='12'>
           <ScrollViewer x:Name='PART_ContentHost' Margin='{TemplateBinding Padding}' VerticalAlignment='Center'/>
         </Border>
         <ControlTemplate.Triggers>
@@ -47,7 +51,7 @@ static class Ui
       </ControlTemplate>
     </Setter.Value>
   </Setter>
-</Style>");
+</Style>").Replace("@TEXT", Theme.Text).Replace("@INPUT", Theme.Input).Replace("@LINE", Theme.Line));
 
     static Style Flat => (Style)Application.Current.FindResource("FlatButton");
 
@@ -77,7 +81,7 @@ static class Ui
             Background = B(bg ?? (selected ? Accent : SurfaceHi)), Tag = new CornerRadius(height / 2),
             Margin = new Thickness(0, 0, 8, 8), Padding = new Thickness(16, 0, 16, 0),
             HorizontalContentAlignment = HorizontalAlignment.Center,
-            Content = new TextBlock { Text = text, FontSize = 15, Foreground = Brushes.White },
+            Content = new TextBlock { Text = text, FontSize = 15, Foreground = (selected || bg != null) ? Brushes.White : B(Theme.Text) },
         };
         b.Click += (_, _) => onClick();
         return b;
@@ -96,7 +100,7 @@ public abstract class EditorBase : Window
         Height = Math.Min(height, SystemParameters.WorkArea.Height * 0.94);
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false; Topmost = true; ResizeMode = ResizeMode.NoResize;
-        Background = Ui.B(Ui.Bg); Icon = owner.Icon;
+        Background = Ui.B(Ui.Bg); Foreground = Ui.B(Theme.Text); Icon = owner.Icon;
         FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI");
     }
 

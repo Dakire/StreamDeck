@@ -1,8 +1,14 @@
 <Application x:Class="TouchDeck.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              StartupUri="MainWindow.xaml">
   <Application.Resources>
+    <ResourceDictionary>
+    <ResourceDictionary.MergedDictionaries>
+      <ui:ThemesDictionary Theme="Dark"/>
+      <ui:ControlsDictionary/>
+    </ResourceDictionary.MergedDictionaries>
 
     <!-- Bouton de grille : carte arrondie, léger relief, retour visuel au toucher -->
     <Style x:Key="DeckButton" TargetType="Button">
@@ -90,5 +96,6 @@
       </Setter>
     </Style>
 
+    </ResourceDictionary>
   </Application.Resources>
 </Application>

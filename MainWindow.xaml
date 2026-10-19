@@ -1,13 +1,14 @@
-<Window x:Class="TouchDeck.MainWindow"
+<ui:FluentWindow x:Class="TouchDeck.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="TouchDeck" Width="1100" Height="650" Icon="Assets/icon.ico"
-        WindowStyle="None" ResizeMode="NoResize" Topmost="False" ShowInTaskbar="True"
+        ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica" WindowCornerPreference="Round"
+        ResizeMode="NoResize" Topmost="False" ShowInTaskbar="True"
         ShowActivated="False" WindowStartupLocation="CenterScreen"
-        Background="#0E1015"
         TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType"
         UseLayoutRounding="True"
         Stylus.IsPressAndHoldEnabled="False" Stylus.IsFlicksEnabled="False"
         Stylus.IsTapFeedbackEnabled="False" Stylus.IsTouchFeedbackEnabled="False">
   <Grid x:Name="Root"/>
-</Window>
+</ui:FluentWindow>

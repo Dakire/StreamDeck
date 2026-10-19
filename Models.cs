@@ -15,6 +15,8 @@ public class DeckConfig
     public int Rows { get; set; } = 0;
     public double Spacing { get; set; } = 14;
     public string Background { get; set; } = "#0E1015";
+    /// <summary>Thème : "system" (suit Windows), "dark" ou "light".</summary>
+    public string Theme { get; set; } = "system";
     public List<DeckPage> Pages { get; set; } = new();
 }
 
