@@ -8,7 +8,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 - **vMix**, **lampes Elgato** et **Philips Hue** (association par le bouton du pont, clé chiffrée DPAPI) ; socle commun
   `PolledHttpIntegration` (interrogation, perte après 3 échecs) et `IPairableIntegration` (bouton « Associer » des paramètres).
 - Documentation : `docs/integrations/{vmix,elgato,hue}.md`.
-- **Applications cibles** : 33 boutons prêts à l’emploi (Zoom, Teams, Discord, Premiere, Photoshop, DaVinci, Blender, Outlook, Word, Excel, Star Citizen) qui mettent l’application au premier plan puis envoient son raccourci (`docs/integrations/raccourcis-applications.md`).
+- **Système Windows** : `{sys.cpu}`, `{sys.ram}`, média en cours (`{sys.media.title}`, `{sys.media.artist}`, `{sys.media.playing}`) et commandes lecture / suivant / précédent par SMTC, sans compte (`docs/integrations/windows.md`). Les projets de l’application et des tests passent à `net9.0-windows10.0.19041.0`.
+- **Applications cibles** : 35 boutons prêts à l’emploi (Zoom, Teams, Discord, Premiere, Photoshop, DaVinci, Blender, Outlook, Word, Excel, Star Citizen) qui mettent l’application au premier plan puis envoient son raccourci (`docs/integrations/raccourcis-applications.md`).
 
 ### Ajouté (phase 3)
 - **Thème AMOLED** (`Theme` = `"amoled"` : fond noir pur), choisi dans les paramètres et le menu du deck. Valeur ajoutée à

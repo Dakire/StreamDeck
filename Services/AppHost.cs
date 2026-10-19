@@ -11,6 +11,7 @@ using TouchDeck.Integrations.ElgatoLight;
 using TouchDeck.Integrations.Hue;
 using TouchDeck.Integrations.Obs;
 using TouchDeck.Integrations.Vmix;
+using TouchDeck.Integrations.WindowsSystem;
 using TouchDeck.Platform.Windows;
 
 namespace TouchDeck;
@@ -97,6 +98,7 @@ public static class AppHost
         AddIntegration<VmixIntegration>(services);
         AddIntegration<ElgatoLightIntegration>(services);
         AddIntegration<HueIntegration>(services);
+        AddIntegration<WindowsSystemIntegration>(services);
 
         services.AddSingleton<IDisplayService, WindowsDisplayService>();
         services.AddSingleton<DisplayService>();
