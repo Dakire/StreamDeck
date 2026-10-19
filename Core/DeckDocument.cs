@@ -345,7 +345,7 @@ public sealed class DeckDocument
 
     public static DeckButton NewFolder(string name = "Dossier") => new()
     {
-        Label = name, Icon = "Folder24", Color = "#99620F", IsFolder = true, Children = new List<DeckButton>(),
+        Label = name, Icon = "Folder24", Color = "#B45309", IsFolder = true, Children = new List<DeckButton>(),
     };
 
     // ---------- presse-papiers ----------

@@ -19,10 +19,10 @@ public enum PropertiesMode { None, Empty, Button, Folder }
 public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
 {
     public static readonly string[] Palette =
-        { "#272B38", "#1E7F5F", "#B23A48", "#3466D6", "#6C3FD1", "#99620F", "#0A7A8C", "#C2410C", "#BE185D", "#4D7C0F" };
+        { "#334155", "#047857", "#BE123C", "#2563EB", "#7C3AED", "#B45309", "#0E7490", "#C2410C", "#BE185D", "#4F46E5" };
     static readonly string[] TextPalette = { "#FFFFFF", "#000000", "#FFD166", "#9FB1FF", "#7CF2C1", "#FF8A97" };
 
-    const string DefaultColor = "#2B2F3A";
+    const string DefaultColor = "#334155";
 
     readonly DeckDocument _doc;
     readonly EditorViewModel _editor;
@@ -204,7 +204,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     partial void OnColorChanged(string value)
     {
         if (_loading) return;
-        if (!Theme.TryBrush(value, out _)) { ColorError = "Couleur non valide. Exemple : #3466D6"; return; }
+        if (!Theme.TryBrush(value, out _)) { ColorError = "Couleur non valide. Exemple : #2563EB"; return; }
         ColorError = "";
         Apply(b => b.Color = value.Trim(), "Modifier la couleur", "color");
     }

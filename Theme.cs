@@ -121,6 +121,24 @@ public static class Theme
         return b;
     }
 
+    static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Brush> Gradients = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Fond d'un bouton : la couleur choisie en haut, légèrement assombrie en bas. Le haut garde exactement la couleur de l'utilisateur
+    /// (le contraste du texte blanc n'est donc jamais dégradé), le bas donne du volume sans reflet ni dégradé voyant.
+    /// </summary>
+    public static Brush TileGradient(string hex)
+    {
+        return Gradients.GetOrAdd(hex.Trim(), h =>
+        {
+            var c = (Color)ColorConverter.ConvertFromString(h);
+            byte Dim(byte v) => (byte)(v * 0.78);
+            var brush = new LinearGradientBrush(c, Color.FromArgb(c.A, Dim(c.R), Dim(c.G), Dim(c.B)), 90);
+            brush.Freeze();
+            return brush;
+        });
+    }
+
     public static bool TryBrush(string? hex, out Brush brush)
     {
         brush = Brushes.Transparent;

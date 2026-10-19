@@ -295,6 +295,20 @@ public class ThemeTests
     }
 
     [Fact]
+    public void TileGradientKeepsTheChosenColorOnTopAndDarkensBelow()
+    {
+        var g = (LinearGradientBrush)Theme.TileGradient("#2563EB");
+        Assert.Equal((Color)ColorConverter.ConvertFromString("#2563EB"), g.GradientStops[0].Color);
+        var bottom = g.GradientStops[1].Color;
+        Assert.True(bottom.R < 0x25 && bottom.G < 0x63 && bottom.B < 0xEB);
+        Assert.True(g.IsFrozen);
+        Assert.Same(g, Theme.TileGradient("#2563eb"));                    // mis en cache, insensible à la casse
+        Assert.ThrowsAny<Exception>(() => Theme.TileGradient("pas une couleur"));
+        var face = ViewModels.TileFaceData.From(new DeckButton { Color = "pas une couleur" });
+        Assert.NotNull(face.Background);                                  // repli sans exception
+    }
+
+    [Fact]
     public void ContrastMath()
     {
         Assert.Equal(21, Theme.Contrast("#FFFFFF", "#000000"), 1);

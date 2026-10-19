@@ -67,7 +67,7 @@ public class DeckButton
     public string Label { get; set; } = "";
     /// <summary>Nom d'icône Fluent (« Play24 »), emoji ou court texte affiché au-dessus du libellé.</summary>
     public string Icon { get; set; } = "";
-    public string Color { get; set; } = "#2B2F3A";
+    public string Color { get; set; } = "#334155";
     public List<DeckAction> Actions { get; set; } = new();
 
     /// <summary>Emplacement vide (conserve les positions des cases voisines).</summary>

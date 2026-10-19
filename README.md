@@ -13,7 +13,8 @@ programme, script, URL, changement de page ou de profil, délai, mise au premier
 - Grille de boutons adaptative (nombre de cases selon la résolution) ou format fixe par profil, avec sous-pages automatiques.
 - Profils, pages en onglets, dossiers et sous-dossiers ; pages masquées accessibles par une action `page`.
 - Fenêtre qui ne prend pas le focus : les raccourcis arrivent à l'application active.
-- Plein écran sur l'écran secondaire ou mode fenêtre ; le deck suit le branchement et le débranchement de l'écran.
+- Plein écran sur l'écran secondaire ou mode fenêtre, sans masquer la barre des tâches (le deck occupe la zone de travail) ; le deck suit le branchement et le débranchement de l'écran, et se cale exactement même entre écrans de densités différentes.
+- Boutons à fond dégradé discret (la couleur choisie en haut, assombrie en bas), palette moderne par défaut, survol et appui nets.
 - Profil associé à une application : il s'affiche seul quand le programme est au premier plan.
 - Mode édition tactile (menu ⚙ › *Modifier au toucher*) : toucher un bouton ouvre l'éditeur dessus.
 

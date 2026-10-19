@@ -81,7 +81,11 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
 
     void GoFullscreen(System.Windows.Forms.Screen s)
     {
-        var b = s.Bounds; // pixels physiques
+        // Zone de travail (pixels physiques) : le deck occupe tout l'écran sauf la barre des tâches, qui reste visible et cliquable
+        var b = s.WorkingArea;
+        SetWindowPos(Hwnd, ZOrder, b.X, b.Y, b.Width, b.Height, SWP_NOACTIVATE);
+        // Passer sur un écran de densité différente fait redimensionner la fenêtre par Windows (WM_DPICHANGED) :
+        // une seconde pose, une fois sur le bon écran, donne la taille exacte
         SetWindowPos(Hwnd, ZOrder, b.X, b.Y, b.Width, b.Height, SWP_NOACTIVATE);
         _full = true;
         _vm?.NotifyWindowState();

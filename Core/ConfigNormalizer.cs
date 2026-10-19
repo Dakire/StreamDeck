@@ -104,7 +104,7 @@ public static class ConfigNormalizer
         {
             b.Label ??= "";
             b.Icon ??= "";
-            b.Color = string.IsNullOrWhiteSpace(b.Color) ? "#2B2F3A" : b.Color;
+            b.Color = string.IsNullOrWhiteSpace(b.Color) ? "#334155" : b.Color;
             b.Actions = (b.Actions ?? new List<DeckAction>()).Where(a => a != null).ToList();
             foreach (var a in b.Actions) { a.Type ??= ""; a.Value ??= ""; }
             if (b.TitlePosition is not (null or "top" or "middle" or "bottom")) b.TitlePosition = null;

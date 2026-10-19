@@ -48,8 +48,9 @@ public sealed class TileFaceData
                 return brush;
             });
         }
-        Theme.TryBrush(b.Color, out var bg);
-        if (bg == Brushes.Transparent) bg = Theme.B(Theme.SurfaceHi);   // couleur absente ou invalide
+        Brush bg;
+        try { bg = Theme.TileGradient(b.Color); }
+        catch { bg = Theme.B(Theme.SurfaceHi); }   // couleur absente ou invalide
         var fg = Theme.TryBrush(b.TextColor, out var fgBrush) ? fgBrush : Brushes.White;
         return new TileFaceData
         {

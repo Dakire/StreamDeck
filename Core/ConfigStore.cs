@@ -167,16 +167,16 @@ public static class ConfigStore
                         Name = "Média",
                         Buttons = new List<DeckButton>
                         {
-                            B("Play24", "Lecture / Pause", "#1E7F5F", "media", "playpause"),
-                            B("Previous24", "Précédent", "#272B38", "media", "prev"),
-                            B("Next24", "Suivant", "#272B38", "media", "next"),
-                            B("SpeakerMute24", "Muet", "#B23A48", "media", "mute"),
-                            B("Speaker124", "Volume -", "#272B38", "media", "voldown"),
-                            B("Speaker224", "Volume +", "#272B38", "media", "volup"),
-                            B("Desktop24", "Bureau", "#3466D6", "hotkey", "win+d"),
-                            B("Cut24", "Capture", "#3466D6", "hotkey", "win+shift+s"),
-                            B("DataBarVertical24", "Gestionnaire", "#3466D6", "hotkey", "ctrl+shift+esc"),
-                            B("Wrench24", "Outils", "#6C3FD1", "page", "Outils"),
+                            B("Play24", "Lecture / Pause", "#047857", "media", "playpause"),
+                            B("Previous24", "Précédent", "#334155", "media", "prev"),
+                            B("Next24", "Suivant", "#334155", "media", "next"),
+                            B("SpeakerMute24", "Muet", "#BE123C", "media", "mute"),
+                            B("Speaker124", "Volume -", "#334155", "media", "voldown"),
+                            B("Speaker224", "Volume +", "#334155", "media", "volup"),
+                            B("Desktop24", "Bureau", "#2563EB", "hotkey", "win+d"),
+                            B("Cut24", "Capture", "#2563EB", "hotkey", "win+shift+s"),
+                            B("DataBarVertical24", "Gestionnaire", "#2563EB", "hotkey", "ctrl+shift+esc"),
+                            B("Wrench24", "Outils", "#7C3AED", "page", "Outils"),
                         }
                     },
                     new()
@@ -184,13 +184,13 @@ public static class ConfigStore
                         Name = "Outils",
                         Buttons = new List<DeckButton>
                         {
-                            B("Notepad24", "Bloc-notes", "#272B38", "launch", "notepad.exe"),
-                            B("Calculator24", "Calculatrice", "#272B38", "launch", "calc.exe"),
-                            B("Folder24", "Explorateur", "#272B38", "hotkey", "win+e"),
-                            B("Globe24", "Google", "#3466D6", "url", "https://www.google.com"),
-                            B("Keyboard24", "Texte", "#272B38", "text", "Bonjour !"),
-                            B("Flash24", "Script PS", "#6C3FD1", "script", "Get-Date | Out-File \"$env:TEMP\\touchdeck.txt\"; notepad \"$env:TEMP\\touchdeck.txt\""),
-                            B("Home24", "Retour", "#99620F", "page", "home"),
+                            B("Notepad24", "Bloc-notes", "#334155", "launch", "notepad.exe"),
+                            B("Calculator24", "Calculatrice", "#334155", "launch", "calc.exe"),
+                            B("Folder24", "Explorateur", "#334155", "hotkey", "win+e"),
+                            B("Globe24", "Google", "#2563EB", "url", "https://www.google.com"),
+                            B("Keyboard24", "Texte", "#334155", "text", "Bonjour !"),
+                            B("Flash24", "Script PS", "#7C3AED", "script", "Get-Date | Out-File \"$env:TEMP\\touchdeck.txt\"; notepad \"$env:TEMP\\touchdeck.txt\""),
+                            B("Home24", "Retour", "#B45309", "page", "home"),
                         }
                     },
                 }

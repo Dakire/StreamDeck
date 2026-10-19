@@ -86,7 +86,7 @@ public sealed class LayoutMetrics
         var (cols, rows) = GridSize(W, H, cfg, colsOverride, rowsOverride);
 
         double cellMin = Math.Min(availW / cols, availH / rows);
-        double radius = Math.Clamp(cellMin * 0.12, 12, 30);
+        double radius = Math.Clamp(cellMin * 0.13, 14, 32);
         double rowH = Math.Clamp(H * 0.075, 52, 76);
         double fs = Math.Max(15, rowH * 0.32);
 

@@ -26,12 +26,15 @@
       <Setter Property="Padding" Value="{Binding L.ChipPadding}"/>
       <Setter Property="FontSize" Value="{Binding L.BarFont}"/>
       <Setter Property="Background" Value="{DynamicResource DeckSurface}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DeckLine}"/>
+      <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="Foreground" Value="{DynamicResource DeckText}"/>
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
     </Style>
 
     <Style x:Key="BarAccentChip" TargetType="Button" BasedOn="{StaticResource BarChip}">
       <Setter Property="Background" Value="{DynamicResource DeckAccent}"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="Foreground" Value="White"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
     </Style>
@@ -48,6 +51,7 @@
       <Style.Triggers>
         <DataTrigger Binding="{Binding IsActive}" Value="True">
           <Setter Property="Background" Value="{DynamicResource DeckAccent}"/>
+          <Setter Property="BorderBrush" Value="Transparent"/>
           <Setter Property="Foreground" Value="White"/>
           <Setter Property="FontWeight" Value="SemiBold"/>
         </DataTrigger>

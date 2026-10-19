@@ -26,20 +26,21 @@
             <Grid RenderTransformOrigin="0.5,0.5">
               <Grid.RenderTransform><ScaleTransform x:Name="Scale" ScaleX="1" ScaleY="1"/></Grid.RenderTransform>
               <Border x:Name="Card" CornerRadius="{TemplateBinding Tag}" Background="{TemplateBinding Background}"
-                      BorderBrush="#26FFFFFF" BorderThickness="1">
+                      BorderBrush="#33FFFFFF" BorderThickness="1">
                 <Border.Effect>
-                  <DropShadowEffect BlurRadius="20" ShadowDepth="5" Direction="270" Opacity="0.35" Color="Black"/>
+                  <DropShadowEffect BlurRadius="18" ShadowDepth="4" Direction="270" Opacity="0.30" Color="Black"/>
                 </Border.Effect>
               </Border>
-              <!-- reflet doux en haut de la carte -->
+              <!-- liseré lumineux en haut de la carte : donne du relief sans reflet -->
               <Border CornerRadius="{TemplateBinding Tag}" IsHitTestVisible="False">
                 <Border.Background>
                   <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#22FFFFFF" Offset="0"/>
-                    <GradientStop Color="#00FFFFFF" Offset="0.6"/>
+                    <GradientStop Color="#18FFFFFF" Offset="0"/>
+                    <GradientStop Color="#00FFFFFF" Offset="0.4"/>
                   </LinearGradientBrush>
                 </Border.Background>
               </Border>
+              <Border x:Name="Hover" CornerRadius="{TemplateBinding Tag}" Background="White" Opacity="0" IsHitTestVisible="False"/>
               <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
               <Border x:Name="Press" CornerRadius="{TemplateBinding Tag}" Background="White" Opacity="0" IsHitTestVisible="False"/>
             </Grid>
@@ -48,9 +49,9 @@
                 <Trigger.EnterActions>
                   <BeginStoryboard>
                     <Storyboard>
-                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="0.95" Duration="0:0:0.07"/>
-                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="0.95" Duration="0:0:0.07"/>
-                      <DoubleAnimation Storyboard.TargetName="Press" Storyboard.TargetProperty="Opacity" To="0.18" Duration="0:0:0.07"/>
+                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="0.96" Duration="0:0:0.07"/>
+                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="0.96" Duration="0:0:0.07"/>
+                      <DoubleAnimation Storyboard.TargetName="Press" Storyboard.TargetProperty="Opacity" To="0.22" Duration="0:0:0.07"/>
                     </Storyboard>
                   </BeginStoryboard>
                 </Trigger.EnterActions>
@@ -69,7 +70,8 @@
                 </Trigger.ExitActions>
               </Trigger>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Card" Property="BorderBrush" Value="#66FFFFFF"/>
+                <Setter TargetName="Card" Property="BorderBrush" Value="#80FFFFFF"/>
+                <Setter TargetName="Hover" Property="Opacity" Value="0.07"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -87,7 +89,8 @@
           <ControlTemplate TargetType="Button">
             <Grid>
               <Border x:Name="Card" CornerRadius="{TemplateBinding Tag}" Background="{TemplateBinding Background}"
-                      BorderBrush="#26FFFFFF" BorderThickness="1"/>
+                      BorderBrush="#33FFFFFF" BorderThickness="1"/>
+              <Border x:Name="Hover" CornerRadius="{TemplateBinding Tag}" Background="White" Opacity="0" IsHitTestVisible="False"/>
               <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
               <Border x:Name="Press" CornerRadius="{TemplateBinding Tag}" Background="White" Opacity="0" IsHitTestVisible="False"/>
             </Grid>
@@ -98,7 +101,8 @@
                 <Setter TargetName="Card" Property="BorderThickness" Value="3"/>
               </Trigger>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Card" Property="BorderBrush" Value="#66FFFFFF"/>
+                <Setter TargetName="Card" Property="BorderBrush" Value="#80FFFFFF"/>
+                <Setter TargetName="Hover" Property="Opacity" Value="0.07"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -112,20 +116,26 @@
     <!-- Boutons de barre (onglets, menus, actions discrètes) : à plat, sans ombre -->
     <Style x:Key="FlatButton" TargetType="Button">
       <Setter Property="Focusable" Value="False"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="Foreground" Value="White"/>
       <Setter Property="Tag"><Setter.Value><CornerRadius>16</CornerRadius></Setter.Value></Setter>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
             <Grid>
-              <Border CornerRadius="{TemplateBinding Tag}" Background="{TemplateBinding Background}"/>
+              <Border CornerRadius="{TemplateBinding Tag}" Background="{TemplateBinding Background}"
+                      BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"/>
               <Border x:Name="Press" CornerRadius="{TemplateBinding Tag}" Background="White" Opacity="0" IsHitTestVisible="False"/>
               <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
             </Grid>
             <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Press" Property="Opacity" Value="0.08"/>
+              </Trigger>
               <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="Press" Property="Opacity" Value="0.16"/>
+                <Setter TargetName="Press" Property="Opacity" Value="0.18"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
