@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
+using TouchDeck.Integrations;
 using TouchDeck.Platform.Windows;
 using CommunityToolkit.Mvvm.Input;
 
@@ -52,6 +53,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] bool _deviceConnected;
     [ObservableProperty] bool _systemReducesMotion;
 
+    /// <summary>Une carte par intégration (OBS, vMix…).</summary>
+    public ObservableCollection<IntegrationCardViewModel> Integrations { get; } = new();
     /// <summary>Choix du thème : système, sombre, clair.</summary>
     public ObservableCollection<ChoiceViewModel> ThemeChoices { get; } = new();
     /// <summary>Écrans proposés pour le deck.</summary>
@@ -88,8 +91,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     };
 
     /// <summary>Paramètres sur le document partagé ; suit ses modifications et les changements d'écran.</summary>
-    public SettingsViewModel(ISettingsShell shell, DeckDocument doc, DisplayService displays, ConfigPersistence persistence)
+    public SettingsViewModel(ISettingsShell shell, DeckDocument doc, DisplayService displays, ConfigPersistence persistence,
+        IntegrationManager integrations, ISecretStore secrets)
     {
+        foreach (var integration in integrations.Integrations) Integrations.Add(new IntegrationCardViewModel(integration, integrations, doc, secrets));
         _shell = shell;
         _doc = doc;
         _displays = displays;
@@ -109,6 +114,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     {
         _doc.Changed -= OnChanged;
         _displays.Changed -= RefreshDevices;
+        foreach (var card in Integrations) card.Dispose();
     }
 
     void OnChanged(DocumentChange c)

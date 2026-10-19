@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TouchDeck.Integrations;
 
 namespace TouchDeck.ViewModels;
 
@@ -20,6 +21,8 @@ public interface IStepOwner
     IReadOnlyList<string> PageNames { get; }
     /// <summary>Profils, proposés pour l'action « profile ».</summary>
     IReadOnlyList<string> ProfileNames { get; }
+    /// <summary>Intégrations disponibles : chacune ajoute un type d'action avec ses commandes.</summary>
+    IReadOnlyList<IIntegration> Integrations { get; }
     /// <summary>Programmes qui ont une fenêtre ouverte, proposés pour l'action « fenêtre au premier plan ».</summary>
     IReadOnlyList<string> OpenPrograms { get; }
     /// <summary>Configuration, pour la validation.</summary>
@@ -70,11 +73,13 @@ public partial class ActionStepViewModel : ObservableObject
     const string ScriptFilter = "Scripts|*.ps1;*.bat;*.cmd|Tous les fichiers|*.*";
 
     readonly IStepOwner _owner;
+    readonly List<(string Key, string Label)> _types = new(Types);
+    readonly List<string> _commandKeys = new();
     readonly List<string> _pageKeys = new();
     readonly List<string> _profileKeys = new();
     bool _loading = true;
 
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowValue), nameof(ShowMedia), nameof(ShowAudio), nameof(ShowPage), nameof(ShowProfile), nameof(ShowProcesses),
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowValue), nameof(ShowCommand), nameof(ShowMedia), nameof(ShowAudio), nameof(ShowPage), nameof(ShowProfile), nameof(ShowProcesses),
         nameof(ShowBrowseValue), nameof(ShowBrowseArgs), nameof(ShowArgs), nameof(ValueCaption), nameof(ValueHint),
         nameof(ShowValueHint), nameof(ArgsCaption), nameof(ArgsHint), nameof(ShowArgsHint), nameof(TypeLabel))]
     string _type;
@@ -89,6 +94,8 @@ public partial class ActionStepViewModel : ObservableObject
     public ObservableCollection<ChoiceViewModel> TypeChoices { get; } = new();
     /// <summary>Touches média proposées.</summary>
     public ObservableCollection<ChoiceViewModel> MediaChoices { get; } = new();
+    /// <summary>Commandes de l'intégration choisie (OBS, vMix…).</summary>
+    public ObservableCollection<ChoiceViewModel> CommandChoices { get; } = new();
     /// <summary>Commandes audio proposées.</summary>
     public ObservableCollection<ChoiceViewModel> AudioChoices { get; } = new();
     /// <summary>Pages proposées (accueil, retour, puis pages du profil).</summary>
@@ -103,7 +110,7 @@ public partial class ActionStepViewModel : ObservableObject
     /// <summary>true si l'étape a au moins un problème.</summary>
     public bool HasIssues => Issues.Count > 0;
     /// <summary>Nom du type affiché (« Raccourci », « Requête web »…).</summary>
-    public string TypeLabel => Types.FirstOrDefault(t => t.Key == Type).Label ?? Type;
+    public string TypeLabel => _types.FirstOrDefault(t => t.Key == Type).Label ?? Type;
 
     /// <summary>Étape éditable, copie de <paramref name="source"/> ; les changements remontent à <paramref name="owner"/>.</summary>
     public ActionStepViewModel(DeckAction source, IStepOwner owner)
@@ -113,7 +120,8 @@ public partial class ActionStepViewModel : ObservableObject
         _value = source.Value;
         _args = source.Args ?? "";
 
-        foreach (var t in Types) TypeChoices.Add(new ChoiceViewModel(t.Label, () => SetType(t.Key)));
+        foreach (var integration in owner.Integrations) _types.Add((integration.Id, integration.Name));
+        foreach (var t in _types) TypeChoices.Add(new ChoiceViewModel(t.Label, () => SetType(t.Key)));
         foreach (var m in MediaKeys) MediaChoices.Add(new ChoiceViewModel(m.Label, () => Value = m.Key));
         foreach (var c in AudioOptions) AudioChoices.Add(new ChoiceViewModel(c.Label, () => Value = c.Key));
         foreach (var name in SpecialPages.Concat(owner.PageNames))
@@ -129,6 +137,7 @@ public partial class ActionStepViewModel : ObservableObject
             _profileKeys.Add(n);
         }
         LoadProcesses();
+        LoadCommands();
         RefreshSelection();
         Revalidate();
         _loading = false;
@@ -137,7 +146,12 @@ public partial class ActionStepViewModel : ObservableObject
     // ---------- affichage selon le type ----------
 
     /// <summary>true si la valeur se saisit au clavier (sinon elle se choisit dans une liste).</summary>
-    public bool ShowValue => Type is not (ActionTypes.Media or ActionTypes.Audio or ActionTypes.Page or ActionTypes.Profile);
+    public bool ShowValue => !IsIntegration && Type is not (ActionTypes.Media or ActionTypes.Audio or ActionTypes.Page or ActionTypes.Profile);
+    /// <summary>true pour choisir une commande d'intégration.</summary>
+    public bool ShowCommand => IsIntegration;
+    bool IsIntegration => Integration != null;
+    IIntegration? Integration => _owner.Integrations.FirstOrDefault(i => i.Id == Type);
+    IntegrationCommand? Command => Integration?.Commands.FirstOrDefault(c => c.Name.Equals(Value, StringComparison.OrdinalIgnoreCase));
     /// <summary>true pour choisir une touche média.</summary>
     public bool ShowMedia => Type == ActionTypes.Media;
     /// <summary>true pour choisir une commande audio.</summary>
@@ -153,7 +167,7 @@ public partial class ActionStepViewModel : ObservableObject
     /// <summary>true pour proposer « Parcourir » sur les arguments (programme à lancer si la fenêtre manque).</summary>
     public bool ShowBrowseArgs => Type == ActionTypes.Focus;
     /// <summary>true si le type utilise les arguments (le volume n'en a que pour la commande « volume »).</summary>
-    public bool ShowArgs => Type is ActionTypes.Launch or ActionTypes.Script or ActionTypes.Focus or ActionTypes.Http || (Type == ActionTypes.Audio && Value == AudioCommands.Volume);
+    public bool ShowArgs => IsIntegration || Type is ActionTypes.Launch or ActionTypes.Script or ActionTypes.Focus or ActionTypes.Http || (Type == ActionTypes.Audio && Value == AudioCommands.Volume);
 
     /// <summary>Libellé du champ de valeur selon le type.</summary>
     public string ValueCaption => Type switch
@@ -171,7 +185,7 @@ public partial class ActionStepViewModel : ObservableObject
     };
 
     /// <summary>Aide affichée sous le champ de valeur, selon le type.</summary>
-    public string ValueHint => Type switch
+    public string ValueHint => IsIntegration ? (Command?.Description ?? "") + (Integration!.State == ConnectionState.Connected ? "" : $"  ({Integration.Name} n'est pas connecté : réglages dans Paramètres › Intégrations.)") : Type switch
     {
         ActionTypes.Hotkey => "Clique dans le champ puis appuie sur ta combinaison (ex. Ctrl+Maj+M, F13). Pour la touche Windows, tape-la : win+d, win+shift+s.",
         ActionTypes.Focus => "Nom du programme (chrome, 3CXDesktopApp…) ou texte présent dans le titre de la fenêtre. Fenêtres ouvertes en ce moment :",
@@ -183,7 +197,7 @@ public partial class ActionStepViewModel : ObservableObject
     public bool ShowValueHint => ValueHint.Length > 0;
 
     /// <summary>Libellé du champ d'arguments selon le type.</summary>
-    public string ArgsCaption => Type switch
+    public string ArgsCaption => IsIntegration ? (Command?.ArgHint is { } hint ? Capitalize(hint) + (Command.ArgRequired ? "" : " (facultatif)") : "Argument (facultatif)") : Type switch
     {
         ActionTypes.Focus => "Si absente, lancer (facultatif)",
         ActionTypes.Script => "Arguments (fichiers uniquement, facultatif)",
@@ -197,6 +211,8 @@ public partial class ActionStepViewModel : ObservableObject
     /// <summary>true si un conseil est disponible pour les arguments.</summary>
     public bool ShowArgsHint => ArgsHint.Length > 0;
 
+    static string Capitalize(string s) => s.Length == 0 ? s : char.ToUpper(s[0], System.Globalization.CultureInfo.CurrentCulture) + s[1..];
+
     // ---------- état ----------
 
     void SetType(string key)
@@ -204,10 +220,12 @@ public partial class ActionStepViewModel : ObservableObject
         if (Type == key) return;
         _loading = true;
         Type = key;
-        Value = key switch { ActionTypes.Delay => "500", ActionTypes.Url or ActionTypes.Http => "https://", ActionTypes.Page => PageTargets.Home, ActionTypes.Audio => AudioCommands.MicToggle, ActionTypes.Timer => "300", _ => "" };
+        Value = _owner.Integrations.FirstOrDefault(i => i.Id == key) is { } integration ? (integration.Commands.Count > 0 ? integration.Commands[0].Name : "")
+            : key switch { ActionTypes.Delay => "500", ActionTypes.Url or ActionTypes.Http => "https://", ActionTypes.Page => PageTargets.Home, ActionTypes.Audio => AudioCommands.MicToggle, ActionTypes.Timer => "300", _ => "" };
         Args = "";
         _loading = false;
         LoadProcesses();
+        LoadCommands();
         RefreshSelection();
         Changed();
     }
@@ -253,9 +271,23 @@ public partial class ActionStepViewModel : ObservableObject
         }
     }
 
+    void LoadCommands()
+    {
+        CommandChoices.Clear();
+        _commandKeys.Clear();
+        if (Integration is not { } integration) return;
+        foreach (var command in integration.Commands)
+        {
+            var name = command.Name;
+            CommandChoices.Add(new ChoiceViewModel(command.Label, () => Value = name));
+            _commandKeys.Add(name);
+        }
+    }
+
     void RefreshSelection()
     {
-        for (int i = 0; i < Types.Length; i++) TypeChoices[i].IsSelected = Types[i].Key == Type;
+        for (int i = 0; i < _types.Count; i++) TypeChoices[i].IsSelected = _types[i].Key == Type;
+        for (int i = 0; i < CommandChoices.Count; i++) CommandChoices[i].IsSelected = string.Equals(_commandKeys[i], Value, StringComparison.OrdinalIgnoreCase);
         for (int i = 0; i < MediaKeys.Length; i++) MediaChoices[i].IsSelected = MediaKeys[i].Key == Value;
         for (int i = 0; i < AudioOptions.Length; i++) AudioChoices[i].IsSelected = AudioOptions[i].Key == Value;
         for (int i = 0; i < PageChoices.Count; i++)

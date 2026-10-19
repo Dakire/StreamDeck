@@ -6,6 +6,7 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TouchDeck.Actions;
+using TouchDeck.Integrations;
 using Wpf.Ui.Controls;
 
 namespace TouchDeck.ViewModels;
@@ -132,7 +133,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     int Offset => _folder.Count > 0 ? 1 : 0;
 
     /// <summary>Éditeur sur le document partagé ; <paramref name="shell"/> fournit dialogues et focus.</summary>
-    public EditorViewModel(IEditorShell shell, DeckDocument doc, DisplayService displays, GridState grid, IAppWindows windows, PlatformServices platform)
+    public EditorViewModel(IEditorShell shell, DeckDocument doc, DisplayService displays, GridState grid, IAppWindows windows, PlatformServices platform, IntegrationManager integrations)
     {
         _platform = platform;
         _shell = shell;
@@ -142,7 +143,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         _windows = windows;
         _profile = _doc.ActiveProfile.Name;
         Catalog = new CatalogViewModel(_doc);
-        Properties = new PropertiesViewModel(_doc, this, shell, platform.Windows);
+        Properties = new PropertiesViewModel(_doc, this, shell, platform.Windows, integrations);
 
         _doc.Changed += OnDocumentChanged;
         Notifier.Posted += OnNotice;

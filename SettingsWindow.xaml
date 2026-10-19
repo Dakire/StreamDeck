@@ -142,6 +142,57 @@
           </StackPanel>
         </Border>
 
+        <!-- Intégrations -->
+        <Border Style="{StaticResource SettingsCard}" Visibility="{Binding Integrations.Count, Converter={StaticResource CountVis}}">
+          <StackPanel>
+            <TextBlock Text="Intégrations" Style="{StaticResource SectionTitle}"/>
+            <TextBlock Style="{StaticResource EditorHint}" Margin="0,0,0,8"
+                       Text="Pilote d'autres logiciels depuis les touches. TouchDeck se reconnecte tout seul si le logiciel est fermé puis relancé. Les mots de passe et jetons sont chiffrés pour ton compte Windows : ils ne sont jamais écrits dans config.json."/>
+            <ItemsControl ItemsSource="{Binding Integrations}" Focusable="False">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:IntegrationCardViewModel}">
+                  <Border BorderBrush="{DynamicResource DeckLine}" BorderThickness="0,1,0,0" Padding="0,12,0,8" Margin="0,4,0,0">
+                    <StackPanel>
+                      <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <ui:SymbolIcon Symbol="{Binding Symbol}" FontSize="24" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15"/>
+                          <StackPanel Orientation="Horizontal" AutomationProperties.LiveSetting="Polite">
+                            <ui:SymbolIcon Symbol="{Binding StatusSymbol}" FontSize="14" Margin="0,2,6,0" Foreground="{DynamicResource DeckDim}"/>
+                            <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource DeckDim}" FontSize="12" TextWrapping="Wrap"/>
+                          </StackPanel>
+                        </StackPanel>
+                        <ui:ToggleSwitch Grid.Column="2" IsChecked="{Binding IsEnabled, Mode=TwoWay}" OnContent="Activé" OffContent="Désactivé"
+                                         AutomationProperties.Name="{Binding Name, StringFormat='Activer {0}'}"/>
+                      </Grid>
+                      <TextBlock Text="{Binding Help}" Style="{StaticResource EditorHint}" Margin="0,4,0,0"/>
+                      <ItemsControl ItemsSource="{Binding Fields}" Focusable="False" Margin="0,6,0,0">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate DataType="{x:Type vm:IntegrationFieldViewModel}">
+                            <StackPanel Margin="0,4,0,0">
+                              <TextBlock Text="{Binding Label}" Style="{StaticResource EditorCaption}" Margin="2,6,0,4"/>
+                              <ui:TextBox Text="{Binding Text, UpdateSourceTrigger=LostFocus}" Style="{StaticResource EditorInput}"
+                                          Visibility="{Binding IsPlain, Converter={StaticResource BoolVis}}" AutomationProperties.Name="{Binding Label}"/>
+                              <ui:PasswordBox Password="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" MinHeight="48"
+                                              Visibility="{Binding IsSecret, Converter={StaticResource BoolVis}}" AutomationProperties.Name="{Binding Label}"/>
+                              <TextBlock Text="{Binding Hint}" Style="{StaticResource EditorHint}" Visibility="{Binding HasHint, Converter={StaticResource BoolVis}}"/>
+                            </StackPanel>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                      <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <ui:Button Content="Tester la connexion" Icon="{ui:SymbolIcon PlugConnected24}" Command="{Binding TestCommand}" Style="{StaticResource EditorChip}"/>
+                        <TextBlock Text="{Binding TestResult}" VerticalAlignment="Center" Margin="4,0,0,8" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
         <!-- Sauvegardes -->
         <Border Style="{StaticResource SettingsCard}">
           <StackPanel>
