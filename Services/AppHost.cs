@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using TouchDeck.Actions;
 using TouchDeck.Integrations;
+using TouchDeck.Integrations.Obs;
 using TouchDeck.Platform.Windows;
 
 namespace TouchDeck;
@@ -88,6 +89,8 @@ public static class AppHost
         // Intégrations : chaque connecteur est un IIntegration du conteneur et fournit son type d'action
         services.AddSingleton<ISecretStore>(_ => new DpapiSecretStore(ConfigStore.Dir));
         services.AddSingleton(sp => new IntegrationManager(sp.GetServices<IIntegration>(), sp.GetRequiredService<DeckDocument>(), sp.GetRequiredService<ISecretStore>()));
+
+        AddIntegration<ObsIntegration>(services);
 
         services.AddSingleton<IDisplayService, WindowsDisplayService>();
         services.AddSingleton<DisplayService>();

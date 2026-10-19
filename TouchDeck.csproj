@@ -16,12 +16,15 @@
     <Compile Remove="tests\**" />
     <Compile Remove="Core\**" />
     <Compile Remove="Platform\Windows\**" />
+    <Compile Remove="Integrations\**" />
     <EmbeddedResource Remove="tests\**" />
     <EmbeddedResource Remove="Core\**" />
     <EmbeddedResource Remove="Platform\Windows\**" />
+    <EmbeddedResource Remove="Integrations\**" />
     <None Remove="tests\**" />
     <None Remove="Core\**" />
     <None Remove="Platform\Windows\**" />
+    <None Remove="Integrations\**" />
     <Page Remove="tests\**" />
   </ItemGroup>
   <ItemGroup>
@@ -31,6 +34,7 @@
   <ItemGroup>
     <ProjectReference Include="Core\TouchDeck.Core.csproj" />
     <ProjectReference Include="Platform\Windows\TouchDeck.Platform.Windows.csproj" />
+    <ProjectReference Include="Integrations\Obs\TouchDeck.Integrations.Obs.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />

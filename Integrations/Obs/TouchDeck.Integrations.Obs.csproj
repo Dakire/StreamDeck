@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- OBS Studio par obs-websocket v5 (WebSocket local, intégré à OBS 28 et plus). Sans dépendance externe. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>TouchDeck.Integrations.Obs</AssemblyName>
+    <RootNamespace>TouchDeck.Integrations.Obs</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\TouchDeck.Core.csproj" />
+  </ItemGroup>
+</Project>
