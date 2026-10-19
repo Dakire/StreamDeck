@@ -382,16 +382,13 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
 
     public void RefreshDevices()
     {
-        Screens.Clear();
-        Screens.Add(new ScreenChoice(-1, "Automatique (écran secondaire)"));
-        foreach (var d in DisplayService.All()) Screens.Add(new ScreenChoice(d.Index, d.ToString()));
-        var monitor = _doc.Config.Monitor;
-        var (text, connected) = DisplayService.Describe(monitor);
-        DeviceText = text; DeviceConnected = connected;
         _refreshingLists = true;
-        SelectedScreen = Screens.FirstOrDefault(s => s.Monitor == monitor)
-                         ?? new ScreenChoice(monitor, $"Écran {monitor + 1} (absent)");
-        if (!Screens.Contains(SelectedScreen)) Screens.Add(SelectedScreen);
+        var (choices, selected) = ScreenChoice.Build(_doc.Config, "Automatique (écran secondaire)");
+        Screens.Clear();
+        foreach (var s in choices) Screens.Add(s);
+        var (text, connected) = DisplayService.Describe(_doc.Config);
+        DeviceText = text; DeviceConnected = connected;
+        SelectedScreen = selected;
         _refreshingLists = false;
     }
 
@@ -437,8 +434,8 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
 
     partial void OnSelectedScreenChanged(ScreenChoice? value)
     {
-        if (_refreshingLists || value == null || value.Monitor == _doc.Config.Monitor) return;
-        _doc.UpdateSettings(c => c.Monitor = value.Monitor, "Écran du deck");
+        if (_refreshingLists || value == null || value.IsCurrent(_doc.Config)) return;
+        _doc.UpdateSettings(value.ApplyTo, "Écran du deck");
     }
 
     /// <summary>Première case libre de la grille courante (au-delà du contenu si besoin).</summary>

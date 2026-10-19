@@ -61,6 +61,8 @@ public static class ConfigNormalizer
             NormalizePages(profile, warnings);
         }
 
+        if (cfg.Monitor < -1) cfg.Monitor = -1;
+        if (string.IsNullOrWhiteSpace(cfg.MonitorDevice)) cfg.MonitorDevice = null;
         cfg.Columns = Math.Clamp(cfg.Columns, 0, 20);
         cfg.Rows = Math.Clamp(cfg.Rows, 0, 20);
         cfg.Spacing = double.IsFinite(cfg.Spacing) ? Math.Clamp(cfg.Spacing, 0, 80) : 14;

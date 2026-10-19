@@ -122,15 +122,15 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     {
         var wasLoading = _loading;
         _loading = true;
+        var cfg = _doc.Config;
+        var (choices, selected) = ScreenChoice.Build(cfg, "Automatique (premier écran secondaire)");
         Screens.Clear();
-        Screens.Add(new ScreenChoice(-1, "Automatique (premier écran secondaire)"));
-        foreach (var d in DisplayService.All()) Screens.Add(new ScreenChoice(d.Index, d.ToString()));
-        var monitor = _doc.Config.Monitor;
-        SelectedScreen = Screens.FirstOrDefault(s => s.Monitor == monitor) ?? new ScreenChoice(monitor, $"Écran {monitor + 1} (absent)");
-        if (!Screens.Contains(SelectedScreen)) Screens.Add(SelectedScreen);
-        (DeviceText, DeviceConnected) = DisplayService.Describe(monitor);
+        foreach (var s in choices) Screens.Add(s);
+        SelectedScreen = selected;
+        (DeviceText, DeviceConnected) = DisplayService.Describe(cfg);
+        var target = DisplayService.ResolveTarget(cfg);
         Displays.Clear();
-        foreach (var d in DisplayService.All()) Displays.Add($"{d}{(d.Index == monitor || (monitor < 0 && !d.Primary) ? "  — écran du deck" : "")}");
+        foreach (var d in DisplayService.All()) Displays.Add($"{d}{(d == target ? "  — écran du deck" : "")}");
         _loading = wasLoading;
     }
 
@@ -182,9 +182,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     partial void OnSelectedScreenChanged(ScreenChoice? value)
     {
-        if (_loading || value == null || value.Monitor == _doc.Config.Monitor) return;
-        Set(c => c.Monitor = value.Monitor, "Écran du deck");
-        (DeviceText, DeviceConnected) = DisplayService.Describe(value.Monitor);
+        if (_loading || value == null || value.IsCurrent(_doc.Config)) return;
+        Set(value.ApplyTo, "Écran du deck");
+        (DeviceText, DeviceConnected) = DisplayService.Describe(_doc.Config);
     }
 
     partial void OnCustomBackgroundChanged(bool value)

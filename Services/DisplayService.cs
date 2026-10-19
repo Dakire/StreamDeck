@@ -7,58 +7,63 @@ using Forms = System.Windows.Forms;
 
 namespace TouchDeck;
 
-public sealed record DisplayInfo(int Index, string Device, int Width, int Height, bool Primary)
+/// <summary>Écrans Windows (System.Windows.Forms.Screen) ; les changements d'affichage arrivent sur le thread d'interface.</summary>
+public sealed class WindowsDisplayService : IDisplayService
 {
-    public string Name => Primary ? $"Écran {Index + 1} (principal)" : $"Écran {Index + 1}";
-    public string Resolution => $"{Width}×{Height}";
-    public override string ToString() => $"{Name} · {Resolution}";
+    public event Action? Changed;
+
+    public WindowsDisplayService()
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        SystemEvents.DisplaySettingsChanged += (_, _) =>
+        {
+            if (dispatcher != null) dispatcher.BeginInvoke(() => Changed?.Invoke());
+            else Changed?.Invoke();
+        };
+    }
+
+    public IReadOnlyList<DisplayInfo> All() =>
+        Forms.Screen.AllScreens.Select((s, i) => new DisplayInfo(i, s.DeviceName, Rect(s.Bounds), Rect(s.WorkingArea), s.Primary)).ToList();
+
+    static PixelRect Rect(System.Drawing.Rectangle r) => new(r.X, r.Y, r.Width, r.Height);
 }
 
 /// <summary>
 /// Écrans disponibles et écran cible du deck. C'est le « périphérique » de TouchDeck : branchement et débranchement
-/// d'un écran tactile sont détectés (Windows signale tout changement de configuration d'affichage).
+/// d'un écran tactile sont détectés. <see cref="Provider"/> est remplaçable (tests : écrans simulés).
 /// </summary>
 public static class DisplayService
 {
+    static IDisplayService? _provider;
+    static readonly HashSet<IDisplayService> Attached = new();
+
+    public static IDisplayService Provider
+    {
+        get => _provider ??= Attach(new WindowsDisplayService());
+        set => _provider = Attach(value);
+    }
+
     public static event Action? Changed;
 
-    static bool _hooked;
-
-    /// <summary>À appeler une fois depuis le thread d'interface.</summary>
-    public static void Start()
+    static IDisplayService Attach(IDisplayService p)
     {
-        if (_hooked) return;
-        _hooked = true;
-        var dispatcher = Application.Current.Dispatcher;
-        SystemEvents.DisplaySettingsChanged += (_, _) => dispatcher.BeginInvoke(() => Changed?.Invoke());
-    }
-
-    public static List<DisplayInfo> All() =>
-        Forms.Screen.AllScreens
-            .Select((s, i) => new DisplayInfo(i, s.DeviceName, s.Bounds.Width, s.Bounds.Height, s.Primary))
-            .ToList();
-
-    /// <summary>Écran visé par la configuration : index explicite, ou -1 = premier écran secondaire. Null si absent.</summary>
-    public static Forms.Screen? ResolveTarget(int monitor)
-    {
-        var screens = Forms.Screen.AllScreens;
-        if (monitor >= 0) return monitor < screens.Length ? screens[monitor] : null;
-        return screens.FirstOrDefault(s => !s.Primary);
-    }
-
-    /// <summary>Résumé de l'état pour l'interface : (texte, connecté).</summary>
-    public static (string Text, bool Connected) Describe(int monitor)
-    {
-        var all = All();
-        if (monitor >= 0)
+        if (!Attached.Add(p)) return p;
+        p.Changed += () =>
         {
-            return monitor < all.Count
-                ? ($"{all[monitor].Name} · {all[monitor].Resolution} — connecté", true)
-                : ($"Écran {monitor + 1} absent — le deck reste sur l'écran courant", false);
-        }
-        var second = all.FirstOrDefault(d => !d.Primary);
-        return second != null
-            ? ($"{second.Name} · {second.Resolution} — connecté (automatique)", true)
-            : ("Aucun écran secondaire — le deck s'affiche en fenêtre", false);
+            if (!ReferenceEquals(p, _provider)) return;
+            Log.Info("Écrans : " + string.Join(", ", p.All()));
+            Changed?.Invoke();
+        };
+        return p;
     }
+
+    /// <summary>Signale un changement simulé (tests) ou forcé.</summary>
+    public static void RaiseChanged() => Changed?.Invoke();
+
+    public static IReadOnlyList<DisplayInfo> All() => Provider.All();
+
+    /// <summary>Écran visé par la configuration, ou null s'il est absent.</summary>
+    public static DisplayInfo? ResolveTarget(DeckConfig cfg) => DisplayResolver.Resolve(All(), cfg.Monitor, cfg.MonitorDevice);
+
+    public static (string Text, bool Connected) Describe(DeckConfig cfg) => DisplayResolver.Describe(All(), cfg.Monitor, cfg.MonitorDevice);
 }

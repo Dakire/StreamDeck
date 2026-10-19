@@ -34,7 +34,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     string? _autoProfile;                   // profil imposé par l'application au premier plan (non enregistré)
     string? _lastForeground;
     string? _lastActive;
-    (int Monitor, bool Fullscreen, bool OnTop) _lastPlacement;
+    (int Monitor, string? Device, bool Fullscreen, bool OnTop) _lastPlacement;
     int _page, _previousPage;
     int _sub;        // sous-page courante quand une page dépasse la capacité de la grille
     int _capacity = 1;
@@ -71,7 +71,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         _doc.Changed += OnDocumentChanged;
         Notifier.Posted += OnNotice;
         _lastActive = _doc.Config.ActiveProfile;
-        _lastPlacement = (_doc.Config.Monitor, _doc.Config.Fullscreen, _doc.Config.AlwaysOnTop);
+        _lastPlacement = (_doc.Config.Monitor, _doc.Config.MonitorDevice, _doc.Config.Fullscreen, _doc.Config.AlwaysOnTop);
         _statusTimer.Tick += (_, _) => { _statusTimer.Stop(); SetStatus(null); };
         _appTimer.Tick += (_, _) => PollForeground();
         _appTimer.Start();
@@ -125,9 +125,9 @@ public partial class MainViewModel : ObservableObject, INavigator
             _autoProfile = null;          // un choix manuel l'emporte sur l'application au premier plan
             ResetNavigation();
         }
-        if ((cfg.Monitor, cfg.Fullscreen, cfg.AlwaysOnTop) != _lastPlacement)
+        if ((cfg.Monitor, cfg.MonitorDevice, cfg.Fullscreen, cfg.AlwaysOnTop) != _lastPlacement)
         {
-            _lastPlacement = (cfg.Monitor, cfg.Fullscreen, cfg.AlwaysOnTop);
+            _lastPlacement = (cfg.Monitor, cfg.MonitorDevice, cfg.Fullscreen, cfg.AlwaysOnTop);
             _shell.ReapplyPlacement();
         }
         ApplyBackground();

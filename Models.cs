@@ -9,6 +9,9 @@ public class DeckConfig
     public int Version { get; set; } = 1;
     /// <summary>Index de l'écran (0 = premier). -1 = auto : premier écran secondaire s'il existe.</summary>
     public int Monitor { get; set; } = -1;
+    /// <summary>Identifiant Windows de l'écran choisi (\\.\DISPLAY2) : prioritaire sur <see cref="Monitor"/>, dont l'index change quand on rebranche un écran.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? MonitorDevice { get; set; }
     /// <summary>true = plein écran sur l'écran cible ; false = fenêtre (utile pour tester).</summary>
     public bool Fullscreen { get; set; } = true;
     /// <summary>true = reste au-dessus des autres fenêtres. Par défaut non.</summary>

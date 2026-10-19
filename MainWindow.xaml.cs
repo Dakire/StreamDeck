@@ -41,7 +41,6 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         Topmost = _onTop;
         Root.SizeChanged += (_, _) => _vm.Resize(Root.ActualWidth, Root.ActualHeight);
         // Écran branché ou débranché : le deck suit (ou revient sur l'écran principal si le sien disparaît)
-        DisplayService.Start();
         DisplayService.Changed += () => PlaceOnScreen(displayChanged: true);
     }
 
@@ -69,20 +68,22 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     {
         var cfg = _vm.Config;
         if (!cfg.Fullscreen) return;
-        var target = DisplayService.ResolveTarget(cfg.Monitor);
+        var target = DisplayService.ResolveTarget(cfg);
         if (target == null)
         {
             // Pas d'écran cible : au démarrage on reste en fenêtre ; si l'écran vient de disparaître, on revient sur l'écran principal
-            if (displayChanged && _full) GoWindowed(System.Windows.Forms.Screen.PrimaryScreen ?? System.Windows.Forms.Screen.AllScreens[0]);
+            // (il reprendra sa place en plein écran dès que l'écran sera rebranché)
+            var all = DisplayService.All();
+            if (displayChanged && _full && all.Count > 0) GoWindowed(all.FirstOrDefault(d => d.Primary) ?? all[0]);
             return;
         }
         GoFullscreen(target);
     }
 
-    void GoFullscreen(System.Windows.Forms.Screen s)
+    void GoFullscreen(DisplayInfo s)
     {
         // Zone de travail (pixels physiques) : le deck occupe tout l'écran sauf la barre des tâches, qui reste visible et cliquable
-        var b = s.WorkingArea;
+        var b = s.WorkArea;
         SetWindowPos(Hwnd, ZOrder, b.X, b.Y, b.Width, b.Height, SWP_NOACTIVATE);
         // Passer sur un écran de densité différente fait redimensionner la fenêtre par Windows (WM_DPICHANGED) :
         // une seconde pose, une fois sur le bon écran, donne la taille exacte
@@ -92,11 +93,11 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     }
 
     /// <summary>Passe en fenêtre 1100×650 (DIP) ; avec cursorPx, la barre du haut est placée sous le doigt.</summary>
-    void GoWindowed(System.Windows.Forms.Screen s, POINT? cursorPx = null)
+    void GoWindowed(DisplayInfo s, POINT? cursorPx = null)
     {
         double scale = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
         int w = (int)(1100 * scale), h = (int)(650 * scale);
-        var wa = s.WorkingArea;
+        var wa = s.WorkArea;
         int x = wa.X + (wa.Width - w) / 2, y = wa.Y + (wa.Height - h) / 2;
         if (cursorPx is { } c) { x = c.X - w / 2; y = c.Y - 12; }
         SetWindowPos(Hwnd, ZOrder, x, y, w, h, SWP_NOACTIVATE);
@@ -104,7 +105,13 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         _vm?.NotifyWindowState();
     }
 
-    System.Windows.Forms.Screen CurrentScreen() => System.Windows.Forms.Screen.FromHandle(Hwnd);
+    /// <summary>Écran qui contient la fenêtre (le plus proche si elle est à cheval).</summary>
+    DisplayInfo CurrentScreen()
+    {
+        var all = DisplayService.All();
+        var device = System.Windows.Forms.Screen.FromHandle(Hwnd).DeviceName;
+        return all.FirstOrDefault(d => d.Device == device) ?? all.FirstOrDefault(d => d.Primary) ?? all[0];
+    }
 
     void OnDragBarDown(object sender, MouseButtonEventArgs e)
     {
@@ -124,9 +131,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
 
     public void NextScreen()
     {
-        var all = System.Windows.Forms.Screen.AllScreens;
+        var all = DisplayService.All();
         var cur = CurrentScreen();
-        var next = all[(Array.FindIndex(all, s => s.DeviceName == cur.DeviceName) + 1) % all.Length];
+        var next = all[(all.ToList().FindIndex(s => s.Device == cur.Device) + 1) % all.Count];
         if (_full) GoFullscreen(next); else GoWindowed(next);
     }
 
