@@ -1,0 +1,56 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+  <!-- Jetons de mise en page et de typographie, communs à tous les thèmes. Les couleurs sont dans Theme.cs : elles viennent
+       de palettes dont les contrastes WCAG sont vérifiés par les tests, et se publient à chaud au changement de thème. -->
+
+  <!-- Rayons : 8 (champs, pastilles), 12 (cartes), 16 (panneaux), 20 (fenêtres, menus) -->
+  <CornerRadius x:Key="RadiusSm">8</CornerRadius>
+  <CornerRadius x:Key="RadiusMd">12</CornerRadius>
+  <CornerRadius x:Key="RadiusLg">16</CornerRadius>
+  <CornerRadius x:Key="RadiusXl">20</CornerRadius>
+
+  <!-- Espacements sur une grille de 4 -->
+  <sys:Double x:Key="Space1">4</sys:Double>
+  <sys:Double x:Key="Space2">8</sys:Double>
+  <sys:Double x:Key="Space3">12</sys:Double>
+  <sys:Double x:Key="Space4">16</sys:Double>
+  <sys:Double x:Key="Space5">20</sys:Double>
+  <sys:Double x:Key="Space6">24</sys:Double>
+  <sys:Double x:Key="Space8">32</sys:Double>
+  <Thickness x:Key="PadSm">8</Thickness>
+  <Thickness x:Key="PadMd">12</Thickness>
+  <Thickness x:Key="PadLg">16</Thickness>
+
+  <!-- Typographie : Segoe UI Variable, repli Segoe UI. Titre 20, section 14 semi-gras, corps 13, légende 11 -->
+  <FontFamily x:Key="FontText">Segoe UI Variable Text, Segoe UI</FontFamily>
+  <FontFamily x:Key="FontDisplay">Segoe UI Variable Display, Segoe UI</FontFamily>
+  <sys:Double x:Key="FontSizeTitle">20</sys:Double>
+  <sys:Double x:Key="FontSizeSection">14</sys:Double>
+  <sys:Double x:Key="FontSizeBody">13</sys:Double>
+  <sys:Double x:Key="FontSizeCaption">11</sys:Double>
+  <FontWeight x:Key="FontWeightSection">SemiBold</FontWeight>
+
+  <Style x:Key="TextTitle" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FontDisplay}"/>
+    <Setter Property="FontSize" Value="{StaticResource FontSizeTitle}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource DeckText}"/>
+  </Style>
+  <Style x:Key="TextSection" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FontText}"/>
+    <Setter Property="FontSize" Value="{StaticResource FontSizeSection}"/>
+    <Setter Property="FontWeight" Value="{StaticResource FontWeightSection}"/>
+    <Setter Property="Foreground" Value="{DynamicResource DeckText}"/>
+  </Style>
+  <Style x:Key="TextBody" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FontText}"/>
+    <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+    <Setter Property="Foreground" Value="{DynamicResource DeckTextSoft}"/>
+  </Style>
+  <Style x:Key="TextCaption" TargetType="TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource FontText}"/>
+    <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
+    <Setter Property="Foreground" Value="{DynamicResource DeckDim}"/>
+  </Style>
+</ResourceDictionary>

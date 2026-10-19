@@ -22,7 +22,7 @@ public static class ConfigNormalizer
     /// <summary>Nombre d'actions récentes conservées dans le catalogue.</summary>
     public const int MaxRecents = 12;
     /// <summary>Valeurs acceptées pour <see cref="DeckConfig.Theme"/>.</summary>
-    public static readonly string[] Themes = { "system", "dark", "light" };
+    public static readonly string[] Themes = { "system", "dark", "light", "amoled" };
 
     /// <summary>Migre l'ancien format et répare une configuration lue sur disque, sans rien supprimer de valide ; décrit ce qui a changé.</summary>
     public static NormalizeResult Normalize(DeckConfig cfg)

@@ -575,7 +575,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         if (ProfileCount > 1)
             Add(SymbolRegular.PersonSwap24, "Changer de profil", () => { _profileMenu = true; BuildMenu(); }, trailing: CurrentProfile.Name, keepOpen: true);
         Add(SymbolRegular.Settings24, "Paramètres", _windows.OpenSettings);
-        Add(SymbolRegular.DarkTheme24, "Thème", CycleTheme, trailing: _doc.Config.Theme.ToLowerInvariant() switch { "dark" => "Sombre", "light" => "Clair", _ => "Auto" });
+        Add(SymbolRegular.DarkTheme24, "Thème", CycleTheme, trailing: _doc.Config.Theme.ToLowerInvariant() switch { "dark" => "Sombre", "amoled" => "AMOLED", "light" => "Clair", _ => "Auto" });
         Add(SymbolRegular.Desktop24, "Changer d'écran", _shell.NextScreen);
         Add(_shell.IsFullscreen ? SymbolRegular.FullScreenMinimize24 : SymbolRegular.FullScreenMaximize24, _shell.IsFullscreen ? "Passer en fenêtre" : "Passer en plein écran", _shell.ToggleFullscreen);
         Add(SymbolRegular.Pin24, "Toujours au premier plan", () => _doc.UpdateSettings(c => c.AlwaysOnTop = !c.AlwaysOnTop, "Premier plan"), trailing: _shell.IsOnTop ? "✓" : null);
@@ -586,7 +586,7 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     void CycleTheme()
     {
-        var next = _doc.Config.Theme.ToLowerInvariant() switch { "system" => "dark", "dark" => "light", _ => "system" };
+        var next = _doc.Config.Theme.ToLowerInvariant() switch { "system" => "dark", "dark" => "amoled", "amoled" => "light", _ => "system" };
         _doc.UpdateSettings(c => c.Theme = next, "Thème");
     }
 

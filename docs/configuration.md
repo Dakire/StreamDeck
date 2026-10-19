@@ -90,7 +90,7 @@ classDiagram
 | `Columns`, `Rows` | entiers | `0` | Grille des profils en format automatique ; `0` = selon la résolution. Bornés de 0 à 20. |
 | `Spacing` | nombre | `14` | Espacement entre les touches, en DIP. Borné de 0 à 80. |
 | `Background` | couleur | `#0E1015` | Fond du deck. La valeur par défaut affiche le fond nuancé du thème ; une autre couleur donne un fond uni. |
-| `Theme` | texte | `system` | `system` (suit Windows), `dark` ou `light`. Une nouvelle configuration est créée en `dark`. |
+| `Theme` | texte | `system` | `system` (suit Windows), `dark`, `amoled` (sombre à fond noir) ou `light`. Une nouvelle configuration est créée en `dark`. |
 | `IconStyle` | texte | `fluent` | `fluent` : les emojis connus s'affichent en icônes Fluent ; `emoji` : tels quels. |
 | `StartWithWindows` | booléen | | Reflet du lancement à l'ouverture de session. C'est la clé Run du registre qui fait foi. |
 | `ReduceMotion` | booléen | `false` | Supprime les animations, en plus du réglage de Windows. |

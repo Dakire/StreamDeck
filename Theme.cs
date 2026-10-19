@@ -23,6 +23,13 @@ public static class Theme
         Input: "#0F1320", EditorBg: "#0E121D", Focus: "#FFFFFF", Success: "#5CD6A0",
         StatusBg: "#3A1F26", StatusLine: "#7A3340", StatusText: "#FFB4BE");
 
+    /// <summary>Palette AMOLED : fond noir pur (pixels éteints sur un écran OLED), cartes à peine plus claires.</summary>
+    public static readonly Palette AmoledPalette = DarkPalette with
+    {
+        Window = "#000000", Bar = "#07090F", Panel = "#07090F", Surface = "#0E111A", SurfaceHi = "#181C28",
+        Line = "#222839", Grip = "#323A52", Input = "#05070B", EditorBg = "#000000", Scrim = "#B3000000",
+    };
+
     /// <summary>Palette claire.</summary>
     public static readonly Palette LightPalette = new(
         Window: "#F3F4F8", Bar: "#FFFFFF", TopBar: "#00FFFFFF", Panel: "#FFFFFF", Surface: "#FFFFFF", SurfaceHi: "#ECEEF4",
@@ -32,14 +39,16 @@ public static class Theme
         StatusBg: "#FBE3E6", StatusLine: "#E0A0A8", StatusText: "#8C1D2B");
 
     /// <summary>Fond des touches avant teinte (haut, bas) : un cran au-dessus des surfaces pour détacher la grille du fond.</summary>
-    static (string Top, string Bottom) TileBase => Dark ? ("#202639", "#1A1F30") : ("#FFFFFF", "#F5F6FA");
+    static (string Top, string Bottom) TileBase => Amoled ? ("#141824", "#0E111A") : Dark ? ("#202639", "#1A1F30") : ("#FFFFFF", "#F5F6FA");
     /// <summary>Part de la couleur du bouton dans le corps de la touche (haut, bas) : la couleur vive reste sur la pastille d'icône.</summary>
     public const double TintTop = 0.26, TintBottom = 0.16;
 
     /// <summary>true si le thème sombre est appliqué.</summary>
     public static bool Dark { get; private set; } = true;
     /// <summary>Palette du thème appliqué.</summary>
-    public static Palette Current => Dark ? DarkPalette : LightPalette;
+    public static Palette Current => Amoled ? AmoledPalette : Dark ? DarkPalette : LightPalette;
+    /// <summary>true pour le thème AMOLED (sombre à fond noir).</summary>
+    public static bool Amoled { get; private set; }
 
     // Raccourcis conservés pour le code existant
     /// <summary>Surface du thème appliqué (raccourci).</summary>
@@ -58,16 +67,17 @@ public static class Theme
     /// <summary>Signale un changement d'apparence qui n'est pas un changement de thème (style des icônes).</summary>
     public static void RaiseChanged() => Changed?.Invoke();
 
-    /// <summary>mode : "system" | "dark" | "light".</summary>
+    /// <summary>mode : "system" | "dark" | "light" | "amoled".</summary>
     public static void Apply(string mode)
     {
         bool dark = mode.ToLowerInvariant() switch
         {
-            "dark" => true,
+            "dark" or "amoled" => true,
             "light" => false,
             _ => SystemUsesDark(),
         };
         Dark = dark;
+        Amoled = dark && mode.Equals("amoled", StringComparison.OrdinalIgnoreCase);
         var accent = (Color)ColorConverter.ConvertFromString(Current.Accent);
         ApplicationThemeManager.Apply(dark ? ApplicationTheme.Dark : ApplicationTheme.Light);
         // Même accent en clair et en sombre (WPF-UI l'éclaircit en sombre par défaut)
@@ -115,7 +125,7 @@ public static class Theme
         r["DeckStatusLine"] = B(p.StatusLine);
         r["DeckStatusText"] = B(p.StatusText);
         r["DeckAccentSoft"] = B(Dark ? "#336C5CE7" : "#226C5CE7");
-        r["DeckDock"] = B(Dark ? "#E6121624" : "#F2FFFFFF");
+        r["DeckDock"] = B(Amoled ? "#E607090F" : Dark ? "#E6121624" : "#F2FFFFFF");
         r["DeckBackdrop"] = Backdrop();
 
         // Repères posés sur la face des touches (voiles d'état, badges, liseré, reflet) : mêmes valeurs dans les deux thèmes,
@@ -183,7 +193,7 @@ public static class Theme
     /// <summary>Fond de la fenêtre du deck : lueur douce en haut, plus profond en bas. Opaque : lisible quel que soit le fond d'écran.</summary>
     static RadialGradientBrush Backdrop()
     {
-        var (glow, mid, deep) = Dark ? ("#161B2D", "#0E121D", "#0B0E17") : ("#FFFFFF", "#F3F4F8", "#E8EBF2");
+        var (glow, mid, deep) = Amoled ? ("#000000", "#000000", "#000000") : Dark ? ("#161B2D", "#0E121D", "#0B0E17") : ("#FFFFFF", "#F3F4F8", "#E8EBF2");
         var brush = new RadialGradientBrush
         {
             Center = new System.Windows.Point(0.5, -0.15), GradientOrigin = new System.Windows.Point(0.5, -0.15),

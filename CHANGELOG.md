@@ -4,6 +4,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Ajouté (phase 3)
+- **Thème AMOLED** (`Theme` = `"amoled"` : fond noir pur), choisi dans les paramètres et le menu du deck. Valeur ajoutée à
+  une clé existante : un ancien fichier reste lisible, une valeur inconnue retombe sur « system ».
+- **Jetons de design** (`Themes/Tokens.xaml`) : rayons 8 / 12 / 16 / 20, espacements sur une grille de 4, échelle
+  typographique (titre 20, section 14, corps 13, légende 11), styles de texte. Les couleurs restent dans `Theme.cs`
+  (palettes dont les contrastes sont testés, publiées à chaud) plutôt que dans un `Colors.xaml` statique.
+
 ### Modifié (phase 3, début)
 - **Palette sombre** du cahier des charges : application `#0B0E17`, panneaux `#121624`, cartes `#1A1F30`, accent `#6C5CE7`
   (clair et sombre). Contrastes WCAG AA revérifiés par les tests ; fond des touches, dock, fond du deck et champs alignés

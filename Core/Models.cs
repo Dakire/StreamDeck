@@ -25,7 +25,7 @@ public class DeckConfig
     public double Spacing { get; set; } = 14;
     /// <summary>Fond du deck ; la valeur par défaut (<see cref="ConfigNormalizer.DefaultBackground"/>) affiche le fond nuancé du thème.</summary>
     public string Background { get; set; } = "#0E1015";
-    /// <summary>Thème : "system" (suit Windows), "dark" ou "light".</summary>
+    /// <summary>Thème : "system" (suit Windows), "dark", "light" ou "amoled" (sombre à fond noir).</summary>
     public string Theme { get; set; } = "system";
     /// <summary>"fluent" : les emojis connus sont affichés avec l'icône Fluent équivalente ; "emoji" : tels quels.</summary>
     public string IconStyle { get; set; } = "fluent";

@@ -67,7 +67,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Dossier de configuration (affiché, ouvrable).</summary>
     public string ConfigDirectory => ConfigStore.Dir;
 
-    static readonly (string Key, string Label)[] Themes = { ("system", "Suivre Windows"), ("dark", "Sombre"), ("light", "Clair") };
+    static readonly (string Key, string Label)[] Themes = { ("system", "Suivre Windows"), ("dark", "Sombre"), ("amoled", "AMOLED"), ("light", "Clair") };
 
     /// <summary>Raccourcis clavier de l'éditeur, affichés dans les paramètres.</summary>
     public static readonly (string Keys, string What)[] Shortcuts =
