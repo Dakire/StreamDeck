@@ -23,15 +23,21 @@ dotnet publish -c Release -r win-x64 --self-contained false
 | Variable / option | Effet |
 |---|---|
 | `TOUCHDECK_DATA_DIR` | Dossier de configuration à utiliser (essais) au lieu de `%APPDATA%\TouchDeck`. |
-| `TOUCHDECK_SHOTS` | Dossier où les tests UI gardent leurs captures PNG (deck sombre / clair, 1080p, portrait, éditeur…). |
+| `TOUCHDECK_SHOTS` | Dossier où les tests UI gardent leurs captures PNG (deck sombre / clair, 1080p, portrait, éditeur…). Utile pour comparer un rendu avant / après au pixel près. |
+| `TOUCHDECK_BENCH` | Active `BenchmarkTests` (désactivé sinon) : création du deck, rendu d'une grille de 32 touches, reconstruction, mémoire, CPU au repos. Résultats ajoutés à `bench.md` dans ce dossier. À lancer en `-c Release`. |
 | `--simulate` | Plateforme simulée : chaque action est affichée (« Simulation : hotkey ctrl+c ») au lieu d'être exécutée. Un badge « Simulation » s'affiche. |
 
 ## Tests
 
 - `ActionEngineTests` : séquences, erreurs, délai maximal, annulation, HTTP (serveur factice), audio, minuteur.
 - `DisplayTests` : écran mémorisé, renumérotation, débranchement (écrans simulés par `FakeDisplays`).
-- `UiTests` : vraies fenêtres rendues hors écran par `UiHarness`. Aucune fenêtre n'est affichée, la configuration est temporaire et la plateforme simulée. Les erreurs de liaison de données font échouer les tests.
+- `UiTests` : vraies fenêtres rendues hors écran par `UiHarness`. Aucune fenêtre n'est affichée, la configuration est temporaire et la plateforme simulée (`App.Headless` empêche le démarrage normal ; `TheHarnessNeverUsesTheRealPlatformNorShowsWindows` le vérifie). Les erreurs de liaison de données font échouer les tests.
+- `DeckNavigationTests` : caractérisation du deck (onglets, pages masquées, `back` / `home`, dossiers, sous-pages, profils, profil par application, exécution), réconciliation de la grille, ressources de thème présentes dans les deux thèmes.
 - `PackageAndThemeTests` : import / export, contrastes WCAG (y compris titre sur corps teinté des touches).
+- `RobustnessTests` : saisies et fichiers invalides consignés sans exception ; valeurs figées des clés du format (`ActionTypes`).
+- `BenchmarkTests` : mesures de performance, seulement si `TOUCHDECK_BENCH` est défini.
+
+Les collections de tests s'exécutent en série : `ConfigStore.Dir` est global au processus.
 
 Ne jamais piloter le vrai bureau (captures, clics simulés) : utiliser le harnais.
 

@@ -7,8 +7,27 @@ Chaque bouton lance une ou plusieurs actions : raccourci clavier, saisie de text
 programme, script, URL, requête web (webhook), micro et volume, minuteur, changement de page ou de profil, délai,
 mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la date.
 
-Documentation détaillée : [architecture](docs/ARCHITECTURE.md), [développement](docs/DEVELOPMENT.md),
-[parité avec Stream Deck](docs/FEATURE_PARITY.md), [rétro-ingénierie fonctionnelle](docs/REVERSE_ENGINEERING.md).
+![Le deck, thème sombre](docs/images/deck-dark.png)
+
+| Thème clair | Éditeur | Paramètres |
+|---|---|---|
+| ![Deck, thème clair](docs/images/deck-light.png) | ![Éditeur à trois panneaux](docs/images/editeur-dark.png) | ![Paramètres](docs/images/parametres-dark.png) |
+
+*Captures rendues hors écran par le harnais de tests, en mode simulation (d'où le badge « Simulation »).*
+
+## Documentation
+
+| Document | Contenu |
+|---|---|
+| [Architecture](docs/ARCHITECTURE.md) | Couches, exécution d'un bouton, mise à jour de la grille, choix de WPF (diagrammes) |
+| [Format de configuration](docs/configuration.md) | `config.json` en détail, cycle de vie, migrations, exemple |
+| [Développement](docs/DEVELOPMENT.md) | Prérequis, commandes, tests, vérifications manuelles, jetons de design |
+| [Contribuer](CONTRIBUTING.md) | Conventions de code, branches, commits, tests |
+| [Décisions d'architecture](docs/adr/README.md) | Pourquoi WPF, le document unique, la plateforme abstraite… |
+| [Journal des modifications](CHANGELOG.md) | Ce qui a changé, version par version |
+| [Parité avec Stream Deck](docs/FEATURE_PARITY.md), [rétro-ingénierie](docs/REVERSE_ENGINEERING.md) | Fonctions couvertes et écarts |
+| [Étude des intégrations](docs/integrations-research.md) | OBS, Twitch, Discord, Hue… : faisabilité et ordre de réalisation |
+| [Bilan du nettoyage](docs/cleanup-report.md) | Corrections, mesures avant / après, risques restants |
 
 ## Fonctionnalités
 
@@ -71,8 +90,12 @@ Ces raccourcis ne s'appliquent jamais pendant la saisie dans un champ de texte.
 ```powershell
 dotnet run -c Release
 dotnet run -c Release -- --simulate  # essai sans risque : les actions sont affichées, rien n'est envoyé au système
-dotnet test tests/TouchDeck.Tests    # tests automatisés
+dotnet run -c Release -- --edit      # ouvre aussi l'éditeur
+dotnet build -c Release              # aucun avertissement toléré (analyseurs, style, documentation XML)
+dotnet test tests/TouchDeck.Tests    # tests automatisés (l'interface est rendue hors écran)
 ```
+
+Pour essayer sans toucher à votre configuration : `$env:TOUCHDECK_DATA_DIR = "$env:TEMP\touchdeck-essai"`.
 
 Pour produire l'exécutable :
 
@@ -94,6 +117,9 @@ Dossier : `%APPDATA%\TouchDeck` (ou le dossier de la variable d'environnement `T
 
 L'éditeur enregistre à chaque modification (écriture atomique : un arrêt en cours d'écriture ne corrompt pas le fichier).
 Un fichier `config.json` invalide n'est jamais écrasé sans copie : il est conservé sous `config.invalide-<date>.json`.
+
+Le format complet (modèle, cycle de vie, migrations, exemple) est décrit dans [docs/configuration.md](docs/configuration.md).
+Les tableaux ci-dessous en donnent l'essentiel.
 
 ### Clés de `config.json`
 
@@ -168,18 +194,19 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 
 | Dossier / fichier | Contenu |
 |---|---|
-| `Core/` | Logique sans WPF : `DeckDocument` (opérations, historique), `ConfigStore`, `ConfigNormalizer` (migration), `ActionCatalog`, `ActionValidator`, `Displays`, `LabelTemplate`, `Countdowns` |
+| `Core/` | Logique sans WPF : `DeckDocument` (opérations, historique), `ConfigStore`, `ConfigNormalizer` (migration), `ActionTypes` (clés du format), `ActionCatalog`, `ActionValidator`, `Displays`, `LabelTemplate`, `Countdowns`, `Log` |
 | `Core/Actions/` | Moteur d'actions (`ActionEngine`, `BuiltInActions`), interfaces de plateforme, plateforme simulée |
 | `Platform/Windows/` | Implémentation Windows des interfaces de plateforme |
-| `Services/` | `AppServices` (sauvegarde auto, rechargement à chaud, moteur), `IconStore`, `ProfilePackage`, `TransferService`, `DisplayService`, `AutoStart`, `Notifier`, `Motion`, `Log` |
+| `Services/` | `AppServices` (sauvegarde auto, rechargement à chaud, moteur), `IconStore`, `ProfilePackage`, `TransferService`, `DisplayService`, `AutoStart`, `Notifier`, `Motion` |
 | `ViewModels/` | `MainViewModel` (deck), `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `SettingsViewModel`, `MenuSpec` |
 | `Controls/` | `TileFace` (rendu d'un bouton), `ContextMenuFactory`, `PromptWindow` |
 | `MainWindow.xaml(.cs)` | Deck ; code-behind limité à Win32 et au placement multi-écran |
 | `EditorWindow.xaml(.cs)`, `SettingsWindow.xaml(.cs)` | Éditeur et paramètres (dialogues, focus, clavier, glisser-déposer) |
 | `Theme.cs`, `IconCatalog.cs`, `App.xaml` | Palettes claire / sombre (contrastes vérifiés), icônes, styles |
 | `NativeInput.cs`, `WindowFocus.cs`, `NativeAudio.cs` | Appels Win32 et Core Audio |
-| `docs/` | Architecture, développement, parité fonctionnelle, rétro-ingénierie |
-| `tests/TouchDeck.Tests` | Tests xUnit : logique, migration, import, contrastes, rendu hors écran des fenêtres |
+| `docs/` | Architecture, configuration, développement, décisions (`adr/`), parité fonctionnelle, intégrations, bilans |
+| `tests/TouchDeck.Tests` | Tests xUnit : logique, migration, import, contrastes, navigation du deck, robustesse, rendu hors écran des fenêtres, mesures de performance (facultatives) |
+| `Directory.Build.props`, `.editorconfig` | Analyseurs, style vérifié à la compilation, avertissements bloquants, documentation XML obligatoire |
 
 ## Accessibilité
 
@@ -196,6 +223,32 @@ animations coupées par le réglage TouchDeck ou celui de Windows.
 - Les profils par application se basent sur le nom du programme au premier plan, relevé toutes les 0,8 s.
 - Le glisser-déposer tactile dépend de la prise en charge de Windows ; le presse-papiers interne et `Alt+flèches` / le menu *Déplacer* offrent des alternatives.
 - Les images importées ne sont jamais supprimées automatiquement (les sauvegardes peuvent encore les référencer).
+
+## FAQ
+
+**Un raccourci n'arrive pas dans l'application.**
+- Vérifiez d'abord que l'application cible n'est pas lancée en administrateur. Windows refuse la saisie simulée vers une
+  application élevée depuis une application qui ne l'est pas ; le journal le signale (« SendInput : … acceptés »).
+- Sinon, placez une étape « Fenêtre au premier plan » avant le raccourci, suivie d'une pause d'environ 150 ms.
+
+**Le toucher agit sur le mauvais écran.**
+Le câble HDMI ne transporte que l'image. Associez le toucher au bon écran dans Paramètres Windows › Affichage ›
+« Étalonner l'écran pour la saisie tactile ».
+
+**TouchDeck dit que ma configuration est invalide.**
+Le fichier fautif est conservé sous `config.invalide-<date>.json` et TouchDeck démarre sur une configuration par défaut.
+Corrigez le JSON, ou restaurez une sauvegarde depuis Paramètres › Sauvegardes.
+
+**Comment repartir de zéro ?**
+Quittez TouchDeck et renommez `%APPDATA%\TouchDeck\config.json`. Une configuration par défaut est créée au lancement
+suivant.
+
+**Où trouver le journal ?**
+Dans `%APPDATA%\TouchDeck\touchdeck.log`. Le bouton Paramètres › « Ouvrir le dossier de configuration » y mène directement.
+
+**Comment essayer sans risque ?**
+Lancez `TouchDeck.exe --simulate` : les actions s'affichent au lieu d'être exécutées. Ajoutez `TOUCHDECK_DATA_DIR` pour
+utiliser un dossier de configuration jetable.
 
 ## Sécurité
 
