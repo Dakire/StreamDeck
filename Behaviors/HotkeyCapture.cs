@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -25,8 +26,8 @@ public static class HotkeyCapture
     static string? KeyName(Key k) => k switch
     {
         >= Key.A and <= Key.Z => k.ToString().ToLowerInvariant(),
-        >= Key.D0 and <= Key.D9 => ((int)k - (int)Key.D0).ToString(),
-        >= Key.NumPad0 and <= Key.NumPad9 => ((int)k - (int)Key.NumPad0).ToString(),
+        >= Key.D0 and <= Key.D9 => ((int)k - (int)Key.D0).ToString(CultureInfo.InvariantCulture),
+        >= Key.NumPad0 and <= Key.NumPad9 => ((int)k - (int)Key.NumPad0).ToString(CultureInfo.InvariantCulture),
         >= Key.F1 and <= Key.F24 => k.ToString().ToLowerInvariant(),
         Key.Enter => "enter", Key.Escape => "esc", Key.Tab => "tab", Key.Space => "space",
         Key.Back => "backspace", Key.Delete => "delete", Key.Insert => "insert",

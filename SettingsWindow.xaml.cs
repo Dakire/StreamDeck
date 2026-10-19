@@ -6,6 +6,8 @@ using TouchDeck.ViewModels;
 
 namespace TouchDeck;
 
+/// <summary>Fenêtre des paramètres : la logique vit dans <see cref="SettingsViewModel"/>, ici seulement les dialogues.</summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001", Justification = "Le ViewModel est libéré à la fermeture de la fenêtre (Closed), fin de vie d'une Window WPF.")]
 public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow, ISettingsShell
 {
     readonly SettingsViewModel _vm;

@@ -876,7 +876,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         return items;
     }
 
-    IReadOnlyList<MenuItemSpec> BuildAddMenu(int index)
+    List<MenuItemSpec> BuildAddMenu(int index)
     {
         var list = new List<MenuItemSpec>();
         foreach (var cat in ActionCatalog.Categories)

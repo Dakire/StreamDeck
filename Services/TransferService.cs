@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -59,9 +60,9 @@ public static class TransferService
         var profile = pkg.Profile;
         int buttons = profile.Pages.Sum(p => DeckDocument.AllButtons(p.Buttons).Count());
         var msg = new StringBuilder();
-        msg.AppendLine($"Ajouter le profil « {profile.Name} » ({profile.Pages.Count} page(s), {buttons} bouton(s)) ?");
+        msg.AppendLine(CultureInfo.CurrentCulture, $"Ajouter le profil « {profile.Name} » ({profile.Pages.Count} page(s), {buttons} bouton(s)) ?");
         if (pkg.RiskyActions > 0)
-            msg.AppendLine().AppendLine($"Il contient {pkg.RiskyActions} action(s) qui lancent des programmes ou des scripts avec tes droits. N'importe que des fichiers de confiance.");
+            msg.AppendLine().AppendLine(CultureInfo.CurrentCulture, $"Il contient {pkg.RiskyActions} action(s) qui lancent des programmes ou des scripts avec tes droits. N'importe que des fichiers de confiance.");
         foreach (var w in pkg.Warnings.Take(5)) msg.AppendLine("• " + w);
         if (!await ui.ConfirmAsync("Importer un profil", msg.ToString().TrimEnd(), "Importer", danger: pkg.RiskyActions > 0)) return null;
 
@@ -93,10 +94,10 @@ public static class TransferService
         var cfg = pkg.Config;
         int buttons = cfg.Profiles.Sum(pr => pr.Pages.Sum(p => DeckDocument.AllButtons(p.Buttons).Count()));
         var msg = new StringBuilder();
-        msg.AppendLine($"Remplacer toute la configuration actuelle par celle du fichier ({cfg.Profiles.Count} profil(s), {buttons} bouton(s)) ?");
+        msg.AppendLine(CultureInfo.CurrentCulture, $"Remplacer toute la configuration actuelle par celle du fichier ({cfg.Profiles.Count} profil(s), {buttons} bouton(s)) ?");
         msg.AppendLine().AppendLine("Une sauvegarde de la configuration actuelle est faite avant, et tu peux annuler.");
         if (pkg.RiskyActions > 0)
-            msg.AppendLine().AppendLine($"Le fichier contient {pkg.RiskyActions} action(s) qui lancent des programmes ou des scripts avec tes droits. N'importe que des fichiers de confiance.");
+            msg.AppendLine().AppendLine(CultureInfo.CurrentCulture, $"Le fichier contient {pkg.RiskyActions} action(s) qui lancent des programmes ou des scripts avec tes droits. N'importe que des fichiers de confiance.");
         foreach (var w in pkg.Warnings.Take(5)) msg.AppendLine("• " + w);
         if (!await ui.ConfirmAsync("Importer une configuration", msg.ToString().TrimEnd(), "Remplacer", danger: true)) return false;
 

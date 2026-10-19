@@ -72,7 +72,9 @@ public static class NativeInput
     {
         if (inputs.Count == 0) return;
         var arr = inputs.ToArray();
-        SendInput((uint)arr.Length, arr, Marshal.SizeOf<INPUT>());
+        // Moins d'événements acceptés que fournis : en général l'application active est élevée (UIPI) et refuse la saisie
+        uint sent = SendInput((uint)arr.Length, arr, Marshal.SizeOf<INPUT>());
+        if (sent != arr.Length) Log.Warn($"SendInput : {sent} événement(s) sur {arr.Length} acceptés (application cible élevée ?)");
     }
 
     static ushort ParseKey(string k)

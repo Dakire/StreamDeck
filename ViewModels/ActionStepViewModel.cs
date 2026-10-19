@@ -30,6 +30,9 @@ public sealed record IssueViewModel(Severity Severity, string Message)
 /// <summary>Une étape d'un bouton : type, valeur et arguments, avec les choix propres à chaque type et la validation en direct.</summary>
 public partial class ActionStepViewModel : ObservableObject
 {
+    /// <summary>Destinations spéciales de l'action « page », proposées avant les pages du profil.</summary>
+    static readonly string[] SpecialPages = { "home", "back" };
+
     static readonly (string Key, string Label)[] Types =
     {
         ("hotkey", "Raccourci"), ("text", "Texte"), ("media", "Média"),
@@ -90,7 +93,7 @@ public partial class ActionStepViewModel : ObservableObject
         foreach (var t in Types) TypeChoices.Add(new ChoiceViewModel(t.Label, () => SetType(t.Key)));
         foreach (var m in MediaKeys) MediaChoices.Add(new ChoiceViewModel(m.Label, () => Value = m.Key));
         foreach (var c in AudioCommands) AudioChoices.Add(new ChoiceViewModel(c.Label, () => Value = c.Key));
-        foreach (var name in new[] { "home", "back" }.Concat(owner.PageNames))
+        foreach (var name in SpecialPages.Concat(owner.PageNames))
         {
             var n = name;
             PageChoices.Add(new ChoiceViewModel(n == "home" ? "Accueil" : n == "back" ? "Retour" : n, () => Value = n));

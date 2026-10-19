@@ -65,7 +65,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     {
         base.OnSourceInitialized(e);
         // NOACTIVATE : toucher l'appli ne retire pas le focus de la fenêtre en cours (les raccourcis lui parviennent)
-        SetWindowLong(Hwnd, GWL_EXSTYLE, GetWindowLong(Hwnd, GWL_EXSTYLE) | WS_EX_NOACTIVATE);
+        _ = SetWindowLong(Hwnd, GWL_EXSTYLE, GetWindowLong(Hwnd, GWL_EXSTYLE) | WS_EX_NOACTIVATE);
+        // Cœur du produit : sans ce style, les raccourcis partiraient vers le deck au lieu de l'application active
+        if ((GetWindowLong(Hwnd, GWL_EXSTYLE) & WS_EX_NOACTIVATE) == 0) Log.Error("Style WS_EX_NOACTIVATE non appliqué à la fenêtre du deck");
         HwndSource.FromHwnd(Hwnd)?.AddHook(WndProc);
         PlaceOnScreen();
     }

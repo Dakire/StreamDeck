@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -89,7 +90,7 @@ public partial class TileFace : UserControl
         StepBadge.Margin = new Thickness(0, pad, pad, 0);
         StepGlyph.FontSize = badge * 0.6;
         StepText.FontSize = badge * 0.55;
-        StepText.Text = f.Steps.ToString();
+        StepText.Text = f.Steps.ToString(CultureInfo.CurrentCulture);
 
         // Barre de progression du minuteur, posée au bas de la touche
         ProgressTrack.Visibility = f.Progress != null ? Visibility.Visible : Visibility.Collapsed;

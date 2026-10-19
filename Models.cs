@@ -15,10 +15,10 @@ public class DeckConfig
     /// <summary>true = plein écran sur l'écran cible ; false = fenêtre (utile pour tester).</summary>
     public bool Fullscreen { get; set; } = true;
     /// <summary>true = reste au-dessus des autres fenêtres. Par défaut non.</summary>
-    public bool AlwaysOnTop { get; set; } = false;
+    public bool AlwaysOnTop { get; set; }
     /// <summary>Colonnes / lignes de la grille. 0 = automatique selon la résolution (≈ 20 cases en FHD).</summary>
-    public int Columns { get; set; } = 0;
-    public int Rows { get; set; } = 0;
+    public int Columns { get; set; }
+    public int Rows { get; set; }
     public double Spacing { get; set; } = 14;
     public string Background { get; set; } = "#0E1015";
     /// <summary>Thème : "system" (suit Windows), "dark" ou "light".</summary>

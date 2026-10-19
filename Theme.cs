@@ -112,7 +112,7 @@ public static class Theme
     }
 
     /// <summary>Fond de la fenêtre du deck : lueur douce en haut, plus profond en bas. Opaque : lisible quel que soit le fond d'écran.</summary>
-    static Brush Backdrop()
+    static RadialGradientBrush Backdrop()
     {
         var (glow, mid, deep) = Dark ? ("#1C2233", "#12151D", "#0C0E13") : ("#FFFFFF", "#F3F4F8", "#E8EBF2");
         var brush = new RadialGradientBrush

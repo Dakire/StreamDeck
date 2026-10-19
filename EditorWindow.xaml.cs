@@ -17,6 +17,7 @@ namespace TouchDeck;
 /// Fenêtre de l'éditeur. La logique vit dans <see cref="EditorViewModel"/> ; ici : dialogues, focus, raccourcis clavier,
 /// menus contextuels et glisser-déposer (ce qui relève des événements WPF).
 /// </summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001", Justification = "Le ViewModel est libéré à la fermeture de la fenêtre (Closed), fin de vie d'une Window WPF.")]
 public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
 {
     const string DragFormat = "TouchDeck.Drag";

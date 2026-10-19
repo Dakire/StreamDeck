@@ -77,6 +77,8 @@ public sealed class TileFaceData
         return TileKind.Standard;
     }
 
+    /// <summary>Face d'un bouton de la configuration, d'après son contenu (variante, couleurs, image, titre dynamique).</summary>
+    /// <param name="b">Bouton à dessiner.</param>
     /// <param name="timer">Temps restant du minuteur du bouton, s'il tourne : remplace « {timer} », ou le titre s'il n'en contient pas.</param>
     /// <param name="progress">Part écoulée de ce minuteur (0 à 1).</param>
     public static TileFaceData From(DeckButton b, string? timer = null, double? progress = null)

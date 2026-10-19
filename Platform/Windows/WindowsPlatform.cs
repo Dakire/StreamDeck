@@ -21,8 +21,9 @@ public sealed class WindowsPlatform : IKeyboardService, IAppLauncher, IWindowSer
         using var _ = Process.Start(new ProcessStartInfo(target) { UseShellExecute = true, Arguments = arguments ?? "" });
     }
 
-    public void RunScript(string value, string? args)
+    public void RunScript(string scriptOrCommand, string? arguments)
     {
+        string value = scriptOrCommand, args = arguments ?? "";
         var ext = Path.GetExtension(value).ToLowerInvariant();
         var psi = new ProcessStartInfo { CreateNoWindow = true, UseShellExecute = false };
         if (ext == ".ps1")

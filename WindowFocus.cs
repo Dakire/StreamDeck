@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace TouchDeck;
 
@@ -20,7 +19,7 @@ public static class WindowFocus
     [DllImport("user32.dll")] static extern bool BringWindowToTop(IntPtr h);
     [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] static extern int GetWindowTextLength(IntPtr h);
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowText(IntPtr h, StringBuilder sb, int max);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowText(IntPtr h, [Out] char[] buffer, int max);
     [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
     [DllImport("user32.dll")] static extern bool AttachThreadInput(uint from, uint to, bool attach);
     [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int index);
@@ -37,19 +36,22 @@ public static class WindowFocus
     {
         var list = new List<Win>();
         uint self = (uint)Environment.ProcessId;
-        EnumWindows((h, _) =>
+        EnumWindows((h, lParam) =>
         {
             if (!IsWindowVisible(h)) return true;
             if ((GetWindowLong(h, GWL_EXSTYLE) & WS_EX_TOOLWINDOW) != 0) return true;
             int len = GetWindowTextLength(h);
             if (len == 0) return true;
-            var sb = new StringBuilder(len + 1);
-            GetWindowText(h, sb, sb.Capacity);
-            GetWindowThreadProcessId(h, out uint pid);
+            var buffer = new char[len + 1];
+            int copied = GetWindowText(h, buffer, buffer.Length);
+            _ = GetWindowThreadProcessId(h, out uint pid);
             if (pid == self) return true;
             string proc;
-            try { proc = Process.GetProcessById((int)pid).ProcessName; } catch { return true; }
-            list.Add(new Win(h, sb.ToString(), proc));
+            // Processus terminé entre l'énumération et la lecture, ou protégé : la fenêtre est simplement ignorée
+            try { proc = Process.GetProcessById((int)pid).ProcessName; }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception) { return true; }
+            catch (Exception ex) { Log.Error("Lecture du programme d'une fenêtre impossible", ex); return true; }
+            list.Add(new Win(h, new string(buffer, 0, Math.Max(0, copied)), proc));
             return true;
         }, IntPtr.Zero);
         return list;
@@ -62,11 +64,13 @@ public static class WindowFocus
         {
             var h = GetForegroundWindow();
             if (h == IntPtr.Zero) return null;
-            GetWindowThreadProcessId(h, out uint pid);
+            _ = GetWindowThreadProcessId(h, out uint pid);
             if (pid == 0 || pid == (uint)Environment.ProcessId) return null;
             return Process.GetProcessById((int)pid).ProcessName;
         }
-        catch { return null; }
+        // Relevé toutes les 0,8 s : un processus qui vient de se terminer n'est pas une erreur, on ne journalise pas
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception) { return null; }
+        catch (Exception ex) { Log.Error("Lecture de l'application au premier plan impossible", ex); return null; }
     }
 
     /// <summary>Distinct par programme, pour proposer un choix dans l'éditeur.</summary>

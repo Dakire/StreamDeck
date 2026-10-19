@@ -625,7 +625,7 @@ ulle\part.exe" } } });
     }
 
     [Fact]
-    public void ImportedProfileThroughTheServiceIsAddedAndUndoable()
+    public async Task ImportedProfileThroughTheServiceIsAddedAndUndoable()
     {
         _host.Reset();
         var tmp = Path.Combine(Path.GetTempPath(), "td-import-" + Guid.NewGuid().ToString("N") + ".touchdeck");
@@ -635,7 +635,7 @@ ulle\part.exe" } } });
             p.Name = "Importé";
             ProfilePackage.ExportProfile(p, tmp);
             var shell = new FakeShell();
-            var name = _host.Run(() => TransferService.ImportProfileAsync(shell, Doc, tmp)).GetAwaiter().GetResult();
+            var name = await _host.Run(() => TransferService.ImportProfileAsync(shell, Doc, tmp));
             Assert.Equal("Importé", name);
             Assert.Contains("confirm:Importer un profil", shell.Calls);
             Assert.Equal(2, _host.Run(() => Doc.Config.Profiles.Count));
@@ -643,7 +643,7 @@ ulle\part.exe" } } });
             Assert.Single(_host.Run(() => Doc.Config.Profiles));
 
             shell.ConfirmAnswer = false;
-            Assert.Null(_host.Run(() => TransferService.ImportProfileAsync(shell, Doc, tmp)).GetAwaiter().GetResult());
+            Assert.Null(await _host.Run(() => TransferService.ImportProfileAsync(shell, Doc, tmp)));
             Assert.Single(_host.Run(() => Doc.Config.Profiles));
         }
         finally { File.Delete(tmp); }

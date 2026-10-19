@@ -1,0 +1,11 @@
+<Project>
+  <!-- Réglages communs à l'application et aux tests : analyseurs .NET, style vérifié à la compilation, avertissements bloquants. -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Fichier XML de documentation : nécessaire à IDE0005 (using inutiles) et aux info-bulles des API -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+</Project>

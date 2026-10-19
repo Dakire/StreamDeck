@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -477,7 +477,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     void RefreshLive()
     {
         _engine.Context.Countdowns.Tick();
-        var minute = DateTime.Now.ToString("yyyyMMddHHmm");
+        var minute = DateTime.Now.ToString("yyyyMMddHHmm", CultureInfo.InvariantCulture);
         bool newMinute = minute != _lastMinute;
         _lastMinute = minute;
         foreach (var t in Tiles.OfType<DeckTileViewModel>())
