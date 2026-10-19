@@ -39,6 +39,7 @@
     <ProjectReference Include="Integrations\ElgatoLight\TouchDeck.Integrations.ElgatoLight.csproj" />
     <ProjectReference Include="Integrations\Hue\TouchDeck.Integrations.Hue.csproj" />
     <ProjectReference Include="Integrations\WindowsSystem\TouchDeck.Integrations.WindowsSystem.csproj" />
+    <ProjectReference Include="Integrations\XPlane\TouchDeck.Integrations.XPlane.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />

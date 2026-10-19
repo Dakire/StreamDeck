@@ -12,6 +12,7 @@ using TouchDeck.Integrations.Hue;
 using TouchDeck.Integrations.Obs;
 using TouchDeck.Integrations.Vmix;
 using TouchDeck.Integrations.WindowsSystem;
+using TouchDeck.Integrations.XPlane;
 using TouchDeck.Platform.Windows;
 
 namespace TouchDeck;
@@ -99,6 +100,7 @@ public static class AppHost
         AddIntegration<ElgatoLightIntegration>(services);
         AddIntegration<HueIntegration>(services);
         AddIntegration<WindowsSystemIntegration>(services);
+        AddIntegration<XPlaneIntegration>(services);
 
         services.AddSingleton<IDisplayService, WindowsDisplayService>();
         services.AddSingleton<DisplayService>();
