@@ -17,48 +17,65 @@
   <ui:FluentWindow.Resources>
     <BooleanToVisibilityConverter x:Key="BoolVis"/>
 
-    <!-- Pastille de la barre du bas (puces, onglets, engrenage) -->
-    <Style x:Key="BarChip" TargetType="Button" BasedOn="{StaticResource FlatButton}">
-      <Setter Property="Height" Value="{Binding L.BarH}"/>
-      <Setter Property="MinWidth" Value="{Binding L.BarH}"/>
-      <Setter Property="Tag" Value="{Binding L.BarRadius}"/>
-      <Setter Property="Margin" Value="{Binding L.ChipMargin}"/>
-      <Setter Property="Padding" Value="{Binding L.ChipPadding}"/>
-      <Setter Property="FontSize" Value="{Binding L.BarFont}"/>
-      <Setter Property="Background" Value="{DynamicResource DeckSurface}"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource DeckLine}"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="Foreground" Value="{DynamicResource DeckText}"/>
+    <!-- ===== Dock du bas : une seule surface pour les pages, les sous-pages et le menu ===== -->
+
+    <!-- Commande du dock : transparente, la surface du dock porte le fond -->
+    <Style x:Key="DockButton" TargetType="Button" BasedOn="{StaticResource FlatButton}">
+      <Setter Property="Height" Value="{Binding DataContext.L.BarH, RelativeSource={RelativeSource AncestorType=Window}}"/>
+      <Setter Property="MinWidth" Value="{Binding DataContext.L.BarH, RelativeSource={RelativeSource AncestorType=Window}}"/>
+      <Setter Property="Tag" Value="{Binding DataContext.L.BarRadius, RelativeSource={RelativeSource AncestorType=Window}}"/>
+      <Setter Property="FontSize" Value="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=Window}}"/>
+      <Setter Property="Padding" Value="{Binding DataContext.L.ChipPadding, RelativeSource={RelativeSource AncestorType=Window}}"/>
+      <Setter Property="Margin" Value="{Binding DataContext.L.ChipMargin, RelativeSource={RelativeSource AncestorType=Window}}"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource DeckTextSoft}"/>
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
     </Style>
 
-    <Style x:Key="BarAccentChip" TargetType="Button" BasedOn="{StaticResource BarChip}">
+    <Style x:Key="DockAccentButton" TargetType="Button" BasedOn="{StaticResource DockButton}">
       <Setter Property="Background" Value="{DynamicResource DeckAccent}"/>
-      <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="Foreground" Value="White"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
     </Style>
 
-    <!-- Onglet de page : l'onglet actif prend la couleur d'accent -->
-    <Style x:Key="BarTab" TargetType="Button" BasedOn="{StaticResource BarChip}">
-      <!-- dans un DataTemplate le DataContext est l'onglet : on remonte au ViewModel principal -->
-      <Setter Property="Height" Value="{Binding DataContext.L.BarH, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
-      <Setter Property="Tag" Value="{Binding DataContext.L.BarRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
-      <Setter Property="FontSize" Value="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
-      <Setter Property="MinWidth" Value="{Binding DataContext.L.TabMinW, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
-      <Setter Property="Margin" Value="{Binding DataContext.L.TabMargin, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
-      <Setter Property="Padding" Value="{Binding DataContext.L.TabPadding, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+    <!-- Onglet de page (contrôle segmenté) : l'onglet actif est une pastille d'accent, les autres restent discrets -->
+    <Style x:Key="DockTab" TargetType="Button" BasedOn="{StaticResource DockButton}">
+      <Setter Property="MinWidth" Value="{Binding DataContext.L.TabMinW, RelativeSource={RelativeSource AncestorType=Window}}"/>
+      <Setter Property="Padding" Value="{Binding DataContext.L.TabPadding, RelativeSource={RelativeSource AncestorType=Window}}"/>
+      <Setter Property="Margin" Value="{Binding DataContext.L.TabMargin, RelativeSource={RelativeSource AncestorType=Window}}"/>
+      <Setter Property="Foreground" Value="{DynamicResource DeckDim}"/>
       <Style.Triggers>
         <DataTrigger Binding="{Binding IsActive}" Value="True">
           <Setter Property="Background" Value="{DynamicResource DeckAccent}"/>
-          <Setter Property="BorderBrush" Value="Transparent"/>
           <Setter Property="Foreground" Value="White"/>
           <Setter Property="FontWeight" Value="SemiBold"/>
         </DataTrigger>
       </Style.Triggers>
     </Style>
 
-    <!-- Entrée de menu : le libellé « danger » prend la couleur d'alerte -->
+    <!-- ===== Barre du haut ===== -->
+
+    <Style x:Key="TopButton" TargetType="Button" BasedOn="{StaticResource FlatButton}">
+      <Setter Property="Width" Value="{Binding DataContext.L.MinW, RelativeSource={RelativeSource AncestorType=Window}}"/>
+      <Setter Property="Height" Value="{Binding DataContext.L.MinH, RelativeSource={RelativeSource AncestorType=Window}}"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource DeckDim}"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="2,0,0,0"/>
+      <Setter Property="Tag"><Setter.Value><CornerRadius>10</CornerRadius></Setter.Value></Setter>
+    </Style>
+
+    <!-- Pastille d'information de la barre du haut (profil, mode) -->
+    <Style x:Key="TopPill" TargetType="Border">
+      <Setter Property="Height" Value="{Binding DataContext.L.PillH, RelativeSource={RelativeSource AncestorType=Window}}"/>
+      <Setter Property="CornerRadius" Value="{Binding DataContext.L.PillRadius, RelativeSource={RelativeSource AncestorType=Window}}"/>
+      <Setter Property="Padding" Value="12,0,14,0"/>
+      <Setter Property="Margin" Value="0,0,8,0"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <!-- Menu -->
     <Style x:Key="MenuRow" TargetType="Button" BasedOn="{StaticResource FlatButton}">
       <Setter Property="Height" Value="{Binding DataContext.L.MenuRowH, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
       <Setter Property="FontSize" Value="{Binding DataContext.L.MenuFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
@@ -73,41 +90,38 @@
       </Style.Triggers>
     </Style>
 
-    <Style x:Key="FluentGlyph" TargetType="TextBlock">
-      <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
-      <Setter Property="HorizontalAlignment" Value="Center"/>
-      <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
+    <!-- ===== Touches ===== -->
 
-    <!-- Bouton du deck -->
     <DataTemplate DataType="{x:Type vm:DeckTileViewModel}">
       <Button Style="{DynamicResource DeckTileStyle}" Command="{Binding Click}" AutomationProperties.Name="{Binding AccessibleName}"
-              Background="{Binding Face.Background}"
+              Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}"
               Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
               Tag="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
         <Grid>
           <controls:TileFace Face="{Binding Face}"
                              CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
-          <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0" Padding="8,4" CornerRadius="10"
-                  Background="#B3000000" Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
+          <!-- Mode édition au toucher : chaque touche s'ouvre dans l'éditeur -->
+          <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="8,4" CornerRadius="10"
+                  Background="{DynamicResource DeckAccent}" Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
             <StackPanel Orientation="Horizontal">
               <ui:SymbolIcon Symbol="Edit24" Foreground="White" Margin="0,0,6,0"
                              FontSize="{Binding DataContext.L.EditSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
-              <TextBlock Text="Modifier" Foreground="White" VerticalAlignment="Center"
+              <TextBlock Text="Modifier" Foreground="White" VerticalAlignment="Center" FontWeight="SemiBold"
                          FontSize="{Binding DataContext.L.EditSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
             </StackPanel>
           </Border>
-          <!-- État d'exécution : anneau pendant une action longue, coche (réussie) ou alerte (échec, détail dans la barre d'état) -->
+          <!-- État d'exécution : anneau pendant une action longue, coche (réussie) ou alerte (échec, détail dans le message) -->
           <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="6" CornerRadius="16" Background="#B3000000"
                   Visibility="{Binding IsRunning, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Action en cours">
             <ui:ProgressRing IsIndeterminate="True" Width="22" Height="22" Foreground="White"/>
           </Border>
-          <Border Background="#8C000000" CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+          <Border Background="#99000000" CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                   Visibility="{Binding IsSuccess, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Action réussie">
-            <ui:SymbolIcon Symbol="CheckmarkCircle24" Filled="True" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"
+            <ui:SymbolIcon Symbol="CheckmarkCircle24" Filled="True" Foreground="#FF5CD6A0" HorizontalAlignment="Center" VerticalAlignment="Center"
                            FontSize="{Binding DataContext.L.IconSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
           </Border>
-          <Border Background="#EB0B0D12" CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+          <Border Background="#FA0B0D12" CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                  BorderBrush="#FFFF8A97" BorderThickness="2"
                   Visibility="{Binding IsError, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Échec de l'action">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
               <ui:SymbolIcon Symbol="Warning24" Filled="True" Foreground="#FFFCD34D" HorizontalAlignment="Center"
@@ -120,9 +134,12 @@
       </Button>
     </DataTemplate>
 
-    <!-- Case vide hors édition : garde la place -->
+    <!-- Emplacement libre hors édition : une touche « éteinte », comme sur un deck physique ; garde la place des voisines -->
     <DataTemplate DataType="{x:Type vm:SpacerTileViewModel}">
-      <Border IsHitTestVisible="False"/>
+      <Border IsHitTestVisible="False" Background="{DynamicResource DeckSurface}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1"
+              Opacity="0.35"
+              Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+              CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
     </DataTemplate>
 
     <!-- Emplacement vide du mode édition -->
@@ -135,6 +152,29 @@
       </Button>
     </DataTemplate>
 
+    <!-- Point de sous-page : cible tactile pleine hauteur, le point lui-même reste discret -->
+    <DataTemplate DataType="{x:Type vm:PageDotViewModel}">
+      <Button Style="{StaticResource FlatButton}" Command="{Binding Command}" AutomationProperties.Name="{Binding Text}" ToolTip="{Binding Text}"
+              Background="Transparent" Width="{Binding DataContext.L.DotActiveW, RelativeSource={RelativeSource AncestorType=Window}}"
+              Height="{Binding DataContext.L.BarH, RelativeSource={RelativeSource AncestorType=Window}}" Margin="2,0">
+        <Border Height="{Binding DataContext.L.DotSize, RelativeSource={RelativeSource AncestorType=Window}}"
+                CornerRadius="5" HorizontalAlignment="Center">
+          <Border.Style>
+            <Style TargetType="Border">
+              <Setter Property="Width" Value="{Binding DataContext.L.DotSize, RelativeSource={RelativeSource AncestorType=Window}}"/>
+              <Setter Property="Background" Value="{DynamicResource DeckGrip}"/>
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                  <Setter Property="Width" Value="{Binding DataContext.L.DotActiveW, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Setter Property="Background" Value="{DynamicResource DeckAccentText}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Border.Style>
+        </Border>
+      </Button>
+    </DataTemplate>
+
     <!-- Entrées du menu -->
     <DataTemplate DataType="{x:Type vm:MenuEntryViewModel}">
       <Button Style="{StaticResource MenuRow}" Command="{Binding Command}" AutomationProperties.Name="{Binding Text}">
@@ -144,11 +184,11 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>
           </Grid.ColumnDefinitions>
-          <ui:SymbolIcon Symbol="{Binding Symbol}" HorizontalAlignment="Center" VerticalAlignment="Center"
+          <ui:SymbolIcon Symbol="{Binding Symbol}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource DeckDim}"
                      FontSize="{Binding DataContext.L.MenuIconFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
           <TextBlock Grid.Column="1" Text="{Binding Text}" VerticalAlignment="Center"/>
-          <TextBlock Grid.Column="2" Text="{Binding Trailing}" FontWeight="Bold" VerticalAlignment="Center"
-                     Margin="0,0,14,0" Foreground="{DynamicResource DeckAccent}"/>
+          <TextBlock Grid.Column="2" Text="{Binding Trailing}" FontWeight="SemiBold" VerticalAlignment="Center"
+                     Margin="0,0,14,0" Foreground="{DynamicResource DeckAccentText}"/>
         </Grid>
       </Button>
     </DataTemplate>
@@ -165,7 +205,7 @@
       <RowDefinition Height="{Binding L.BarRowH}"/>
     </Grid.RowDefinitions>
 
-    <!-- Barre du haut : marque, poignée de déplacement, réduire -->
+    <!-- ===== Barre du haut : marque, profil, mode ; poignée de déplacement ; commandes de fenêtre ===== -->
     <Border Grid.Row="0" Background="{DynamicResource DeckTopBar}" MouseLeftButtonDown="OnDragBarDown">
       <Grid Margin="{Binding L.TopMargin}">
         <Grid.ColumnDefinitions>
@@ -175,38 +215,61 @@
         </Grid.ColumnDefinitions>
         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
           <Image Source="Assets/logo.png" Width="{Binding L.LogoSize}" Height="{Binding L.LogoSize}"/>
-          <TextBlock Text="{Binding BrandText}" FontWeight="SemiBold" VerticalAlignment="Center"
-                     FontSize="{Binding L.TopFont}" Margin="{Binding L.BrandTextMargin}">
-            <TextBlock.Style>
-              <Style TargetType="TextBlock">
-                <Setter Property="Foreground" Value="{DynamicResource DeckDim}"/>
-                <Style.Triggers>
-                  <DataTrigger Binding="{Binding IsEdit}" Value="True">
-                    <Setter Property="Foreground" Value="{DynamicResource DeckAccent}"/>
-                  </DataTrigger>
-                </Style.Triggers>
-              </Style>
-            </TextBlock.Style>
-          </TextBlock>
+          <TextBlock Text="TouchDeck" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource DeckText}"
+                     FontFamily="Segoe UI Variable Display, Segoe UI" FontSize="{Binding L.TopFont}" Margin="{Binding L.BrandTextMargin}"/>
+
+          <!-- Profil actif : touchable, ouvre la liste des profils -->
+          <Button Style="{StaticResource FlatButton}" Command="{Binding OpenProfilesCommand}" Background="Transparent" Padding="0"
+                  AutomationProperties.Name="{Binding ProfileName, StringFormat='Profil {0}, changer de profil'}" Margin="0,0,8,0"
+                  Tag="{Binding L.PillRadius}">
+            <Border Style="{StaticResource TopPill}" Margin="0" Background="{DynamicResource DeckSurface}" BorderBrush="{DynamicResource DeckLine}">
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <ui:SymbolIcon Symbol="Person24" Foreground="{DynamicResource DeckAccentText}" FontSize="{Binding L.PillFont}" Margin="0,0,8,0"/>
+                <TextBlock Text="{Binding ProfileName}" Foreground="{DynamicResource DeckText}" FontSize="{Binding L.PillFont}" VerticalAlignment="Center"
+                           MaxWidth="260" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="  · auto" Foreground="{DynamicResource DeckDim}" FontSize="{Binding L.PillFont}" VerticalAlignment="Center"
+                           Visibility="{Binding IsAutoProfile, Converter={StaticResource BoolVis}}"
+                           ToolTip="Affiché automatiquement pour l'application au premier plan"/>
+                <ui:SymbolIcon Symbol="ChevronDown20" Foreground="{DynamicResource DeckDim}" FontSize="{Binding L.PillFont}" Margin="6,0,0,0"
+                               Visibility="{Binding HasProfiles, Converter={StaticResource BoolVis}}"/>
+              </StackPanel>
+            </Border>
+          </Button>
+
+          <!-- Dossier ouvert -->
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0" Visibility="{Binding InFolder, Converter={StaticResource BoolVis}}">
+            <ui:SymbolIcon Symbol="Folder24" Foreground="{DynamicResource DeckDim}" FontSize="{Binding L.PillFont}" Margin="0,0,6,0"/>
+            <TextBlock Text="{Binding PathText}" Foreground="{DynamicResource DeckTextSoft}" FontSize="{Binding L.PillFont}" VerticalAlignment="Center"
+                       MaxWidth="320" TextTrimming="CharacterEllipsis"/>
+          </StackPanel>
+
+          <!-- Modes : jamais signalés par la couleur seule (icône + texte) -->
+          <Border Style="{StaticResource TopPill}" Background="{DynamicResource DeckAccent}" BorderBrush="Transparent"
+                  Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <ui:SymbolIcon Symbol="Edit24" Foreground="White" FontSize="{Binding L.PillFont}" Margin="0,0,6,0"/>
+              <TextBlock Text="Mode édition" Foreground="White" FontWeight="SemiBold" FontSize="{Binding L.PillFont}" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource TopPill}" Background="Transparent" BorderBrush="#FFFCD34D"
+                  Visibility="{Binding IsSimulated, Converter={StaticResource BoolVis}}"
+                  ToolTip="Mode simulation : les actions sont affichées, rien n'est envoyé au système">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <ui:SymbolIcon Symbol="Beaker24" Foreground="#FFFCD34D" FontSize="{Binding L.PillFont}" Margin="0,0,6,0"/>
+              <TextBlock Text="Simulation" Foreground="#FFFCD34D" FontWeight="SemiBold" FontSize="{Binding L.PillFont}" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Border>
         </StackPanel>
+
         <Border Grid.Column="1" CornerRadius="10" VerticalAlignment="Center"
-                Width="{Binding L.GripW}" Height="{Binding L.GripH}" Background="{DynamicResource DeckGrip}"/>
+                Width="{Binding L.GripW}" Height="{Binding L.GripH}" Background="{DynamicResource DeckGrip}"
+                ToolTip="Glisser pour déplacer · double-toucher : plein écran"/>
+
         <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-          <StackPanel.Resources>
-            <Style x:Key="TopButton" TargetType="Button" BasedOn="{StaticResource FlatButton}">
-              <Setter Property="Width" Value="{Binding DataContext.L.MinW, RelativeSource={RelativeSource AncestorType=StackPanel}}"/>
-              <Setter Property="Height" Value="{Binding DataContext.L.MinH, RelativeSource={RelativeSource AncestorType=StackPanel}}"/>
-              <Setter Property="Background" Value="Transparent"/>
-              <Setter Property="Foreground" Value="{DynamicResource DeckDim}"/>
-              <Setter Property="HorizontalContentAlignment" Value="Center"/>
-              <Setter Property="Margin" Value="4,0,0,0"/>
-              <Setter Property="Tag"><Setter.Value><CornerRadius>10</CornerRadius></Setter.Value></Setter>
-            </Style>
-          </StackPanel.Resources>
-          <Button Style="{StaticResource TopButton}" Command="{Binding MinimizeCommand}" ToolTip="Réduire">
+          <Button Style="{StaticResource TopButton}" Command="{Binding MinimizeCommand}" ToolTip="Réduire" AutomationProperties.Name="Réduire">
             <ui:SymbolIcon Symbol="Subtract24" FontSize="{Binding L.MinFont}"/>
           </Button>
-          <Button Style="{StaticResource TopButton}" Command="{Binding ToggleFullscreenCommand}">
+          <Button Style="{StaticResource TopButton}" Command="{Binding ToggleFullscreenCommand}" AutomationProperties.Name="Plein écran ou fenêtre">
             <ui:SymbolIcon FontSize="{Binding L.MinFont}">
               <ui:SymbolIcon.Style>
                 <Style TargetType="ui:SymbolIcon">
@@ -220,15 +283,19 @@
               </ui:SymbolIcon.Style>
             </ui:SymbolIcon>
           </Button>
-          <Button Style="{StaticResource TopButton}" Command="{Binding CloseAppCommand}" ToolTip="Fermer">
+          <Button Style="{StaticResource TopButton}" Command="{Binding CloseAppCommand}" ToolTip="Fermer" AutomationProperties.Name="Fermer TouchDeck">
             <ui:SymbolIcon Symbol="Dismiss24" FontSize="{Binding L.MinFont}"/>
           </Button>
         </StackPanel>
       </Grid>
     </Border>
 
-    <!-- Grille de boutons -->
-    <ItemsControl Grid.Row="1" ItemsSource="{Binding Tiles}" Margin="{Binding L.GridMargin}" Focusable="False">
+    <!-- ===== Grille : centrée, à la taille exacte des touches (aucune touche étirée) ===== -->
+    <ItemsControl x:Name="DeckGrid" Grid.Row="1" ItemsSource="{Binding Tiles}" Focusable="False"
+                  Width="{Binding L.GridW}" Height="{Binding L.GridH}" HorizontalAlignment="Center" VerticalAlignment="Center">
+      <ItemsControl.RenderTransform>
+        <TranslateTransform x:Name="GridShift"/>
+      </ItemsControl.RenderTransform>
       <ItemsControl.ItemsPanel>
         <ItemsPanelTemplate>
           <UniformGrid Columns="{Binding L.Columns}" Rows="{Binding L.Rows}"/>
@@ -236,120 +303,148 @@
       </ItemsControl.ItemsPanel>
     </ItemsControl>
 
-    <!-- Barre du bas : onglets / état, pagination, édition, menu -->
-    <Grid Grid.Row="2" Margin="{Binding L.BarMargin}">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="*"/>
-        <ColumnDefinition Width="Auto"/>
-      </Grid.ColumnDefinitions>
-
+    <!-- ===== Dock : pages (à gauche), sous-pages (au centre), édition et menu (à droite) ===== -->
+    <Border Grid.Row="2" Margin="{Binding L.BarMargin}" VerticalAlignment="Bottom" Padding="6"
+            Background="{DynamicResource DeckDock}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1"
+            CornerRadius="{Binding L.DockRadius}">
+      <Border.Effect>
+        <DropShadowEffect BlurRadius="24" ShadowDepth="4" Direction="270" Opacity="0.25" Color="#000000"/>
+      </Border.Effect>
       <Grid>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-          <StackPanel.Style>
-            <Style TargetType="StackPanel">
-              <Style.Triggers>
-                <DataTrigger Binding="{Binding HasStatus}" Value="True">
-                  <Setter Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
-              </Style.Triggers>
-            </Style>
-          </StackPanel.Style>
-          <ItemsControl ItemsSource="{Binding Tabs}" Focusable="False">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Pages : contrôle segmenté, défilant si elles sont nombreuses -->
+        <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly"
+                      Focusable="False" HorizontalAlignment="Left">
+          <StackPanel Orientation="Horizontal">
+            <Button Style="{StaticResource DockButton}" Command="{Binding ParentFolderCommand}" AutomationProperties.Name="Remonter au dossier parent"
+                    Visibility="{Binding InFolder, Converter={StaticResource BoolVis}}" ToolTip="Dossier parent">
+              <StackPanel Orientation="Horizontal">
+                <ui:SymbolIcon Symbol="ArrowLeft24" Margin="0,0,8,0"/>
+                <TextBlock Text="Retour" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <ItemsControl ItemsSource="{Binding Tabs}" Focusable="False">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:TabViewModel}">
+                  <Button Style="{StaticResource DockTab}" Command="{Binding Command}" Content="{Binding Text}" AutomationProperties.Name="{Binding Text, StringFormat='Page {0}'}"/>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button Style="{StaticResource DockButton}" Command="{Binding AddPageCommand}" AutomationProperties.Name="Ajouter une page"
+                    Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}" ToolTip="Ajouter une page">
+              <ui:SymbolIcon Symbol="Add24"/>
+            </Button>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- Sous-pages : flèches et points -->
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Visibility="{Binding HasSubs, Converter={StaticResource BoolVis}}">
+          <Button Style="{StaticResource DockButton}" Command="{Binding PrevSubCommand}" AutomationProperties.Name="Sous-page précédente" Padding="0">
+            <ui:SymbolIcon Symbol="ChevronLeft24"/>
+          </Button>
+          <ItemsControl ItemsSource="{Binding Dots}" Focusable="False" VerticalAlignment="Center">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-              <DataTemplate DataType="{x:Type vm:TabViewModel}">
-                <Button Style="{StaticResource BarTab}" Command="{Binding Command}" Content="{Binding Text}"/>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
           </ItemsControl>
-          <StackPanel Orientation="Horizontal" Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
-            <Button Style="{StaticResource BarChip}" Command="{Binding AddPageCommand}" Content="＋ Page"/>
-            <Button Style="{StaticResource BarChip}" Command="{Binding OpenEditorHereCommand}" Content="Ouvrir l'éditeur"/>
-          </StackPanel>
-        </StackPanel>
-
-        <!-- message d'état : erreur (rouge) ou information (accent) -->
-        <Border HorizontalAlignment="Left" BorderThickness="1" CornerRadius="{Binding L.BarRadius}"
-                Padding="{Binding L.StatusPadding}" MaxWidth="900"
-                Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}"
-                AutomationProperties.LiveSetting="Polite">
-          <Border.Style>
-            <Style TargetType="Border">
-              <Setter Property="Background" Value="{DynamicResource DeckStatusBg}"/>
-              <Setter Property="BorderBrush" Value="{DynamicResource DeckStatusLine}"/>
-              <Style.Triggers>
-                <DataTrigger Binding="{Binding StatusIsError}" Value="False">
-                  <Setter Property="Background" Value="{DynamicResource DeckSurface}"/>
-                  <Setter Property="BorderBrush" Value="{DynamicResource DeckLine}"/>
-                </DataTrigger>
-              </Style.Triggers>
-            </Style>
-          </Border.Style>
-          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-            <ui:SymbolIcon FontSize="{Binding L.SubFont}" Margin="0,0,10,0">
-              <ui:SymbolIcon.Style>
-                <Style TargetType="ui:SymbolIcon">
-                  <Setter Property="Symbol" Value="Warning24"/>
-                  <Setter Property="Foreground" Value="{DynamicResource DeckStatusText}"/>
-                  <Style.Triggers>
-                    <DataTrigger Binding="{Binding StatusIsError}" Value="False">
-                      <Setter Property="Symbol" Value="Info24"/>
-                      <Setter Property="Foreground" Value="{DynamicResource DeckAccentText}"/>
-                    </DataTrigger>
-                  </Style.Triggers>
-                </Style>
-              </ui:SymbolIcon.Style>
-            </ui:SymbolIcon>
-            <TextBlock Text="{Binding Status}" FontSize="{Binding L.SubFont}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
-              <TextBlock.Style>
-                <Style TargetType="TextBlock">
-                  <Setter Property="Foreground" Value="{DynamicResource DeckStatusText}"/>
-                  <Style.Triggers>
-                    <DataTrigger Binding="{Binding StatusIsError}" Value="False">
-                      <Setter Property="Foreground" Value="{DynamicResource DeckText}"/>
-                    </DataTrigger>
-                  </Style.Triggers>
-                </Style>
-              </TextBlock.Style>
-            </TextBlock>
-          </StackPanel>
-        </Border>
-      </Grid>
-
-      <StackPanel Grid.Column="1" Orientation="Horizontal">
-        <StackPanel Orientation="Horizontal" Visibility="{Binding HasSubs, Converter={StaticResource BoolVis}}">
-          <Button Style="{StaticResource BarChip}" Command="{Binding PrevSubCommand}">
-            <ui:SymbolIcon Symbol="ChevronLeft24"/>
-          </Button>
-          <TextBlock Text="{Binding SubText}" Foreground="{DynamicResource DeckDim}" VerticalAlignment="Center"
-                     FontSize="{Binding L.SubFont}" Margin="{Binding L.SubTextMargin}"/>
-          <Button Style="{StaticResource BarChip}" Command="{Binding NextSubCommand}">
+          <Button Style="{StaticResource DockButton}" Command="{Binding NextSubCommand}" AutomationProperties.Name="Sous-page suivante" Padding="0">
             <ui:SymbolIcon Symbol="ChevronRight24"/>
           </Button>
         </StackPanel>
-        <Button Style="{StaticResource BarAccentChip}" Command="{Binding EndEditCommand}" Content="✓ Terminer"
-                Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}"/>
-        <Button Style="{StaticResource BarChip}" Command="{Binding OpenMenuCommand}" Margin="0" AutomationProperties.Name="Menu" Padding="0"
-                Width="{Binding L.BarH}" Foreground="{DynamicResource DeckTextSoft}">
-          <ui:SymbolIcon Symbol="Settings24" FontSize="{Binding L.GearFont}"/>
-        </Button>
-      </StackPanel>
-    </Grid>
 
-    <!-- Menu : feuille tactile par-dessus l'interface ; toucher en dehors la ferme -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+          <StackPanel Orientation="Horizontal" Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
+            <Button Style="{StaticResource DockButton}" Command="{Binding OpenEditorHereCommand}" AutomationProperties.Name="Ouvrir l'éditeur">
+              <StackPanel Orientation="Horizontal">
+                <ui:SymbolIcon Symbol="WindowEdit20" Margin="0,0,8,0"/>
+                <TextBlock Text="Éditeur" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <Button Style="{StaticResource DockAccentButton}" Command="{Binding EndEditCommand}" AutomationProperties.Name="Terminer la modification">
+              <StackPanel Orientation="Horizontal">
+                <ui:SymbolIcon Symbol="Checkmark24" Foreground="White" Margin="0,0,8,0"/>
+                <TextBlock Text="Terminer" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+          </StackPanel>
+          <Border Width="1" Margin="4,10,8,10" Background="{DynamicResource DeckLine}"/>
+          <Button Style="{StaticResource DockButton}" Command="{Binding OpenMenuCommand}" AutomationProperties.Name="Menu" ToolTip="Menu" Padding="0" Margin="0"
+                  Width="{Binding L.BarH}">
+            <ui:SymbolIcon Symbol="Settings24" FontSize="{Binding L.GearFont}"/>
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- ===== Message (erreur ou information) : au-dessus du dock, sans masquer la navigation ===== -->
+    <Border Grid.Row="1" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="{Binding L.ToastMargin}"
+            BorderThickness="1" CornerRadius="{Binding L.BarRadius}" Padding="{Binding L.StatusPadding}" MaxWidth="900"
+            Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}" AutomationProperties.LiveSetting="Polite" IsHitTestVisible="False">
+      <Border.Style>
+        <Style TargetType="Border">
+          <Setter Property="Background" Value="{DynamicResource DeckStatusBg}"/>
+          <Setter Property="BorderBrush" Value="{DynamicResource DeckStatusLine}"/>
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding StatusIsError}" Value="False">
+              <Setter Property="Background" Value="{DynamicResource DeckSurfaceHi}"/>
+              <Setter Property="BorderBrush" Value="{DynamicResource DeckLine}"/>
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </Border.Style>
+      <Border.Effect>
+        <DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="270" Opacity="0.35" Color="#000000"/>
+      </Border.Effect>
+      <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <ui:SymbolIcon FontSize="{Binding L.SubFont}" Margin="0,0,10,0">
+          <ui:SymbolIcon.Style>
+            <Style TargetType="ui:SymbolIcon">
+              <Setter Property="Symbol" Value="Warning24"/>
+              <Setter Property="Foreground" Value="{DynamicResource DeckStatusText}"/>
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding StatusIsError}" Value="False">
+                  <Setter Property="Symbol" Value="Info24"/>
+                  <Setter Property="Foreground" Value="{DynamicResource DeckAccentText}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </ui:SymbolIcon.Style>
+        </ui:SymbolIcon>
+        <TextBlock Text="{Binding Status}" FontSize="{Binding L.SubFont}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock">
+              <Setter Property="Foreground" Value="{DynamicResource DeckStatusText}"/>
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding StatusIsError}" Value="False">
+                  <Setter Property="Foreground" Value="{DynamicResource DeckText}"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+      </StackPanel>
+    </Border>
+
+    <!-- ===== Menu : feuille tactile au-dessus du dock ; toucher en dehors la ferme ===== -->
     <Grid Grid.RowSpan="3" Visibility="{Binding MenuOpen, Converter={StaticResource BoolVis}}">
       <Border Background="{DynamicResource DeckScrim}">
         <Border.InputBindings>
           <MouseBinding MouseAction="LeftClick" Command="{Binding CloseMenuCommand}"/>
         </Border.InputBindings>
       </Border>
-      <Border Background="{DynamicResource DeckSurface}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1"
-              CornerRadius="22" Padding="10" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+      <Border Background="{DynamicResource DeckPanel}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1"
+              CornerRadius="24" Padding="10" HorizontalAlignment="Right" VerticalAlignment="Bottom"
               Width="{Binding L.MenuWidth}" Margin="{Binding L.MenuMargin}">
         <Border.Effect>
-          <DropShadowEffect BlurRadius="30" ShadowDepth="6" Opacity="0.5"/>
+          <DropShadowEffect BlurRadius="36" ShadowDepth="8" Direction="270" Opacity="0.45"/>
         </Border.Effect>
         <ItemsControl ItemsSource="{Binding MenuEntries}" Focusable="False"/>
       </Border>

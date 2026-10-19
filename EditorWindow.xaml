@@ -36,7 +36,7 @@
           <ControlTemplate TargetType="ListBoxItem">
             <Grid x:Name="Root" Background="Transparent" SnapsToDevicePixels="True">
               <!-- fond : couleur du bouton, ou cadre pointillé pour une case vide -->
-              <Border x:Name="Card" CornerRadius="16" Background="{Binding Face.Background}" BorderBrush="#33FFFFFF" BorderThickness="1"/>
+              <Border x:Name="Card" CornerRadius="16" Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1"/>
               <Rectangle x:Name="EmptyFrame" RadiusX="16" RadiusY="16" Margin="1" Stroke="{DynamicResource DeckPlaceholder}"
                          StrokeThickness="2" StrokeDashArray="4 4" Visibility="Collapsed"/>
               <ui:SymbolIcon x:Name="EmptyPlus" Symbol="Add24" FontSize="30" Foreground="{DynamicResource DeckPlaceholder}"
@@ -614,7 +614,7 @@
                       <ColumnDefinition Width="Auto"/>
                       <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Border Width="132" Height="132" CornerRadius="16" Background="{Binding Preview.Background}" BorderBrush="#33FFFFFF" BorderThickness="1"
+                    <Border Width="132" Height="132" CornerRadius="16" Background="{Binding Preview.Background}" BorderBrush="{Binding Preview.Border}" BorderThickness="1"
                             AutomationProperties.Name="Aperçu du bouton" AutomationProperties.HelpText="Rendu fidèle du bouton sur le deck">
                       <controls:TileFace Face="{Binding Preview}" CornerRadius="16"/>
                     </Border>

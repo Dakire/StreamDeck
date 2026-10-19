@@ -60,6 +60,21 @@ public partial class MainViewModel : ObservableObject, INavigator
     public bool HasStatus => Status != null;
     public string BrandText => (IsEdit ? "TouchDeck  ·  Mode édition" : "TouchDeck")
         + (ProfileCount > 1 ? "  ·  " + CurrentProfile.Name : "") + (PathText.Length > 0 ? "  ›  " + PathText : "");
+
+    // ---------- barre du haut et dock ----------
+
+    /// <summary>Profil affiché (pastille de la barre du haut) ; « auto » s'il est imposé par l'application au premier plan.</summary>
+    public string ProfileName => CurrentProfile.Name;
+    public bool IsAutoProfile => _autoProfile != null;
+    public bool HasProfiles => ProfileCount > 1;
+    public bool IsSimulated => AppServices.Simulated;
+    /// <summary>Points des sous-pages (indicateur du dock).</summary>
+    public ObservableCollection<PageDotViewModel> Dots { get; } = new();
+
+    /// <summary>La vue a changé de page, de sous-page ou de dossier (+1 vers l'avant, -1 vers l'arrière) : la fenêtre anime l'entrée de la grille.</summary>
+    public event Action<int>? Navigated;
+    int _shownPage = -1, _shownSub, _shownDepth;
+    string _shownProfile = "";
     public DeckConfig Config => _doc.Config;
     int ProfileCount => _doc.Config.Profiles.Count;
 
@@ -144,9 +159,10 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     void ApplyBackground()
     {
-        // Couleur par défaut : Mica visible ; couleur personnalisée : fond uni par-dessus
-        if (string.Equals(_doc.Config.Background, Theme.DefaultBackground, StringComparison.OrdinalIgnoreCase)) { RootBackground = Brushes.Transparent; return; }
-        RootBackground = Theme.TryBrush(_doc.Config.Background, out var b) ? b : Brushes.Transparent;   // couleur invalide : Mica
+        // Couleur par défaut : fond nuancé du thème (lueur en haut) ; couleur personnalisée : fond uni
+        var backdrop = Application.Current.Resources["DeckBackdrop"] as Brush ?? Brushes.Transparent;
+        if (string.Equals(_doc.Config.Background, Theme.DefaultBackground, StringComparison.OrdinalIgnoreCase)) { RootBackground = backdrop; return; }
+        RootBackground = Theme.TryBrush(_doc.Config.Background, out var b) ? b : backdrop;   // couleur invalide : fond du thème
     }
 
     void SetStatus(string? text, bool error = true)
@@ -273,6 +289,29 @@ public partial class MainViewModel : ObservableObject, INavigator
         _sub = Math.Clamp(_sub, 0, subs - 1);
         HasSubs = subs > 1;
         SubText = $"{_sub + 1} / {subs}";
+        if (Dots.Count != subs || Dots.Where((d, i) => d.IsActive != (i == _sub)).Any())
+        {
+            Dots.Clear();
+            for (int i = 0; i < subs; i++)
+            {
+                int target = i;
+                Dots.Add(new PageDotViewModel { IsActive = i == _sub, Text = $"Sous-page {i + 1} sur {subs}", Command = new RelayCommand(() => { _sub = target; Rebuild(); }) });
+            }
+        }
+        // Transition : seulement quand l'emplacement affiché change, jamais pour une simple mise à jour de contenu
+        var where = (Profile: profile.Name, Page: _page, Sub: _sub, Depth: _folder.Count);
+        if (_shownPage >= 0 && (where.Profile != _shownProfile || where.Page != _shownPage || where.Sub != _shownSub || where.Depth != _shownDepth))
+        {
+            int dir = where.Profile != _shownProfile ? 1
+                : where.Page != _shownPage ? Math.Sign(where.Page - _shownPage)
+                : where.Depth != _shownDepth ? Math.Sign(where.Depth - _shownDepth)
+                : Math.Sign(where.Sub - _shownSub);
+            Navigated?.Invoke(dir == 0 ? 1 : dir);
+        }
+        (_shownProfile, _shownPage, _shownSub, _shownDepth) = where;
+        OnPropertyChanged(nameof(ProfileName));
+        OnPropertyChanged(nameof(IsAutoProfile));
+        OnPropertyChanged(nameof(HasProfiles));
         InFolder = _folder.Count > 0;
         PathText = BuildPath();
 
@@ -306,7 +345,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             {
                 // Au-delà du contenu : en édition, chaque case libre propose d'ajouter un bouton
                 if (IsEdit) { int at = i - offset; Tiles.Add(new AddTileViewModel { Click = new RelayCommand(() => AppServices.OpenEditor(place, at)) }); }
-                else break;
+                else Tiles.Add(new SpacerTileViewModel());   // touche libre, dessinée éteinte
                 continue;
             }
             var item = view[i];
@@ -380,8 +419,9 @@ public partial class MainViewModel : ObservableObject, INavigator
     {
         var def = tile.Button;
         if (def == null) return;
-        var left = _engine.Context.Countdowns.Remaining(def);
-        tile.Face = TileFaceData.From(def, left is { } t ? Countdowns.Format(t) : null);
+        var countdowns = _engine.Context.Countdowns;
+        var left = countdowns.Remaining(def);
+        tile.Face = TileFaceData.From(def, left is { } t ? Countdowns.Format(t) : null, countdowns.Progress(def));
         tile.AccessibleName = def.IsFolder ? $"Dossier {tile.Face.Label}" : tile.Face.Label;
     }
 
@@ -495,6 +535,8 @@ public partial class MainViewModel : ObservableObject, INavigator
     // ---------- commandes de la vue ----------
 
     [RelayCommand] void OpenMenu() { _profileMenu = false; BuildMenu(); MenuOpen = true; }
+    /// <summary>Pastille du profil : ouvre directement la liste des profils.</summary>
+    [RelayCommand] void OpenProfiles() { if (!HasProfiles) { OpenMenu(); return; } _profileMenu = true; BuildMenu(); MenuOpen = true; }
     [RelayCommand] void CloseMenu() => MenuOpen = false;
     [RelayCommand] void EndEdit() { IsEdit = false; Rebuild(); }
     [RelayCommand] void Minimize() => _shell.Minimize();

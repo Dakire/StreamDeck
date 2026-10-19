@@ -11,7 +11,7 @@ namespace TouchDeck;
 public sealed class Countdowns
 {
     readonly Func<DateTime> _now;
-    readonly Dictionary<DeckButton, DateTime> _ends = new(ReferenceEqualityComparer.Instance);
+    readonly Dictionary<DeckButton, (DateTime End, TimeSpan Duration)> _ends = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>Un compte à rebours vient d'arriver à zéro (signalé par <see cref="Tick"/>).</summary>
     public event Action<DeckButton>? Finished;
@@ -24,7 +24,7 @@ public sealed class Countdowns
     public bool Toggle(DeckButton button, TimeSpan duration)
     {
         if (_ends.Remove(button)) return false;
-        _ends[button] = _now() + duration;
+        _ends[button] = (_now() + duration, duration);
         return true;
     }
 
@@ -33,17 +33,25 @@ public sealed class Countdowns
     /// <summary>Temps restant (arrondi à la seconde supérieure), ou null si le bouton n'a pas de minuteur en cours.</summary>
     public TimeSpan? Remaining(DeckButton button)
     {
-        if (!_ends.TryGetValue(button, out var end)) return null;
-        var left = end - _now();
+        if (!_ends.TryGetValue(button, out var t)) return null;
+        var left = t.End - _now();
         if (left < TimeSpan.Zero) left = TimeSpan.Zero;
         return TimeSpan.FromSeconds(Math.Ceiling(left.TotalSeconds));
+    }
+
+    /// <summary>Part écoulée (0 à 1) du minuteur de ce bouton, ou null s'il n'en a pas.</summary>
+    public double? Progress(DeckButton button)
+    {
+        if (!_ends.TryGetValue(button, out var t) || t.Duration <= TimeSpan.Zero) return null;
+        var left = (t.End - _now()).TotalSeconds;
+        return Math.Clamp(1 - left / t.Duration.TotalSeconds, 0, 1);
     }
 
     /// <summary>Signale et retire les comptes à rebours arrivés à zéro.</summary>
     public void Tick()
     {
         var now = _now();
-        foreach (var b in _ends.Where(kv => kv.Value <= now).Select(kv => kv.Key).ToList())
+        foreach (var b in _ends.Where(kv => kv.Value.End <= now).Select(kv => kv.Key).ToList())
         {
             _ends.Remove(b);
             Finished?.Invoke(b);

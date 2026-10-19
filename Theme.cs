@@ -13,20 +13,26 @@ public sealed record Palette(
 /// <summary>Palette claire / sombre de l'application ; sombre par défaut pour les nouvelles configurations, « système » suit Windows.</summary>
 public static class Theme
 {
+    // Direction « graphite » : fond bleuté nuancé (jamais noir pur), trois profondeurs de surface, accent indigo propre à TouchDeck.
     // Accent : fond des boutons principaux (texte blanc, contraste ≥ 4,5) ; AccentText : accent utilisé comme texte ou contour sur fond de panneau.
     public static readonly Palette DarkPalette = new(
-        Window: "#1C1C1F", Bar: "#141417", TopBar: "#33000000", Panel: "#252529", Surface: "#2C2C31", SurfaceHi: "#37373D",
-        Line: "#46464E", Grip: "#4A4A53", Dim: "#A8A8B3", Text: "#F5F5F7", TextSoft: "#D2D2DA", Placeholder: "#7C7C88",
-        Accent: "#4361EE", AccentText: "#9FB1FF", Danger: "#FF8A97", Scrim: "#96000000",
-        Input: "#18181B", EditorBg: "#1C1C1F", Focus: "#FFFFFF", Success: "#5CD6A0",
+        Window: "#0F1218", Bar: "#171B24", TopBar: "#00000000", Panel: "#181C25", Surface: "#1F2430", SurfaceHi: "#2A303D",
+        Line: "#313849", Grip: "#3C4456", Dim: "#A3ABBD", Text: "#F4F6FB", TextSoft: "#CDD3E0", Placeholder: "#737C90",
+        Accent: "#5B4CF0", AccentText: "#B0A8FF", Danger: "#FF8A97", Scrim: "#A6060810",
+        Input: "#12151C", EditorBg: "#12151B", Focus: "#FFFFFF", Success: "#5CD6A0",
         StatusBg: "#3A1F26", StatusLine: "#7A3340", StatusText: "#FFB4BE");
 
     public static readonly Palette LightPalette = new(
-        Window: "#F3F3F6", Bar: "#E9EAEE", TopBar: "#33FFFFFF", Panel: "#FFFFFF", Surface: "#FFFFFF", SurfaceHi: "#EDEDF2",
-        Line: "#C9C9D2", Grip: "#B8BDCB", Dim: "#565662", Text: "#1B1B20", TextSoft: "#3A3A44", Placeholder: "#7A7F90",
-        Accent: "#4361EE", AccentText: "#2F46C8", Danger: "#B3202F", Scrim: "#66000000",
-        Input: "#FFFFFF", EditorBg: "#F3F3F6", Focus: "#1B1B20", Success: "#0F7A52",
+        Window: "#F3F4F8", Bar: "#FFFFFF", TopBar: "#00FFFFFF", Panel: "#FFFFFF", Surface: "#FFFFFF", SurfaceHi: "#ECEEF4",
+        Line: "#D5D9E3", Grip: "#C3C8D4", Dim: "#565C6E", Text: "#171A21", TextSoft: "#363B48", Placeholder: "#7A8092",
+        Accent: "#5B4CF0", AccentText: "#4334D6", Danger: "#B3202F", Scrim: "#660B0D14",
+        Input: "#FFFFFF", EditorBg: "#F3F4F8", Focus: "#171A21", Success: "#0F7A52",
         StatusBg: "#FBE3E6", StatusLine: "#E0A0A8", StatusText: "#8C1D2B");
+
+    /// <summary>Fond des touches avant teinte (haut, bas) : un cran au-dessus des surfaces pour détacher la grille du fond.</summary>
+    static (string Top, string Bottom) TileBase => Dark ? ("#1D222D", "#161A23") : ("#FFFFFF", "#F5F6FA");
+    /// <summary>Part de la couleur du bouton dans le corps de la touche (haut, bas) : la couleur vive reste sur la pastille d'icône.</summary>
+    public const double TintTop = 0.26, TintBottom = 0.16;
 
     public static bool Dark { get; private set; } = true;
     public static Palette Current => Dark ? DarkPalette : LightPalette;
@@ -58,7 +64,8 @@ public static class Theme
         ApplicationThemeManager.Apply(dark ? ApplicationTheme.Dark : ApplicationTheme.Light);
         // Même accent en clair et en sombre (WPF-UI l'éclaircit en sombre par défaut)
         ApplicationAccentColorManager.Apply(accent, accent,
-            (Color)ColorConverter.ConvertFromString("#3A55D8"), (Color)ColorConverter.ConvertFromString("#3049BE"));
+            (Color)ColorConverter.ConvertFromString("#4E40DA"), (Color)ColorConverter.ConvertFromString("#4436C2"));
+        Fills.Clear();
         PublishResources();
         Changed?.Invoke();
     }
@@ -70,8 +77,8 @@ public static class Theme
         var r = System.Windows.Application.Current.Resources;
         // Les boutons « Primary » de WPF-UI suivent notre accent (en sombre, WPF-UI l'éclaircit par défaut)
         r["AccentFillColorDefaultBrush"] = B(p.Accent);
-        r["AccentFillColorSecondaryBrush"] = B("#E64361EE");
-        r["AccentFillColorTertiaryBrush"] = B("#CC4361EE");
+        r["AccentFillColorSecondaryBrush"] = B("#E65B4CF0");
+        r["AccentFillColorTertiaryBrush"] = B("#CC5B4CF0");
         r["TextOnAccentFillColorPrimaryBrush"] = B("#FFFFFF");
         r["TextOnAccentFillColorSecondaryBrush"] = B("#CCFFFFFF");
         // En thème sombre WPF-UI écrit en noir sur l'accent ; notre accent est assez sombre pour du texte blanc (contraste ≥ 4,5)
@@ -99,6 +106,68 @@ public static class Theme
         r["DeckStatusBg"] = B(p.StatusBg);
         r["DeckStatusLine"] = B(p.StatusLine);
         r["DeckStatusText"] = B(p.StatusText);
+        r["DeckAccentSoft"] = B(Dark ? "#335B4CF0" : "#225B4CF0");
+        r["DeckDock"] = B(Dark ? "#E6171B24" : "#F2FFFFFF");
+        r["DeckBackdrop"] = Backdrop();
+    }
+
+    /// <summary>Fond de la fenêtre du deck : lueur douce en haut, plus profond en bas. Opaque : lisible quel que soit le fond d'écran.</summary>
+    static Brush Backdrop()
+    {
+        var (glow, mid, deep) = Dark ? ("#1C2233", "#12151D", "#0C0E13") : ("#FFFFFF", "#F3F4F8", "#E8EBF2");
+        var brush = new RadialGradientBrush
+        {
+            Center = new System.Windows.Point(0.5, -0.15), GradientOrigin = new System.Windows.Point(0.5, -0.15),
+            RadiusX = 1.0, RadiusY = 1.25,
+            GradientStops =
+            {
+                new GradientStop((Color)ColorConverter.ConvertFromString(glow), 0),
+                new GradientStop((Color)ColorConverter.ConvertFromString(mid), 0.55),
+                new GradientStop((Color)ColorConverter.ConvertFromString(deep), 1),
+            },
+        };
+        brush.Freeze();
+        return brush;
+    }
+
+    // ---------- touches ----------
+
+    /// <summary>Mélange linéaire de deux couleurs opaques (part de b : 0 à 1), en hexadécimal #RRGGBB.</summary>
+    public static string Mix(string a, string b, double amount)
+    {
+        var x = (Color)ColorConverter.ConvertFromString(a);
+        var y = (Color)ColorConverter.ConvertFromString(b);
+        byte M(byte p, byte q) => (byte)Math.Round(p + (q - p) * amount);
+        return $"#{M(x.R, y.R):X2}{M(x.G, y.G):X2}{M(x.B, y.B):X2}";
+    }
+
+    /// <summary>Corps d'une touche (haut, bas) pour une couleur de bouton dans le thème courant. Logique pure : contraste testé.</summary>
+    public static (string Top, string Bottom) TileFillColors(string hex, double tint = 1)
+    {
+        var c = (Color)ColorConverter.ConvertFromString(hex.Trim());
+        var opaque = $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+        var (top, bottom) = TileBase;
+        return (Mix(top, opaque, TintTop * tint), Mix(bottom, opaque, TintBottom * tint));
+    }
+
+    static readonly System.Collections.Concurrent.ConcurrentDictionary<(string, double), Brush> Fills = new();
+
+    /// <summary>Corps teinté d'une touche (dégradé vertical discret) ; tint = 0,5 pour une touche de navigation, plus neutre.</summary>
+    public static Brush TileFill(string hex, double tint = 1) => Fills.GetOrAdd((hex.Trim().ToUpperInvariant(), tint), key =>
+    {
+        var (top, bottom) = TileFillColors(key.Item1, key.Item2);
+        var brush = new LinearGradientBrush((Color)ColorConverter.ConvertFromString(top), (Color)ColorConverter.ConvertFromString(bottom), 90);
+        brush.Freeze();
+        return brush;
+    });
+
+    /// <summary>Liseré de la touche : la couleur du bouton, très atténuée.</summary>
+    public static Brush TileBorder(string hex)
+    {
+        var c = (Color)ColorConverter.ConvertFromString(hex.Trim());
+        var b = new SolidColorBrush(Color.FromArgb(Dark ? (byte)0x66 : (byte)0x73, c.R, c.G, c.B));
+        b.Freeze();
+        return b;
     }
 
     static bool SystemUsesDark()

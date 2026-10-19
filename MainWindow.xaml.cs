@@ -42,6 +42,18 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         Root.SizeChanged += (_, _) => _vm.Resize(Root.ActualWidth, Root.ActualHeight);
         // Écran branché ou débranché : le deck suit (ou revient sur l'écran principal si le sien disparaît)
         DisplayService.Changed += () => PlaceOnScreen(displayChanged: true);
+        _vm.Navigated += AnimateGridIn;
+    }
+
+    /// <summary>Entrée de la nouvelle page : glissement court dans le sens de la navigation. Purement visuel, la page est déjà affichée.</summary>
+    void AnimateGridIn(int direction)
+    {
+        if (!Motion.Enabled) return;
+        var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+        var duration = TimeSpan.FromMilliseconds(180);
+        GridShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,
+            new System.Windows.Media.Animation.DoubleAnimation(36 * direction, 0, duration) { EasingFunction = ease });
+        DeckGrid.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0.35, 1, duration) { EasingFunction = ease });
     }
 
     // ---------- fenêtre : sans focus, dans la barre des tâches, placée sur l'écran tactile ----------

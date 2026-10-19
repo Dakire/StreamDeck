@@ -3,38 +3,71 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              Focusable="False" IsHitTestVisible="False" SnapsToDevicePixels="True">
-  <!-- Face d'un bouton : image ou icône, titre (sous l'icône ou superposé), badge de dossier. Dessin seul, aucune interaction. -->
+  <!-- Face d'un bouton, dessin seul : image plein cadre, pastille d'icône + titre, valeur en grand (horloge, minuteur),
+       titre superposé, badges (dossier, étapes) et progression. Toutes les tailles sont proportionnelles à la case. -->
   <Grid>
     <Border x:Name="ImageLayer" Visibility="Collapsed"/>
-    <Border x:Name="Scrim" Visibility="Collapsed" VerticalAlignment="Bottom" Height="60">
+    <Border x:Name="Scrim" Visibility="Collapsed" VerticalAlignment="Bottom">
       <Border.Background>
         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
           <GradientStop Color="#00000000" Offset="0"/>
-          <GradientStop Color="#B0000000" Offset="1"/>
+          <GradientStop Color="#C0000000" Offset="1"/>
         </LinearGradientBrush>
       </Border.Background>
     </Border>
 
-    <!-- Titre sous l'icône -->
-    <StackPanel x:Name="StackLayer" HorizontalAlignment="Center" VerticalAlignment="Center">
-      <ui:SymbolIcon x:Name="StackSymbol" HorizontalAlignment="Center"/>
-      <TextBlock x:Name="StackIconText" FontFamily="Segoe UI Emoji, Segoe UI" TextAlignment="Center" HorizontalAlignment="Center"/>
-      <TextBlock x:Name="StackTitle" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Center" TextTrimming="CharacterEllipsis"/>
-    </StackPanel>
+    <Grid x:Name="FaceContent">
+      <!-- Standard, média, navigation : pastille d'icône puis titre -->
+      <StackPanel x:Name="StackLayer" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Border x:Name="Plate" HorizontalAlignment="Center">
+          <Border.Effect>
+            <DropShadowEffect x:Name="PlateShadow" BlurRadius="14" ShadowDepth="3" Direction="270" Opacity="0.35" Color="Black"/>
+          </Border.Effect>
+          <Grid>
+            <ui:SymbolIcon x:Name="StackSymbol" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <TextBlock x:Name="StackIconText" FontFamily="Segoe UI Emoji, Segoe UI Variable Display, Segoe UI" TextAlignment="Center"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Grid>
+        </Border>
+        <TextBlock x:Name="StackTitle" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Center" TextTrimming="CharacterEllipsis"
+                   FontFamily="Segoe UI Variable Text, Segoe UI"/>
+      </StackPanel>
 
-    <!-- Titre superposé (haut, milieu, bas) -->
-    <Grid x:Name="OverlayLayer" Visibility="Collapsed">
-      <ui:SymbolIcon x:Name="OverlaySymbol" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-      <TextBlock x:Name="OverlayIconText" FontFamily="Segoe UI Emoji, Segoe UI" TextAlignment="Center"
-                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
-      <TextBlock x:Name="OverlayTitle" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Center"
-                 TextTrimming="CharacterEllipsis" HorizontalAlignment="Center"/>
+      <!-- Affichage : la valeur est le contenu (heure, date, temps restant) -->
+      <StackPanel x:Name="DisplayLayer" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <ui:SymbolIcon x:Name="DisplaySymbol" HorizontalAlignment="Center" Opacity="0.7"/>
+        <TextBlock x:Name="DisplayValue" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center"
+                   FontFamily="Segoe UI Variable Display, Segoe UI" TextTrimming="CharacterEllipsis"/>
+        <TextBlock x:Name="DisplayCaption" FontWeight="SemiBold" TextAlignment="Center" HorizontalAlignment="Center" Opacity="0.75"
+                   TextTrimming="CharacterEllipsis"/>
+      </StackPanel>
+
+      <!-- Titre superposé (haut, milieu, bas) -->
+      <Grid x:Name="OverlayLayer" Visibility="Collapsed">
+        <ui:SymbolIcon x:Name="OverlaySymbol" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <TextBlock x:Name="OverlayIconText" FontFamily="Segoe UI Emoji, Segoe UI" TextAlignment="Center"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <TextBlock x:Name="OverlayTitle" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Center"
+                   TextTrimming="CharacterEllipsis" HorizontalAlignment="Center"/>
+      </Grid>
     </Grid>
 
+    <!-- Badge « plusieurs étapes » -->
+    <Border x:Name="StepBadge" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Top" Background="#66000000">
+      <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+        <ui:SymbolIcon x:Name="StepGlyph" Symbol="Layer20" Foreground="White" VerticalAlignment="Center"/>
+        <TextBlock x:Name="StepText" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center" Margin="3,0,0,0"/>
+      </StackPanel>
+    </Border>
+
     <!-- Badge « dossier » -->
-    <Border x:Name="FolderBadge" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-            Background="#99000000" CornerRadius="10">
+    <Border x:Name="FolderBadge" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="#66000000">
       <ui:SymbolIcon x:Name="FolderGlyph" Symbol="ChevronRight20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </Border>
+
+    <!-- Progression du minuteur -->
+    <Border x:Name="ProgressTrack" Visibility="Collapsed" VerticalAlignment="Bottom" Background="#33FFFFFF">
+      <Border x:Name="ProgressFill" HorizontalAlignment="Left" Background="White"/>
     </Border>
   </Grid>
 </UserControl>

@@ -34,6 +34,14 @@ public sealed class AddTileViewModel
     public required ICommand Click { get; init; }
 }
 
+/// <summary>Point de l'indicateur de sous-pages du dock (touchable : va à cette sous-page).</summary>
+public sealed class PageDotViewModel
+{
+    public bool IsActive { get; init; }
+    public string Text { get; init; } = "";
+    public required ICommand Command { get; init; }
+}
+
 public sealed class TabViewModel
 {
     public string Text { get; init; } = "";

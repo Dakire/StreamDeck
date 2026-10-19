@@ -97,17 +97,36 @@ public class UiTests
         page.Buttons.Add(new DeckButton { Label = "Avec image", ImagePath = icon, Color = "#272B38", Actions = { new DeckAction { Type = "delay", Value = "1" } } });
         page.Buttons.Add(new DeckButton { Label = "Titre haut", TitlePosition = "top", Icon = "Star24", Color = "#99620F", Actions = { new DeckAction { Type = "delay", Value = "1" } } });
         page.Buttons.Add(DeckDocument.NewFolder("Jeux"));
+        page.Buttons.Add(new DeckButton { Label = "{time}", Icon = "Clock24", Color = "#334155" });
+        page.Buttons.Add(new DeckButton { Label = "Réunion", Icon = "Video24", Color = "#7C3AED",
+            Actions = { new DeckAction { Type = "launch", Value = "x" }, new DeckAction { Type = "delay", Value = "1" }, new DeckAction { Type = "hotkey", Value = "ctrl+d" } } });
+        page.Buttons.Add(new DeckButton { Label = "Micro", Icon = "Mic24", Color = "#BE123C", Actions = { new DeckAction { Type = "audio", Value = "mic-toggle" } } });
+        page.Buttons.Add(new DeckButton { Label = "Vide", Icon = "Star24", Color = "#334155" });
+        cfg.Profiles.Add(new DeckProfile { Name = "Jeux" });
         _host.Reset(cfg);
-        var win = _host.Run(() => new MainWindow());
-        try
+        foreach (var theme in new[] { "dark", "light" })
         {
-            _host.Settle();
-            _host.Render(win, "deck-dark", 1600, 900);
-            var tiles = _host.Run(() => WpfHost.Descendants<Button>((DependencyObject)win.Content).Count(b => b.DataContext is DeckTileViewModel));
-            Assert.True(tiles >= 10, $"{tiles} boutons");
-            Assert.Empty(BindingProblems());
+            _host.SetTheme(theme);
+            var win = _host.Run(() => new MainWindow());
+            try
+            {
+                _host.Settle();
+                var path = _host.Render(win, $"deck-{theme}", 1600, 900);
+                _host.Render(win, $"deck-{theme}-1080p", 1920, 1080);
+                _host.Render(win, $"deck-{theme}-portrait", 1080, 1600);
+                _host.Render(win, $"deck-{theme}", 1600, 900);
+                var tiles = _host.Run(() => WpfHost.Descendants<Button>((DependencyObject)win.Content).Count(b => b.DataContext is DeckTileViewModel));
+                Assert.True(tiles >= 10, $"{tiles} boutons");
+                // Les touches gardent des proportions raisonnables à toutes les tailles
+                var vm = _host.Run(() => (MainViewModel)win.DataContext);
+                var l = _host.Run(() => vm.L);
+                double cw = l.GridW / l.Columns, ch = l.GridH / l.Rows;
+                Assert.InRange(cw / ch, 1 / LayoutMetrics.MaxAspect - 0.01, LayoutMetrics.MaxAspect + 0.01);
+                Assert.True(l.BarH >= 48, "dock tactile");
+                Assert.Empty(BindingProblems());
+            }
+            finally { _host.Run(win.Close); }
         }
-        finally { _host.Run(win.Close); }
     }
 
     [Fact]
@@ -157,9 +176,22 @@ public class UiTests
 
     static byte[] PackageTests_TinyPng()
     {
-        var pixels = new byte[32 * 32 * 4];
-        for (int i = 0; i < pixels.Length; i += 4) { pixels[i] = 200; pixels[i + 1] = (byte)(i % 255); pixels[i + 2] = 40; pixels[i + 3] = 255; }
-        var bmp = System.Windows.Media.Imaging.BitmapSource.Create(32, 32, 96, 96, System.Windows.Media.PixelFormats.Bgra32, null, pixels, 128);
+        // Illustration lisible (disque dégradé, coins transparents) : l'ancienne image de test, faite de bandes horizontales
+        // (vert = i % 255 sur le tableau d'octets), passait pour un défaut de rendu du bouton « Avec image ».
+        const int n = 96;
+        var pixels = new byte[n * n * 4];
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                int i = (y * n + x) * 4;
+                double dx = x - n / 2.0 + 0.5, dy = y - n / 2.0 + 0.5, r = Math.Sqrt(dx * dx + dy * dy) / (n / 2.0);
+                bool disc = r < 0.62;
+                pixels[i] = (byte)(disc ? 240 : 120 + y);              // B
+                pixels[i + 1] = (byte)(disc ? 160 - r * 120 : 60 + x / 2); // G
+                pixels[i + 2] = (byte)(disc ? 80 : 40);                // R
+                pixels[i + 3] = (byte)(r > 1.35 ? 0 : 255);            // A : coins transparents
+            }
+        var bmp = System.Windows.Media.Imaging.BitmapSource.Create(n, n, 96, 96, System.Windows.Media.PixelFormats.Bgra32, null, pixels, n * 4);
         var enc = new System.Windows.Media.Imaging.PngBitmapEncoder();
         enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp));
         using var ms = new MemoryStream();

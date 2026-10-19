@@ -115,7 +115,7 @@ public static class IconStore
                 var bmp = new BitmapImage();
                 bmp.BeginInit();
                 bmp.CacheOption = BitmapCacheOption.OnLoad;
-                bmp.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+                // Profil colorimétrique appliqué (pas d'IgnoreColorProfile) : une photo avec profil ICC garde ses couleurs d'origine
                 bmp.UriSource = new Uri(path);
                 bmp.EndInit();
                 bmp.Freeze();

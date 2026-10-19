@@ -15,10 +15,12 @@
 
     <!-- ===== Deck tactile ===== -->
 
-    <!-- Bouton de grille : carte arrondie, léger relief, retour visuel au toucher (avec animation) -->
+    <!-- Touche du deck : corps teinté (Background), liseré de sa couleur (BorderBrush), ombre douce et reflet en haut.
+         L'appui répond immédiatement (50 ms) : l'action part au relâchement, l'animation ne la retarde jamais. -->
     <Style x:Key="DeckButton" TargetType="Button">
       <Setter Property="Focusable" Value="False"/>
       <Setter Property="Foreground" Value="White"/>
+      <Setter Property="BorderBrush" Value="#33FFFFFF"/>
       <Setter Property="Tag"><Setter.Value><CornerRadius>22</CornerRadius></Setter.Value></Setter>
       <Setter Property="Template">
         <Setter.Value>
@@ -26,17 +28,17 @@
             <Grid RenderTransformOrigin="0.5,0.5">
               <Grid.RenderTransform><ScaleTransform x:Name="Scale" ScaleX="1" ScaleY="1"/></Grid.RenderTransform>
               <Border x:Name="Card" CornerRadius="{TemplateBinding Tag}" Background="{TemplateBinding Background}"
-                      BorderBrush="#33FFFFFF" BorderThickness="1">
+                      BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
                 <Border.Effect>
-                  <DropShadowEffect BlurRadius="18" ShadowDepth="4" Direction="270" Opacity="0.30" Color="Black"/>
+                  <DropShadowEffect x:Name="Shadow" BlurRadius="22" ShadowDepth="6" Direction="270" Opacity="0.28" Color="#000000"/>
                 </Border.Effect>
               </Border>
-              <!-- liseré lumineux en haut de la carte : donne du relief sans reflet -->
-              <Border CornerRadius="{TemplateBinding Tag}" IsHitTestVisible="False">
+              <!-- reflet très léger sur le haut : du volume sans effet « verre » -->
+              <Border CornerRadius="{TemplateBinding Tag}" IsHitTestVisible="False" Margin="1">
                 <Border.Background>
                   <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#18FFFFFF" Offset="0"/>
-                    <GradientStop Color="#00FFFFFF" Offset="0.4"/>
+                    <GradientStop Color="#14FFFFFF" Offset="0"/>
+                    <GradientStop Color="#00FFFFFF" Offset="0.35"/>
                   </LinearGradientBrush>
                 </Border.Background>
               </Border>
@@ -49,29 +51,30 @@
                 <Trigger.EnterActions>
                   <BeginStoryboard>
                     <Storyboard>
-                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="0.96" Duration="0:0:0.07"/>
-                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="0.96" Duration="0:0:0.07"/>
-                      <DoubleAnimation Storyboard.TargetName="Press" Storyboard.TargetProperty="Opacity" To="0.22" Duration="0:0:0.07"/>
+                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="0.95" Duration="0:0:0.05"/>
+                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="0.95" Duration="0:0:0.05"/>
+                      <DoubleAnimation Storyboard.TargetName="Press" Storyboard.TargetProperty="Opacity" To="0.16" Duration="0:0:0.05"/>
+                      <DoubleAnimation Storyboard.TargetName="Shadow" Storyboard.TargetProperty="Opacity" To="0.1" Duration="0:0:0.05"/>
                     </Storyboard>
                   </BeginStoryboard>
                 </Trigger.EnterActions>
                 <Trigger.ExitActions>
                   <BeginStoryboard>
                     <Storyboard>
-                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.18">
-                        <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.6"/></DoubleAnimation.EasingFunction>
+                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.22">
+                        <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.5"/></DoubleAnimation.EasingFunction>
                       </DoubleAnimation>
-                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.18">
-                        <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.6"/></DoubleAnimation.EasingFunction>
+                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.22">
+                        <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.5"/></DoubleAnimation.EasingFunction>
                       </DoubleAnimation>
-                      <DoubleAnimation Storyboard.TargetName="Press" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
+                      <DoubleAnimation Storyboard.TargetName="Press" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.25"/>
+                      <DoubleAnimation Storyboard.TargetName="Shadow" Storyboard.TargetProperty="Opacity" To="0.28" Duration="0:0:0.25"/>
                     </Storyboard>
                   </BeginStoryboard>
                 </Trigger.ExitActions>
               </Trigger>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Card" Property="BorderBrush" Value="#80FFFFFF"/>
-                <Setter TargetName="Hover" Property="Opacity" Value="0.07"/>
+                <Setter TargetName="Hover" Property="Opacity" Value="0.05"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -79,30 +82,31 @@
       </Setter>
     </Style>
 
-    <!-- Même bouton sans animation (réduction des animations) : l'appui est indiqué par un voile et une bordure -->
+    <!-- Même touche sans animation (réduction des animations) : l'appui est indiqué par un voile et un contour épais -->
     <Style x:Key="DeckButtonStatic" TargetType="Button">
       <Setter Property="Focusable" Value="False"/>
       <Setter Property="Foreground" Value="White"/>
+      <Setter Property="BorderBrush" Value="#33FFFFFF"/>
       <Setter Property="Tag"><Setter.Value><CornerRadius>22</CornerRadius></Setter.Value></Setter>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
             <Grid>
               <Border x:Name="Card" CornerRadius="{TemplateBinding Tag}" Background="{TemplateBinding Background}"
-                      BorderBrush="#33FFFFFF" BorderThickness="1"/>
+                      BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"/>
               <Border x:Name="Hover" CornerRadius="{TemplateBinding Tag}" Background="White" Opacity="0" IsHitTestVisible="False"/>
               <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
               <Border x:Name="Press" CornerRadius="{TemplateBinding Tag}" Background="White" Opacity="0" IsHitTestVisible="False"/>
+              <Border x:Name="PressRing" CornerRadius="{TemplateBinding Tag}" BorderBrush="{DynamicResource DeckFocus}" BorderThickness="3"
+                      Visibility="Collapsed" IsHitTestVisible="False"/>
             </Grid>
             <ControlTemplate.Triggers>
               <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="Press" Property="Opacity" Value="0.25"/>
-                <Setter TargetName="Card" Property="BorderBrush" Value="White"/>
-                <Setter TargetName="Card" Property="BorderThickness" Value="3"/>
+                <Setter TargetName="Press" Property="Opacity" Value="0.2"/>
+                <Setter TargetName="PressRing" Property="Visibility" Value="Visible"/>
               </Trigger>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Card" Property="BorderBrush" Value="#80FFFFFF"/>
-                <Setter TargetName="Hover" Property="Opacity" Value="0.07"/>
+                <Setter TargetName="Hover" Property="Opacity" Value="0.05"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>

@@ -295,6 +295,30 @@ public class ThemeTests
     }
 
     [Fact]
+    public void TileTitlesStayReadableOnTintedBodies()
+    {
+        // Le titre est écrit sur le corps teinté de la touche : contraste AA pour toutes les couleurs proposées, dans les deux thèmes
+        var colors = ActionCatalog.All.Select(a => a.Color).Concat(ViewModels.PropertiesViewModel.Palette).Distinct().ToList();
+        var previous = Theme.Dark;
+        try
+        {
+            foreach (var dark in new[] { true, false })
+            {
+                typeof(Theme).GetProperty(nameof(Theme.Dark))!.SetValue(null, dark);
+                var text = Theme.Current.Text;
+                foreach (var c in colors)
+                {
+                    var (top, bottom) = Theme.TileFillColors(c);
+                    Assert.True(Theme.Contrast(text, top) >= 4.5, $"{(dark ? "sombre" : "clair")} {c} : {Theme.Contrast(text, top):0.0}");
+                    Assert.True(Theme.Contrast(text, bottom) >= 4.5, $"{(dark ? "sombre" : "clair")} {c} bas");
+                }
+            }
+        }
+        finally { typeof(Theme).GetProperty(nameof(Theme.Dark))!.SetValue(null, previous); }
+        Assert.Equal("#808080", Theme.Mix("#000000", "#FFFFFF", 0.502));
+    }
+
+    [Fact]
     public void TileGradientKeepsTheChosenColorOnTopAndDarkensBelow()
     {
         var g = (LinearGradientBrush)Theme.TileGradient("#2563EB");
