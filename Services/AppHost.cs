@@ -9,8 +9,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using TouchDeck.Actions;
 using TouchDeck.Integrations;
+using TouchDeck.Integrations.ClickUp;
 using TouchDeck.Integrations.ElgatoLight;
 using TouchDeck.Integrations.Hue;
+using TouchDeck.Integrations.Monday;
+using TouchDeck.Integrations.Notion;
 using TouchDeck.Integrations.Obs;
 using TouchDeck.Integrations.Vmix;
 using TouchDeck.Integrations.WindowsSystem;
@@ -107,6 +110,9 @@ public static class AppHost
         AddIntegration<WindowsSystemIntegration>(services, takenIds);
         AddIntegration<XPlaneIntegration>(services, takenIds);
         AddIntegration<TeamsIntegration>(services, takenIds);
+        AddIntegration<ClickUpIntegration>(services, takenIds);
+        AddIntegration<NotionIntegration>(services, takenIds);
+        AddIntegration<MondayIntegration>(services, takenIds);
         AddPlugins(services, takenIds);
 
         services.AddSingleton<IDisplayService, WindowsDisplayService>();

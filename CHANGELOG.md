@@ -4,6 +4,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Ajouté (phase 8, gestionnaires de tâches)
+- **ClickUp**, **Notion** et **monday.com** (jeton personnel chiffré, base `RestIntegrationBase`) : créer une tâche ou une ligne, changer un statut, minuteur ClickUp (`docs/integrations/gestionnaires-de-taches.md`).
+
 ### Ajouté (phase 7, modèles de profils)
 - **Modèles de profils** (menu d’un profil › « Nouveau profil depuis un modèle ») : Réunions, Streaming OBS, Montage vidéo, Simulation de vol, Poste de travail. Annulable en une fois.
 - **Icône de la zone de notification** : afficher le deck, l’éditeur, les paramètres, quitter.
