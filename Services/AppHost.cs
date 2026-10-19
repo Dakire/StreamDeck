@@ -72,11 +72,14 @@ public static class AppHost
             http.DefaultRequestHeaders.UserAgent.ParseAdd("TouchDeck/1.0");
             return http;
         });
+        // Un gestionnaire par type d'action ; les intégrations en ajoutent d'autres de la même façon
+        foreach (var handler in BuiltInActions.All) services.AddSingleton(handler);
+        services.AddSingleton(sp => new ActionRegistry(sp.GetServices<IActionHandler>()));
         services.AddSingleton(sp => new ActionEngine(new ActionContext
         {
             Platform = sp.GetRequiredService<PlatformServices>(),
             Http = sp.GetRequiredService<HttpClient>(),
-        }));
+        }, sp.GetRequiredService<ActionRegistry>()));
 
         services.AddSingleton<IDisplayService, WindowsDisplayService>();
         services.AddSingleton<DisplayService>();

@@ -69,7 +69,7 @@ public interface IActionHandler
 /// </summary>
 public sealed class ActionEngine : IDisposable
 {
-    readonly Dictionary<string, IActionHandler> _handlers;
+    readonly ActionRegistry _registry;
     CancellationTokenSource _life = new();
 
     /// <summary>Services partagés par toutes les exécutions.</summary>
@@ -77,15 +77,19 @@ public sealed class ActionEngine : IDisposable
 
     /// <summary>Crée le moteur.</summary>
     /// <param name="context">Services de plateforme, HTTP et minuteurs.</param>
-    /// <param name="handlers">Types d'action disponibles ; par défaut <see cref="BuiltInActions.All"/> (les tests en fournissent d'autres).</param>
+    /// <param name="handlers">Types d'action disponibles ; par défaut <see cref="BuiltInActions.All"/>. Un type en double est refusé.</param>
     public ActionEngine(ActionContext context, IEnumerable<IActionHandler>? handlers = null)
+        : this(context, new ActionRegistry(handlers ?? BuiltInActions.All)) { }
+
+    /// <summary>Crée le moteur sur un registre déjà constitué.</summary>
+    public ActionEngine(ActionContext context, ActionRegistry registry)
     {
         Context = context;
-        _handlers = (handlers ?? BuiltInActions.All).ToDictionary(h => h.Type, StringComparer.OrdinalIgnoreCase);
+        _registry = registry;
     }
 
     /// <summary>Types d'action pris en charge (sans distinction de casse).</summary>
-    public IReadOnlyCollection<string> Types => _handlers.Keys;
+    public IReadOnlyCollection<string> Types => _registry.Types;
 
     /// <summary>Exécute les étapes du bouton dans l'ordre. Ne lève jamais d'exception : l'échec, l'annulation ou le dépassement de délai sont décrits par le résultat.</summary>
     /// <param name="button">Bouton pressé ; ses étapes sont copiées avant l'exécution.</param>
@@ -101,7 +105,7 @@ public sealed class ActionEngine : IDisposable
         for (int i = 0; i < steps.Count; i++)
         {
             var action = steps[i];
-            if (!_handlers.TryGetValue(action.Type ?? "", out var handler))
+            if (!_registry.TryGet(action.Type, out var handler))
                 return new ActionResult(ActionOutcome.Failed, $"Type d'action inconnu : « {action.Type} »", i);
 
             using var step = CancellationTokenSource.CreateLinkedTokenSource(run.Token);
