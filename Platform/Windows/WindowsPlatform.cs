@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using TouchDeck.Actions;
@@ -58,6 +59,8 @@ public sealed class WindowsPlatform : IKeyboardService, IAppLauncher, IWindowSer
     public bool Activate(string query) => WindowFocus.Activate(query);
     /// <inheritdoc/>
     public string? ForegroundProcessName() => WindowFocus.ForegroundProcessName();
+    /// <inheritdoc/>
+    public IReadOnlyList<string> OpenProcessNames() => WindowFocus.OpenProcessNames();
 
     /// <inheritdoc/>
     public bool IsMuted(AudioDevice device) => NativeAudio.IsMuted(device);

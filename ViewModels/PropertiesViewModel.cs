@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TouchDeck.Actions;
 using Wpf.Ui.Controls;
 
 namespace TouchDeck.ViewModels;
@@ -36,6 +37,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     const string DefaultColor = "#334155";
 
     readonly DeckDocument _doc;
+    readonly IWindowService _windows;
     readonly EditorViewModel _editor;
     readonly IEditorShell _shell;
     Place? _place;
@@ -101,9 +103,9 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     public ObservableCollection<IconPickViewModel> IconChoices { get; } = new();
 
     /// <summary>Panneau de propriétés de l'éditeur.</summary>
-    public PropertiesViewModel(DeckDocument doc, EditorViewModel editor, IEditorShell shell)
+    public PropertiesViewModel(DeckDocument doc, EditorViewModel editor, IEditorShell shell, IWindowService windows)
     {
-        _doc = doc; _editor = editor; _shell = shell;
+        _doc = doc; _editor = editor; _shell = shell; _windows = windows;
         foreach (var (key, label) in new (string?, string)[] { (null, "Sous l'icône"), ("top", "En haut"), ("middle", "Au centre"), ("bottom", "En bas") })
         {
             var k = key;
@@ -277,6 +279,8 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         : _doc.FindProfile(_place.Profile)?.Pages.Select(p => p.Name).ToList() ?? new List<string>();
     /// <inheritdoc/>
     public IReadOnlyList<string> ProfileNames => _doc.Config.Profiles.Select(p => p.Name).ToList();
+    /// <inheritdoc/>
+    public IReadOnlyList<string> OpenPrograms => _windows.OpenProcessNames();
     /// <inheritdoc/>
     public DeckConfig Config => _doc.Config;
     /// <inheritdoc/>

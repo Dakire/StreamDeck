@@ -28,10 +28,16 @@ Ajouter ou adapter un test pour tout changement de logique (`Core/`, `Services/`
   ne jamais renommer ni supprimer une clé sans migration (`ConfigNormalizer`) ni test.
 - **Sécurité** : ne pas ajouter d'exécution de code issu d'une source distante. Les actions `script` et `launch`
   s'exécutent avec les droits de l'utilisateur.
-- **Win32** : les appels P/Invoke et COM restent dans `NativeInput.cs`, `WindowFocus.cs`, `NativeAudio.cs` et `MainWindow.xaml.cs`.
-  Les actions n'y accèdent qu'à travers les interfaces de `Core/Actions/Platform.cs` (implémentation : `Platform/Windows/WindowsPlatform.cs`) ;
-  `Core/` ne référence ni WPF ni Win32.
+- **Win32** : les appels P/Invoke et COM restent dans le projet `Platform/Windows/` (`NativeInput.cs`, `WindowFocus.cs`, `NativeAudio.cs`,
+  internes) et dans `MainWindow.xaml.cs` (placement de la fenêtre). Les actions et les ViewModels n'y accèdent qu'à travers les interfaces de
+  `Core/Actions/Platform.cs` (implémentation : `Platform/Windows/WindowsPlatform.cs`) ; `Core/` ne référence ni WPF ni Win32 (`ArchitectureTests`).
 - **Pas de secrets** dans le dépôt, ni de binaires : `bin/` et `obj/` sont ignorés par git.
+
+## Injection de dépendances
+
+- Un service s'ajoute dans `AppHost.Build` ; un ViewModel ou une fenêtre le reçoit par son constructeur. Pas de localisateur statique.
+- Un nouveau type d'action = une classe dans `Core/Actions/Handlers/` (voir `HotkeyAction`), ajoutée à `BuiltInActions.All`.
+- Journal : `Log` (Core) hors injection, `ILogger<T>` dans les services injectés. Ne jamais journaliser un secret.
 
 ## Style de code
 

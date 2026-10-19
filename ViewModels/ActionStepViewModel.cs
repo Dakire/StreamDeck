@@ -20,6 +20,8 @@ public interface IStepOwner
     IReadOnlyList<string> PageNames { get; }
     /// <summary>Profils, proposés pour l'action « profile ».</summary>
     IReadOnlyList<string> ProfileNames { get; }
+    /// <summary>Programmes qui ont une fenêtre ouverte, proposés pour l'action « fenêtre au premier plan ».</summary>
+    IReadOnlyList<string> OpenPrograms { get; }
     /// <summary>Configuration, pour la validation.</summary>
     DeckConfig Config { get; }
     /// <summary>Profil du bouton, pour vérifier les noms de page (null : non vérifiés).</summary>
@@ -244,7 +246,7 @@ public partial class ActionStepViewModel : ObservableObject
     {
         ProcessChoices.Clear();
         if (Type != ActionTypes.Focus) return;
-        foreach (var proc in WindowFocus.OpenProcessNames())
+        foreach (var proc in _owner.OpenPrograms)
         {
             var pn = proc;
             ProcessChoices.Add(new ChoiceViewModel(pn, () => Value = pn));

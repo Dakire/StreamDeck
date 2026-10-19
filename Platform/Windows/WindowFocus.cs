@@ -4,10 +4,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace TouchDeck;
+namespace TouchDeck.Platform.Windows;
 
 /// <summary>Recherche et mise au premier plan d'une fenêtre d'une autre application.</summary>
-public static class WindowFocus
+internal static class WindowFocus
 {
     delegate bool EnumProc(IntPtr hWnd, IntPtr lParam);
 

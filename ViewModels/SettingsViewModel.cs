@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
+using TouchDeck.Platform.Windows;
 using CommunityToolkit.Mvvm.Input;
 
 namespace TouchDeck.ViewModels;

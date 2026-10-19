@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace TouchDeck;
+namespace TouchDeck.Platform.Windows;
 
 /// <summary>Envoi de touches / texte au système via SendInput.</summary>
-public static class NativeInput
+internal static class NativeInput
 {
     const uint INPUT_KEYBOARD = 1;
     const uint KEYEVENTF_EXTENDEDKEY = 0x1;

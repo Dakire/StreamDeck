@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TouchDeck.Actions;
 using Wpf.Ui.Controls;
 
 namespace TouchDeck.ViewModels;
@@ -56,6 +57,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     readonly DisplayService _displays;
     readonly GridState _grid;
     readonly IAppWindows _windows;
+    readonly PlatformServices _platform;
     readonly IEditorShell _shell;
     readonly List<int> _folder = new();
     readonly DispatcherTimer _toastTimer = new() { Interval = TimeSpan.FromSeconds(6) };
@@ -130,8 +132,9 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     int Offset => _folder.Count > 0 ? 1 : 0;
 
     /// <summary>Éditeur sur le document partagé ; <paramref name="shell"/> fournit dialogues et focus.</summary>
-    public EditorViewModel(IEditorShell shell, DeckDocument doc, DisplayService displays, GridState grid, IAppWindows windows)
+    public EditorViewModel(IEditorShell shell, DeckDocument doc, DisplayService displays, GridState grid, IAppWindows windows, PlatformServices platform)
     {
+        _platform = platform;
         _shell = shell;
         _doc = doc;
         _displays = displays;
@@ -139,7 +142,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         _windows = windows;
         _profile = _doc.ActiveProfile.Name;
         Catalog = new CatalogViewModel(_doc);
-        Properties = new PropertiesViewModel(_doc, this, shell);
+        Properties = new PropertiesViewModel(_doc, this, shell, platform.Windows);
 
         _doc.Changed += OnDocumentChanged;
         Notifier.Posted += OnNotice;
@@ -844,7 +847,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     {
         var p = _doc.FindProfile(name);
         if (p == null) return;
-        var running = string.Join(", ", WindowFocus.OpenProcessNames().Take(8));
+        var running = string.Join(", ", _platform.Windows.OpenProcessNames().Take(8));
         var app = await _shell.PromptAsync("Application associée",
             "Nom du programme (ex. chrome). Le profil s'affiche seul quand il est au premier plan. Laisse vide pour retirer l'association."
             + (running.Length > 0 ? $"\nOuverts en ce moment : {running}" : ""), p.AppMatch ?? "", "Enregistrer");

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace TouchDeck.Actions;
 
 // Ce que les actions demandent au système d'exploitation. Les implémentations Windows vivent dans Platform/Windows ;
@@ -30,6 +32,8 @@ public interface IWindowService
     bool Activate(string query);
     /// <summary>Nom du programme au premier plan (sans .exe), ou null.</summary>
     string? ForegroundProcessName();
+    /// <summary>Programmes qui ont une fenêtre ouverte (sans doublon, une quinzaine au plus), pour les proposer dans l'éditeur.</summary>
+    IReadOnlyList<string> OpenProcessNames();
 }
 
 /// <summary>Périphérique audio par défaut visé par une commande.</summary>

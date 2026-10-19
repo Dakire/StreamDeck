@@ -9,11 +9,16 @@ Le projet s'appelle `TouchDeck` (assembly et namespace), le dépôt `StreamDeck`
 
 ## Architecture actuelle
 
+- **Trois projets** : `Core/` (`TouchDeck.Core`, net9.0 : modèle, document, configuration, moteur d'actions, sans WPF ni Win32),
+  `Platform/Windows/` (`TouchDeck.Platform.Windows` : SendInput, Core Audio, fenêtres Win32, registre ; seul `WindowsPlatform` est public),
+  et l'application WPF à la racine. Les frontières sont vérifiées par `ArchitectureTests`.
 - **MVVM** avec CommunityToolkit.Mvvm. Un seul `DeckDocument` (`Core/DeckDocument.cs`, sans WPF) porte la configuration, l'historique
-  annuler/rétablir et le presse-papiers ; deck, éditeur et paramètres le partagent via `AppServices.Document`.
+  annuler/rétablir et le presse-papiers ; deck, éditeur et paramètres le reçoivent par injection de dépendances.
   Toute modification de contenu passe par ses méthodes (annulables) ou `UpdateSettings` (réglages, hors historique).
-- `AppServices` : chargement, sauvegarde automatique (300 ms, écriture atomique), rechargement à chaud (ignore nos propres écritures),
-  thème / animations, ouverture de l'éditeur et des paramètres.
+- **Injection de dépendances** (`Microsoft.Extensions.Hosting`) : `AppHost.Build` est la racine de composition (les tests construisent le même
+  conteneur en simulation). `ConfigPersistence` : sauvegarde automatique (300 ms, écriture atomique) et rechargement à chaud (ignore nos propres
+  écritures) ; `AppearanceService` : thème / animations ; `IAppWindows` : éditeur et paramètres. Plus de localisateur statique.
+- **Journal** : façade `Log` (Core) branchée sur Serilog (`touchdeck.log`) ; `ILogger<T>` pour les services injectés.
 - Deck : `MainWindow.xaml` + `MainViewModel` (profil, page, dossier, sous-page, menu) + `LayoutMetrics`. `MainWindow.xaml.cs` ne garde que
   Win32 et le placement (NOACTIVATE, plein écran multi-écran) et implémente `IShell`.
 - Éditeur : `EditorWindow` (fenêtre activable normale, séparée du deck qui ne prend jamais le focus) + `EditorViewModel`,
@@ -23,8 +28,9 @@ Le projet s'appelle `TouchDeck` (assembly et namespace), le dépôt `StreamDeck`
   Les images vivent dans `Icons\` et ne sont référencées que par un nom de hachage validé (`IconStore`).
 - Thème : `Theme.cs` (palettes `DarkPalette` / `LightPalette`, contrastes testés) publie les brushes `Deck*` ; le XAML les consomme en `DynamicResource`.
 - Icônes de l'interface : `ui:SymbolIcon` (Fluent System Icons fournis par WPF-UI). Les icônes des boutons utilisateur : nom Fluent, emoji ou image.
-- Actions : `Core/Actions/ActionEngine` (délai par étape, annulation, `ActionResult`) ; appels système via les interfaces de
-  `Core/Actions/Platform.cs` (Windows : `Platform/Windows/`, tests et `--simulate` : `SimulatedPlatform`). Détail : `docs/ARCHITECTURE.md`.
+- Actions : `Core/Actions/ActionEngine` (délai par étape, annulation, `ActionResult`), un gestionnaire par type dans `Core/Actions/Handlers/`
+  enregistrés dans `ActionRegistry` ; appels système via les interfaces de `Core/Actions/Platform.cs` (Windows : `Platform/Windows/`,
+  tests et `--simulate` : `SimulatedPlatform`). Détail : `docs/ARCHITECTURE.md`.
 - Deck : touches dessinées par `TileFace` selon `TileKind` (corps teinté, pastille, variantes) ; seule la tuile change pendant une exécution.
 - Écran du deck : `MonitorDevice` (identifiant) prioritaire sur `Monitor` (index), résolu par `DisplayResolver`.
 - Tests : `tests/TouchDeck.Tests` (xUnit). `UiHarness` démarre une vraie application WPF sur un thread STA et rend les fenêtres hors écran

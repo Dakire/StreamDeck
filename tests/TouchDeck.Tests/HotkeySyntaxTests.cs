@@ -1,4 +1,5 @@
 using System.Linq;
+using TouchDeck.Platform.Windows;
 using Xunit;
 
 namespace TouchDeck.Tests;

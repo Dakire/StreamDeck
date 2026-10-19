@@ -2,13 +2,13 @@ using System;
 using System.Runtime.InteropServices;
 using TouchDeck.Actions;
 
-namespace TouchDeck;
+namespace TouchDeck.Platform.Windows;
 
 /// <summary>
 /// Volume et coupure des périphériques audio par défaut via Core Audio (IAudioEndpointVolume), sans dépendance externe.
 /// Sortie = périphérique de lecture « Console » ; micro = périphérique d'enregistrement « Communications ».
 /// </summary>
-public static class NativeAudio
+internal static class NativeAudio
 {
     [ComImport, Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")]
     class MMDeviceEnumeratorCom { }

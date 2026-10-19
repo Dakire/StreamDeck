@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TouchDeck.Actions;
 
@@ -59,6 +60,9 @@ public sealed class SimulatedPlatform : IKeyboardService, IAppLauncher, IWindowS
 
     /// <inheritdoc/>
     public string? ForegroundProcessName() => Foreground;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<string> OpenProcessNames() => OpenWindows.OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
 
     /// <inheritdoc/>
     public bool IsMuted(AudioDevice device) => _muted[device];

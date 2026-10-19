@@ -15,10 +15,13 @@
   <ItemGroup>
     <Compile Remove="tests\**" />
     <Compile Remove="Core\**" />
+    <Compile Remove="Platform\Windows\**" />
     <EmbeddedResource Remove="tests\**" />
     <EmbeddedResource Remove="Core\**" />
+    <EmbeddedResource Remove="Platform\Windows\**" />
     <None Remove="tests\**" />
     <None Remove="Core\**" />
+    <None Remove="Platform\Windows\**" />
     <Page Remove="tests\**" />
   </ItemGroup>
   <ItemGroup>
@@ -27,6 +30,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Core\TouchDeck.Core.csproj" />
+    <ProjectReference Include="Platform\Windows\TouchDeck.Platform.Windows.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />

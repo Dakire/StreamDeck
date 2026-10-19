@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Win32;
 
-namespace TouchDeck;
+namespace TouchDeck.Platform.Windows;
 
 /// <summary>Lancement à l'ouverture de session Windows, via la clé Run de l'utilisateur (aucun droit administrateur).</summary>
 public static class AutoStart
