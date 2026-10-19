@@ -50,7 +50,9 @@ Ne jamais piloter le vrai bureau (captures, clics simulés) : utiliser le harnai
 
 ## Ajouter un type d'action
 
-1. Ajouter un `IActionHandler` dans `BuiltInActions.All`. Les appels système passent par une interface de `Platform.cs`.
+1. Ajouter une classe dans `Core/Actions/Handlers/` (voir `HotkeyAction`) qui dérive de `SyncActionHandler` (instantané),
+   `BackgroundActionHandler` (peut bloquer : hors du thread d'interface, avec délai maximal) ou `ActionHandler` (asynchrone),
+   puis l'ajouter à `BuiltInActions.All`. Les appels système passent par une interface de `Platform.cs`.
 2. Déclarer le type dans `ActionValidator.KnownTypes` et sa validation (le test `EveryKnownTypeHasAHandler` vérifie l'accord).
 3. L'exposer dans l'éditeur (`ActionStepViewModel.Types`, libellés) et, si utile, dans `ActionCatalog`.
 4. Ajouter des tests avec `SimulatedPlatform` et documenter `Value` / `Args` dans le README.

@@ -12,8 +12,8 @@ Les actions envoyaient des touches, lançaient des programmes et pilotaient l'au
 
 - **Interfaces.** Les actions n'appellent le système qu'à travers `IKeyboardService`, `IAppLauncher`, `IWindowService` et
   `IAudioService` (`Core/Actions/Platform.cs`).
-- **Implémentation Windows.** Elle est dans `Platform/Windows/WindowsPlatform.cs`. Les P/Invoke restent dans
-  `NativeInput.cs`, `WindowFocus.cs`, `NativeAudio.cs` et `MainWindow.xaml.cs`.
+- **Implémentation Windows.** Elle est dans le projet `Platform/Windows/` (voir [0009](0009-trois-projets.md)). Les P/Invoke
+  y restent, internes, et dans `MainWindow.xaml.cs` (placement de la fenêtre).
 - **Plateforme simulée.** `SimulatedPlatform` consigne au lieu d'exécuter. Elle sert aux tests et au mode `--simulate`.
 - **Moteur.** `ActionEngine` exécute les étapes avec un délai maximal par étape et une annulation. Il ne lève jamais
   d'exception : le résultat est un `ActionResult`.

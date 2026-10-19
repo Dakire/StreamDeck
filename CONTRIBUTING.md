@@ -46,6 +46,11 @@ Ne touchez pas à `%APPDATA%\TouchDeck`.
   `Log`. Laissez les autres remonter au gestionnaire global (`App.OnUnhandled`).
 - **Couleurs.** Aucune couleur en dur dans les vues : publiez une ressource `Deck*` depuis `Theme` et consommez-la en
   `DynamicResource`. Un test vérifie que chaque ressource utilisée existe dans les deux thèmes.
+- **Injection de dépendances.** Un service s'ajoute dans `AppHost.Build` ; un ViewModel ou une fenêtre le reçoit par son
+  constructeur. Pas de localisateur statique (un test le vérifie) : les statiques restantes sont documentées dans
+  `docs/ARCHITECTURE.md`.
+- **Frontières.** `Core/` ne référence ni WPF, ni Windows, ni les autres projets ; `Platform/Windows/` ne référence pas WPF ;
+  le Win32 de l'interface est limité à `MainWindow.xaml.cs`. `ArchitectureTests` le vérifie sur les assemblies compilés.
 - **Clés de format.** Les identifiants d'action passent par `ActionTypes`, `PageTargets` et `AudioCommands`. Ce sont des
   clés de `config.json` : on ne les renomme pas.
 

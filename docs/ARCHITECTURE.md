@@ -1,35 +1,45 @@
 # Architecture
 
-TouchDeck est une application **WPF / .NET 9** (`net9.0-windows`), en MVVM avec CommunityToolkit.Mvvm et WPF-UI (lepoco, licence MIT).
-Un seul assembly, organisé en couches par dossier.
+TouchDeck est une application **WPF / .NET 9**, en MVVM avec CommunityToolkit.Mvvm et WPF-UI (lepoco, licence MIT). Elle est
+composée de **trois projets**, dont les frontières sont vérifiées par les tests (`ArchitectureTests`) :
+
+| Projet | Cible | Contenu | Connaît |
+|---|---|---|---|
+| `Core/` (`TouchDeck.Core`) | `net9.0` | Modèle, document annulable, configuration, moteur d'actions, interfaces de plateforme, journal (façade) | Rien d'autre : ni WPF, ni Windows, ni les autres projets |
+| `Platform/Windows/` (`TouchDeck.Platform.Windows`) | `net9.0-windows`, sans WPF | `SendInput`, fenêtres Win32, Core Audio (COM), registre. Seul `WindowsPlatform` (et `AutoStart`) est public | Core |
+| racine (`TouchDeck`) | `net9.0-windows`, WPF | Fenêtres, ViewModels, services, composition (`AppHost`) | Core et plateforme Windows |
 
 ```mermaid
 flowchart TB
-    subgraph Vues["Vues WPF"]
-        MW["MainWindow (deck)<br/>Win32 : NOACTIVATE, placement"]
-        EW[EditorWindow]
-        SW[SettingsWindow]
-        TF[Controls/TileFace]
+    subgraph App["TouchDeck : application WPF"]
+        subgraph Vues["Vues"]
+            MW["MainWindow (deck)<br/>Win32 : NOACTIVATE, placement"]
+            EW[EditorWindow]
+            SW[SettingsWindow]
+            TF[Controls/TileFace]
+        end
+        subgraph VM["ViewModels (reçoivent leurs dépendances par constructeur)"]
+            MVM["MainViewModel<br/>navigation, exécution, tuiles"]
+            EVM["EditorViewModel · PropertiesViewModel<br/>CatalogViewModel · ActionStepViewModel"]
+            SVM[SettingsViewModel]
+            LM["TileFaceData · LayoutMetrics"]
+        end
+        subgraph Services["Services (WPF)"]
+            AH["AppHost : racine de composition<br/>conteneur d'injection, journal Serilog"]
+            CP["ConfigPersistence<br/>sauvegarde auto, rechargement à chaud"]
+            AP["AppearanceService · DisplayService · IAppWindows"]
+            OT["IconStore · ProfilePackage · TransferService<br/>Notifier · Motion"]
+        end
     end
-    subgraph VM["ViewModels"]
-        MVM["MainViewModel<br/>navigation, exécution, tuiles"]
-        EVM["EditorViewModel · PropertiesViewModel<br/>CatalogViewModel · ActionStepViewModel"]
-        SVM[SettingsViewModel]
-        LM["TileFaceData · LayoutMetrics"]
-    end
-    subgraph Services["Services (WPF)"]
-        AS["AppServices<br/>cycle de vie, sauvegarde, rechargement"]
-        DS["DisplayService → IDisplayService"]
-        OT["IconStore · ProfilePackage · TransferService<br/>Notifier · Motion · AutoStart"]
-    end
-    subgraph Core["Core (sans WPF ni Win32)"]
+    subgraph Core["TouchDeck.Core (net9.0)"]
         DD["DeckDocument<br/>modifications annulables, presse-papiers"]
         CS["ConfigStore · ConfigNormalizer<br/>format, migration, sauvegardes"]
-        AE["Actions/ : ActionEngine · BuiltInActions<br/>interfaces de plateforme · SimulatedPlatform"]
-        UT["ActionTypes · ActionCatalog · ActionValidator<br/>Displays · LabelTemplate · Countdowns · Log"]
+        AE["ActionEngine · ActionRegistry · Handlers/<br/>un gestionnaire par type d'action"]
+        PI["Interfaces de plateforme<br/>SimulatedPlatform"]
+        UT["ActionTypes · ActionCatalog · ActionValidator<br/>HotkeySyntax · IconNames · Displays · Log"]
     end
-    subgraph Win["Plateforme Windows (seuls P/Invoke et COM)"]
-        WP[Platform/Windows/WindowsPlatform]
+    subgraph Win["TouchDeck.Platform.Windows (net9.0-windows)"]
+        WP["WindowsPlatform (public)"]
         NI["NativeInput (SendInput)"]
         WF["WindowFocus (fenêtres)"]
         NA["NativeAudio (Core Audio)"]
@@ -38,27 +48,53 @@ flowchart TB
     VM --> Services
     VM --> Core
     Services --> Core
-    AE -. "IKeyboardService, IAppLauncher,<br/>IWindowService, IAudioService" .-> WP
+    AH -. "construit" .-> CP & AP & AE
+    PI -. "IKeyboardService, IAppLauncher,<br/>IWindowService, IAudioService" .-> WP
     WP --> NI & WF & NA
 ```
 
-Les P/Invoke et le COM ne vivent que dans `NativeInput.cs`, `WindowFocus.cs`, `NativeAudio.cs` et `MainWindow.xaml.cs`.
+Les P/Invoke et le COM ne vivent que dans `Platform/Windows/` (internes) et `MainWindow.xaml.cs` (placement de la fenêtre).
 
+## Composition et injection de dépendances
+
+`AppHost.Build` est la racine de composition : elle construit un conteneur `Microsoft.Extensions.DependencyInjection` et
+branche le journal Serilog. Les tests construisent **le même conteneur** en simulation, sur un dossier temporaire.
+
+| Service | Rôle |
+|---|---|
+| `StartupResult`, `DeckDocument` | Configuration chargée au démarrage (fichier invalide mis de côté) et document unique |
+| `PlatformServices` | Clavier, lancement, fenêtres, audio : Windows, ou simulés avec `--simulate` |
+| `ActionRegistry`, `ActionEngine` | Un `IActionHandler` du conteneur par type d'action ; le moteur exécute les étapes |
+| `ConfigPersistence` | Sauvegarde 300 ms après la dernière modification, rechargement à chaud de `config.json` |
+| `AppearanceService` | Thème, animations et style des icônes, appliqués à chaque changement des réglages |
+| `DisplayService` | Écrans et écran cible du deck (la source `IDisplayService` est injectée) |
+| `IAppWindows` | Éditeur et paramètres, une instance de chacun |
+| `GridState`, `AppOptions` | Grille automatique du deck ; options de la ligne de commande |
+
+Les fenêtres reçoivent l'`IServiceProvider` et construisent leur ViewModel avec elles-mêmes comme « shell »
+(`ActivatorUtilities.CreateInstance`), car le ViewModel demande à la fenêtre ses boîtes de dialogue.
+
+Restent statiques, par nature : `Notifier` (bus de messages), `Theme` et `Motion` (ressources globales de l'application
+WPF), `ConfigStore` et `IconStore` (fichiers du dossier de configuration) et la façade `Log`. Aucune ne porte d'état
+métier.
+
+Libérer le conteneur (`App.OnExit`) enregistre les modifications en attente, arrête la surveillance de `config.json` et
+interrompt les actions en cours.
 ## Responsabilités
 
 | Domaine | Où | Notes |
 |---|---|---|
-| Modèle des profils | `Models.cs` | `DeckConfig` › `Profiles` › `Pages` › `Buttons` (› `Children` pour les dossiers) › `Actions`. |
+| Modèle des profils | `Core/Models.cs` | `DeckConfig` › `Profiles` › `Pages` › `Buttons` (› `Children` pour les dossiers) › `Actions`. |
 | Modifications | `Core/DeckDocument.cs` | Toute modification de contenu passe par lui (historique 100 niveaux, presse-papiers interne). |
 | Persistance et migrations | `Core/ConfigStore.cs`, `Core/ConfigNormalizer.cs` | Écriture atomique (fichier temporaire + `File.Replace`), 15 sauvegardes, migration v1 → v2, réparation sans perte. |
 | Moteur d'actions | `Core/Actions/ActionEngine.cs` | Séquence d'étapes, délai maximal par étape, annulation (`CancellationToken`, `CancelAll` à l'arrêt), résultat typé (`ActionResult`). |
-| Types d'action | `Core/Actions/BuiltInActions.cs` | Un `IActionHandler` par type ; l'identifiant (`hotkey`, `http`…) est la clé stable de `config.json`. |
-| Intégrations système | `Core/Actions/Platform.cs` → `Platform/Windows/` | `IKeyboardService`, `IAppLauncher`, `IWindowService`, `IAudioService`. Les ViewModels et le moteur n'appellent jamais Win32. |
+| Types d'action | `Core/Actions/Handlers/` | Une classe par type (`HotkeyAction`, `HttpAction`…) sur trois bases : synchrone, hors thread d'interface avec délai maximal, libre. L'identifiant est la clé stable de `config.json`. `ActionRegistry` refuse les doublons. |
+| Intégrations système | `Core/Actions/Platform.cs` → `Platform/Windows/` | `IKeyboardService`, `IAppLauncher`, `IWindowService`, `IAudioService`. Les ViewModels et le moteur n'appellent jamais Win32 : le compilateur l'interdit (types internes). |
 | Écrans | `Core/Displays.cs`, `Services/DisplayService.cs` | `DisplayResolver` (logique pure, testée) choisit l'écran ; `IDisplayService` fournit les écrans et signale les changements. Placement en pixels physiques dans `MainWindow.xaml.cs` (`SetWindowPos`). |
 | Rendu des touches | `ViewModels/TileFaceData.cs`, `Controls/TileFace` | Le modèle ne connaît pas le rendu ; la variante (standard, média, navigation, affichage, image) est déduite du contenu. |
 | Thème | `Theme.cs` | Palettes claire / sombre (contrastes testés), brushes `Deck*` publiées en `DynamicResource`, corps teinté des touches. |
 | Identifiants du format | `Core/ActionTypes.cs` | `ActionTypes`, `PageTargets`, `AudioCommands` : clés stables de `config.json`, figées par un test. |
-| Journal | `Core/Log.cs` | `touchdeck.log` (1 Mo, puis `.old`) : démarrage, erreurs, échecs d'action, changements d'écran. Dans `Core` pour que la persistance puisse journaliser. |
+| Journal | `Core/Log.cs`, `Services/AppHost.cs` | Façade `Log` (Core) branchée sur Serilog ; `ILogger<T>` dans les services injectés. `touchdeck.log` (1 Mo, 3 fichiers) : démarrage, erreurs, échecs d'action, changements d'écran. |
 | Notifications | `Services/Notifier.cs` | Toast de l'éditeur, message du deck. |
 
 ## Exécution d'un bouton
@@ -132,13 +168,9 @@ La logique métier (`Core/`) est déjà indépendante de WPF et de Win32, si bie
 
 ## Préparation de Linux
 
-Il reste à faire, dans l'ordre :
+Le Core est un projet `net9.0` indépendant de Windows et de WPF (`ArchitectureTests`). Il reste à faire, dans l'ordre :
 
-1. Extraire `Core/` et `Models.cs` dans un projet `TouchDeck.Core` (`net9.0`). Les dépendances à lever d'abord :
-   - `ActionValidator` appelle `NativeInput.TryValidateHotkey` (validation à déplacer derrière `IKeyboardService`) ;
-   - `ConfigNormalizer` lit `Theme.DefaultBackground` (constante à déplacer) ;
-   - `ActionValidator` appelle `IconStore.Resolve`.
-2. Adaptateurs Linux, par service :
+1. Adaptateurs Linux, par service :
 
    | Service | X11 | Wayland |
    |---|---|---|
@@ -148,6 +180,8 @@ Il reste à faire, dans l'ordre :
    | `IAudioService` | PulseAudio / PipeWire (`pactl`) | PulseAudio / PipeWire (`pactl`) |
    | `IDisplayService` | XRandR | Selon le compositeur |
 
-3. Front Avalonia réutilisant les ViewModels qui n'ont pas de types WPF. `TileFaceData` utilise des `Brush` WPF : à remplacer par des couleurs neutres.
+2. Sortir `DeckDocument`, `ConfigPersistence` et la logique des ViewModels qui n'ont pas de types WPF dans un projet partagé.
+   `TileFaceData` utilise des `Brush` WPF : à remplacer par des couleurs neutres.
+3. Front Avalonia réutilisant ces ViewModels.
 
 Aucune fonction n'est déclarée multiplateforme tant qu'elle n'a pas été testée sous Linux.

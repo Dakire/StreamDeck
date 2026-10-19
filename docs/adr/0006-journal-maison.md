@@ -1,6 +1,6 @@
 # 0006 — Journal maison plutôt qu'une bibliothèque de journalisation
 
-- **Statut** : acceptée, à réexaminer en phase 2 (injection de dépendances).
+- **Statut** : remplacée par [0008](0008-journal-serilog.md) (phase 2).
 - **Date** : 19 octobre 2026.
 
 ## Contexte

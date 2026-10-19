@@ -4,6 +4,20 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Architecture (phase 2)
+- **Trois projets.** `TouchDeck.Core` (`net9.0`, sans WPF ni Windows), `TouchDeck.Platform.Windows` (Win32 interne, sans
+  WPF) et l'application WPF. Les frontières sont vérifiées par `ArchitectureTests`.
+- **Injection de dépendances.** Le localisateur statique `AppServices` est supprimé. `AppHost.Build` construit le
+  conteneur ; ViewModels et fenêtres reçoivent leurs dépendances par constructeur. Nouveaux services :
+  `ConfigPersistence`, `AppearanceService`, `IAppWindows`, `DisplayService` injecté.
+- **Journal Serilog.** Façade `Log` du Core branchée sur Serilog ; `ILogger<T>` pour les services injectés. Le fichier
+  `touchdeck.log` change de rotation : 1 Mo par fichier, 3 fichiers (`touchdeck_001.log`…) au lieu de `.old`.
+- **Gestionnaires d'action.** Une classe par type (`Core/Actions/Handlers/`), enregistrés dans un `ActionRegistry` qui refuse
+  les doublons : une intégration s'ajoute sans modifier le Core.
+- **Démarrage.** Environ 55 ms de plus qu'en fin de phase 1, mais moins que la version initiale (≈ 670 ms contre ≈ 700 ms).
+  Le journal indique le temps de chaque étape.
+- **Documentation.** `docs/ARCHITECTURE.md` réécrit, ADR 0007 à 0010, `docs/phase2-report.md`.
+
 ### Corrigé (phase 2)
 - **Dossiers trop profonds.** Au-delà de 8 niveaux, le contenu n'est plus ignoré au chargement : il est remonté dans le
   dernier dossier autorisé, avec un avertissement. Aucun bouton n'est perdu.

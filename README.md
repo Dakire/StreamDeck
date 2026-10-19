@@ -27,7 +27,8 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 | [Journal des modifications](CHANGELOG.md) | Ce qui a changé, version par version |
 | [Parité avec Stream Deck](docs/FEATURE_PARITY.md), [rétro-ingénierie](docs/REVERSE_ENGINEERING.md) | Fonctions couvertes et écarts |
 | [Étude des intégrations](docs/integrations-research.md) | OBS, Twitch, Discord, Hue… : faisabilité et ordre de réalisation |
-| [Bilan du nettoyage](docs/cleanup-report.md) | Corrections, mesures avant / après, risques restants |
+| [Bilan du nettoyage](docs/cleanup-report.md) | Corrections, mesures avant / après, risques restants (phase 1) |
+| [Bilan de l'architecture](docs/phase2-report.md) | Trois projets, injection de dépendances, Serilog, gestionnaires d'action (phase 2) |
 
 ## Fonctionnalités
 
@@ -113,7 +114,7 @@ Dossier : `%APPDATA%\TouchDeck` (ou le dossier de la variable d'environnement `T
 | `Icons\` | Images des boutons (PNG, nommées d'après leur contenu). |
 | `Backups\` | Sauvegardes automatiques (15 conservées). |
 | `config.v1.backup.json` | Copie intacte de l'ancien fichier, faite une seule fois lors du passage aux profils. |
-| `touchdeck.log` | Journal : démarrage, erreurs, actions en échec, changements d'écran (1 Mo, l'ancien est gardé en `.old`). |
+| `touchdeck.log` | Journal : démarrage (avec le temps de chaque étape), erreurs, actions en échec, changements d'écran. 1 Mo par fichier, 3 fichiers conservés (`touchdeck.log`, `touchdeck_001.log`…). |
 
 L'éditeur enregistre à chaque modification (écriture atomique : un arrêt en cours d'écriture ne corrompt pas le fichier).
 Un fichier `config.json` invalide n'est jamais écrasé sans copie : il est conservé sous `config.invalide-<date>.json`.
@@ -194,18 +195,17 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 
 | Dossier / fichier | Contenu |
 |---|---|
-| `Core/` | Logique sans WPF : `DeckDocument` (opérations, historique), `ConfigStore`, `ConfigNormalizer` (migration), `ActionTypes` (clés du format), `ActionCatalog`, `ActionValidator`, `Displays`, `LabelTemplate`, `Countdowns`, `Log` |
-| `Core/Actions/` | Moteur d'actions (`ActionEngine`, `BuiltInActions`), interfaces de plateforme, plateforme simulée |
-| `Platform/Windows/` | Implémentation Windows des interfaces de plateforme |
-| `Services/` | `AppServices` (sauvegarde auto, rechargement à chaud, moteur), `IconStore`, `ProfilePackage`, `TransferService`, `DisplayService`, `AutoStart`, `Notifier`, `Motion` |
+| `Core/` (projet `TouchDeck.Core`, `net9.0`) | Logique sans WPF ni Windows : `Models`, `DeckDocument` (opérations, historique), `ConfigStore`, `ConfigNormalizer` (migration), `ActionTypes` (clés du format), `ActionCatalog`, `ActionValidator`, `HotkeySyntax`, `Displays`, `LabelTemplate`, `Countdowns`, `Log` (façade) |
+| `Core/Actions/` | Moteur d'actions (`ActionEngine`, `ActionRegistry`), un gestionnaire par type dans `Handlers/`, interfaces de plateforme, plateforme simulée |
+| `Platform/Windows/` (projet `TouchDeck.Platform.Windows`) | Implémentation Windows des interfaces de plateforme : `SendInput`, fenêtres Win32, Core Audio, registre. Seul `WindowsPlatform` est public |
+| `Services/` | `AppHost` (racine de composition, journal Serilog), `ConfigPersistence` (sauvegarde auto, rechargement à chaud), `AppearanceService`, `AppWindows`, `DisplayService`, `IconStore`, `ProfilePackage`, `TransferService`, `Notifier`, `Motion` |
 | `ViewModels/` | `MainViewModel` (deck), `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `SettingsViewModel`, `MenuSpec` |
 | `Controls/` | `TileFace` (rendu d'un bouton), `ContextMenuFactory`, `PromptWindow` |
 | `MainWindow.xaml(.cs)` | Deck ; code-behind limité à Win32 et au placement multi-écran |
 | `EditorWindow.xaml(.cs)`, `SettingsWindow.xaml(.cs)` | Éditeur et paramètres (dialogues, focus, clavier, glisser-déposer) |
 | `Theme.cs`, `IconCatalog.cs`, `App.xaml` | Palettes claire / sombre (contrastes vérifiés), icônes, styles |
-| `NativeInput.cs`, `WindowFocus.cs`, `NativeAudio.cs` | Appels Win32 et Core Audio |
 | `docs/` | Architecture, configuration, développement, décisions (`adr/`), parité fonctionnelle, intégrations, bilans |
-| `tests/TouchDeck.Tests` | Tests xUnit : logique, migration, import, contrastes, navigation du deck, robustesse, rendu hors écran des fenêtres, mesures de performance (facultatives) |
+| `tests/TouchDeck.Tests` | Tests xUnit : logique, migration, import, contrastes, navigation du deck, robustesse, composition (conteneur), architecture (frontières entre projets), rendu hors écran des fenêtres, mesures de performance (facultatives) |
 | `Directory.Build.props`, `.editorconfig` | Analyseurs, style vérifié à la compilation, avertissements bloquants, documentation XML obligatoire |
 
 ## Accessibilité

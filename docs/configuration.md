@@ -19,7 +19,7 @@ modification enregistrée est appliquée sans redémarrer (rechargement à chaud
 | `Backups\config-<date>-<n>.json` | Sauvegardes : au démarrage, avant un import ou une restauration, et à la demande (Paramètres). Une sauvegarde identique à la précédente n'est pas recréée. Les 15 dernières sont conservées. |
 | `config.v1.backup.json` | Copie intacte d'un fichier de l'ancien format, faite une seule fois avant la migration. |
 | `config.invalide-<date>.json` | Copie d'un `config.json` illisible au démarrage, conservée avant toute réécriture. |
-| `touchdeck.log` | Journal de diagnostic : démarrage, erreurs, actions en échec, changements d'écran. Au-delà de 1 Mo, il est renommé en `.old`. |
+| `touchdeck.log` | Journal de diagnostic (Serilog) : démarrage, erreurs, actions en échec, changements d'écran. Au-delà de 1 Mo, un nouveau fichier est ouvert (`touchdeck_001.log`…) ; les 3 derniers sont conservés. |
 
 ## Structure
 

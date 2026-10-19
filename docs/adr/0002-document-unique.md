@@ -12,7 +12,7 @@ une autre fenêtre.
 ## Décision
 
 - **Un document partagé.** Un seul `DeckDocument` (`Core/DeckDocument.cs`) porte la configuration, l'historique
-  (100 niveaux) et le presse-papiers interne. Les trois fenêtres le partagent via `AppServices.Document`.
+  (100 niveaux) et le presse-papiers interne. Les trois fenêtres le reçoivent par injection de dépendances (voir [0007](0007-injection-de-dependances.md)).
 - **Contenu.** Toute modification de contenu (boutons, pages, profils) passe par une méthode du document. Elle est
   annulable et renvoie un `OpResult`.
 - **Réglages.** Les réglages (thème, écran, favoris) passent par `UpdateSettings` et restent hors de l'historique.
@@ -23,5 +23,4 @@ une autre fenêtre.
 
 - Annuler et rétablir fonctionnent partout. La sauvegarde automatique s'abonne au même événement.
 - Le document ne référence pas WPF : il est entièrement testé (`DeckDocumentTests`).
-- `AppServices` reste un point d'accès statique au document. Le remplacer par une injection de dépendances est l'objet
-  de la phase 2.
+- Le localisateur statique `AppServices`, qui donnait accès au document, a été supprimé en phase 2 (ADR 0007).
