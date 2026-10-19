@@ -9,15 +9,16 @@ Le projet s'appelle `TouchDeck` (assembly et namespace), le dépôt `StreamDeck`
 
 ## Architecture actuelle
 
-- `MainWindow.xaml` ne contient qu'une `Grid` vide. **Toute l'interface est construite en C#** dans
-  `MainWindow.xaml.cs` (`Rebuild()`, `BuildTopBar`, `BuildButtons`, `BuildBar`, `BuildMenu`), avec des couleurs
-  codées en dur (`Surface`, `Accent`…) et reconstruction complète à chaque changement d'état.
-- `EditorWindows.cs` (`Ui`) et `ButtonEditorWindow.cs` construisent aussi leurs fenêtres en code.
-- Styles XAML dans `App.xaml` : `DeckButton` (carte avec ombre et animation d'appui), `FlatButton`.
-- Configuration : `Models.cs` (`DeckConfig`, `DeckPage`, `DeckButton`, `DeckAction`), `ConfigStore.cs`
-  (JSON dans `%APPDATA%\TouchDeck`), rechargement via `FileSystemWatcher`.
-- Actions : `ActionRunner.cs` dispatche sur `DeckAction.Type`.
-- Pas de MVVM, pas de NuGet, `UseWindowsForms` activé uniquement pour `Screen`.
+- **MVVM** avec CommunityToolkit.Mvvm. `MainWindow.xaml` décrit toute l'interface principale ; `ViewModels/MainViewModel.cs`
+  porte l'état (pages, mode édition, menu, statut, rechargement de config) ; `ViewModels/LayoutMetrics.cs` calcule les
+  dimensions à partir de la taille de la fenêtre ; `ViewModels/Items.cs` contient les éléments affichés (boutons, onglets, menu).
+- `MainWindow.xaml.cs` ne garde que Win32 et le placement (NOACTIVATE, plein écran multi-écran, déplacement) et implémente
+  `IShell` (`ViewModels/IShell.cs`), l'interface par laquelle le ViewModel demande ces actions et les boîtes de dialogue.
+- Thème : `Theme.cs` (clair/sombre/système) publie les brushes `Deck*` comme ressources d'application ; le XAML les consomme en `DynamicResource`.
+- Icônes de l'interface : `ui:SymbolIcon` (Fluent System Icons fournis par WPF-UI). Les icônes des boutons utilisateur restent des emojis.
+- **Pas encore migré (encore construit en C#)** : `ButtonEditorWindow.cs` et `EditorWindows.cs` (fenêtres d'édition).
+- Styles XAML dans `App.xaml` : `DeckButton`, `FlatButton`, `AddTileButton`.
+- Configuration : `Models.cs`, `ConfigStore.cs` (JSON dans `%APPDATA%\TouchDeck`) ; actions : `ActionRunner.cs`.
 
 ## Chantier : modernisation Fluent / Windows 11
 
@@ -27,8 +28,7 @@ Cible technique :
 
 1. Ajouter le package **WPF-UI** (lepoco, `Wpf.Ui`) et ses `ThemesDictionary` / `ControlsDictionary` dans `App.xaml`.
 2. Passer `MainWindow` en `ui:FluentWindow` avec `WindowBackdropType="Mica"` et thème clair, sombre ou système.
-3. Migrer l'interface construite en code vers du XAML : `ItemsControl` + `UniformGrid` pour les boutons,
-   `DataTemplate` pour le bouton de deck, `ViewModel` avec `CommunityToolkit.Mvvm`.
+3. ~~Migrer l'interface principale en XAML + MVVM~~ (fait). Reste : les fenêtres d'édition.
 4. Remplacer les couleurs en dur par des ressources de thème (`DynamicResource`).
 5. Remplacer les emojis des chrome UI par `Segoe Fluent Icons` (les icônes **des boutons utilisateur** restent libres : emoji ou texte).
 6. Navigation par pages : `NavigationView` à gauche, ou barre d'onglets en bas pour le mode tactile.

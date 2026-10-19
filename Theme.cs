@@ -40,7 +40,30 @@ public static class Theme
         };
         Dark = dark;
         ApplicationThemeManager.Apply(dark ? ApplicationTheme.Dark : ApplicationTheme.Light);
+        PublishResources();
         Changed?.Invoke();
+    }
+
+    /// <summary>Expose la palette au XAML (DynamicResource) : les vues suivent le thème sans reconstruction.</summary>
+    static void PublishResources()
+    {
+        var r = System.Windows.Application.Current.Resources;
+        r["DeckBar"] = B(Bar);
+        r["DeckTopBar"] = B(Dark ? "#33000000" : "#33FFFFFF");
+        r["DeckSurface"] = B(Surface);
+        r["DeckSurfaceHi"] = B(SurfaceHi);
+        r["DeckLine"] = B(Line);
+        r["DeckGrip"] = B(Grip);
+        r["DeckDim"] = B(Dim);
+        r["DeckText"] = B(Text);
+        r["DeckTextSoft"] = B(TextSoft);
+        r["DeckPlaceholder"] = B(Placeholder);
+        r["DeckAccent"] = B(Accent);
+        r["DeckDanger"] = B(Danger);
+        r["DeckScrim"] = B(Scrim);
+        r["DeckStatusBg"] = B(Dark ? "#3A1F26" : "#FBE3E6");
+        r["DeckStatusLine"] = B(Dark ? "#7A3340" : "#E0A0A8");
+        r["DeckStatusText"] = B(Dark ? "#FFB4BE" : "#8C1D2B");
     }
 
     static bool SystemUsesDark()

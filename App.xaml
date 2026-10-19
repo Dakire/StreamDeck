@@ -96,6 +96,30 @@
       </Setter>
     </Style>
 
+    <!-- Emplacement vide du mode édition : cadre en pointillés -->
+    <Style x:Key="AddTileButton" TargetType="Button">
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="Tag"><Setter.Value><CornerRadius>22</CornerRadius></Setter.Value></Setter>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Grid Background="Transparent">
+              <Rectangle x:Name="Frame"
+                         RadiusX="{Binding Tag.TopLeft, RelativeSource={RelativeSource TemplatedParent}}"
+                         RadiusY="{Binding Tag.TopLeft, RelativeSource={RelativeSource TemplatedParent}}"
+                         Stroke="{DynamicResource DeckPlaceholder}" StrokeThickness="2" StrokeDashArray="4 4" Margin="2"/>
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Frame" Property="Stroke" Value="{DynamicResource DeckAccent}"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
     </ResourceDictionary>
   </Application.Resources>
 </Application>

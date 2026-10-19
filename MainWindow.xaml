@@ -2,13 +2,274 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:vm="clr-namespace:TouchDeck.ViewModels"
         Title="TouchDeck" Width="1100" Height="650" Icon="Assets/icon.ico"
         ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica" WindowCornerPreference="Round"
         ResizeMode="NoResize" Topmost="False" ShowInTaskbar="True"
         ShowActivated="False" WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
         TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType"
         UseLayoutRounding="True"
         Stylus.IsPressAndHoldEnabled="False" Stylus.IsFlicksEnabled="False"
         Stylus.IsTapFeedbackEnabled="False" Stylus.IsTouchFeedbackEnabled="False">
-  <Grid x:Name="Root"/>
+
+  <ui:FluentWindow.Resources>
+    <BooleanToVisibilityConverter x:Key="BoolVis"/>
+
+    <!-- Pastille de la barre du bas (puces, onglets, engrenage) -->
+    <Style x:Key="BarChip" TargetType="Button" BasedOn="{StaticResource FlatButton}">
+      <Setter Property="Height" Value="{Binding L.BarH}"/>
+      <Setter Property="MinWidth" Value="{Binding L.BarH}"/>
+      <Setter Property="Tag" Value="{Binding L.BarRadius}"/>
+      <Setter Property="Margin" Value="{Binding L.ChipMargin}"/>
+      <Setter Property="Padding" Value="{Binding L.ChipPadding}"/>
+      <Setter Property="FontSize" Value="{Binding L.BarFont}"/>
+      <Setter Property="Background" Value="{DynamicResource DeckSurface}"/>
+      <Setter Property="Foreground" Value="{DynamicResource DeckText}"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="BarAccentChip" TargetType="Button" BasedOn="{StaticResource BarChip}">
+      <Setter Property="Background" Value="{DynamicResource DeckAccent}"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- Onglet de page : l'onglet actif prend la couleur d'accent -->
+    <Style x:Key="BarTab" TargetType="Button" BasedOn="{StaticResource BarChip}">
+      <!-- dans un DataTemplate le DataContext est l'onglet : on remonte au ViewModel principal -->
+      <Setter Property="Height" Value="{Binding DataContext.L.BarH, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+      <Setter Property="Tag" Value="{Binding DataContext.L.BarRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+      <Setter Property="FontSize" Value="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+      <Setter Property="MinWidth" Value="{Binding DataContext.L.TabMinW, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+      <Setter Property="Margin" Value="{Binding DataContext.L.TabMargin, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+      <Setter Property="Padding" Value="{Binding DataContext.L.TabPadding, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding IsActive}" Value="True">
+          <Setter Property="Background" Value="{DynamicResource DeckAccent}"/>
+          <Setter Property="Foreground" Value="White"/>
+          <Setter Property="FontWeight" Value="SemiBold"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- Entrée de menu : le libellé « danger » prend la couleur d'alerte -->
+    <Style x:Key="MenuRow" TargetType="Button" BasedOn="{StaticResource FlatButton}">
+      <Setter Property="Height" Value="{Binding DataContext.L.MenuRowH, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+      <Setter Property="FontSize" Value="{Binding DataContext.L.MenuFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource DeckText}"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="Tag"><Setter.Value><CornerRadius>14</CornerRadius></Setter.Value></Setter>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding IsDanger}" Value="True">
+          <Setter Property="Foreground" Value="{DynamicResource DeckDanger}"/>
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+
+    <Style x:Key="FluentGlyph" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Bouton du deck -->
+    <DataTemplate DataType="{x:Type vm:DeckTileViewModel}">
+      <Button Style="{StaticResource DeckButton}" Command="{Binding Click}"
+              Background="{Binding Background}"
+              Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+              Tag="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+          <TextBlock Text="{Binding Icon}" FontFamily="Segoe UI Emoji, Segoe UI" Foreground="White"
+                     TextAlignment="Center" HorizontalAlignment="Center"
+                     FontSize="{Binding DataContext.L.IconSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                     Visibility="{Binding HasIcon, Converter={StaticResource BoolVis}}"/>
+          <TextBlock Text="{Binding Label}" FontWeight="SemiBold" Foreground="#EBFFFFFF"
+                     TextWrapping="Wrap" TextAlignment="Center"
+                     FontSize="{Binding DataContext.L.LabelSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                     Margin="{Binding DataContext.L.LabelMargin, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                     Visibility="{Binding HasLabel, Converter={StaticResource BoolVis}}"/>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                      Margin="{Binding DataContext.L.EditMargin, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                      Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
+            <ui:SymbolIcon Symbol="Edit24" Foreground="White" Margin="0,0,6,0"
+                       FontSize="{Binding DataContext.L.EditSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+            <TextBlock Text="Modifier" Foreground="White" VerticalAlignment="Center"
+                       FontSize="{Binding DataContext.L.EditSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+          </StackPanel>
+        </StackPanel>
+      </Button>
+    </DataTemplate>
+
+    <!-- Emplacement vide du mode édition -->
+    <DataTemplate DataType="{x:Type vm:AddTileViewModel}">
+      <Button Style="{StaticResource AddTileButton}" Command="{Binding Click}"
+              Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+              Tag="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+        <ui:SymbolIcon Symbol="Add24" Foreground="{DynamicResource DeckDim}"
+                   FontSize="{Binding DataContext.L.AddGlyphSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+      </Button>
+    </DataTemplate>
+
+    <!-- Entrées du menu -->
+    <DataTemplate DataType="{x:Type vm:MenuEntryViewModel}">
+      <Button Style="{StaticResource MenuRow}" Command="{Binding Command}">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="{Binding DataContext.L.MenuIconW, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+          <ui:SymbolIcon Symbol="{Binding Symbol}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                     FontSize="{Binding DataContext.L.MenuIconFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+          <TextBlock Grid.Column="1" Text="{Binding Text}" VerticalAlignment="Center"/>
+          <TextBlock Grid.Column="2" Text="{Binding Trailing}" FontWeight="Bold" VerticalAlignment="Center"
+                     Margin="0,0,14,0" Foreground="{DynamicResource DeckAccent}"/>
+        </Grid>
+      </Button>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:MenuSeparatorViewModel}">
+      <Border Height="1" Background="{DynamicResource DeckLine}" Margin="12,6"/>
+    </DataTemplate>
+  </ui:FluentWindow.Resources>
+
+  <Grid x:Name="Root" Background="{Binding RootBackground}">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="{Binding L.TopH}"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="{Binding L.BarRowH}"/>
+    </Grid.RowDefinitions>
+
+    <!-- Barre du haut : marque, poignée de déplacement, réduire -->
+    <Border Grid.Row="0" Background="{DynamicResource DeckTopBar}" MouseLeftButtonDown="OnDragBarDown">
+      <Grid Margin="{Binding L.TopMargin}">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <Image Source="Assets/logo.png" Width="{Binding L.LogoSize}" Height="{Binding L.LogoSize}"/>
+          <TextBlock Text="{Binding BrandText}" FontWeight="SemiBold" VerticalAlignment="Center"
+                     FontSize="{Binding L.TopFont}" Margin="{Binding L.BrandTextMargin}">
+            <TextBlock.Style>
+              <Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource DeckDim}"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding IsEdit}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource DeckAccent}"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </TextBlock.Style>
+          </TextBlock>
+        </StackPanel>
+        <Border Grid.Column="1" CornerRadius="10" VerticalAlignment="Center"
+                Width="{Binding L.GripW}" Height="{Binding L.GripH}" Background="{DynamicResource DeckGrip}"/>
+        <Button Grid.Column="2" Style="{StaticResource FlatButton}" Command="{Binding MinimizeCommand}"
+                HorizontalAlignment="Right" VerticalAlignment="Center" Background="Transparent"
+                Width="{Binding L.MinW}" Height="{Binding L.MinH}" Foreground="{DynamicResource DeckDim}"
+                HorizontalContentAlignment="Center">
+          <Button.Tag><CornerRadius>10</CornerRadius></Button.Tag>
+          <ui:SymbolIcon Symbol="Subtract24" FontSize="{Binding L.MinFont}"/>
+        </Button>
+      </Grid>
+    </Border>
+
+    <!-- Grille de boutons -->
+    <ItemsControl Grid.Row="1" ItemsSource="{Binding Tiles}" Margin="{Binding L.GridMargin}" Focusable="False">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <UniformGrid Columns="{Binding L.Columns}" Rows="{Binding L.Rows}"/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+    </ItemsControl>
+
+    <!-- Barre du bas : onglets / état, pagination, édition, menu -->
+    <Grid Grid.Row="2" Margin="{Binding L.BarMargin}">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="Auto"/>
+      </Grid.ColumnDefinitions>
+
+      <Grid>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+          <StackPanel.Style>
+            <Style TargetType="StackPanel">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding HasStatus}" Value="True">
+                  <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </StackPanel.Style>
+          <ItemsControl ItemsSource="{Binding Tabs}" Focusable="False">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="{x:Type vm:TabViewModel}">
+                <Button Style="{StaticResource BarTab}" Command="{Binding Command}" Content="{Binding Text}"/>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <StackPanel Orientation="Horizontal" Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
+            <Button Style="{StaticResource BarChip}" Command="{Binding AddPageCommand}" Content="＋ Page"/>
+            <Button Style="{StaticResource BarChip}" Command="{Binding EditCurrentPageCommand}" Content="Modifier la page"/>
+          </StackPanel>
+        </StackPanel>
+
+        <!-- message d'état (erreurs) -->
+        <Border HorizontalAlignment="Left" BorderThickness="1" CornerRadius="{Binding L.BarRadius}"
+                Background="{DynamicResource DeckStatusBg}" BorderBrush="{DynamicResource DeckStatusLine}"
+                Padding="{Binding L.StatusPadding}"
+                Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}">
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <ui:SymbolIcon Symbol="Warning24" Foreground="{DynamicResource DeckStatusText}"
+                       FontSize="{Binding L.SubFont}" Margin="0,0,10,0"/>
+            <TextBlock Text="{Binding Status}" Foreground="{DynamicResource DeckStatusText}"
+                       FontSize="{Binding L.SubFont}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <StackPanel Grid.Column="1" Orientation="Horizontal">
+        <StackPanel Orientation="Horizontal" Visibility="{Binding HasSubs, Converter={StaticResource BoolVis}}">
+          <Button Style="{StaticResource BarChip}" Command="{Binding PrevSubCommand}">
+            <ui:SymbolIcon Symbol="ChevronLeft24"/>
+          </Button>
+          <TextBlock Text="{Binding SubText}" Foreground="{DynamicResource DeckDim}" VerticalAlignment="Center"
+                     FontSize="{Binding L.SubFont}" Margin="{Binding L.SubTextMargin}"/>
+          <Button Style="{StaticResource BarChip}" Command="{Binding NextSubCommand}">
+            <ui:SymbolIcon Symbol="ChevronRight24"/>
+          </Button>
+        </StackPanel>
+        <Button Style="{StaticResource BarAccentChip}" Command="{Binding EndEditCommand}" Content="✓ Terminer"
+                Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}"/>
+        <Button Style="{StaticResource BarChip}" Command="{Binding OpenMenuCommand}" Margin="0" Padding="0"
+                Width="{Binding L.BarH}" Foreground="{DynamicResource DeckTextSoft}">
+          <ui:SymbolIcon Symbol="Settings24" FontSize="{Binding L.GearFont}"/>
+        </Button>
+      </StackPanel>
+    </Grid>
+
+    <!-- Menu : feuille tactile par-dessus l'interface ; toucher en dehors la ferme -->
+    <Grid Grid.RowSpan="3" Visibility="{Binding MenuOpen, Converter={StaticResource BoolVis}}">
+      <Border Background="{DynamicResource DeckScrim}">
+        <Border.InputBindings>
+          <MouseBinding MouseAction="LeftClick" Command="{Binding CloseMenuCommand}"/>
+        </Border.InputBindings>
+      </Border>
+      <Border Background="{DynamicResource DeckSurface}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1"
+              CornerRadius="22" Padding="10" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+              Width="{Binding L.MenuWidth}" Margin="{Binding L.MenuMargin}">
+        <Border.Effect>
+          <DropShadowEffect BlurRadius="30" ShadowDepth="6" Opacity="0.5"/>
+        </Border.Effect>
+        <ItemsControl ItemsSource="{Binding MenuEntries}" Focusable="False"/>
+      </Border>
+    </Grid>
+  </Grid>
 </ui:FluentWindow>
