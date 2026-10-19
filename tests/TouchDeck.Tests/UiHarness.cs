@@ -53,7 +53,8 @@ public sealed class WpfHost : IDisposable
         {
             try
             {
-                var app = new App { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                // Headless : le démarrage normal (vraie fenêtre du deck, plateforme Windows) ne s'exécute pas
+                var app = new App { ShutdownMode = ShutdownMode.OnExplicitShutdown, Headless = true };
                 app.InitializeComponent();
                 System.Diagnostics.PresentationTraceSources.Refresh();
                 PresentationTraceSources.DataBindingSource.Listeners.Add(Bindings);
