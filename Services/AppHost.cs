@@ -13,6 +13,7 @@ using TouchDeck.Integrations.Obs;
 using TouchDeck.Integrations.Vmix;
 using TouchDeck.Integrations.WindowsSystem;
 using TouchDeck.Integrations.XPlane;
+using TouchDeck.Integrations.Teams;
 using TouchDeck.Platform.Windows;
 
 namespace TouchDeck;
@@ -101,6 +102,7 @@ public static class AppHost
         AddIntegration<HueIntegration>(services);
         AddIntegration<WindowsSystemIntegration>(services);
         AddIntegration<XPlaneIntegration>(services);
+        AddIntegration<TeamsIntegration>(services);
 
         services.AddSingleton<IDisplayService, WindowsDisplayService>();
         services.AddSingleton<DisplayService>();
