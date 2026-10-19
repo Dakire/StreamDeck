@@ -7,14 +7,7 @@
        titre superposé, badges (dossier, étapes) et progression. Toutes les tailles sont proportionnelles à la case. -->
   <Grid>
     <Border x:Name="ImageLayer" Visibility="Collapsed"/>
-    <Border x:Name="Scrim" Visibility="Collapsed" VerticalAlignment="Bottom">
-      <Border.Background>
-        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-          <GradientStop Color="#00000000" Offset="0"/>
-          <GradientStop Color="#C0000000" Offset="1"/>
-        </LinearGradientBrush>
-      </Border.Background>
-    </Border>
+    <Border x:Name="Scrim" Visibility="Collapsed" VerticalAlignment="Bottom" Background="{DynamicResource DeckImageScrim}"/>
 
     <Grid x:Name="FaceContent">
       <!-- Standard, média, navigation : pastille d'icône puis titre -->
@@ -53,7 +46,7 @@
     </Grid>
 
     <!-- Badge « plusieurs étapes » -->
-    <Border x:Name="StepBadge" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Top" Background="#66000000">
+    <Border x:Name="StepBadge" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Top" Background="{DynamicResource DeckTileBadge}">
       <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
         <ui:SymbolIcon x:Name="StepGlyph" Symbol="Layer20" Foreground="White" VerticalAlignment="Center"/>
         <TextBlock x:Name="StepText" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center" Margin="3,0,0,0"/>
@@ -61,12 +54,12 @@
     </Border>
 
     <!-- Badge « dossier » -->
-    <Border x:Name="FolderBadge" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="#66000000">
+    <Border x:Name="FolderBadge" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="{DynamicResource DeckTileBadge}">
       <ui:SymbolIcon x:Name="FolderGlyph" Symbol="ChevronRight20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
     </Border>
 
     <!-- Progression du minuteur -->
-    <Border x:Name="ProgressTrack" Visibility="Collapsed" VerticalAlignment="Bottom" Background="#33FFFFFF">
+    <Border x:Name="ProgressTrack" Visibility="Collapsed" VerticalAlignment="Bottom" Background="{DynamicResource DeckTileTrack}">
       <Border x:Name="ProgressFill" HorizontalAlignment="Left" Background="White"/>
     </Border>
   </Grid>

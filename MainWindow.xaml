@@ -111,20 +111,20 @@
             </StackPanel>
           </Border>
           <!-- État d'exécution : anneau pendant une action longue, coche (réussie) ou alerte (échec, détail dans le message) -->
-          <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="6" CornerRadius="16" Background="#B3000000"
+          <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="6" CornerRadius="16" Background="{DynamicResource DeckTileRunningVeil}"
                   Visibility="{Binding IsRunning, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Action en cours">
             <ui:ProgressRing IsIndeterminate="True" Width="22" Height="22" Foreground="White"/>
           </Border>
-          <Border Background="#99000000" CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+          <Border Background="{DynamicResource DeckTileDoneVeil}" CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                   Visibility="{Binding IsSuccess, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Action réussie">
-            <ui:SymbolIcon Symbol="CheckmarkCircle24" Filled="True" Foreground="#FF5CD6A0" HorizontalAlignment="Center" VerticalAlignment="Center"
+            <ui:SymbolIcon Symbol="CheckmarkCircle24" Filled="True" Foreground="{DynamicResource DeckTileSuccessMark}" HorizontalAlignment="Center" VerticalAlignment="Center"
                            FontSize="{Binding DataContext.L.IconSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
           </Border>
-          <Border Background="#FA0B0D12" CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                  BorderBrush="#FFFF8A97" BorderThickness="2"
+          <Border Background="{DynamicResource DeckTileErrorVeil}" CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                  BorderBrush="{DynamicResource DeckTileErrorLine}" BorderThickness="2"
                   Visibility="{Binding IsError, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Échec de l'action">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-              <ui:SymbolIcon Symbol="Warning24" Filled="True" Foreground="#FFFCD34D" HorizontalAlignment="Center"
+              <ui:SymbolIcon Symbol="Warning24" Filled="True" Foreground="{DynamicResource DeckTileWarningMark}" HorizontalAlignment="Center"
                              FontSize="{Binding DataContext.L.IconSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
               <TextBlock Text="Échec" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center"
                          FontSize="{Binding DataContext.L.LabelSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
@@ -251,12 +251,12 @@
               <TextBlock Text="Mode édition" Foreground="White" FontWeight="SemiBold" FontSize="{Binding L.PillFont}" VerticalAlignment="Center"/>
             </StackPanel>
           </Border>
-          <Border Style="{StaticResource TopPill}" Background="Transparent" BorderBrush="#FFFCD34D"
+          <Border Style="{StaticResource TopPill}" Background="Transparent" BorderBrush="{DynamicResource DeckSimulation}"
                   Visibility="{Binding IsSimulated, Converter={StaticResource BoolVis}}"
                   ToolTip="Mode simulation : les actions sont affichées, rien n'est envoyé au système">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-              <ui:SymbolIcon Symbol="Beaker24" Foreground="#FFFCD34D" FontSize="{Binding L.PillFont}" Margin="0,0,6,0"/>
-              <TextBlock Text="Simulation" Foreground="#FFFCD34D" FontWeight="SemiBold" FontSize="{Binding L.PillFont}" VerticalAlignment="Center"/>
+              <ui:SymbolIcon Symbol="Beaker24" Foreground="{DynamicResource DeckSimulation}" FontSize="{Binding L.PillFont}" Margin="0,0,6,0"/>
+              <TextBlock Text="Simulation" Foreground="{DynamicResource DeckSimulation}" FontWeight="SemiBold" FontSize="{Binding L.PillFont}" VerticalAlignment="Center"/>
             </StackPanel>
           </Border>
         </StackPanel>

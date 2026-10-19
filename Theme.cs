@@ -109,6 +109,67 @@ public static class Theme
         r["DeckAccentSoft"] = B(Dark ? "#335B4CF0" : "#225B4CF0");
         r["DeckDock"] = B(Dark ? "#E6171B24" : "#F2FFFFFF");
         r["DeckBackdrop"] = Backdrop();
+
+        // Repères posés sur la face des touches (voiles d'état, badges, liseré, reflet) : mêmes valeurs dans les deux thèmes,
+        // car ils s'affichent sur la couleur de la touche ou sur un voile sombre, jamais directement sur le fond de l'application
+        r["DeckTileRunningVeil"] = B(OnTile.RunningVeil);
+        r["DeckTileDoneVeil"] = B(OnTile.DoneVeil);
+        r["DeckTileErrorVeil"] = B(OnTile.ErrorVeil);
+        r["DeckTileSuccessMark"] = B(OnTile.SuccessMark);
+        r["DeckTileErrorLine"] = B(OnTile.ErrorLine);
+        r["DeckTileWarningMark"] = B(OnTile.WarningMark);
+        r["DeckTileBadge"] = B(OnTile.Badge);
+        r["DeckTileTrack"] = B(OnTile.Track);
+        r["DeckTileLine"] = B(OnTile.Line);
+        r["DeckTileSheen"] = Vertical(OnTile.SheenTop, OnTile.SheenBottom, 0.35);
+        r["DeckImageScrim"] = Vertical("#00000000", OnTile.ImageScrim, 1);
+        // Pastille « Simulation » de la barre du haut, éditeur (case de dépôt) et nuancier
+        r["DeckSimulation"] = B(OnTile.WarningMark);
+        r["DeckDropFill"] = B("#2600FF99");
+        r["DeckSwatchRing"] = B("#80808080");
+    }
+
+    /// <summary>Couleurs des repères posés sur les touches (voir <see cref="PublishResources"/>).</summary>
+    public static class OnTile
+    {
+        /// <summary>Fond de la pastille « en cours » (anneau de progression).</summary>
+        public const string RunningVeil = "#B3000000";
+        /// <summary>Voile de la touche après une action réussie.</summary>
+        public const string DoneVeil = "#99000000";
+        /// <summary>Voile de la touche après un échec.</summary>
+        public const string ErrorVeil = "#FA0B0D12";
+        /// <summary>Coche de réussite.</summary>
+        public const string SuccessMark = "#FF5CD6A0";
+        /// <summary>Contour de la touche en échec.</summary>
+        public const string ErrorLine = "#FFFF8A97";
+        /// <summary>Icône d'alerte (échec, mode simulation).</summary>
+        public const string WarningMark = "#FFFCD34D";
+        /// <summary>Fond des badges (dossier, nombre d'étapes).</summary>
+        public const string Badge = "#66000000";
+        /// <summary>Rail de la barre de progression du minuteur.</summary>
+        public const string Track = "#33FFFFFF";
+        /// <summary>Liseré par défaut d'une touche (remplacé par la couleur du bouton).</summary>
+        public const string Line = "#33FFFFFF";
+        /// <summary>Reflet du haut de la touche, du haut vers le bas.</summary>
+        public const string SheenTop = "#14FFFFFF", SheenBottom = "#00FFFFFF";
+        /// <summary>Bas du dégradé qui rend le titre lisible sur une image.</summary>
+        public const string ImageScrim = "#C0000000";
+    }
+
+    /// <summary>Dégradé vertical figé : <paramref name="top"/> en haut, <paramref name="bottom"/> à la hauteur relative <paramref name="end"/>.</summary>
+    static LinearGradientBrush Vertical(string top, string bottom, double end)
+    {
+        var brush = new LinearGradientBrush
+        {
+            StartPoint = new System.Windows.Point(0, 0), EndPoint = new System.Windows.Point(0, 1),
+            GradientStops =
+            {
+                new GradientStop((Color)ColorConverter.ConvertFromString(top), 0),
+                new GradientStop((Color)ColorConverter.ConvertFromString(bottom), end),
+            },
+        };
+        brush.Freeze();
+        return brush;
     }
 
     /// <summary>Fond de la fenêtre du deck : lueur douce en haut, plus profond en bas. Opaque : lisible quel que soit le fond d'écran.</summary>

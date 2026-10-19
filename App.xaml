@@ -19,7 +19,7 @@
     <Style x:Key="DeckButton" TargetType="Button">
       <Setter Property="Focusable" Value="False"/>
       <Setter Property="Foreground" Value="White"/>
-      <Setter Property="BorderBrush" Value="#33FFFFFF"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DeckTileLine}"/>
       <Setter Property="Tag"><Setter.Value><CornerRadius>22</CornerRadius></Setter.Value></Setter>
       <Setter Property="Template">
         <Setter.Value>
@@ -33,14 +33,7 @@
                 </Border.Effect>
               </Border>
               <!-- reflet très léger sur le haut : du volume sans effet « verre » -->
-              <Border CornerRadius="{TemplateBinding Tag}" IsHitTestVisible="False" Margin="1">
-                <Border.Background>
-                  <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#14FFFFFF" Offset="0"/>
-                    <GradientStop Color="#00FFFFFF" Offset="0.35"/>
-                  </LinearGradientBrush>
-                </Border.Background>
-              </Border>
+              <Border CornerRadius="{TemplateBinding Tag}" IsHitTestVisible="False" Margin="1" Background="{DynamicResource DeckTileSheen}"/>
               <Border x:Name="Hover" CornerRadius="{TemplateBinding Tag}" Background="White" Opacity="0" IsHitTestVisible="False"/>
               <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
               <Border x:Name="Press" CornerRadius="{TemplateBinding Tag}" Background="White" Opacity="0" IsHitTestVisible="False"/>
@@ -85,7 +78,7 @@
     <Style x:Key="DeckButtonStatic" TargetType="Button">
       <Setter Property="Focusable" Value="False"/>
       <Setter Property="Foreground" Value="White"/>
-      <Setter Property="BorderBrush" Value="#33FFFFFF"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DeckTileLine}"/>
       <Setter Property="Tag"><Setter.Value><CornerRadius>22</CornerRadius></Setter.Value></Setter>
       <Setter Property="Template">
         <Setter.Value>
@@ -213,7 +206,7 @@
     <DataTemplate DataType="{x:Type vm:SwatchViewModel}">
       <ui:Button Width="48" Height="48" Padding="0" CornerRadius="24" Margin="0,0,8,8"
                  Command="{Binding Command}" Background="{Binding Brush}" MouseOverBackground="{Binding Brush}"
-                 PressedBackground="{Binding Brush}" BorderThickness="2" BorderBrush="#80808080"
+                 PressedBackground="{Binding Brush}" BorderThickness="2" BorderBrush="{DynamicResource DeckSwatchRing}"
                  FocusVisualStyle="{StaticResource DeckFocusVisual}"
                  AutomationProperties.Name="{Binding Color, StringFormat='Couleur {0}'}"
                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center">

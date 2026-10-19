@@ -49,7 +49,7 @@
               <Border x:Name="SelectRing" CornerRadius="16" BorderThickness="4" BorderBrush="{DynamicResource DeckAccentText}"
                       Visibility="Collapsed" IsHitTestVisible="False"/>
               <Border x:Name="DropRing" CornerRadius="16" BorderThickness="4" BorderBrush="{DynamicResource DeckSuccess}"
-                      Background="#2600FF99" Visibility="Collapsed" IsHitTestVisible="False"/>
+                      Background="{DynamicResource DeckDropFill}" Visibility="Collapsed" IsHitTestVisible="False"/>
               <!-- configuration incorrecte : icône + infobulle -->
               <Border x:Name="IssueBadge" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6" CornerRadius="12"
                       Background="{DynamicResource DeckWindow}" Padding="3">

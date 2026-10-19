@@ -241,6 +241,27 @@ public class DeckNavigationTests
         Assert.All(after.Zip(before), p => Assert.NotSame(p.First, p.Second));
     }
 
+    /// <summary>Une ressource Deck* absente ne lève aucune erreur : l'élément s'affiche simplement sans couleur.</summary>
+    [Theory]
+    [InlineData("dark")]
+    [InlineData("light")]
+    public void EveryDeckResourceUsedInXamlIsPublished(string theme)
+    {
+        _host.Reset();
+        _host.SetTheme(theme);
+        var root = new System.IO.DirectoryInfo(AppContext.BaseDirectory);
+        while (root != null && !System.IO.File.Exists(System.IO.Path.Combine(root.FullName, "TouchDeck.csproj"))) root = root.Parent;
+        Assert.NotNull(root);
+        var rx = new System.Text.RegularExpressions.Regex(@"DynamicResource (Deck\w+)");
+        var keys = System.IO.Directory.EnumerateFiles(root!.FullName, "*.xaml", System.IO.SearchOption.AllDirectories)
+            .Where(f => !f.Contains(@"\obj\") && !f.Contains(@"\bin\"))
+            .SelectMany(f => rx.Matches(System.IO.File.ReadAllText(f)).Select(m => m.Groups[1].Value))
+            .Distinct().ToList();
+        Assert.NotEmpty(keys);
+        var missing = _host.Run(() => keys.Where(k => System.Windows.Application.Current.TryFindResource(k) == null).ToList());
+        Assert.Empty(missing);
+    }
+
     static async Task WaitUntil(Func<bool> condition)
     {
         var limit = DateTime.UtcNow.AddSeconds(5);
