@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using TouchDeck.Actions;
 using TouchDeck.ViewModels;
 using Xunit;
@@ -62,7 +63,7 @@ public class DeckNavigationTests
     MainViewModel NewDeck(DeckConfig cfg)
     {
         _host.Reset(cfg);
-        var vm = _host.Run(() => { var v = new MainViewModel(new FakeDeckShell()); v.Resize(1600, 900); return v; });
+        var vm = _host.Run(() => { var v = _host.Create<MainViewModel>(new FakeDeckShell()); v.Resize(1600, 900); return v; });
         _host.Settle();
         return vm;
     }
@@ -83,8 +84,8 @@ public class DeckNavigationTests
     [Fact]
     public void TheHarnessNeverUsesTheRealPlatformNorShowsWindows()
     {
-        Assert.True(_host.Run(() => AppServices.Simulated));
-        Assert.IsType<SimulatedPlatform>(_host.Run(() => AppServices.Engine.Context.Platform.Keyboard));
+        Assert.True(_host.Run(() => _host.Services.GetRequiredService<AppOptions>().Simulate));
+        Assert.IsType<SimulatedPlatform>(_host.Run(() => _host.Engine.Context.Platform.Keyboard));
         Assert.DoesNotContain(_host.Run(() => System.Windows.Application.Current.Windows.Cast<System.Windows.Window>().ToList()), w => w.IsVisible);
     }
 
@@ -167,7 +168,7 @@ public class DeckNavigationTests
     {
         var vm = NewDeck(Config());
         await Press(vm, "Profil Q");
-        Assert.Equal("Q", _host.Run(() => AppServices.Document.Config.ActiveProfile));
+        Assert.Equal("Q", _host.Run(() => _host.Document.Config.ActiveProfile));
         Assert.Equal("Q", _host.Run(() => vm.ProfileName));
         Assert.Equal(new[] { "Q" }, Labels(vm));
         Assert.False(_host.Run(() => vm.IsAutoProfile));
@@ -177,7 +178,7 @@ public class DeckNavigationTests
     public async Task ButtonsRunTheirActionsOnThePlatform()
     {
         var vm = NewDeck(Config());
-        var sim = (SimulatedPlatform)_host.Run(() => AppServices.Engine.Context.Platform.Keyboard);
+        var sim = (SimulatedPlatform)_host.Run(() => _host.Engine.Context.Platform.Keyboard);
         int before = sim.Log.Count;
         var tile = Tile(vm, "Copier");
         var run = _host.Run(() => vm.RunTileAsync(tile));
@@ -193,13 +194,13 @@ public class DeckNavigationTests
         var cfg = Config();
         cfg.Profiles[1].AppMatch = "notepad";
         var vm = NewDeck(cfg);
-        var sim = (SimulatedPlatform)_host.Run(() => AppServices.Engine.Context.Platform.Windows);
+        var sim = (SimulatedPlatform)_host.Run(() => _host.Engine.Context.Platform.Windows);
         try
         {
             _host.Run(() => sim.Foreground = "Notepad");
             await WaitUntil(() => _host.Run(() => vm.IsAutoProfile));
             Assert.Equal("Q", _host.Run(() => vm.ProfileName));
-            Assert.Equal("P", _host.Run(() => AppServices.Document.Config.ActiveProfile));   // jamais enregistré
+            Assert.Equal("P", _host.Run(() => _host.Document.Config.ActiveProfile));   // jamais enregistré
 
             _host.Run(() => sim.Foreground = "explorer");
             await WaitUntil(() => !_host.Run(() => vm.IsAutoProfile));
@@ -215,7 +216,7 @@ public class DeckNavigationTests
         var before = _host.Run(() => vm.Tiles.ToList());
         var oldFace = _host.Run(() => Tile(vm, "Copier").Face);
 
-        _host.Run(() => AppServices.Document.UpdateButton(new Place("P", 0), 0, b => b.Color = "#BE123C", "Couleur"));
+        _host.Run(() => _host.Document.UpdateButton(new Place("P", 0), 0, b => b.Color = "#BE123C", "Couleur"));
         _host.Settle();
         var after = _host.Run(() => vm.Tiles.ToList());
         Assert.Equal(before.Count, after.Count);
@@ -223,7 +224,7 @@ public class DeckNavigationTests
         Assert.NotSame(oldFace, _host.Run(() => Tile(vm, "Copier").Face));        // la face, elle, est recalculée
 
         // Renommer change le nom de la tuile : seule cette case est remplacée
-        _host.Run(() => AppServices.Document.UpdateButton(new Place("P", 0), 0, b => b.Label = "Copier tout", "Titre"));
+        _host.Run(() => _host.Document.UpdateButton(new Place("P", 0), 0, b => b.Label = "Copier tout", "Titre"));
         _host.Settle();
         var renamed = _host.Run(() => vm.Tiles.ToList());
         Assert.NotSame(before[0], renamed[0]);

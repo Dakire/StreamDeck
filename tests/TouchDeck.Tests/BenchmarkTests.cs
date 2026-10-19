@@ -55,13 +55,13 @@ public class BenchmarkTests
             var cfg = Grid32();
             cfg.ReduceMotion = reduce;
             _host.Reset(cfg);
-            _host.Run(() => AppServices.Document.UpdateSettings(c => c.ReduceMotion = reduce));
+            _host.Run(() => _host.Document.UpdateSettings(c => c.ReduceMotion = reduce));
             _host.Settle();
 
             GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
             long memBefore = GC.GetTotalMemory(true);
             var sw = Stopwatch.StartNew();
-            var win = _host.Run(() => new MainWindow());
+            var win = _host.Run(() => new MainWindow(_host.Services));
             _host.Render(win, "bench-first", 1920, 1080);
             double firstMs = sw.Elapsed.TotalMilliseconds;
             try
@@ -84,7 +84,7 @@ public class BenchmarkTests
                 var rebuilds = Enumerable.Range(0, 15).Select(i => _host.Run(() =>
                 {
                     var t = Stopwatch.StartNew();
-                    AppServices.Document.UpdateSettings(c => c.Spacing = 14 + (i % 2));
+                    _host.Document.UpdateSettings(c => c.Spacing = 14 + (i % 2));
                     ((FrameworkElement)win.Content).UpdateLayout();
                     return t.Elapsed.TotalMilliseconds;
                 })).OrderBy(x => x).ToArray();

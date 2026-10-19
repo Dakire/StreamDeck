@@ -52,7 +52,10 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         new("8 × 4 · 32 touches", 8, 4),
     };
 
-    readonly DeckDocument _doc = AppServices.Document;
+    readonly DeckDocument _doc;
+    readonly DisplayService _displays;
+    readonly GridState _grid;
+    readonly IAppWindows _windows;
     readonly IEditorShell _shell;
     readonly List<int> _folder = new();
     readonly DispatcherTimer _toastTimer = new() { Interval = TimeSpan.FromSeconds(6) };
@@ -127,16 +130,20 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     int Offset => _folder.Count > 0 ? 1 : 0;
 
     /// <summary>Éditeur sur le document partagé ; <paramref name="shell"/> fournit dialogues et focus.</summary>
-    public EditorViewModel(IEditorShell shell)
+    public EditorViewModel(IEditorShell shell, DeckDocument doc, DisplayService displays, GridState grid, IAppWindows windows)
     {
         _shell = shell;
+        _doc = doc;
+        _displays = displays;
+        _grid = grid;
+        _windows = windows;
         _profile = _doc.ActiveProfile.Name;
         Catalog = new CatalogViewModel(_doc);
         Properties = new PropertiesViewModel(_doc, this, shell);
 
         _doc.Changed += OnDocumentChanged;
         Notifier.Posted += OnNotice;
-        DisplayService.Changed += RefreshDevices;
+        _displays.Changed += RefreshDevices;
         _toastTimer.Tick += (_, _) => DismissToast();
 
         RefreshAll();
@@ -147,7 +154,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     {
         _doc.Changed -= OnDocumentChanged;
         Notifier.Posted -= OnNotice;
-        DisplayService.Changed -= RefreshDevices;
+        _displays.Changed -= RefreshDevices;
         _toastTimer.Stop();
     }
 
@@ -342,7 +349,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     (int Cols, int Rows) Dimensions()
     {
         var p = Profile;
-        var auto = AppServices.AutoGrid;
+        var auto = _grid.Auto;
         int cols = p.Columns > 0 ? p.Columns : _doc.Config.Columns > 0 ? _doc.Config.Columns : auto.Columns;
         int rows = p.Rows > 0 ? p.Rows : _doc.Config.Rows > 0 ? _doc.Config.Rows : auto.Rows;
         return (Math.Max(1, cols), Math.Max(1, rows));
@@ -424,10 +431,10 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     public void RefreshDevices()
     {
         _refreshingLists = true;
-        var (choices, selected) = ScreenChoice.Build(_doc.Config, "Automatique (écran secondaire)");
+        var (choices, selected) = ScreenChoice.Build(_doc.Config, _displays.All(), "Automatique (écran secondaire)");
         Screens.Clear();
         foreach (var s in choices) Screens.Add(s);
-        var (text, connected) = DisplayService.Describe(_doc.Config);
+        var (text, connected) = _displays.Describe(_doc.Config);
         DeviceText = text; DeviceConnected = connected;
         SelectedScreen = selected;
         _refreshingLists = false;
@@ -866,7 +873,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         if (name != null) SwitchProfile(name);
     }
 
-    [RelayCommand] void OpenSettings() => AppServices.OpenSettings();
+    [RelayCommand] void OpenSettings() => _windows.OpenSettings();
     [RelayCommand] void ActivateCurrentProfile() => SetActive(_profile);
     [RelayCommand] async System.Threading.Tasks.Task RenameCurrentProfile() => await RenameProfileAsync(_profile);
     [RelayCommand] void ExportCurrentProfile() => ExportProfile(_profile);

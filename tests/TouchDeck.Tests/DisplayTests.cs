@@ -61,45 +61,48 @@ public class DisplayTests
     [Fact]
     public void ScreenChoicesFollowTheDeviceAcrossReconnection()
     {
-        var previous = DisplayService.Provider;
         var fake = new FakeDisplays();
         fake.Screens.AddRange(new[] { Main, Touch });
+        using var displays = new DisplayService(fake);   // la source est injectée : aucun écran réel
         int changes = 0;
-        void Count() => changes++;
-        DisplayService.Changed += Count;
-        try
-        {
-            DisplayService.Provider = fake;
-            var cfg = new DeckConfig();
-            var (choices, selected) = ScreenChoice.Build(cfg, "Auto");
-            Assert.Equal(3, choices.Count);
-            Assert.Equal(-1, selected.Monitor);
+        displays.Changed += () => changes++;
 
-            choices[2].ApplyTo(cfg);
-            Assert.Equal((1, Touch.Device), (cfg.Monitor, cfg.MonitorDevice));
+        var cfg = new DeckConfig();
+        var (choices, selected) = ScreenChoice.Build(cfg, displays.All(), "Auto");
+        Assert.Equal(3, choices.Count);
+        Assert.Equal(-1, selected.Monitor);
 
-            // Renumérotation : le même écran est retrouvé et resélectionné
-            fake.Screens.Insert(1, Portrait);
-            fake.Raise();
-            Assert.Equal(1, changes);
-            (_, selected) = ScreenChoice.Build(cfg, "Auto");
-            Assert.Equal(Touch.Device, selected.Device);
-            Assert.Equal(Touch.Device, DisplayService.ResolveTarget(cfg)!.Device);
+        choices[2].ApplyTo(cfg);
+        Assert.Equal((1, Touch.Device), (cfg.Monitor, cfg.MonitorDevice));
 
-            // Débranché : choix « absent » affiché, deck sans cible
-            fake.Screens.RemoveAll(d => d.Device == Touch.Device);
-            fake.Screens.Remove(Portrait);
-            (choices, selected) = ScreenChoice.Build(cfg, "Auto");
-            Assert.Contains("absent", selected.Text);
-            Assert.Null(DisplayService.ResolveTarget(cfg));
-        }
-        finally
-        {
-            DisplayService.Changed -= Count;
-            DisplayService.Provider = previous;
-        }
+        // Renumérotation : le même écran est retrouvé et resélectionné
+        fake.Screens.Insert(1, Portrait);
+        fake.Raise();
+        Assert.Equal(1, changes);
+        (_, selected) = ScreenChoice.Build(cfg, displays.All(), "Auto");
+        Assert.Equal(Touch.Device, selected.Device);
+        Assert.Equal(Touch.Device, displays.ResolveTarget(cfg)!.Device);
+
+        // Débranché : choix « absent » affiché, deck sans cible
+        fake.Screens.RemoveAll(d => d.Device == Touch.Device);
+        fake.Screens.Remove(Portrait);
+        (choices, selected) = ScreenChoice.Build(cfg, displays.All(), "Auto");
+        Assert.Contains("absent", selected.Text);
+        Assert.Null(displays.ResolveTarget(cfg));
     }
 
+    [Fact]
+    public void ADisposedDisplayServiceStopsFollowingItsSource()
+    {
+        var fake = new FakeDisplays();
+        var displays = new DisplayService(fake);
+        int changes = 0;
+        displays.Changed += () => changes++;
+        fake.Raise();
+        displays.Dispose();
+        fake.Raise();
+        Assert.Equal(1, changes);
+    }
     [Fact]
     public void MonitorDeviceIsOptionalInConfigJson()
     {

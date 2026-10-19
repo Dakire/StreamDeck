@@ -1,41 +1,50 @@
 using System;
-using System.IO;
 
 namespace TouchDeck;
 
+/// <summary>Gravité d'un message du journal.</summary>
+public enum LogSeverity
+{
+    /// <summary>Événement normal (démarrage, changement d'écran).</summary>
+    Info,
+    /// <summary>Anomalie sans conséquence grave (action en échec, image illisible).</summary>
+    Warning,
+    /// <summary>Erreur : quelque chose n'a pas pu être fait.</summary>
+    Error,
+}
+
+/// <summary>Destination des messages du journal ; l'application branche Serilog, les tests une liste en mémoire.</summary>
+public interface ILogSink
+{
+    /// <summary>Consigne un message. Ne doit jamais lever d'exception : un journal en échec ne doit pas faire tomber le deck.</summary>
+    void Write(LogSeverity severity, string message, Exception? exception);
+}
+
 /// <summary>
-/// Journal de diagnostic dans le dossier de configuration (touchdeck.log, 1 Mo maximum, l'ancien est gardé en .old).
-/// Ne lève jamais d'exception : un journal en échec ne doit pas faire tomber le deck.
+/// Façade du journal pour le code qui n'est pas construit par l'injection de dépendances (persistance, validation, plateforme).
+/// Le Core ne dépend d'aucune bibliothèque de journalisation : la racine de composition branche <see cref="Sink"/>.
+/// Sans destination, les messages sont ignorés.
 /// </summary>
 public static class Log
 {
-    /// <summary>Taille au-delà de laquelle le journal est renommé en .old et recommencé.</summary>
-    public const long MaxBytes = 1_000_000;
-    static readonly object Gate = new();
+    sealed class NullSink : ILogSink
+    {
+        public void Write(LogSeverity severity, string message, Exception? exception) { }
+    }
 
-    /// <summary>Chemin du journal (dossier de configuration).</summary>
-    public static string FilePath => Path.Combine(ConfigStore.Dir, "touchdeck.log");
+    /// <summary>Destination courante des messages.</summary>
+    public static ILogSink Sink { get; set; } = new NullSink();
 
     /// <summary>Événement normal (démarrage, changement d'écran).</summary>
-    public static void Info(string message) => Write("INFO ", message);
+    public static void Info(string message) => Write(LogSeverity.Info, message, null);
     /// <summary>Anomalie sans conséquence grave (action en échec, image illisible).</summary>
-    public static void Warn(string message) => Write("WARN ", message);
+    public static void Warn(string message) => Write(LogSeverity.Warning, message, null);
     /// <summary>Erreur, avec l'exception complète si elle est fournie.</summary>
-    public static void Error(string message, Exception? ex = null) => Write("ERROR", ex == null ? message : $"{message}\n{ex}");
+    public static void Error(string message, Exception? ex = null) => Write(LogSeverity.Error, message, ex);
 
-    static void Write(string level, string message)
+    static void Write(LogSeverity severity, string message, Exception? exception)
     {
-        try
-        {
-            lock (Gate)
-            {
-                var path = FilePath;
-                Directory.CreateDirectory(ConfigStore.Dir);
-                var info = new FileInfo(path);
-                if (info.Exists && info.Length > MaxBytes) File.Move(path, path + ".old", overwrite: true);
-                File.AppendAllText(path, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {level} {message}{Environment.NewLine}");
-            }
-        }
-        catch { /* journal best-effort */ }
+        try { Sink.Write(severity, message, exception); }
+        catch (Exception) { /* un journal en échec ne doit jamais faire tomber l'application */ }
     }
 }

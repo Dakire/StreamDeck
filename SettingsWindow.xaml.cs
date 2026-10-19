@@ -1,6 +1,8 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
 using TouchDeck.Controls;
 using TouchDeck.ViewModels;
 
@@ -13,9 +15,9 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow, ISettingsShe
     readonly SettingsViewModel _vm;
 
     /// <summary>Paramètres sur le document partagé ; le ViewModel est libéré à la fermeture.</summary>
-    public SettingsWindow()
+    public SettingsWindow(IServiceProvider services)
     {
-        _vm = new SettingsViewModel(this);
+        _vm = ActivatorUtilities.CreateInstance<SettingsViewModel>(services, this);   // la fenêtre est le « shell » du ViewModel
         DataContext = _vm;
         InitializeComponent();
         ShortcutList.ItemsSource = SettingsViewModel.Shortcuts.Select(s => new { s.Keys, s.What }).ToList();

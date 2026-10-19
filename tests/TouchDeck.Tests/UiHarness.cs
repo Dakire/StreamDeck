@@ -7,6 +7,9 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using TouchDeck.Actions;
 using Xunit;
 
 namespace TouchDeck.Tests;
@@ -34,7 +37,13 @@ public sealed class WpfHost : IDisposable
 {
     readonly Thread _thread;
     readonly string _dir;
+    IHost? _app;
     public Dispatcher Dispatcher { get; private set; } = null!;
+    /// <summary>Conteneur de services de l'application, construit comme en production mais en simulation.</summary>
+    public IServiceProvider Services => _app!.Services;
+    public DeckDocument Document => Services.GetRequiredService<DeckDocument>();
+    public ActionEngine Engine => Services.GetRequiredService<ActionEngine>();
+    public ConfigPersistence Persistence => Services.GetRequiredService<ConfigPersistence>();
     public BindingErrors Bindings { get; } = new();
     public string ShotDir { get; }
 
@@ -58,7 +67,7 @@ public sealed class WpfHost : IDisposable
                 System.Diagnostics.PresentationTraceSources.Refresh();
                 PresentationTraceSources.DataBindingSource.Listeners.Add(Bindings);
                 PresentationTraceSources.DataBindingSource.Switch.Level = SourceLevels.Warning;
-                AppServices.Init(simulate: true);   // aucun raccourci envoyé, aucun programme lancé pendant les tests
+                _app = AppHost.Build(new AppOptions(Simulate: true));   // aucun raccourci envoyé, aucun programme lancé pendant les tests
                 Dispatcher = Dispatcher.CurrentDispatcher;
             }
             catch (Exception ex) { failure = ex; }
@@ -82,14 +91,17 @@ public sealed class WpfHost : IDisposable
     {
         Run(() =>
         {
-            AppServices.Document.Reset(cfg ?? ConfigStore.DefaultConfig());
-            AppServices.Document.UpdateSettings(c => c.Theme = "dark");
+            Document.Reset(cfg ?? ConfigStore.DefaultConfig());
+            Document.UpdateSettings(c => c.Theme = "dark");
         });
         Settle();
         lock (Bindings.Messages) Bindings.Messages.Clear();
     }
 
-    public void SetTheme(string theme) { Run(() => AppServices.Document.UpdateSettings(c => c.Theme = theme)); Settle(); }
+    public void SetTheme(string theme) { Run(() => Document.UpdateSettings(c => c.Theme = theme)); Settle(); }
+
+    /// <summary>Construit un objet par le conteneur (fenêtre, ViewModel), les arguments donnés complétant les services.</summary>
+    public T Create<T>(params object[] args) where T : class => ActivatorUtilities.CreateInstance<T>(Services, args);
 
     /// <summary>Met en page une fenêtre sans l'afficher et la rend en PNG ; retourne le chemin de l'image.</summary>
     public string Render(Window window, string name, double width, double height)
@@ -114,7 +126,7 @@ public sealed class WpfHost : IDisposable
 
     public void Dispose()
     {
-        try { Dispatcher.Invoke(() => { AppServices.Shutdown(); Dispatcher.InvokeShutdown(); }); } catch { }
+        try { Dispatcher.Invoke(() => { _app?.Dispose(); Dispatcher.InvokeShutdown(); }); } catch { }
         try { Directory.Delete(_dir, true); } catch { }
     }
 

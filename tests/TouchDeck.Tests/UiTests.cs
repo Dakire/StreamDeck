@@ -37,14 +37,14 @@ public class UiTests
     readonly WpfHost _host;
     public UiTests(WpfHost host) { _host = host; }
 
-    DeckDocument Doc => AppServices.Document;
+    DeckDocument Doc => _host.Document;
 
     string[] BindingProblems()
     {
         lock (_host.Bindings.Messages) return _host.Bindings.Messages.ToArray();
     }
 
-    EditorViewModel NewVm(FakeShell? shell = null) => _host.Run(() => new EditorViewModel(shell ?? new FakeShell()));
+    EditorViewModel NewVm(FakeShell? shell = null) => _host.Run(() => _host.Create<EditorViewModel>(shell ?? new FakeShell()));
 
     // ---------- rendu des fenêtres réelles ----------
 
@@ -55,7 +55,7 @@ public class UiTests
     {
         _host.Reset();
         _host.SetTheme(theme);
-        EditorWindow win = _host.Run(() => new EditorWindow());
+        EditorWindow win = _host.Run(() => new EditorWindow(_host.Services));
         try
         {
             _host.Run(() => win.GoTo(new Place("Principal", 0), 0));
@@ -74,7 +74,7 @@ public class UiTests
     public void SettingsWindowRenders()
     {
         _host.Reset();
-        var win = _host.Run(() => new SettingsWindow());
+        var win = _host.Run(() => new SettingsWindow(_host.Services));
         try
         {
             _host.Settle();
@@ -104,7 +104,7 @@ public class UiTests
         foreach (var theme in new[] { "dark", "light" })
         {
             _host.SetTheme(theme);
-            var win = _host.Run(() => new MainWindow());
+            var win = _host.Run(() => new MainWindow(_host.Services));
             try
             {
                 _host.Settle();
@@ -137,7 +137,7 @@ public class UiTests
         page.Buttons.Add(new DeckButton { Label = "Thé", Icon = "Timer24", Actions = { new DeckAction { Type = "timer", Value = "300" } } });
         page.Buttons.Add(new DeckButton { Label = "Copier", Icon = "Copy24", Actions = { new DeckAction { Type = "hotkey", Value = "ctrl+c" } } });
         _host.Reset(cfg);
-        var win = _host.Run(() => new MainWindow());
+        var win = _host.Run(() => new MainWindow(_host.Services));
         try
         {
             _host.Settle();
@@ -214,7 +214,7 @@ ulle\part.exe" } } });
         page.Buttons.Add(folder);
         cfg.Profiles.Add(new DeckProfile { Name = "Navigateur", AppMatch = "chrome", Columns = 3, Rows = 2 });
         _host.Reset(cfg);
-        var win = _host.Run(() => new EditorWindow());
+        var win = _host.Run(() => new EditorWindow(_host.Services));
         try
         {
             _host.Run(() => win.GoTo(new Place("Principal", 0), 6));
@@ -591,7 +591,7 @@ ulle\part.exe" } } });
 
             // une action à compléter amène l'utilisateur sur le champ à remplir
             var shell = new FakeShell();
-            var vm2 = new EditorViewModel(shell);
+            var vm2 = _host.Create<EditorViewModel>(shell);
             vm2.SelectIndex(13);
             vm2.AddCatalogAction(ActionCatalog.Find("key.hotkey")!);
             Assert.Contains("focus:properties", shell.Calls);
@@ -651,7 +651,7 @@ ulle\part.exe" } } });
     {
         _host.Reset();
         _host.Run(() => Doc.UpdateButton(new Place("Principal", 0), 0, b => b.Label = "Persisté", "test"));
-        _host.Run(() => AppServices.Flush());
+        _host.Run(() => _host.Persistence.Flush());
         var onDisk = ConfigStore.Parse(File.ReadAllText(ConfigStore.FilePath));
         Assert.Equal("Persisté", onDisk.Profiles[0].Pages[0].Buttons[0].Label);
     }

@@ -34,6 +34,23 @@ public sealed class TempConfigDir : IDisposable
     }
 }
 
+/// <summary>Journal en mémoire : remplace la destination du journal le temps d'un test, puis la rétablit.</summary>
+sealed class MemoryLogSink : ILogSink, IDisposable
+{
+    readonly ILogSink _previous = Log.Sink;
+    public System.Collections.Generic.List<string> Messages { get; } = new();
+
+    public MemoryLogSink() { Log.Sink = this; }
+
+    public void Write(LogSeverity severity, string message, Exception? exception)
+    {
+        lock (Messages) Messages.Add($"{severity}: {message}{(exception == null ? "" : " | " + exception.GetType().Name)}");
+    }
+
+    public bool Contains(string text) { lock (Messages) return Messages.Exists(m => m.Contains(text)); }
+
+    public void Dispose() => Log.Sink = _previous;
+}
 static class Samples
 {
     /// <summary>Ancien format (version 1) tel qu'écrit par les versions précédentes.</summary>

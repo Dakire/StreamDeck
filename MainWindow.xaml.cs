@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
+using Microsoft.Extensions.DependencyInjection;
 using TouchDeck.ViewModels;
 
 namespace TouchDeck;
@@ -29,20 +30,22 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     [StructLayout(LayoutKind.Sequential)] struct POINT { public int X, Y; }
 
     readonly MainViewModel _vm;
+    readonly DisplayService _displays;
     bool _full;
     bool _onTop;
 
-    /// <summary>Deck sur le document partagé ; la configuration et le thème sont déjà chargés par <see cref="AppServices.Init"/>.</summary>
-    public MainWindow()
+    /// <summary>Deck sur le document partagé ; la configuration et le thème sont déjà chargés par <see cref="AppHost.Build"/>.</summary>
+    public MainWindow(IServiceProvider services)
     {
-        _vm = new MainViewModel(this);   // la configuration et le thème sont déjà chargés par AppServices
+        _displays = services.GetRequiredService<DisplayService>();
+        _vm = ActivatorUtilities.CreateInstance<MainViewModel>(services, this);   // la fenêtre est le « shell » du ViewModel
         DataContext = _vm;
         InitializeComponent();
         _onTop = _vm.Config.AlwaysOnTop;
         Topmost = _onTop;
         Root.SizeChanged += (_, _) => _vm.Resize(Root.ActualWidth, Root.ActualHeight);
         // Écran branché ou débranché : le deck suit (ou revient sur l'écran principal si le sien disparaît)
-        DisplayService.Changed += () => PlaceOnScreen(displayChanged: true);
+        _displays.Changed += () => PlaceOnScreen(displayChanged: true);
         _vm.Navigated += AnimateGridIn;
     }
 
@@ -84,12 +87,12 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     {
         var cfg = _vm.Config;
         if (!cfg.Fullscreen) return;
-        var target = DisplayService.ResolveTarget(cfg);
+        var target = _displays.ResolveTarget(cfg);
         if (target == null)
         {
             // Pas d'écran cible : au démarrage on reste en fenêtre ; si l'écran vient de disparaître, on revient sur l'écran principal
             // (il reprendra sa place en plein écran dès que l'écran sera rebranché)
-            var all = DisplayService.All();
+            var all = _displays.All();
             if (displayChanged && _full && all.Count > 0) GoWindowed(all.FirstOrDefault(d => d.Primary) ?? all[0]);
             return;
         }
@@ -124,7 +127,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     /// <summary>Écran qui contient la fenêtre (le plus proche si elle est à cheval).</summary>
     DisplayInfo CurrentScreen()
     {
-        var all = DisplayService.All();
+        var all = _displays.All();
         var device = System.Windows.Forms.Screen.FromHandle(Hwnd).DeviceName;
         return all.FirstOrDefault(d => d.Device == device) ?? all.FirstOrDefault(d => d.Primary) ?? all[0];
     }
@@ -150,7 +153,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     /// <inheritdoc/>
     public void NextScreen()
     {
-        var all = DisplayService.All();
+        var all = _displays.All();
         var cur = CurrentScreen();
         var next = all[(all.ToList().FindIndex(s => s.Device == cur.Device) + 1) % all.Count];
         if (_full) GoFullscreen(next); else GoWindowed(next);

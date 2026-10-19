@@ -32,22 +32,24 @@ public class RobustnessTests
     public void ACorruptedButtonImageIsSkippedAndLogged()
     {
         using var dir = new TempConfigDir();
+        using var log = new MemoryLogSink();
         Directory.CreateDirectory(ConfigStore.IconsDir);
         var name = new string('a', 32) + ".png";   // nom de hachage valide, contenu illisible
         File.WriteAllBytes(Path.Combine(ConfigStore.IconsDir, name), new byte[] { 1, 2, 3, 4, 5 });
 
         Assert.Null(IconStore.Load(name));
-        Assert.Contains("Image de bouton illisible", File.ReadAllText(Log.FilePath));
+        Assert.True(log.Contains("Image de bouton illisible"));
     }
 
     [Fact]
     public void ABackupFailureIsLoggedAndDoesNotThrow()
     {
         using var dir = new TempConfigDir();
+        using var log = new MemoryLogSink();
         // Un fichier à la place du dossier Backups : la sauvegarde ne peut pas s'écrire
         File.WriteAllText(ConfigStore.BackupsDir, "pas un dossier");
         Assert.Null(ConfigStore.CreateBackup(ConfigStore.DefaultConfig()));
-        Assert.Contains("Sauvegarde de la configuration impossible", File.ReadAllText(Log.FilePath));
+        Assert.True(log.Contains("Sauvegarde de la configuration impossible"));
     }
 }
 

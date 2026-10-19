@@ -8,6 +8,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using TouchDeck.Controls;
 using TouchDeck.ViewModels;
 
@@ -34,13 +35,14 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
     DragGhost? _ghost;
 
     /// <summary>Éditeur sur le document partagé ; s'ouvre sur l'écran du pointeur, enregistre à la fermeture.</summary>
-    public EditorWindow()
+    public EditorWindow(IServiceProvider services)
     {
-        _vm = new EditorViewModel(this);
+        var persistence = services.GetRequiredService<ConfigPersistence>();
+        _vm = ActivatorUtilities.CreateInstance<EditorViewModel>(services, this);   // la fenêtre est le « shell » du ViewModel
         DataContext = _vm;
         InitializeComponent();
         Icon = Application.Current.MainWindow?.Icon;
-        Closed += (_, _) => { _vm.Dispose(); AppServices.Flush(); };
+        Closed += (_, _) => { _vm.Dispose(); persistence.Flush(); };
         SourceInitialized += (_, _) => PlaceOnCursorScreen();
     }
 

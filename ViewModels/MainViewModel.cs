@@ -24,8 +24,12 @@ public partial class MainViewModel : ObservableObject, INavigator
     public static readonly TimeSpan RunningDelay = TimeSpan.FromMilliseconds(250);
 
     readonly IShell _shell;
-    readonly DeckDocument _doc = AppServices.Document;
-    readonly ActionEngine _engine = AppServices.Engine;
+    readonly DeckDocument _doc;
+    readonly ActionEngine _engine;
+    readonly AppOptions _options;
+    readonly GridState _grid;
+    readonly IAppWindows _windows;
+    readonly ConfigPersistence _persistence;
     readonly DispatcherTimer _statusTimer = new() { Interval = TimeSpan.FromSeconds(5) };
     readonly DispatcherTimer _appTimer = new() { Interval = TimeSpan.FromMilliseconds(800) };
     readonly DispatcherTimer _liveTimer = new() { Interval = TimeSpan.FromSeconds(1) };   // horloges et minuteurs visibles
@@ -75,7 +79,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     /// <summary>true s'il y a plusieurs profils (la pastille de profil est alors utile).</summary>
     public bool HasProfiles => ProfileCount > 1;
     /// <summary>true en mode --simulate (badge « Simulation »).</summary>
-    public bool IsSimulated => AppServices.Simulated;
+    public bool IsSimulated => _options.Simulate;
     /// <summary>Points des sous-pages (indicateur du dock).</summary>
     public ObservableCollection<PageDotViewModel> Dots { get; } = new();
 
@@ -88,9 +92,16 @@ public partial class MainViewModel : ObservableObject, INavigator
     int ProfileCount => _doc.Config.Profiles.Count;
 
     /// <summary>Deck sur le document partagé ; <paramref name="shell"/> fournit le placement Win32.</summary>
-    public MainViewModel(IShell shell)
+    public MainViewModel(IShell shell, DeckDocument doc, ActionEngine engine, AppOptions options, StartupResult startup,
+        GridState grid, IAppWindows windows, ConfigPersistence persistence)
     {
         _shell = shell;
+        _doc = doc;
+        _engine = engine;
+        _options = options;
+        _grid = grid;
+        _windows = windows;
+        _persistence = persistence;
         ApplyBackground();
         // Changement de thème (rare) : toutes les tuiles sont recréées, y compris la case « retour » dont la face est fixe
         Theme.Changed += () => { ApplyBackground(); TileFaceData.ClearCache(); Tiles.Clear(); _tileKeys.Clear(); Rebuild(); };
@@ -103,7 +114,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         _appTimer.Start();
         _liveTimer.Tick += (_, _) => RefreshLive();
         _engine.Context.Countdowns.Finished += OnCountdownFinished;
-        if (AppServices.StartupMessage != null) SetStatus(AppServices.StartupMessage, error: false);
+        if (startup.Message != null) SetStatus(startup.Message, error: false);
     }
 
     /// <summary>Appelé par la fenêtre à chaque changement de taille de la zone de contenu.</summary>
@@ -165,7 +176,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     {
         // Le deck affiche les erreurs ; les confirmations restent dans l'éditeur quand il est ouvert
         if (n.Kind is NoticeKind.Error or NoticeKind.Warning) SetStatus(n.Message);
-        else if (AppServices.Editor == null) SetStatus(n.Message, error: false);
+        else if (!_windows.IsEditorOpen) SetStatus(n.Message, error: false);
     }
 
     void ApplyBackground()
@@ -292,7 +303,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         var profile = CurrentProfile;
         var m = LayoutMetrics.Compute(_w, _h, _doc.Config, profile.Columns, profile.Rows);
         _capacity = m.Columns * m.Rows;
-        AppServices.AutoGrid = LayoutMetrics.GridSize(_w, _h, _doc.Config);
+        _grid.Auto = LayoutMetrics.GridSize(_w, _h, _doc.Config);
         L = m;
 
         var view = BuildView();
@@ -370,7 +381,7 @@ public partial class MainViewModel : ObservableObject, INavigator
                 int at = i - offset;
                 key = IsEdit ? new TileKey("add", place, at, null, null, false, true) : new TileKey("spacer", place, -1, null, null, false, false);
                 create = IsEdit
-                    ? () => new AddTileViewModel { Click = new RelayCommand(() => AppServices.OpenEditor(place, at)) }
+                    ? () => new AddTileViewModel { Click = new RelayCommand(() => _windows.OpenEditor(place, at)) }
                     : () => new SpacerTileViewModel();   // touche libre, dessinée éteinte
             }
             else if (view[i].IsBack)
@@ -392,7 +403,7 @@ public partial class MainViewModel : ObservableObject, INavigator
                 int at = view[i].ListIndex;
                 key = IsEdit ? new TileKey("add", place, at, null, null, false, true) : new TileKey("spacer", place, -1, null, null, false, false);
                 create = IsEdit
-                    ? () => new AddTileViewModel { Click = new RelayCommand(() => AppServices.OpenEditor(place, at)) }
+                    ? () => new AddTileViewModel { Click = new RelayCommand(() => _windows.OpenEditor(place, at)) }
                     : () => new SpacerTileViewModel();
             }
             else
@@ -408,7 +419,7 @@ public partial class MainViewModel : ObservableObject, INavigator
                     {
                         Button = def, Label = def.Label, IsEdit = edit,
                         Click = edit
-                            ? new RelayCommand(() => AppServices.OpenEditor(place, idx))
+                            ? new RelayCommand(() => _windows.OpenEditor(place, idx))
                             : def.IsFolder
                                 ? new RelayCommand(() => EnterFolder(idx))
                                 : new AsyncRelayCommand(() => RunTileAsync(tile!), AsyncRelayCommandOptions.AllowConcurrentExecutions),
@@ -559,16 +570,16 @@ public partial class MainViewModel : ObservableObject, INavigator
             return;
         }
 
-        Add(SymbolRegular.Edit24, "Ouvrir l'éditeur", () => AppServices.OpenEditor(CurrentPlace));
+        Add(SymbolRegular.Edit24, "Ouvrir l'éditeur", () => _windows.OpenEditor(CurrentPlace));
         Add(SymbolRegular.Cursor24, IsEdit ? "Terminer la modification" : "Modifier au toucher", () => IsEdit = !IsEdit);
         if (ProfileCount > 1)
             Add(SymbolRegular.PersonSwap24, "Changer de profil", () => { _profileMenu = true; BuildMenu(); }, trailing: CurrentProfile.Name, keepOpen: true);
-        Add(SymbolRegular.Settings24, "Paramètres", AppServices.OpenSettings);
+        Add(SymbolRegular.Settings24, "Paramètres", _windows.OpenSettings);
         Add(SymbolRegular.DarkTheme24, "Thème", CycleTheme, trailing: _doc.Config.Theme.ToLowerInvariant() switch { "dark" => "Sombre", "light" => "Clair", _ => "Auto" });
         Add(SymbolRegular.Desktop24, "Changer d'écran", _shell.NextScreen);
         Add(_shell.IsFullscreen ? SymbolRegular.FullScreenMinimize24 : SymbolRegular.FullScreenMaximize24, _shell.IsFullscreen ? "Passer en fenêtre" : "Passer en plein écran", _shell.ToggleFullscreen);
         Add(SymbolRegular.Pin24, "Toujours au premier plan", () => _doc.UpdateSettings(c => c.AlwaysOnTop = !c.AlwaysOnTop, "Premier plan"), trailing: _shell.IsOnTop ? "✓" : null);
-        Add(SymbolRegular.ArrowSync24, "Recharger la configuration", AppServices.ReloadFromDisk);
+        Add(SymbolRegular.ArrowSync24, "Recharger la configuration", _persistence.ReloadFromDisk);
         MenuEntries.Add(new MenuSeparatorViewModel());
         Add(SymbolRegular.Power24, "Quitter TouchDeck", () => Application.Current.Shutdown(), danger: true);
     }
@@ -590,7 +601,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     [RelayCommand] void ToggleFullscreen() { _shell.ToggleFullscreen(); IsFullscreen = _shell.IsFullscreen; }
     [RelayCommand] void CloseApp() => Application.Current.Shutdown();
     [RelayCommand] void ParentFolder() => FolderUp();
-    [RelayCommand] void OpenEditorHere() => AppServices.OpenEditor(CurrentPlace);
+    [RelayCommand] void OpenEditorHere() => _windows.OpenEditor(CurrentPlace);
 
     /// <summary>La fenêtre signale un changement de placement (plein écran / fenêtre) pour mettre à jour l'icône.</summary>
     public void NotifyWindowState() => IsFullscreen = _shell.IsFullscreen;

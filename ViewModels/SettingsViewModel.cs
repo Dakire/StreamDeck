@@ -29,7 +29,9 @@ public interface ISettingsShell : IConfirm
 /// <summary>Réglages de l'application. Tout ce qui est affiché agit réellement : chaque changement est appliqué tout de suite et enregistré.</summary>
 public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 {
-    readonly DeckDocument _doc = AppServices.Document;
+    readonly DeckDocument _doc;
+    readonly DisplayService _displays;
+    readonly ConfigPersistence _persistence;
     readonly ISettingsShell _shell;
     bool _loading;
 
@@ -85,9 +87,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     };
 
     /// <summary>Paramètres sur le document partagé ; suit ses modifications et les changements d'écran.</summary>
-    public SettingsViewModel(ISettingsShell shell)
+    public SettingsViewModel(ISettingsShell shell, DeckDocument doc, DisplayService displays, ConfigPersistence persistence)
     {
         _shell = shell;
+        _doc = doc;
+        _displays = displays;
+        _persistence = persistence;
         foreach (var (key, label) in Themes)
         {
             var k = key;
@@ -95,14 +100,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
         Load();
         _doc.Changed += OnChanged;
-        DisplayService.Changed += RefreshDevices;
+        _displays.Changed += RefreshDevices;
     }
 
     /// <summary>Se désabonne du document et des écrans (fermeture de la fenêtre).</summary>
     public void Dispose()
     {
         _doc.Changed -= OnChanged;
-        DisplayService.Changed -= RefreshDevices;
+        _displays.Changed -= RefreshDevices;
     }
 
     void OnChanged(DocumentChange c)
@@ -138,14 +143,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         var wasLoading = _loading;
         _loading = true;
         var cfg = _doc.Config;
-        var (choices, selected) = ScreenChoice.Build(cfg, "Automatique (premier écran secondaire)");
+        var (choices, selected) = ScreenChoice.Build(cfg, _displays.All(), "Automatique (premier écran secondaire)");
         Screens.Clear();
         foreach (var s in choices) Screens.Add(s);
         SelectedScreen = selected;
-        (DeviceText, DeviceConnected) = DisplayService.Describe(cfg);
-        var target = DisplayService.ResolveTarget(cfg);
+        (DeviceText, DeviceConnected) = _displays.Describe(cfg);
+        var target = _displays.ResolveTarget(cfg);
         Displays.Clear();
-        foreach (var d in DisplayService.All()) Displays.Add($"{d}{(d == target ? "  — écran du deck" : "")}");
+        foreach (var d in _displays.All()) Displays.Add($"{d}{(d == target ? "  — écran du deck" : "")}");
         _loading = wasLoading;
     }
 
@@ -199,7 +204,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     {
         if (_loading || value == null || value.IsCurrent(_doc.Config)) return;
         Set(value.ApplyTo, "Écran du deck");
-        (DeviceText, DeviceConnected) = DisplayService.Describe(_doc.Config);
+        (DeviceText, DeviceConnected) = _displays.Describe(_doc.Config);
     }
 
     partial void OnCustomBackgroundChanged(bool value)
@@ -267,11 +272,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     {
         try
         {
-            AppServices.Flush();
+            _persistence.Flush();
             Process.Start(new ProcessStartInfo(ConfigStore.FilePath) { UseShellExecute = true });
         }
         catch (Exception ex) { Notifier.Error("Impossible d'ouvrir le fichier : " + ex.Message); }
     }
 
-    [RelayCommand] void Reload() => AppServices.ReloadFromDisk();
+    [RelayCommand] void Reload() => _persistence.ReloadFromDisk();
 }
