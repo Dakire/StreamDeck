@@ -8,7 +8,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using TouchDeck.Actions;
 using Xunit;
 
@@ -37,10 +36,10 @@ public sealed class WpfHost : IDisposable
 {
     readonly Thread _thread;
     readonly string _dir;
-    IHost? _app;
+    ServiceProvider? _app;
     public Dispatcher Dispatcher { get; private set; } = null!;
     /// <summary>Conteneur de services de l'application, construit comme en production mais en simulation.</summary>
-    public IServiceProvider Services => _app!.Services;
+    public IServiceProvider Services => _app!;
     public DeckDocument Document => Services.GetRequiredService<DeckDocument>();
     public ActionEngine Engine => Services.GetRequiredService<ActionEngine>();
     public ConfigPersistence Persistence => Services.GetRequiredService<ConfigPersistence>();

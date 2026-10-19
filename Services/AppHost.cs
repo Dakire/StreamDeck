@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Serilog;
 using TouchDeck.Actions;
 using TouchDeck.Platform.Windows;
@@ -33,6 +32,8 @@ sealed class SerilogSink : ILogSink
 /// <summary>
 /// Racine de composition : construit le conteneur de services de l'application (journal, document, plateforme, moteur
 /// d'actions, persistance, fenêtres). Les tests construisent le même conteneur, en simulation, sur un dossier temporaire.
+/// Conteneur d'injection seul, sans l'hôte générique (Microsoft.Extensions.Hosting) : l'application n'a ni service de
+/// fond ni configuration externe à gérer, et l'hôte coûtait environ 40 ms au démarrage (voir ADR 0007).
 /// </summary>
 public static class AppHost
 {
@@ -42,12 +43,14 @@ public static class AppHost
     const int LogFilesKept = 3;
 
     /// <summary>
-    /// Construit l'hôte : journal, configuration, document, plateforme (réelle ou simulée), moteur d'actions, sauvegarde
-    /// automatique, apparence et fenêtres. Doit être appelé sur le thread d'interface, après <c>ConfigStore.UseDirectory</c>
-    /// éventuel. Libérer l'hôte enregistre les modifications en attente et interrompt les actions en cours.
+    /// Construit le conteneur : journal, configuration, document, plateforme (réelle ou simulée), moteur d'actions,
+    /// sauvegarde automatique, apparence et fenêtres. Doit être appelé sur le thread d'interface, après
+    /// <c>ConfigStore.UseDirectory</c> éventuel. Libérer le conteneur enregistre les modifications en attente et interrompt
+    /// les actions en cours.
     /// </summary>
-    public static IHost Build(AppOptions options)
+    public static ServiceProvider Build(AppOptions options)
     {
+        var clock = System.Diagnostics.Stopwatch.StartNew();
         var serilog = new LoggerConfiguration()
             .MinimumLevel.Information()
             .WriteTo.File(Path.Combine(ConfigStore.Dir, LogFileName), fileSizeLimitBytes: LogMaxBytes, rollOnFileSizeLimit: true,
@@ -55,9 +58,9 @@ public static class AppHost
                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3} {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
         Log.Sink = new SerilogSink(serilog);
+        long tLog = clock.ElapsedMilliseconds;
 
-        var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { DisableDefaults = true });
-        var services = builder.Services;
+        var services = new ServiceCollection();
         services.AddLogging(b => b.AddSerilog(serilog, dispose: true));
 
         services.AddSingleton(options);
@@ -87,15 +90,17 @@ public static class AppHost
         services.AddSingleton<AppearanceService>();
         services.AddSingleton<IAppWindows, AppWindows>();
 
-        var host = builder.Build();
+        long tRegistered = clock.ElapsedMilliseconds;
+        var sp = services.BuildServiceProvider();
+        long tBuilt = clock.ElapsedMilliseconds;
         // Services qui agissent dès leur création (apparence, sauvegarde, validation des raccourcis) : instanciés ici,
         // dans cet ordre, avant l'ouverture de la première fenêtre
         Log.Info($"Démarrage (dossier {ConfigStore.Dir}{(options.Simulate ? ", simulation" : "")})");
-        var sp = host.Services;
         ActionValidator.Keyboard = sp.GetRequiredService<PlatformServices>().Keyboard;
         sp.GetRequiredService<AppearanceService>();
         sp.GetRequiredService<ConfigPersistence>();
-        return host;
+        Log.Info($"Services prêts en {clock.ElapsedMilliseconds} ms (journal {tLog}, déclarations {tRegistered - tLog}, conteneur {tBuilt - tRegistered})");
+        return sp;
     }
 
     static PlatformServices CreatePlatform(AppOptions options)
