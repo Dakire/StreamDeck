@@ -4,6 +4,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Ajouté (phase 8, Twitch)
+- **Twitch** par l’API Helix avec ton propre identifiant client et un jeton utilisateur : clip, marqueur, publicité, titre, chat (`docs/integrations/twitch.md`).
+
 ### Ajouté (phase 8, gestionnaires de tâches)
 - **ClickUp**, **Notion** et **monday.com** (jeton personnel chiffré, base `RestIntegrationBase`) : créer une tâche ou une ligne, changer un statut, minuteur ClickUp (`docs/integrations/gestionnaires-de-taches.md`).
 

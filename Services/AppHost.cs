@@ -15,6 +15,7 @@ using TouchDeck.Integrations.Hue;
 using TouchDeck.Integrations.Monday;
 using TouchDeck.Integrations.Notion;
 using TouchDeck.Integrations.Obs;
+using TouchDeck.Integrations.Twitch;
 using TouchDeck.Integrations.Vmix;
 using TouchDeck.Integrations.WindowsSystem;
 using TouchDeck.Integrations.XPlane;
@@ -113,6 +114,7 @@ public static class AppHost
         AddIntegration<ClickUpIntegration>(services, takenIds);
         AddIntegration<NotionIntegration>(services, takenIds);
         AddIntegration<MondayIntegration>(services, takenIds);
+        AddIntegration<TwitchIntegration>(services, takenIds);
         AddPlugins(services, takenIds);
 
         services.AddSingleton<IDisplayService, WindowsDisplayService>();

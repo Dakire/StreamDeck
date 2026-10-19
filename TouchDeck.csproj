@@ -47,6 +47,7 @@
     <ProjectReference Include="Integrations\ClickUp\TouchDeck.Integrations.ClickUp.csproj" />
     <ProjectReference Include="Integrations\Notion\TouchDeck.Integrations.Notion.csproj" />
     <ProjectReference Include="Integrations\Monday\TouchDeck.Integrations.Monday.csproj" />
+    <ProjectReference Include="Integrations\Twitch\TouchDeck.Integrations.Twitch.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />

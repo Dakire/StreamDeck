@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Twitch par l'API Helix (jeton utilisateur). Sans dépendance externe. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>TouchDeck.Integrations.Twitch</AssemblyName>
+    <RootNamespace>TouchDeck.Integrations.Twitch</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\TouchDeck.Core.csproj" />
+  </ItemGroup>
+</Project>
