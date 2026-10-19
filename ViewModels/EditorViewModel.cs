@@ -802,6 +802,14 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Notifier.Success("Profil créé");
     }
 
+    /// <summary>Crée un profil à partir d'un modèle livré et l'affiche dans l'éditeur ; annulable.</summary>
+    public void NewProfileFromTemplate(ProfileTemplate template)
+    {
+        var r = _doc.AddImportedProfile(template.Build());
+        if (!r.Ok) { Notifier.Error(r.Message ?? "Création impossible"); return; }
+        SwitchProfile(_doc.Config.Profiles[r.Index].Name);
+        Notifier.Success($"Profil « {template.Name} » créé", "Annuler", () => _doc.Undo());
+    }
     /// <summary>Demande un nouveau nom de profil.</summary>
     public async System.Threading.Tasks.Task RenameProfileAsync(string name)
     {
@@ -993,6 +1001,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
             MenuItemSpec.Separator,
             new("Exporter…", () => ExportProfile(name), SymbolRegular.ArrowExportUp24),
             new("Importer…", () => ImportProfileCommand.Execute(null), SymbolRegular.ArrowImport24),
+            new("Nouveau profil depuis un modèle", Icon: SymbolRegular.DocumentAdd24, Children: ProfileTemplates.All.Select(t => new MenuItemSpec(t.Name, () => NewProfileFromTemplate(t), Enum.TryParse(t.Icon, out SymbolRegular icon) ? icon : null)).ToList()),
             MenuItemSpec.Separator,
             new("Supprimer", async () => await DeleteProfileAsync(name), SymbolRegular.Delete24, Enabled: canDelete, Danger: true),
         };

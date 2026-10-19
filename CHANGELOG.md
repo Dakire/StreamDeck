@@ -4,6 +4,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Ajouté (phase 7, modèles de profils)
+- **Modèles de profils** (menu d’un profil › « Nouveau profil depuis un modèle ») : Réunions, Streaming OBS, Montage vidéo, Simulation de vol, Poste de travail. Annulable en une fois.
+- **Icône de la zone de notification** : afficher le deck, l’éditeur, les paramètres, quitter.
+
 ### Ajouté (phase 9, plugins et API locale)
 - **Plugins** : intégrations posées dans `plugins<Nom><Nom>.dll`, chargées dans leur propre contexte (`docs/plugins.md`, exemple `samples/HelloPlugin`, ADR 0011 et 0012).
 - **API locale** par canal nommé réservé à l’utilisateur (`ping`, `status`, `values`, `profile`, `page`, `run`, `show`, `edit`, `settings`) : `docs/local-api.md`.
