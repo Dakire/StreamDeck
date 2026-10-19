@@ -30,10 +30,6 @@ public sealed class Place : IEquatable<Place>
     public Place Enter(int folderIndex) => new(Profile, Page, Path.Append(folderIndex).ToArray());
     /// <summary>Dossier parent, ou null à la racine de la page.</summary>
     public Place? Parent => IsRoot ? null : new Place(Profile, Page, Path.Take(Path.Count - 1).ToArray());
-    /// <summary>Même page et même chemin dans un autre profil (profil renommé).</summary>
-    public Place WithProfile(string profile) => new(profile, Page, Path);
-    /// <summary>Racine d'une autre page du même profil.</summary>
-    public Place WithPage(int page) => new(Profile, page, Array.Empty<int>());
 
     /// <summary>Même profil (sans distinction de casse), même page, même chemin de dossiers.</summary>
     public bool Equals(Place? o) =>
@@ -587,19 +583,6 @@ public sealed class DeckDocument
             cfg.Profiles.Remove(p);
             if (string.Equals(cfg.ActiveProfile, p.Name, StringComparison.OrdinalIgnoreCase)) cfg.ActiveProfile = cfg.Profiles[0].Name;
             return OpResult.Success(0);
-        });
-
-    /// <summary>Déplace un profil de <paramref name="delta"/> rangs.</summary>
-    public OpResult MoveProfile(string name, int delta) =>
-        Edit("Déplacer le profil", cfg =>
-        {
-            var p = FindProfile(name);
-            if (p == null) return OpResult.Fail("Profil introuvable");
-            int from = cfg.Profiles.IndexOf(p), to = from + delta;
-            if (to < 0 || to >= cfg.Profiles.Count) return OpResult.Fail("Déplacement impossible");
-            cfg.Profiles.RemoveAt(from);
-            cfg.Profiles.Insert(to, p);
-            return OpResult.Success(to);
         });
 
     /// <summary>Fixe le format de grille du profil (colonnes × lignes, de 0 à 20 ; 0 : réglage global).</summary>

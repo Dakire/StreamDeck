@@ -84,17 +84,6 @@ public sealed class TileFaceData
     /// <summary>Oublie les images chargées (thème changé, image remplacée).</summary>
     public static void ClearCache() => ImageBrushes.Clear();
 
-    /// <summary>Même face avec un autre titre (titre dynamique, minuteur) : l'image et les couleurs sont réutilisées.</summary>
-    public TileFaceData WithLabel(string label) => label == Label ? this : Copy(label, Progress);
-
-    TileFaceData Copy(string label, double? progress) => new()
-    {
-        Label = label, Icon = Icon, Symbol = Symbol, HasSymbol = HasSymbol, ShowTitle = ShowTitle, TitleMode = TitleMode,
-        Foreground = Foreground, LabelBrush = LabelBrush, Background = Background, Border = Border, Plate = Plate,
-        ImageBrush = ImageBrush, IsFolder = IsFolder, IsBlank = IsBlank, Kind = Kind, Steps = Steps, IsDisabled = IsDisabled,
-        Progress = progress, Caption = Caption,
-    };
-
     /// <summary>Variante d'après le contenu : rien n'est stocké dans la configuration.</summary>
     public static TileKind KindOf(DeckButton b, bool hasImage, bool counting)
     {

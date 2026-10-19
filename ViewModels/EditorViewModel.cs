@@ -613,14 +613,6 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         _shell.FocusSlot(target);
     }
 
-    /// <summary>Navigation au clavier dans la grille (flèches) : déplace la sélection sans rien modifier.</summary>
-    public int NeighborIndex(int fromPosition, int dx, int dy)
-    {
-        int col = fromPosition % Columns + dx, row = fromPosition / Columns + dy;
-        if (col < 0 || col >= Columns || row < 0 || row >= Rows) return -2;
-        return row * Columns + col;
-    }
-
     // ---------- catalogue ----------
 
     /// <summary>Ajoute une action du catalogue dans la case visée, sinon sélectionnée, sinon la première libre.</summary>

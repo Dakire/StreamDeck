@@ -234,7 +234,7 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
 
     void PageTab_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (sender is ListBoxItem { DataContext: PageTabViewModel page } item) { item.IsSelected = true; item.Focus(); }
+        if (sender is ListBoxItem { DataContext: PageTabViewModel } item) { item.IsSelected = true; item.Focus(); }
     }
 
     void PageTab_ContextMenuOpening(object sender, ContextMenuEventArgs e)

@@ -8,7 +8,6 @@ using System.Windows.Controls;
 using TouchDeck.Controls;
 using TouchDeck.ViewModels;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace TouchDeck.Tests;
 
@@ -36,9 +35,7 @@ sealed class FakeShell : IEditorShell
 public class UiTests
 {
     readonly WpfHost _host;
-    readonly ITestOutputHelper _out;
-
-    public UiTests(WpfHost host, ITestOutputHelper output) { _host = host; _out = output; }
+    public UiTests(WpfHost host) { _host = host; }
 
     DeckDocument Doc => AppServices.Document;
 
