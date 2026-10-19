@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
 using Microsoft.Extensions.DependencyInjection;
+using TouchDeck.Actions;
 using TouchDeck.ViewModels;
 
 namespace TouchDeck;
@@ -30,6 +31,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     [StructLayout(LayoutKind.Sequential)] struct POINT { public int X, Y; }
 
     readonly MainViewModel _vm;
+
+    /// <summary>Navigation du deck (page, profil), pour l'API locale.</summary>
+    public INavigator Navigator => _vm;
     readonly DisplayService _displays;
     bool _full;
     bool _onTop;

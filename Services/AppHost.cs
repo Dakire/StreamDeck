@@ -109,6 +109,8 @@ public static class AppHost
         services.AddSingleton<ConfigPersistence>();
         services.AddSingleton<AppearanceService>();
         services.AddSingleton<IAppWindows, AppWindows>();
+        services.AddSingleton<IApiShell, ApiShell>();
+        services.AddSingleton<LocalApi>();
 
         long tRegistered = clock.ElapsedMilliseconds;
         var sp = services.BuildServiceProvider();
