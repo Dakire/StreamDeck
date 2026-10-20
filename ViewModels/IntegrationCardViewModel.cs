@@ -148,7 +148,11 @@ public sealed partial class IntegrationCardViewModel : ObservableObject, IDispos
         TestResult = "Association en cours…";
         try
         {
-            var current = new IntegrationSettings { Values = Fields.Where(f => !f.IsSecret).ToDictionary(f => f.Field.Key, f => f.Text.Trim()) };
+            var current = new IntegrationSettings
+            {
+                Values = Fields.Where(f => !f.IsSecret).ToDictionary(f => f.Field.Key, f => f.Text.Trim()),
+                Secrets = Fields.Where(f => f.IsSecret && f.Field.Key != pairable.PairedSecretField).ToDictionary(f => f.Field.Key, f => f.Text),
+            };
             var key = await pairable.PairAsync(current, default);
             var field = Fields.First(f => f.Field.Key == pairable.PairedSecretField);
             field.Text = key;   // enregistre le secret et relance la connexion

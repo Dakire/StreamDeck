@@ -11,6 +11,7 @@ using TouchDeck.Actions;
 using TouchDeck.Integrations;
 using TouchDeck.Integrations.ClickUp;
 using TouchDeck.Integrations.ElgatoLight;
+using TouchDeck.Integrations.Google;
 using TouchDeck.Integrations.Hue;
 using TouchDeck.Integrations.Monday;
 using TouchDeck.Integrations.Notion;
@@ -115,6 +116,7 @@ public static class AppHost
         AddIntegration<NotionIntegration>(services, takenIds);
         AddIntegration<MondayIntegration>(services, takenIds);
         AddIntegration<TwitchIntegration>(services, takenIds);
+        AddIntegration<GoogleIntegration>(services, takenIds);
         AddPlugins(services, takenIds);
 
         services.AddSingleton<IDisplayService, WindowsDisplayService>();

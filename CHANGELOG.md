@@ -4,6 +4,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Ajouté (phase 8, Google Workspace)
+- **Google Workspace** avec ton projet Google Cloud (OAuth de bureau, PKCE, jeton chiffré) : ajouter une ligne ou écrire une cellule Sheets, ajouter du texte à un Docs, créer un événement Agenda (`docs/integrations/google.md`).
+
 ### Modifié (.NET 10)
 - **Migration vers .NET 10 (LTS)** : tous les projets, paquets `Microsoft.Extensions.*`, `ProtectedData`, `PerformanceCounter` et Serilog.Extensions.Logging en 10.0.0. .NET 9 sort de support en novembre 2026. Aucun changement de comportement, 354 tests au vert.
 

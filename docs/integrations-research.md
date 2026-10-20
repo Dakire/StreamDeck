@@ -28,7 +28,8 @@ Légende : effort **S** (quelques jours), **M** (une à deux semaines), **L** (p
 | ClickUp, Notion, monday.com | **Faites** | `docs/integrations/gestionnaires-de-taches.md` |
 | Plugins locaux | **Faits** | `docs/plugins.md` — pour tout ce qui n'est pas livré |
 | Streamlabs Desktop | Non faite | Protocole peu documenté (**à vérifier**) ; OBS couvre la plupart des usages |
-| YouTube, Google Workspace | Non faites | Application Google à faire vérifier (plafond de 100 utilisateurs) : à décider par toi |
+| Google Workspace | **Faite** (Sheets, Docs, Agenda) | `docs/integrations/google.md` — ton projet Google Cloud, OAuth de bureau |
+| YouTube | Non faite | Quota de 10 000 unités par jour et application à faire vérifier : à décider par toi |
 | Microsoft 365 (Graph) | Non faite | Enregistrement d'une application Entra ID nécessaire |
 | Discord RPC | Non faite | Approbation de Discord requise : les raccourcis globaux sont proposés à la place |
 | Spotify Web API | Non faite | Premium et 5 utilisateurs maximum ; le média en cours passe déjà par SMTC |

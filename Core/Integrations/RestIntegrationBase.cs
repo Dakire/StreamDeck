@@ -27,6 +27,8 @@ public abstract class RestIntegrationBase : IntegrationBase, IDisposable
 
     /// <summary>Prépare les en-têtes d'authentification et de version du service.</summary>
     protected abstract void Configure(HttpClient http, string token);
+    /// <summary>Complète une requête juste avant l'envoi (jeton d'accès à renouveler). Par défaut, rien : les en-têtes fixes de <see cref="Configure"/> suffisent.</summary>
+    protected virtual Task AuthorizeAsync(HttpRequestMessage request, CancellationToken cancellation) => Task.CompletedTask;
     /// <summary>Vérifie le jeton et lit ce qu'il faut garder (utilisateur, équipe). Lève une exception à message clair en cas d'échec.</summary>
     protected abstract Task VerifyAsync(IntegrationSettings settings, CancellationToken cancellation);
 
@@ -45,7 +47,8 @@ public abstract class RestIntegrationBase : IntegrationBase, IDisposable
     /// <summary>Envoie une requête JSON et retourne la réponse analysée (objet vide si le service ne répond rien).</summary>
     protected async Task<JsonNode> SendAsync(HttpMethod method, string path, JsonNode? body, CancellationToken cancellation)
     {
-        using var request = new HttpRequestMessage(method, path.TrimStart('/'));
+        using var request = new HttpRequestMessage(method, path.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? path : path.TrimStart('/'));
+        await AuthorizeAsync(request, cancellation);
         if (body != null) request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
         HttpResponseMessage response;
         try { response = await Http.SendAsync(request, cancellation); }
