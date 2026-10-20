@@ -13,7 +13,7 @@ protocoles très différents (WebSocket, HTTP, canal nommé, WinRT) et des secre
 
 - **Un contrat** `IIntegration` (Core) : identifiant, réglages, commandes, état de connexion, valeurs lisibles, connexion et
   exécution. `IntegrationBase` fournit l'état et les valeurs ; `PolledHttpIntegration` factorise les appareils HTTP.
-- **Un projet par connecteur** (`Integrations/<Nom>/`, `net9.0` sauf Système Windows pour WinRT) qui référence seulement le Core.
+- **Un projet par connecteur** (`Integrations/<Nom>/`, `net10.0` sauf Système Windows pour WinRT) qui référence seulement le Core.
   Un connecteur en panne ou instable se retire sans toucher au reste ; les dépendances ne se mélangent pas.
 - **Aucun nouveau format d'action.** Une étape de bouton est `{ Type = <id de l'intégration>, Value = <commande>, Args = <argument> }`.
   Un seul gestionnaire générique (`IntegrationAction`) relaie vers l'intégration. Les anciens fichiers restent lisibles.
@@ -30,4 +30,4 @@ protocoles très différents (WebSocket, HTTP, canal nommé, WinRT) et des secre
 
 - Une nouvelle intégration = un projet, une ligne dans `AppHost`, une page `docs/integrations/<nom>.md`, des tests contre un faux.
 - Clé de configuration `Integrations` ajoutée (activation et réglages non secrets), validée par l'utilisateur.
-- Le projet de l'application et celui des tests passent à `net9.0-windows10.0.19041.0` (API média WinRT du connecteur système).
+- Le projet de l'application et celui des tests passent à `net10.0-windows10.0.19041.0` (API média WinRT du connecteur système).

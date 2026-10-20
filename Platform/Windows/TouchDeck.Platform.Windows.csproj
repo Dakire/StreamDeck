@@ -3,7 +3,7 @@
        Seul WindowsPlatform est public : le reste de l'application passe par les interfaces du Core (IKeyboardService,
        IAppLauncher, IWindowService, IAudioService), le compilateur interdit d'appeler Win32 directement. -->
   <PropertyGroup>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>TouchDeck.Platform.Windows</AssemblyName>
@@ -16,6 +16,6 @@
     <InternalsVisibleTo Include="TouchDeck.Tests" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.10" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
   </ItemGroup>
 </Project>

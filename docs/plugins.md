@@ -5,7 +5,7 @@ L'exemple complet est dans [`samples/HelloPlugin`](../samples/HelloPlugin).
 
 ## En bref
 
-1. Créer une bibliothèque `net9.0` qui référence `TouchDeck.Core` (`EnableDynamicLoading` activé, Core non copié).
+1. Créer une bibliothèque `net10.0` qui référence `TouchDeck.Core` (`EnableDynamicLoading` activé, Core non copié).
 2. Écrire une classe **publique**, avec un constructeur **sans paramètre**, qui dérive de `IntegrationBase`
    (ou de `PolledHttpIntegration` pour un appareil HTTP) : `Id`, `Name`, `Category`, `Help`, `Fields`, `Commands`,
    `ConnectCoreAsync`, `DisconnectCoreAsync`, `ExecuteAsync`.

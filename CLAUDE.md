@@ -4,12 +4,12 @@
 
 ## Contexte
 
-Application WPF .NET 9 de type Stream Deck pour écran tactile (usage perso, IT, gaming).
+Application WPF .NET 10 de type Stream Deck pour écran tactile (usage perso, IT, gaming).
 Le projet s'appelle `TouchDeck` (assembly et namespace), le dépôt `StreamDeck`.
 
 ## Architecture actuelle
 
-- **Trois projets** : `Core/` (`TouchDeck.Core`, net9.0 : modèle, document, configuration, moteur d'actions, sans WPF ni Win32),
+- **Trois projets** : `Core/` (`TouchDeck.Core`, net10.0 : modèle, document, configuration, moteur d'actions, sans WPF ni Win32),
   `Platform/Windows/` (`TouchDeck.Platform.Windows` : SendInput, Core Audio, fenêtres Win32, registre ; seul `WindowsPlatform` est public),
   et l'application WPF à la racine. Les frontières sont vérifiées par `ArchitectureTests`.
 - **MVVM** avec CommunityToolkit.Mvvm. Un seul `DeckDocument` (`Core/DeckDocument.cs`, sans WPF) porte la configuration, l'historique
@@ -41,7 +41,7 @@ Le projet s'appelle `TouchDeck` (assembly et namespace), le dépôt `StreamDeck`
 
 ## Chantier : modernisation Fluent / Windows 11
 
-Décisions prises avec l'utilisateur : refonte complète, look moderne et simple d'usage, .NET 9.
+Décisions prises avec l'utilisateur : refonte complète, look moderne et simple d'usage, .NET 10.
 
 Cible technique :
 

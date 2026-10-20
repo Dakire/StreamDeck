@@ -8,7 +8,7 @@ Ce guide complète [AGENTS.md](AGENTS.md), dont les règles s'imposent à toute 
 
 ## Préparer son poste
 
-Il faut Windows 10 ou 11 et le SDK .NET 9 (voir [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)).
+Il faut Windows 10 ou 11 et le SDK .NET 10 (voir [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)).
 
 ```powershell
 dotnet build -c Release              # aucun avertissement toléré (TreatWarningsAsErrors)

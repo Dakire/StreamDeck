@@ -2,7 +2,7 @@
   <!-- Logique de TouchDeck sans aucune dépendance à WPF ni à Win32 : modèle, document, configuration, moteur d'actions.
        Une autre interface (Avalonia) ou une autre plateforme (Linux) peut s'y brancher sans y toucher. -->
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>TouchDeck.Core</AssemblyName>

@@ -98,8 +98,8 @@ Ces raccourcis ne s'appliquent jamais pendant la saisie dans un champ de texte.
 ## Prérequis
 
 - Windows 10 ou 11 (Windows 11 recommandé : effet Mica dans l'éditeur et les paramètres ; le deck a son propre fond, opaque)
-- Runtime Desktop .NET 9 pour exécuter
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) pour compiler, runtime Desktop pour exécuter
+- Runtime Desktop .NET 10 pour exécuter
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) pour compiler, runtime Desktop pour exécuter
 
 ## Démarrage rapide
 
@@ -211,7 +211,7 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 
 | Dossier / fichier | Contenu |
 |---|---|
-| `Core/` (projet `TouchDeck.Core`, `net9.0`) | Logique sans WPF ni Windows : `Models`, `DeckDocument` (opérations, historique), `ConfigStore`, `ConfigNormalizer` (migration), `ActionTypes` (clés du format), `ActionCatalog`, `ActionValidator`, `HotkeySyntax`, `Displays`, `LabelTemplate`, `Countdowns`, `Log` (façade) |
+| `Core/` (projet `TouchDeck.Core`, `net10.0`) | Logique sans WPF ni Windows : `Models`, `DeckDocument` (opérations, historique), `ConfigStore`, `ConfigNormalizer` (migration), `ActionTypes` (clés du format), `ActionCatalog`, `ActionValidator`, `HotkeySyntax`, `Displays`, `LabelTemplate`, `Countdowns`, `Log` (façade) |
 | `Core/Actions/` | Moteur d'actions (`ActionEngine`, `ActionRegistry`), un gestionnaire par type dans `Handlers/`, interfaces de plateforme, plateforme simulée |
 | `Platform/Windows/` (projet `TouchDeck.Platform.Windows`) | Implémentation Windows des interfaces de plateforme : `SendInput`, fenêtres Win32, Core Audio, registre. Seul `WindowsPlatform` est public |
 | `Core/Integrations/`, `Core/Api/`, `Core/Plugins/` | Cadre d'intégrations (`IIntegration`, `IntegrationManager`, bases HTTP et REST), API locale, chargeur de plugins |

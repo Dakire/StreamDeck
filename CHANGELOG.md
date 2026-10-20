@@ -4,6 +4,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Modifié (.NET 10)
+- **Migration vers .NET 10 (LTS)** : tous les projets, paquets `Microsoft.Extensions.*`, `ProtectedData`, `PerformanceCounter` et Serilog.Extensions.Logging en 10.0.0. .NET 9 sort de support en novembre 2026. Aucun changement de comportement, 354 tests au vert.
+
 ### Ajouté (phase 8, Twitch)
 - **Twitch** par l’API Helix avec ton propre identifiant client et un jeton utilisateur : clip, marqueur, publicité, titre, chat (`docs/integrations/twitch.md`).
 

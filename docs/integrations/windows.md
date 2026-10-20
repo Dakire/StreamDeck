@@ -1,6 +1,6 @@
 # Système Windows
 
-Connecteur `TouchDeck.Integrations.WindowsSystem` (cible `net9.0-windows10.0.19041.0`, nécessaire à l'API WinRT du média).
+Connecteur `TouchDeck.Integrations.WindowsSystem` (cible `net10.0-windows10.0.19041.0`, nécessaire à l'API WinRT du média).
 Aucun compte, aucun réglage : activer l'intégration suffit (**Paramètres › Intégrations › Système Windows**).
 
 ## Valeurs pour les titres

@@ -3,7 +3,7 @@
 ## Prérequis
 
 - Windows 10 ou 11.
-- [SDK .NET 9](https://dotnet.microsoft.com/download/dotnet/9.0). Pour exécuter seulement : runtime **Desktop** .NET 9.
+- [SDK .NET 10](https://dotnet.microsoft.com/download/dotnet/9.0). Pour exécuter seulement : runtime **Desktop** .NET 10.
   Sans installation système, le script officiel installe le SDK pour l'utilisateur courant :
   ```powershell
   & ([scriptblock]::Create((iwr https://dot.net/v1/dotnet-install.ps1))) -Channel 9.0 -InstallDir "$env:USERPROFILE\.dotnet" -NoPath

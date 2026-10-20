@@ -2,7 +2,7 @@
   <!-- Exemple de plugin TouchDeck : une intégration « hello ». Après compilation, copier le contenu de bin\Release\net9.0\
        dans %APPDATA%\TouchDeck\plugins\HelloPlugin\ (le dossier et la bibliothèque portent le même nom). -->
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>HelloPlugin</AssemblyName>

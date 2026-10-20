@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Système Windows : charge processeur et mémoire, média en cours (SMTC). Cible Windows 10 2004 minimum pour l'API WinRT du média. -->
   <PropertyGroup>
-    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>TouchDeck.Integrations.WindowsSystem</AssemblyName>
@@ -11,6 +11,6 @@
     <ProjectReference Include="..\..\Core\TouchDeck.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.10" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.0" />
   </ItemGroup>
 </Project>

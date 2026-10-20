@@ -4,7 +4,7 @@ Instructions pour les agents de code (Claude Code, Codex, Copilot, etc.). Lire a
 
 ## Projet
 
-TouchDeck : application WPF .NET 9 (`net9.0-windows`), tableau de bord de raccourcis pour écran tactile.
+TouchDeck : application WPF .NET 10 (`net10.0-windows`), tableau de bord de raccourcis pour écran tactile.
 Namespace racine `TouchDeck`, nullable activé, `ImplicitUsings` désactivé (écrire les `using`).
 
 ## Commandes

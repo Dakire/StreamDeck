@@ -1,14 +1,14 @@
 # Architecture
 
-TouchDeck est une application **WPF / .NET 9**, en MVVM avec CommunityToolkit.Mvvm et WPF-UI (lepoco, licence MIT). Elle est
+TouchDeck est une application **WPF / .NET 10**, en MVVM avec CommunityToolkit.Mvvm et WPF-UI (lepoco, licence MIT). Elle est
 composée de **trois projets**, dont les frontières sont vérifiées par les tests (`ArchitectureTests`) :
 
 | Projet | Cible | Contenu | Connaît |
 |---|---|---|---|
-| `Core/` (`TouchDeck.Core`) | `net9.0` | Modèle, document annulable, configuration, moteur d'actions, interfaces de plateforme, journal (façade) | Rien d'autre : ni WPF, ni Windows, ni les autres projets |
-| `Platform/Windows/` (`TouchDeck.Platform.Windows`) | `net9.0-windows`, sans WPF | `SendInput`, fenêtres Win32, Core Audio (COM), registre. Seul `WindowsPlatform` (et `AutoStart`) est public | Core |
-| `Integrations/<Nom>/` (un projet par connecteur) | `net9.0` (`net9.0-windows10.0.19041.0` pour le système Windows) | Un logiciel ou service piloté : commandes, valeurs d'état, connexion | Core |
-| racine (`TouchDeck`) | `net9.0-windows10.0.19041.0`, WPF | Fenêtres, ViewModels, services, composition (`AppHost`), API locale côté interface | Core, plateforme Windows et connecteurs |
+| `Core/` (`TouchDeck.Core`) | `net10.0` | Modèle, document annulable, configuration, moteur d'actions, interfaces de plateforme, journal (façade) | Rien d'autre : ni WPF, ni Windows, ni les autres projets |
+| `Platform/Windows/` (`TouchDeck.Platform.Windows`) | `net10.0-windows`, sans WPF | `SendInput`, fenêtres Win32, Core Audio (COM), registre. Seul `WindowsPlatform` (et `AutoStart`) est public | Core |
+| `Integrations/<Nom>/` (un projet par connecteur) | `net10.0` (`net10.0-windows10.0.19041.0` pour le système Windows) | Un logiciel ou service piloté : commandes, valeurs d'état, connexion | Core |
+| racine (`TouchDeck`) | `net10.0-windows10.0.19041.0`, WPF | Fenêtres, ViewModels, services, composition (`AppHost`), API locale côté interface | Core, plateforme Windows et connecteurs |
 
 ```mermaid
 flowchart TB
@@ -32,14 +32,14 @@ flowchart TB
             OT["IconStore · ProfilePackage · TransferService<br/>Notifier · Motion"]
         end
     end
-    subgraph Core["TouchDeck.Core (net9.0)"]
+    subgraph Core["TouchDeck.Core (net10.0)"]
         DD["DeckDocument<br/>modifications annulables, presse-papiers"]
         CS["ConfigStore · ConfigNormalizer<br/>format, migration, sauvegardes"]
         AE["ActionEngine · ActionRegistry · Handlers/<br/>un gestionnaire par type d'action"]
         PI["Interfaces de plateforme<br/>SimulatedPlatform"]
         UT["ActionTypes · ActionCatalog · ActionValidator<br/>HotkeySyntax · IconNames · Displays · Log"]
     end
-    subgraph Win["TouchDeck.Platform.Windows (net9.0-windows)"]
+    subgraph Win["TouchDeck.Platform.Windows (net10.0-windows)"]
         WP["WindowsPlatform (public)"]
         NI["NativeInput (SendInput)"]
         WF["WindowFocus (fenêtres)"]
@@ -199,7 +199,7 @@ La logique métier (`Core/`) est déjà indépendante de WPF et de Win32, si bie
 
 ## Préparation de Linux
 
-Le Core est un projet `net9.0` indépendant de Windows et de WPF (`ArchitectureTests`). Il reste à faire, dans l'ordre :
+Le Core est un projet `net10.0` indépendant de Windows et de WPF (`ArchitectureTests`). Il reste à faire, dans l'ordre :
 
 1. Adaptateurs Linux, par service :
 
