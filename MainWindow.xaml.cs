@@ -24,10 +24,20 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     static readonly IntPtr HWND_NOTOPMOST = new(-2);
     const uint SWP_NOACTIVATE = 0x0010;
 
+    // Famille WM_POINTER (Windows 8+) : touch, stylet et souris unifiés
+    const int WM_POINTERDOWN   = 0x0246;
+    const int WM_POINTERUP     = 0x0247;
+    const int WM_POINTERUPDATE = 0x0245;
+    // Types de pointeur (POINTER_INPUT_TYPE)
+    const uint PT_TOUCH = 2;
+    const uint PT_PEN   = 3;
+
     [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr hWnd, int nIndex);
     [DllImport("user32.dll")] static extern int SetWindowLong(IntPtr hWnd, int nIndex, int value);
     [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
     [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT p);
+    // GetPointerType : récupère le type du pointeur (touch / pen / mouse) à partir de son identifiant
+    [DllImport("user32.dll")] static extern bool GetPointerType(uint pointerId, out uint pointerType);
     [StructLayout(LayoutKind.Sequential)] struct POINT { public int X, Y; }
 
     readonly MainViewModel _vm;
@@ -84,6 +94,26 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     static IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == WM_MOUSEACTIVATE) { handled = true; return new IntPtr(MA_NOACTIVATE); }
+
+        // Bloquer la promotion tactile → souris pour WM_POINTER issus d'un doigt ou d'un stylet.
+        // Sans cette interception, DefWindowProc synthétise un WM_MOUSEMOVE qui déplace le curseur
+        // avant même que WPF ne reçoive quoi que ce soit. Les vrais messages souris (PT_MOUSE) ne
+        // sont pas bloqués : déplacement, clics et survol fonctionnent normalement.
+        // WPF continue à traiter le toucher via son propre pipeline Stylus/Manipulation, indépendant
+        // de ce chemin Win32.
+        if (msg is WM_POINTERDOWN or WM_POINTERUP or WM_POINTERUPDATE)
+        {
+            // L'identifiant du pointeur est dans les 16 bits bas de wParam
+            uint pointerId = (uint)(wParam.ToInt32() & 0xFFFF);
+            if (GetPointerType(pointerId, out uint ptype) && ptype is PT_TOUCH or PT_PEN)
+            {
+                // handled = true empêche DefWindowProc : plus de WM_MOUSEMOVE synthétisé,
+                // donc le curseur reste en place. On ne retourne pas MA_NOACTIVATE ici
+                // (message différent), on laisse simplement IntPtr.Zero comme résultat.
+                handled = true;
+            }
+        }
+
         return IntPtr.Zero;
     }
 
