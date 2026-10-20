@@ -23,39 +23,47 @@ public class TouchPointerFilterTests
     // Tests automatiques (sans matériel tactile)
     // -----------------------------------------------------------------------
 
+    // Appelle la vraie décision de MainWindow.WndProc, avec un type de pointeur simulé
+    static bool Filters(int msg, uint? type, nint wParam = 7) =>
+        MainWindow.IsTouchOrPenPointerMessage(msg, wParam, _ => type);
+
     [Theory]
-    [InlineData(WM_POINTERDOWN,   true)]
-    [InlineData(WM_POINTERUP,     true)]
-    [InlineData(WM_POINTERUPDATE, true)]
-    [InlineData(WM_MOUSEACTIVATE, false)]
-    [InlineData(0x0200 /* WM_MOUSEMOVE */, false)]
-    [InlineData(0x0201 /* WM_LBUTTONDOWN */, false)]
-    public void IsPointerMessage_CatchesExactlyThreeCodes(int msg, bool expected)
+    [InlineData(WM_POINTERDOWN)]
+    [InlineData(WM_POINTERUP)]
+    [InlineData(WM_POINTERUPDATE)]
+    public void TouchAndPen_PointerMessages_AreSwallowed(int msg)
     {
-        bool result = msg is WM_POINTERDOWN or WM_POINTERUP or WM_POINTERUPDATE;
-        Assert.Equal(expected, result);
+        Assert.True(Filters(msg, PT_TOUCH));
+        Assert.True(Filters(msg, PT_PEN));
     }
 
     [Theory]
-    [InlineData(PT_TOUCH, true)]
-    [InlineData(PT_PEN,   true)]
-    [InlineData(PT_MOUSE, false)]
-    [InlineData(0u,       false)]   // type inconnu → on ne bloque pas
-    public void ShouldBlockPromotionFor_TouchAndPen_NotMouse(uint ptype, bool shouldBlock)
+    [InlineData(WM_POINTERDOWN)]
+    [InlineData(WM_POINTERUP)]
+    [InlineData(WM_POINTERUPDATE)]
+    public void Mouse_AndUnknownPointer_AreNeverSwallowed(int msg)
     {
-        bool result = ptype is PT_TOUCH or PT_PEN;
-        Assert.Equal(shouldBlock, result);
+        Assert.False(Filters(msg, PT_MOUSE));
+        Assert.False(Filters(msg, null));   // GetPointerType a échoué : on laisse passer
+        Assert.False(Filters(msg, 0u));
     }
 
     [Theory]
-    [InlineData(0x00000001u, 0x0001u)]  // ID seul dans les 16 bits bas
-    [InlineData(0xABCD1234u, 0x1234u)]  // Flags dans les 16 bits hauts, ID dans les bas
-    [InlineData(0x00000042u, 0x0042u)]
-    public void PointerIdExtraction_Uses16BitsLow(uint wParam, uint expectedId)
+    [InlineData(WM_MOUSEACTIVATE)]
+    [InlineData(0x0200 /* WM_MOUSEMOVE */)]
+    [InlineData(0x0201 /* WM_LBUTTONDOWN */)]
+    [InlineData(0x0248 /* WM_POINTERENTER */)]
+    public void OtherMessages_AreNeverSwallowed(int msg) => Assert.False(Filters(msg, PT_TOUCH));
+
+    [Theory]
+    [InlineData(0x00000001, 0x0001u)]   // identifiant seul dans les 16 bits bas
+    [InlineData(0x7BCD1234, 0x1234u)]   // drapeaux dans les 16 bits hauts
+    [InlineData(0x00000042, 0x0042u)]
+    public void PointerId_IsTheLow16BitsOfWParam(int wParam, uint expectedId)
     {
-        // Même expression que dans WndProc : (uint)((int)wParam & 0xFFFF)
-        uint pointerId = (uint)((int)wParam & 0xFFFF);
-        Assert.Equal(expectedId, pointerId);
+        uint? seen = null;
+        MainWindow.IsTouchOrPenPointerMessage(WM_POINTERDOWN, wParam, id => { seen = id; return PT_TOUCH; });
+        Assert.Equal(expectedId, seen);
     }
 
     /// <summary>

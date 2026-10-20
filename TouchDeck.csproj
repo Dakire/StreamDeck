@@ -31,6 +31,9 @@
     <Page Remove="tests\**" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="TouchDeck.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <Resource Include="Assets\icon.ico" />
     <Resource Include="Assets\logo.png" />
   </ItemGroup>

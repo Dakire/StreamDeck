@@ -35,7 +35,6 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr hWnd, int nIndex);
     [DllImport("user32.dll")] static extern int SetWindowLong(IntPtr hWnd, int nIndex, int value);
     [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
-    [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT p);
     // GetPointerType : récupère le type du pointeur (touch / pen / mouse) à partir de son identifiant
     [DllImport("user32.dll")] static extern bool GetPointerType(uint pointerId, out uint pointerType);
     [StructLayout(LayoutKind.Sequential)] struct POINT { public int X, Y; }
@@ -100,21 +99,22 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         // avant même que WPF ne reçoive quoi que ce soit. Les vrais messages souris (PT_MOUSE) ne
         // sont pas bloqués : déplacement, clics et survol fonctionnent normalement.
         // WPF continue à traiter le toucher via son propre pipeline Stylus/Manipulation, indépendant
-        // de ce chemin Win32.
-        if (msg is WM_POINTERDOWN or WM_POINTERUP or WM_POINTERUPDATE)
-        {
-            // L'identifiant du pointeur est dans les 16 bits bas de wParam
-            uint pointerId = (uint)(wParam.ToInt32() & 0xFFFF);
-            if (GetPointerType(pointerId, out uint ptype) && ptype is PT_TOUCH or PT_PEN)
-            {
-                // handled = true empêche DefWindowProc : plus de WM_MOUSEMOVE synthétisé,
-                // donc le curseur reste en place. On ne retourne pas MA_NOACTIVATE ici
-                // (message différent), on laisse simplement IntPtr.Zero comme résultat.
-                handled = true;
-            }
-        }
+        // de ce chemin Win32. handled = true empêche DefWindowProc : le curseur reste en place.
+        if (IsTouchOrPenPointerMessage(msg, wParam, PointerTypeOf)) handled = true;
 
         return IntPtr.Zero;
+    }
+
+    /// <summary>Type du pointeur (PT_*), ou null si Windows ne le connaît pas.</summary>
+    static uint? PointerTypeOf(uint pointerId) => GetPointerType(pointerId, out uint type) ? type : null;
+
+    /// <summary>Vrai pour un WM_POINTER{DOWN,UPDATE,UP} d'un doigt ou d'un stylet (jamais d'une souris ni d'un type inconnu).</summary>
+    internal static bool IsTouchOrPenPointerMessage(int msg, IntPtr wParam, Func<uint, uint?> pointerType)
+    {
+        if (msg is not (WM_POINTERDOWN or WM_POINTERUP or WM_POINTERUPDATE)) return false;
+        // L'identifiant du pointeur est dans les 16 bits bas de wParam (GET_POINTERID_WPARAM)
+        uint pointerId = (uint)((long)wParam & 0xFFFF);
+        return pointerType(pointerId) is PT_TOUCH or PT_PEN;
     }
 
     void PlaceOnScreen(bool displayChanged = false)
@@ -171,8 +171,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         if (e.ClickCount == 2) { ToggleFullscreen(); return; }
         if (_full)
         {
-            GetCursorPos(out var p);
-            GoWindowed(CurrentScreen(), p);
+            // Position de l'appui (doigt ou souris) en pixels physiques : le curseur ne suit pas le toucher
+            var at = PointToScreen(e.GetPosition(this));
+            GoWindowed(CurrentScreen(), new POINT { X = (int)at.X, Y = (int)at.Y });
         }
         try { DragMove(); } catch (InvalidOperationException) { }
     }
