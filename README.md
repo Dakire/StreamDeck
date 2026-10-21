@@ -48,9 +48,17 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 - Plein écran sur l'écran secondaire ou mode fenêtre, sans masquer la barre des tâches (le deck occupe la zone de travail) ; le deck suit le branchement et le débranchement de l'écran, et se cale exactement même entre écrans de densités différentes.
 - Profil associé à une application : il s'affiche seul quand le programme est au premier plan.
 - Mode édition tactile (menu ⚙ › *Modifier au toucher*) : toucher un bouton ouvre l'éditeur dessus.
-- Édition directe, sans mode : **clic droit** ou **appui long** (environ 0,55 s, doigt immobile) sur un bouton ouvre l'éditeur sur ce
-  bouton, sur une **case vide** il ouvre la création (focus sur la recherche d'actions : taper un nom puis Entrée ajoute la première
-  action trouvée). L'appui long n'exécute pas l'action ; un glissement du doigt l'annule ; le toucher ne déplace jamais le curseur.
+- **Création rapide**, sans ouvrir l'éditeur : **clic droit** ou **appui long** (environ 0,55 s, doigt immobile) sur une **case vide**
+  ouvre un menu : *Nouveau bouton…* (panneau où l'on tape un nom d'action, « chrome » ou « vol », puis Entrée), *Parcourir les actions*
+  (catégories, au toucher), des **modèles en un clic** (raccourci clavier, lancer une application, ouvrir un site, volume / muet,
+  média, script, dossier, page), *Coller* et *Éditeur complet…*. Chaque création est une seule modification annulable, avec un bouton
+  *Annuler* dans le bandeau d'état. Une page ou un dossier vide propose *Ajouter un bouton* sur sa première case.
+- **Glisser-déposer** d'un fichier, d'un raccourci `.lnk`, d'un exécutable, d'un dossier, d'un raccourci Internet ou d'une adresse
+  web sur une case vide : le bouton *Lancer* ou *Ouvrir* est créé sans dialogue, avec le bon titre et l'icône de l'application.
+  Plusieurs éléments remplissent les cases libres suivantes (douze au plus), en une seule annulation.
+- Sur un **bouton**, le même geste ouvre son menu : *Modifier…* (éditeur rapide : le titre est sélectionné), *Dupliquer* (dans la
+  prochaine case libre), *Copier*, *Couper*, *Supprimer*, *Éditeur complet…*. L'appui long n'exécute pas l'action ; un glissement du
+  doigt l'annule ; le toucher ne déplace jamais le curseur. Un bouton qui échoue propose *Modifier* dans le bandeau d'état.
 
 **L'éditeur** (menu ⚙ › *Ouvrir l'éditeur*, ou `TouchDeck.exe --edit`)
 
@@ -58,8 +66,8 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 - Catalogue : recherche instantanée, 8 catégories repliables, favoris, actions récentes, glisser vers une case.
 - Grille fidèle au deck : sélection, case vide, glisser-déposer (déplacer, échanger, copier avec Ctrl, ranger dans un dossier,
   envoyer vers une autre page), formats 3×2, 5×3, 6×3, 5×4, 8×4 ou automatique.
-- Propriétés : titre (position, affichage), icône Fluent / emoji / texte, image importée, couleurs, étapes multiples
-  (ajout, ordre, suppression), aperçu en direct, validation en direct, réinitialisation de l'apparence.
+- Propriétés : aperçu, titre, étapes multiples (ajout, ordre, suppression), validation en direct ; position du titre, icône Fluent /
+  emoji / texte, image importée et couleurs sont dans un bloc *Apparence* replié par défaut, avec réinitialisation de l'apparence.
   La saisie (titre, icône, couleurs, valeur des étapes) est un brouillon : l'aperçu suit chaque caractère, mais la configuration
   n'est écrite qu'à la validation (Entrée, changement de champ ou de case, fermeture), en une seule modification annulable.
   Échap abandonne la saisie en cours. Les boutons *Annuler* (retour à l'état de la case à l'ouverture, ou case vide si le bouton
@@ -218,15 +226,15 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 
 | Dossier / fichier | Contenu |
 |---|---|
-| `Core/` (projet `TouchDeck.Core`, `net10.0`) | Logique sans WPF ni Windows : `Models`, `DeckDocument` (opérations, historique), `ConfigStore`, `ConfigNormalizer` (migration), `ActionTypes` (clés du format), `ActionCatalog`, `ActionValidator`, `HotkeySyntax`, `Displays`, `LabelTemplate`, `Countdowns`, `Log` (façade) |
+| `Core/` (projet `TouchDeck.Core`, `net10.0`) | Logique sans WPF ni Windows : `Models`, `DeckDocument` (opérations, historique), `ConfigStore`, `ConfigNormalizer` (migration), `ActionTypes` (clés du format), `ActionCatalog`, `QuickCreate` (modèles, suggestions), `DroppedItem` (éléments déposés), `ActionValidator`, `HotkeySyntax`, `Displays`, `LabelTemplate`, `Countdowns`, `Log` (façade) |
 | `Core/Actions/` | Moteur d'actions (`ActionEngine`, `ActionRegistry`), un gestionnaire par type dans `Handlers/`, interfaces de plateforme, plateforme simulée |
 | `Platform/Windows/` (projet `TouchDeck.Platform.Windows`) | Implémentation Windows des interfaces de plateforme : `SendInput`, fenêtres Win32, Core Audio, registre. Seul `WindowsPlatform` est public |
 | `Core/Integrations/`, `Core/Api/`, `Core/Plugins/` | Cadre d'intégrations (`IIntegration`, `IntegrationManager`, bases HTTP et REST), API locale, chargeur de plugins |
 | `Integrations/<Nom>/` | Un projet par connecteur : Obs, Vmix, ElgatoLight, Hue, WindowsSystem, XPlane, Teams, Twitch, ClickUp, Notion, Monday |
 | `samples/HelloPlugin` | Exemple de plugin |
-| `Services/` | `AppHost` (racine de composition, journal Serilog), `ConfigPersistence` (sauvegarde auto, rechargement à chaud), `AppearanceService`, `AppWindows`, `DisplayService`, `IconStore`, `ProfilePackage`, `TransferService`, `Notifier`, `Motion` |
-| `ViewModels/` | `MainViewModel` (deck), `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `SettingsViewModel`, `MenuSpec` |
-| `Controls/` | `TileFace` (rendu d'un bouton), `ContextMenuFactory`, `PromptWindow` |
+| `Services/` | `AppHost` (racine de composition, journal Serilog), `ConfigPersistence` (sauvegarde auto, rechargement à chaud), `AppearanceService`, `AppWindows`, `DisplayService`, `IconStore`, `DropPayload` (lecture d'un glisser-déposer), `ProfilePackage`, `TransferService`, `Notifier`, `Motion` |
+| `ViewModels/` | `MainViewModel` (deck ; menu des cases et glisser-déposer en classes partielles), `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `QuickCreateViewModel`, `SettingsViewModel`, `MenuSpec`, `CatalogMenu` |
+| `Controls/` | `TileFace` (rendu d'un bouton), `ContextMenuFactory`, `PromptWindow`, `QuickCreateWindow` (panneau de création rapide) |
 | `MainWindow.xaml(.cs)` | Deck ; code-behind limité à Win32 et au placement multi-écran |
 | `EditorWindow.xaml(.cs)`, `SettingsWindow.xaml(.cs)` | Éditeur et paramètres (dialogues, focus, clavier, glisser-déposer) |
 | `Theme.cs`, `IconCatalog.cs`, `App.xaml` | Palettes claire / sombre (contrastes vérifiés), icônes, styles |
@@ -236,7 +244,7 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 
 ## Accessibilité
 
-Contraste des textes et des anneaux de focus vérifié par tests (WCAG 2.2 AA) en thème clair et sombre ; focus clavier visible ;
+Contraste des textes et des anneaux de focus vérifié par tests (WCAG 2.2 AA) en thèmes clair, sombre et AMOLED ; un test exige un nom accessible pour chaque contrôle interactif du deck, de l'éditeur, des paramètres et du panneau rapide ; focus clavier visible ;
 état jamais porté par la couleur seule (icône + texte pour les erreurs, coche sur les couleurs, bordure + anneau pour la sélection) ;
 noms accessibles et annonces polies (`LiveSetting`) pour les notifications et erreurs ; cibles de 48 px minimum ;
 animations coupées par le réglage TouchDeck ou celui de Windows.
@@ -248,6 +256,8 @@ animations coupées par le réglage TouchDeck ou celui de Windows.
 - Pas de traduction : l'interface est en français, il n'y a pas de sélecteur de langue.
 - Les profils par application se basent sur le nom du programme au premier plan, relevé toutes les 0,8 s.
 - Le glisser-déposer tactile dépend de la prise en charge de Windows ; le presse-papiers interne et `Alt+flèches` / le menu *Déplacer* offrent des alternatives.
+- La touche Menu (ou Maj+F10) n'ouvre pas le menu d'une case : le deck ne prend jamais le focus clavier. Clic droit ou appui long.
+- Le panneau de création rapide est une petite fenêtre (le deck n'accepte pas la saisie) : la recherche demande un clavier ou le clavier tactile de Windows ; les modèles et *Parcourir les actions* se font sans clavier.
 - Les images importées ne sont jamais supprimées automatiquement (les sauvegardes peuvent encore les référencer).
 
 ## FAQ

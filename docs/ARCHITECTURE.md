@@ -126,7 +126,9 @@ locale sont décrits dans `docs/plugins.md` et `docs/local-api.md` (ADR 0012).
 | Thème | `Theme.cs` | Palettes claire / sombre (contrastes testés), brushes `Deck*` publiées en `DynamicResource`, corps teinté des touches. |
 | Identifiants du format | `Core/ActionTypes.cs` | `ActionTypes`, `PageTargets`, `AudioCommands` : clés stables de `config.json`, figées par un test. |
 | Journal | `Core/Log.cs`, `Services/AppHost.cs` | Façade `Log` (Core) branchée sur Serilog ; `ILogger<T>` dans les services injectés. `touchdeck.log` (1 Mo, 3 fichiers) : démarrage, erreurs, échecs d'action, changements d'écran. |
-| Notifications | `Services/Notifier.cs` | Toast de l'éditeur, message du deck. |
+| Notifications | `Services/Notifier.cs` | Toast de l'éditeur, message du deck (avec bouton *Annuler* ou *Modifier*). |
+| Création rapide | `Core/QuickCreate.cs`, `ViewModels/MainViewModel.TileMenu.cs`, `ViewModels/QuickCreateViewModel.cs`, `Controls/QuickCreateWindow` | Modèles, classement des suggestions, menu des cases, panneau de saisie. Une écriture = `DeckDocument.AddButton(s)` (ADR 0014). |
+| Glisser-déposer | `Core/DroppedItem.cs`, `Services/DropPayload.cs`, `MainWindow.Drop.cs`, `ViewModels/MainViewModel.Drop.cs` | Classe un chemin ou une adresse (Core, pur), lit l'objet OLE et l'icône (application), crée les boutons dans les cases libres. |
 
 ## Exécution d'un bouton
 
@@ -175,6 +177,24 @@ sequenceDiagram
 Tant que cette identité ne change pas, la tuile existante est gardée et seule sa face est recalculée. Une modification
 faite dans l'éditeur ne régénère donc que les cases touchées. Mesure hors écran, 32 touches : 135 ms → 12 ms par
 modification. Un changement de thème recrée toutes les tuiles.
+
+## Création rapide d'un bouton
+
+```mermaid
+flowchart LR
+    G["Clic droit · appui long<br/>sur une case"] --> M["Menu de la case<br/>(MenuItemSpec, feuille du deck)"]
+    M -- "modèle · catégorie" --> A["DeckDocument.AddButton<br/>(une écriture)"]
+    M -- "Nouveau bouton…" --> P["QuickCreateWindow<br/>brouillon, aucune écriture"]
+    P -- "Créer" --> A
+    D["Glisser-déposer<br/>fichier · .lnk · adresse"] --> DP["DropPayload · DroppedItem"] --> B["DeckDocument.AddButtons<br/>(lot, une annulation)"]
+    A --> N["Notifier : bandeau + Annuler"]
+    B --> N
+```
+
+Le menu est décrit en `MenuItemSpec` par `MainViewModel.BuildTileMenu` ; la feuille du deck l'affiche (un `ContextMenu` WPF
+sortirait du traitement tactile du deck, ADR 0013). Un modèle qui demande un réglage ouvre l'éditeur rapide sur la case ;
+sinon le bouton est créé tout de suite. Les suggestions viennent de `ActionCatalog` (actions natives, applications cibles,
+intégrations) classées par `QuickCreate.Rank`.
 
 ## Configuration et modèle de données
 

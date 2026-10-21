@@ -17,5 +17,7 @@ effacée : elle passe au statut « Remplacée par … ».
 | [0010](0010-gestionnaires-d-action.md) | Un gestionnaire par type d'action, enregistrés dans un registre | Acceptée |
 | [0011](0011-cadre-d-integrations.md) | Cadre d'intégrations : un projet par connecteur, aucune nouvelle action | Acceptée |
 | [0012](0012-plugins-et-api-locale.md) | Plugins locaux et API locale par canal nommé | Acceptée |
+| [0013](0013-pile-pointeur-wpf.md) | Toucher du deck sans souris système | Acceptée |
+| [0014](0014-creation-rapide.md) | Création rapide d'un bouton depuis le deck | Acceptée |
 
 Modèle d'une nouvelle décision : contexte, décision, conséquences, statut et date.

@@ -4,6 +4,20 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Ajouté (création rapide)
+- **Menu des cases du deck** (clic droit, appui long) : case vide → *Nouveau bouton…*, *Parcourir les actions*, modèles en un clic, *Coller*, *Éditeur complet…* ; bouton → *Modifier…*, *Dupliquer*, *Copier*, *Couper*, *Supprimer*, *Éditeur complet…*. Décrit en `MenuItemSpec`, affiché dans la feuille du deck (lignes de 48 px) pour que le toucher reste traité par le deck (ADR 0013, ADR 0014).
+- **Panneau de création rapide** : recherche dans tout le catalogue (« chrome », « vol »), titre et icône proposés, *Créer* (Entrée) / *Annuler* (Échap) ; une seule écriture, un seul pas d'annulation.
+- **Glisser-déposer** de fichiers, `.lnk`, exécutables, dossiers, `.url` et adresses web sur une case vide : bouton *Lancer* ou *Ouvrir* avec l'icône de l'application.
+- **Bouton *Annuler*** dans le bandeau d'état après une création, une duplication ou un dépôt ; **bouton *Modifier*** quand un bouton échoue.
+- `DeckDocument.AddButton`, `AddButtonFirstFree`, `AddButtons` (lot = une annulation), `QuickCreate`, `DroppedItem`, `DropPayload`.
+
+### Modifié (simplicité d'usage)
+- Page ou dossier vide : la première case propose *Ajouter un bouton* ; un indice « appui long ou clic droit » s'affiche une fois par lancement (sans clé de configuration).
+- Éditeur : l'action passe avant l'apparence ; position du titre, icône, image et couleurs sont dans un bloc replié par défaut.
+- Messages d'échec : ils disent quoi faire (« Réessaie… », « choisis une autre action »). Le menu des cases de l'éditeur parle du « bouton ».
+- `config.json` n'est plus réécrit quand son contenu n'a pas changé.
+- Aucune clé de `config.json` ajoutée ni modifiée.
+
 ### Corrigé (tactile)
 - **Le toucher ne déplace plus le curseur** : le deck traite lui-même les appuis du doigt (boutons, menu, barre du haut déplaçable, double appui = plein écran) au lieu de laisser Windows les convertir en souris. La souris reste indépendante. Diagnostic : `TOUCHDECK_TOUCHLOG=1` (`docs/adr/0013-pile-pointeur-wpf.md`).
 
