@@ -484,7 +484,9 @@ public partial class MainViewModel : ObservableObject, INavigator
         if (!result.Ok)
         {
             var step = def.Actions.Count > 1 ? $" (étape {result.Step + 1})" : "";
-            SetStatus($"{def.Label}{step} : {result.Message}");
+            // Récupérable : « Modifier » ouvre le bouton pour corriger ses réglages (programme, adresse, raccourci…)
+            Action? fix = TryGetSlot(tile, out var place, out var index) ? () => _windows.OpenEditor(place, index, quick: true) : null;
+            SetStatus($"{def.Label}{step} : {result.Message}", actionText: fix == null ? null : "Modifier", action: fix);
             Log.Warn($"Bouton « {def.Label} »{step} : {result.Outcome} — {result.Message}");
         }
         else if (result.Message != null) SetStatus(result.Message, error: false);

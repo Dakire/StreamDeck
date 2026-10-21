@@ -983,7 +983,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         items.Add(new("Copier", () => CopyCommand.Execute(null), SymbolRegular.Copy24, "Ctrl+C", Enabled: occupied));
         items.Add(new("Couper", () => CutCommand.Execute(null), SymbolRegular.Cut24, "Ctrl+X", Enabled: occupied));
         items.Add(new("Coller", () => PasteCommand.Execute(null), SymbolRegular.ClipboardPaste24, "Ctrl+V", Enabled: _doc.HasClipboard));
-        items.Add(new("Dupliquer l'action", () => DuplicateCommand.Execute(null), SymbolRegular.CopyAdd24, "Ctrl+D", Enabled: occupied));
+        items.Add(new("Dupliquer le bouton", () => DuplicateCommand.Execute(null), SymbolRegular.CopyAdd24, "Ctrl+D", Enabled: occupied));
 
         var move = new List<MenuItemSpec>
         {
@@ -1005,7 +1005,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
                 Children: folders.Select(f => new MenuItemSpec(_doc.Get(place, f.Index)?.Label is { Length: > 0 } t ? t : "Dossier", () => MoveToFolder(slot.Index, f.Index))).ToList()));
         if (_folder.Count > 0 && occupied)
             move.Add(new("Sortir du dossier", () => MoveOut(slot.Index), SymbolRegular.ArrowUpLeft24));
-        items.Add(new("Déplacer l'action", Icon: SymbolRegular.ArrowMove24, Enabled: occupied, Children: move));
+        items.Add(new("Déplacer le bouton", Icon: SymbolRegular.ArrowMove24, Enabled: occupied, Children: move));
 
         items.Add(MenuItemSpec.Separator);
         items.Add(new("Ajouter une action", Icon: SymbolRegular.Add24, Children: BuildAddMenu(slot.Index)));
@@ -1013,7 +1013,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         items.Add(new("Réinitialiser le bouton", () => ResetButtonCommand.Execute(null), SymbolRegular.ArrowReset24, Enabled: occupied));
         items.Add(MenuItemSpec.Separator);
         items.Add(new("Afficher les propriétés", () => _shell.FocusProperties(), SymbolRegular.Info24, Enabled: occupied));
-        items.Add(new("Supprimer l'action", () => DeleteSelection(), SymbolRegular.Delete24, "Suppr", Enabled: occupied, Danger: true));
+        items.Add(new("Supprimer le bouton", () => DeleteSelection(), SymbolRegular.Delete24, "Suppr", Enabled: occupied, Danger: true));
         return items;
     }
 

@@ -143,6 +143,8 @@ public class ActionEngineTests
         Assert.Equal(ActionOutcome.TimedOut, r.Outcome);
         Assert.Equal(0, r.Step);
         Assert.Empty(_sim.Log);
+        Assert.Contains("Délai dépassé", r.Message);
+        Assert.Contains("Réessaie", r.Message);                    // le message dit quoi faire
     }
 
     [Fact]

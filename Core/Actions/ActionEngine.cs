@@ -106,7 +106,7 @@ public sealed class ActionEngine : IDisposable
         {
             var action = steps[i];
             if (!_registry.TryGet(action.Type, out var handler))
-                return new ActionResult(ActionOutcome.Failed, $"Type d'action inconnu : « {action.Type} »", i);
+                return new ActionResult(ActionOutcome.Failed, $"Type d'action inconnu : « {action.Type} ». Ouvre le bouton et choisis une autre action.", i);
 
             using var step = CancellationTokenSource.CreateLinkedTokenSource(run.Token);
             if (handler.Timeout is { } limit) step.CancelAfter(limit);
@@ -121,7 +121,7 @@ public sealed class ActionEngine : IDisposable
             }
             catch (OperationCanceledException) when (step.IsCancellationRequested)
             {
-                return new ActionResult(ActionOutcome.TimedOut, $"Délai dépassé ({handler.Timeout!.Value.TotalSeconds:0} s)", i);
+                return new ActionResult(ActionOutcome.TimedOut, $"Délai dépassé ({handler.Timeout!.Value.TotalSeconds:0} s) : l'action n'a pas répondu. Réessaie, ou vérifie son adresse ou son programme.", i);
             }
             catch (Exception ex)
             {

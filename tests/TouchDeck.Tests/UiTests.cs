@@ -495,8 +495,8 @@ ulle\part.exe" } } });
         {
             vm.SelectIndex(0);
             var occupied = Headers(ContextMenuFactory.Build(vm.BuildSlotMenu(vm.Slots[0])));
-            foreach (var h in new[] { "Configurer l'action", "Modifier le titre", "Modifier l'icône", "Copier", "Couper", "Coller", "Dupliquer l'action",
-                         "Déplacer l'action", "Ajouter une action", "Créer un dossier", "Réinitialiser le bouton", "Afficher les propriétés", "Supprimer l'action" })
+            foreach (var h in new[] { "Configurer l'action", "Modifier le titre", "Modifier l'icône", "Copier", "Couper", "Coller", "Dupliquer le bouton",
+                         "Déplacer le bouton", "Ajouter une action", "Créer un dossier", "Réinitialiser le bouton", "Afficher les propriétés", "Supprimer le bouton" })
                 Assert.Contains(h, occupied.Keys);
             Assert.True(occupied["Copier"]);
             Assert.False(occupied["Coller"]);                           // presse-papiers vide
@@ -508,8 +508,8 @@ ulle\part.exe" } } });
             vm.SelectIndex(12);
             var empty = Headers(ContextMenuFactory.Build(vm.BuildSlotMenu(vm.Slots[12])));
             Assert.False(empty["Copier"]);
-            Assert.False(empty["Supprimer l'action"]);
-            Assert.False(empty["Déplacer l'action"]);
+            Assert.False(empty["Supprimer le bouton"]);
+            Assert.False(empty["Déplacer le bouton"]);
             Assert.True(empty["Créer un dossier"]);
             Assert.True(empty["Ajouter une action"]);
             Assert.True(empty["Coller"]);
