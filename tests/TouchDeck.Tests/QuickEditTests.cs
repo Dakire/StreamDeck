@@ -18,6 +18,9 @@ sealed class FakeAppWindows : IAppWindows
     public List<(Place? Place, int Index, bool Quick)> Opened { get; } = new();
     public List<string> AddedCatalog { get; } = new();
     public List<(Place Place, int Index)> QuickCreates { get; } = new();
+    /// <summary>Le deck a été passé en mode édition sur ces cases (panneaux intégrés, sans autre fenêtre).</summary>
+    public List<(Place Place, int Index)> EditedOnDeck { get; } = new();
+    public void EditOnDeck(Place place, int index) => EditedOnDeck.Add((place, index));
     public void OpenQuickCreate(Place place, int index) => QuickCreates.Add((place, index));
     public bool IsEditorOpen => Opened.Count > 0;
     public void OpenEditor(Place? place = null, int index = -1, bool quick = false, string? addCatalogId = null)
@@ -150,19 +153,22 @@ public class QuickEditTests
             Assert.True(vm.MenuOpen);
             Assert.Empty(windows.Opened);                                      // le geste ouvre un menu, pas l'éditeur
             Pick(vm, "Modifier…");
-            Assert.Equal((new Place("P", 0), 0, true), windows.Opened[^1]);
+            Assert.Empty(windows.Opened);                                      // aucune autre fenêtre : le deck passe en mode édition
+            Assert.True(vm.IsEdit);
+            Assert.Equal(0, vm.Editor!.SelectedIndex);
             Assert.False(vm.MenuOpen);
+            vm.EndEditCommand.Execute(null);
 
             // Case vide (6e emplacement, hors édition : un « espaceur »)
             var spacer = vm.Tiles.OfType<SpacerTileViewModel>().Single();
             Assert.NotNull(spacer.Edit);
             spacer.Edit!.Execute(null);
-            Assert.Single(windows.Opened);                                     // toujours pas d'éditeur
+            Assert.Empty(windows.Opened);                                      // toujours pas d'éditeur
             Pick(vm, "Éditeur complet…");
             Assert.Equal((new Place("P", 0), 5, false), windows.Opened[^1]);
 
             // Le toucher bref garde son rôle : exécuter, pas éditer
-            Assert.Equal(2, windows.Opened.Count);
+            Assert.Single(windows.Opened);
         });
     }
 
@@ -176,7 +182,9 @@ public class QuickEditTests
             var home = vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Accueil");
             home.Edit!.Execute(null);
             Pick(vm, "Modifier…");
-            Assert.Equal((new Place("P", 1), 0, true), windows.Opened[^1]);
+            Assert.True(vm.IsEdit);
+            Assert.Equal((new Place("P", 1), 0), (vm.Editor!.Place, vm.Editor.SelectedIndex));   // le panneau de droite montre ce bouton
+            vm.EndEditCommand.Execute(null);
             var spacers = vm.Tiles.OfType<SpacerTileViewModel>().ToList();
             Assert.Equal(4, spacers.Count);
             spacers[0].Edit!.Execute(null);
@@ -197,7 +205,8 @@ public class QuickEditTests
             var inside = vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Dedans");
             inside.Edit!.Execute(null);
             Pick(vm, "Modifier…");
-            Assert.Equal((new Place("P", 0, new[] { 1 }), 0, true), windows.Opened[^1]);
+            Assert.Equal((new Place("P", 0, new[] { 1 }), 0), (vm.Editor!.Place, vm.Editor.SelectedIndex));
+            vm.EndEditCommand.Execute(null);
         });
     }
 
@@ -210,10 +219,13 @@ public class QuickEditTests
             vm.OpenMenuCommand.Execute(null);
             vm.MenuEntries.OfType<MenuEntryViewModel>().First(e => e.Text.StartsWith("Modifier au toucher", StringComparison.Ordinal)).Command.Execute(null);
             Assert.True(vm.IsEdit);
-            vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Copier").Click.Execute(null);
-            Assert.Equal((new Place("P", 0), 0, true), windows.Opened[^1]);
+            vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Copier").Click.Execute(null);   // sélectionne la touche
+            Assert.Empty(windows.Opened);
+            Assert.Equal(0, vm.Editor!.SelectedIndex);
             var add = vm.Tiles.OfType<AddTileViewModel>().First();
-            add.Click.Execute(null);                                                  // « + » : menu de création de la case
+            add.Click.Execute(null);                                                  // « + » : sélectionne la case vide
+            Assert.Equal(5, vm.Editor.SelectedIndex);
+            add.Edit!.Execute(null);                                                  // appui long : menu de création de la case
             Assert.True(vm.MenuOpen);
             Pick(vm, "Éditeur complet…");
             Assert.Equal(5, windows.Opened[^1].Index);

@@ -19,6 +19,12 @@ sealed class FakeDeckShell : IShell
     public void SetOnTop(bool onTop) => IsOnTop = onTop;
     public void Minimize() { }
     public void ReapplyPlacement() => Placements++;
+    /// <summary>Dernier état demandé du mode édition (fenêtre activable ou non) et nombre de changements.</summary>
+    public bool Editing { get; private set; }
+    public int EditingChanges { get; private set; }
+    public void SetEditing(bool editing) { Editing = editing; EditingChanges++; }
+    public FakeShell Dialogs { get; } = new();
+    public IEditorShell EditorShell => Dialogs;
 }
 
 /// <summary>

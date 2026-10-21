@@ -49,7 +49,9 @@ public partial class MainViewModel : ObservableObject, INavigator
     int _page, _previousPage;
     int _sub;        // sous-page courante quand une page dépasse la capacité de la grille
     int _capacity = 1;
-    double _w, _h;
+    double _w, _h;            // zone de la grille (largeur de la fenêtre moins les panneaux d'édition)
+    double _rawW, _rawH;      // taille de la zone de contenu de la fenêtre
+    readonly Func<IEditorShell, EditorViewModel> _editorFactory;
     bool _profileMenu;
 
     /// <summary>Cases de la grille affichée : <see cref="DeckTileViewModel"/>, <see cref="AddTileViewModel"/> ou <see cref="SpacerTileViewModel"/>.</summary>
@@ -103,8 +105,10 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     /// <summary>Deck sur le document partagé ; <paramref name="shell"/> fournit le placement Win32.</summary>
     public MainViewModel(IShell shell, DeckDocument doc, ActionEngine engine, AppOptions options, StartupResult startup,
-        GridState grid, IAppWindows windows, ConfigPersistence persistence, IntegrationManager integrations)
+        GridState grid, IAppWindows windows, ConfigPersistence persistence, IntegrationManager integrations,
+        Func<IEditorShell, EditorViewModel> editorFactory)
     {
+        _editorFactory = editorFactory;
         _integrations = integrations;
         _shell = shell;
         _doc = doc;
@@ -133,7 +137,8 @@ public partial class MainViewModel : ObservableObject, INavigator
     /// <summary>Appelé par la fenêtre à chaque changement de taille de la zone de contenu.</summary>
     public void Resize(double width, double height)
     {
-        _w = width; _h = height;
+        _rawW = width; _rawH = height;
+        ApplyPanelWidths();
         Rebuild();
     }
 
@@ -326,9 +331,11 @@ public partial class MainViewModel : ObservableObject, INavigator
         if (_w < 50 || _h < 50 || _doc.Config.Profiles.Count == 0) return;
 
         var profile = CurrentProfile;
-        var m = LayoutMetrics.Compute(_w, _h, _doc.Config, profile.Columns, profile.Rows);
+        // Mode édition : les panneaux prennent de la largeur, mais la grille garde le nombre de cases qu'elle a en usage normal
+        var (cols, rows) = LayoutMetrics.GridSize(_rawW, _rawH, _doc.Config, profile.Columns, profile.Rows);
+        var m = LayoutMetrics.Compute(_w, _h, _doc.Config, cols, rows);
         _capacity = m.Columns * m.Rows;
-        _grid.Auto = LayoutMetrics.GridSize(_w, _h, _doc.Config);
+        _grid.Auto = LayoutMetrics.GridSize(_rawW, _rawH, _doc.Config);
         L = m;
 
         var view = BuildView();
@@ -362,6 +369,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         InFolder = _folder.Count > 0;
         PathText = BuildPath();
 
+        if (Editor != null && !Editor.Place.Equals(CurrentPlace)) Editor.GoTo(CurrentPlace, -1);   // autre page ou dossier : plus de sélection
         BuildTiles(view);
         if (navigation) BuildTabs();
     }
@@ -438,7 +446,7 @@ public partial class MainViewModel : ObservableObject, INavigator
                     {
                         Button = def, Label = def.Label, IsEdit = edit, Edit = menu,
                         Click = edit
-                            ? new RelayCommand(() => _windows.OpenEditor(place, idx, quick: true))        // mode « Modifier au toucher »
+                            ? new RelayCommand(() => SelectTile(place, idx))                              // mode édition : sélectionne la touche
                             : def.IsFolder
                                 ? new RelayCommand(() => EnterFolder(idx))
                                 : new AsyncRelayCommand(() => RunTileAsync(tile!), AsyncRelayCommandOptions.AllowConcurrentExecutions),
@@ -463,6 +471,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             _tileKeys.RemoveAt(_tileKeys.Count - 1);
         }
         UpdateLiveTimer();
+        ApplySelection();
         ShowDiscoveryHintOnce(view.Count(v => v.Button != null));
     }
 
@@ -485,7 +494,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         {
             var step = def.Actions.Count > 1 ? $" (étape {result.Step + 1})" : "";
             // Récupérable : « Modifier » ouvre le bouton pour corriger ses réglages (programme, adresse, raccourci…)
-            Action? fix = TryGetSlot(tile, out var place, out var index) ? () => _windows.OpenEditor(place, index, quick: true) : null;
+            Action? fix = TryGetSlot(tile, out var place, out var index) ? () => StartEditing(place, index) : null;
             SetStatus($"{def.Label}{step} : {result.Message}", actionText: fix == null ? null : "Modifier", action: fix);
             Log.Warn($"Bouton « {def.Label} »{step} : {result.Outcome} — {result.Message}");
         }

@@ -90,6 +90,16 @@
       </Style.Triggers>
     </Style>
 
+    <!-- Tiroir latéral du mode édition : feuille de conteneur à grands coins arrondis (MD3), élévation par le ton et non par une ombre -->
+    <Style x:Key="DrawerSheet" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource DeckPanel}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource DeckLine}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="28"/>
+      <Setter Property="Margin" Value="8,0"/>
+      <Setter Property="Padding" Value="0,4"/>
+    </Style>
+
     <!-- ===== Touches ===== -->
 
     <DataTemplate DataType="{x:Type vm:DeckTileViewModel}">
@@ -100,6 +110,10 @@
         <Grid>
           <controls:TileFace Face="{Binding Face}"
                              CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+          <!-- Mode édition : la touche choisie porte un liseré d'accent (jamais la couleur seule : le panneau de propriétés l'affiche aussi) -->
+          <Border BorderThickness="4" BorderBrush="{DynamicResource DeckAccent}" IsHitTestVisible="False"
+                  CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                  Visibility="{Binding IsSelected, Converter={StaticResource BoolVis}}"/>
           <!-- Mode édition au toucher : chaque touche s'ouvre dans l'éditeur -->
           <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="8,4" CornerRadius="10"
                   Background="{DynamicResource DeckAccent}" Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
@@ -148,8 +162,13 @@
       <Button Style="{StaticResource AddTileButton}" Command="{Binding Click}" AutomationProperties.Name="Ajouter un bouton"
               Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
               Tag="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
-        <ui:SymbolIcon Symbol="Add24" Foreground="{DynamicResource DeckDim}"
-                   FontSize="{Binding DataContext.L.AddGlyphSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+        <Grid>
+          <Border BorderThickness="4" BorderBrush="{DynamicResource DeckAccent}" IsHitTestVisible="False"
+                  CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                  Visibility="{Binding IsSelected, Converter={StaticResource BoolVis}}"/>
+          <ui:SymbolIcon Symbol="Add24" Foreground="{DynamicResource DeckDim}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                     FontSize="{Binding DataContext.L.AddGlyphSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+        </Grid>
       </Button>
     </DataTemplate>
 
@@ -314,18 +333,38 @@
     </Border>
 
     <!-- ===== Grille : centrée, à la taille exacte des touches (aucune touche étirée) ===== -->
-    <ItemsControl x:Name="DeckGrid" Grid.Row="1" ItemsSource="{Binding Tiles}" Focusable="False"
-                  PreviewMouseRightButtonDown="OnDeckRightClick" AllowDrop="True" DragEnter="OnDeckDragOver" DragOver="OnDeckDragOver" Drop="OnDeckDrop"
-                  Width="{Binding L.GridW}" Height="{Binding L.GridH}" HorizontalAlignment="Center" VerticalAlignment="Center">
-      <ItemsControl.RenderTransform>
-        <TranslateTransform x:Name="GridShift"/>
-      </ItemsControl.RenderTransform>
-      <ItemsControl.ItemsPanel>
-        <ItemsPanelTemplate>
-          <UniformGrid Columns="{Binding L.Columns}" Rows="{Binding L.Rows}"/>
-        </ItemsPanelTemplate>
-      </ItemsControl.ItemsPanel>
-    </ItemsControl>
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="{Binding LeftPanelWidth}"/>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="{Binding RightPanelWidth}"/>
+      </Grid.ColumnDefinitions>
+
+      <!-- Mode édition : tiroir d'actions à gauche (toucher une action la pose dans la case choisie). La fenêtre est activable pendant l'édition. -->
+      <Border Grid.Column="0" Style="{StaticResource DrawerSheet}" Margin="{Binding L.GridMargin}"
+              Visibility="{Binding HasEditor, Converter={StaticResource BoolVis}}">
+        <controls:CatalogPanel x:Name="DeckCatalog" DataContext="{Binding Editor}"/>
+      </Border>
+
+      <ItemsControl x:Name="DeckGrid" Grid.Column="1" ItemsSource="{Binding Tiles}" Focusable="False"
+                    PreviewMouseRightButtonDown="OnDeckRightClick" AllowDrop="True" DragEnter="OnDeckDragOver" DragOver="OnDeckDragOver" Drop="OnDeckDrop"
+                    Width="{Binding L.GridW}" Height="{Binding L.GridH}" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <ItemsControl.RenderTransform>
+          <TranslateTransform x:Name="GridShift"/>
+        </ItemsControl.RenderTransform>
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <UniformGrid Columns="{Binding L.Columns}" Rows="{Binding L.Rows}"/>
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+      </ItemsControl>
+
+      <!-- Mode édition : propriétés de la case choisie à droite -->
+      <Border Grid.Column="2" Style="{StaticResource DrawerSheet}" Margin="{Binding L.GridMargin}"
+              Visibility="{Binding HasEditor, Converter={StaticResource BoolVis}}">
+        <controls:PropertiesPanel x:Name="DeckProps" DataContext="{Binding Editor}" PanelRadius="28" EdgeThickness="0"/>
+      </Border>
+    </Grid>
 
     <!-- ===== Dock : pages (à gauche), sous-pages (au centre), édition et menu (à droite) ===== -->
     <Border Grid.Row="2" Margin="{Binding L.BarMargin}" VerticalAlignment="Bottom" Padding="6"
@@ -386,7 +425,15 @@
 
         <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
           <StackPanel Orientation="Horizontal" Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
-            <Button Style="{StaticResource DockButton}" Command="{Binding OpenEditorHereCommand}" AutomationProperties.Name="Ouvrir l'éditeur">
+            <Button Style="{StaticResource DockButton}" Command="{Binding Editor.UndoCommand}" IsEnabled="{Binding Editor.CanUndo}" Width="{Binding L.BarH}" Padding="0"
+                    AutomationProperties.Name="Annuler la dernière modification" ToolTip="{Binding Editor.UndoTooltip}">
+              <ui:SymbolIcon Symbol="ArrowUndo24"/>
+            </Button>
+            <Button Style="{StaticResource DockButton}" Command="{Binding Editor.RedoCommand}" IsEnabled="{Binding Editor.CanRedo}" Width="{Binding L.BarH}" Padding="0"
+                    AutomationProperties.Name="Rétablir la modification annulée" ToolTip="{Binding Editor.RedoTooltip}">
+              <ui:SymbolIcon Symbol="ArrowRedo24"/>
+            </Button>
+            <Button Style="{StaticResource DockButton}" Command="{Binding OpenEditorHereCommand}" AutomationProperties.Name="Ouvrir l'éditeur complet" ToolTip="Éditeur complet (fenêtre séparée)">
               <StackPanel Orientation="Horizontal">
                 <ui:SymbolIcon Symbol="WindowEdit20" Margin="0,0,8,0"/>
                 <TextBlock Text="Éditeur" VerticalAlignment="Center"/>

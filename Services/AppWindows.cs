@@ -19,6 +19,9 @@ public interface IAppWindows
     /// <param name="addCatalogId">Avec <paramref name="quick"/> : action du catalogue posée aussitôt dans la case visée (annulable avec « Annuler »).</param>
     void OpenEditor(Place? place = null, int index = -1, bool quick = false, string? addCatalogId = null);
 
+    /// <summary>Passe le deck en mode édition sur cette case : les panneaux d'actions et de propriétés s'ouvrent autour de la grille, sans autre fenêtre.</summary>
+    void EditOnDeck(Place place, int index);
+
     /// <summary>Ouvre le panneau de création rapide pour cette case vide (une seule instance : un nouveau panneau remplace l'ancien).</summary>
     void OpenQuickCreate(Place place, int index);
 
@@ -53,6 +56,13 @@ public sealed class AppWindows : IAppWindows
         _editor.GoTo(place, index, quick, addCatalogId);
         if (_editor.WindowState == WindowState.Minimized) _editor.WindowState = WindowState.Normal;
         _editor.Activate();
+    }
+
+    /// <inheritdoc/>
+    public void EditOnDeck(Place place, int index)
+    {
+        if (Application.Current.MainWindow is MainWindow deck) deck.EditCell(place, index);
+        else OpenEditor(place, index, quick: true);   // pas de deck affiché (API locale, démarrage) : l'éditeur séparé
     }
 
     /// <inheritdoc/>

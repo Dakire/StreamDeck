@@ -26,7 +26,9 @@ public partial class MainViewModel
     /// </summary>
     (TileKey Key, Func<object> Create) FreeTile(Place place, int at, bool welcome)
     {
-        if (IsEdit) return (new TileKey("add", place, at, null, null, false, true), () => new AddTileViewModel { Click = new RelayCommand(() => OpenTileMenu(place, at)) });
+        if (IsEdit)
+            return (new TileKey("add", place, at, null, null, false, true),
+                () => new AddTileViewModel { Click = new RelayCommand(() => SelectTile(place, at)), Edit = new RelayCommand(() => OpenTileMenu(place, at)) });
         if (welcome) return (new TileKey("welcome", place, at, null, null, false, false), () => new WelcomeTileViewModel { Click = new RelayCommand(() => OpenTileMenu(place, at)) });
         return (new TileKey("spacer", place, at, null, null, false, false), () => new SpacerTileViewModel { Edit = new RelayCommand(() => OpenTileMenu(place, at)) });
     }
@@ -79,7 +81,7 @@ public partial class MainViewModel
 
     List<MenuItemSpec> BuildButtonMenu(Place place, int index, DeckButton button) => new()
     {
-        new("Modifier…", () => _windows.OpenEditor(place, index, quick: true), SymbolRegular.Edit24),
+        new("Modifier…", () => StartEditing(place, index), SymbolRegular.Edit24),
         new("Dupliquer", () => DuplicateHere(place, index), SymbolRegular.CopyAdd24),
         new("Copier", () => CopyHere(place, index), SymbolRegular.Copy24),
         new("Couper", () => CutHere(place, index), SymbolRegular.Cut24),
@@ -100,7 +102,7 @@ public partial class MainViewModel
         var button = action.CreateButton();
         if (QuickCreate.NeedsSetup(button, _doc.Config, _doc.FindProfile(place.Profile)))
         {
-            _windows.OpenEditor(place, index, quick: true, addCatalogId: action.Id);
+            StartEditing(place, index, action.Id);   // les réglages à compléter se font dans le panneau de propriétés du deck
             return;
         }
         var result = _doc.AddButton(place, index, button, $"Ajouter « {action.Name} »");
