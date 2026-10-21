@@ -90,6 +90,8 @@ public sealed class WpfHost : IDisposable
     {
         Run(() =>
         {
+            // Le presse-papiers survit à un rechargement (voulu en production) : on le vide pour que les scénarios restent indépendants
+            typeof(DeckDocument).GetProperty(nameof(DeckDocument.Clipboard))!.SetValue(Document, null);
             Document.Reset(cfg ?? ConfigStore.DefaultConfig());
             Document.UpdateSettings(c => c.Theme = "dark");
         });

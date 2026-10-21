@@ -50,7 +50,7 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
     }
 
     /// <summary>Sélectionne un emplacement (profil, page, dossier) et éventuellement une case.</summary>
-    public void GoTo(Place? place, int index, bool quick = false) => _vm.GoTo(place, index, quick);
+    public void GoTo(Place? place, int index, bool quick = false, string? addCatalogId = null) => _vm.GoTo(place, index, quick, addCatalogId);
 
     /// <summary>S'ouvre sur l'écran où se trouve le curseur (l'éditeur se pilote à la souris et au clavier, pas sur l'écran tactile du deck).</summary>
     void PlaceOnCursorScreen()

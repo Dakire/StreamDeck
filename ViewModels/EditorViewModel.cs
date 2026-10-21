@@ -171,8 +171,9 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Se place sur un emplacement donné (appelé quand le deck demande à modifier un bouton). <paramref name="quick"/> : ouverture directe
     /// sur cette case, le focus va au titre (bouton) ou à la recherche d'actions (case vide) pour modifier ou créer sans étape intermédiaire.
+    /// <paramref name="addCatalogId"/> : action du catalogue à poser aussitôt dans la case (modèle du deck qui demande des réglages).
     /// </summary>
-    public void GoTo(Place? place, int index, bool quick = false)
+    public void GoTo(Place? place, int index, bool quick = false, string? addCatalogId = null)
     {
         Properties.Flush();
         Properties.BeginSession();
@@ -192,6 +193,8 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         if (!QuickEdit) _shell.FocusSlot(_selectedIndex);
         else if (_doc.Get(Place, _selectedIndex) == null) _shell.FocusCatalogSearch();
         else _shell.FocusTitle();
+        // Modèle du deck à compléter : posé après l'ouverture, donc « Annuler » rend la case vide
+        if (addCatalogId != null && quick && _selectedIndex >= 0) AddCatalogActionById(addCatalogId, _selectedIndex);
     }
 
     void ValidatePlace()
@@ -1014,19 +1017,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         return items;
     }
 
-    List<MenuItemSpec> BuildAddMenu(int index)
-    {
-        var list = new List<MenuItemSpec>();
-        foreach (var cat in ActionCatalog.Categories)
-        {
-            var children = ActionCatalog.All.Where(a => a.Category == cat)
-                .Select(a => new MenuItemSpec(a.Name, () => AddCatalogAction(a, index), IconCatalog.TryResolve(a.Icon, out var s) ? s : SymbolRegular.Apps24))
-                .ToList();
-            IconCatalog.TryResolve(ActionCatalog.CategoryIcons.GetValueOrDefault(cat, "Apps24"), out var ci);
-            list.Add(new MenuItemSpec(cat, Icon: ci, Children: children));
-        }
-        return list;
-    }
+    List<MenuItemSpec> BuildAddMenu(int index) => CatalogMenu.Categories(a => AddCatalogAction(a, index));
 
     void MoveToPage(int index, PageTabViewModel page)
     {

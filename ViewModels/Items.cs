@@ -16,10 +16,10 @@ public enum TileRunState
     Error,
 }
 
-/// <summary>Case du deck qu'on peut modifier directement (clic droit, appui long) : bouton, case vide ou emplacement « + ».</summary>
+/// <summary>Case du deck qui a son propre menu (clic droit, appui long) : bouton, case vide ou emplacement « + ».</summary>
 public interface IEditableTile
 {
-    /// <summary>Ouvre l'éditeur sur cette case ; null pour une case qui ne se modifie pas (flèche « retour »).</summary>
+    /// <summary>Ouvre le menu de cette case (créer, modifier, dupliquer…) ; null pour une case sans menu (flèche « retour »).</summary>
     ICommand? Edit { get; }
 }
 
@@ -49,7 +49,7 @@ public sealed partial class DeckTileViewModel : ObservableObject, IEditableTile
     public bool IsError => RunState == TileRunState.Error;
 }
 
-/// <summary>Case vide hors édition : réserve la place pour que les voisins gardent leur position. Un clic droit ou un appui long y crée un bouton.</summary>
+/// <summary>Case vide hors édition : réserve la place pour que les voisins gardent leur position. Un clic droit ou un appui long y ouvre le menu de création.</summary>
 public sealed class SpacerTileViewModel : IEditableTile
 {
     /// <inheritdoc/>
@@ -104,3 +104,10 @@ public sealed class MenuEntryViewModel
 
 /// <summary>Séparateur du menu du deck.</summary>
 public sealed class MenuSeparatorViewModel { }
+
+/// <summary>Titre non cliquable en haut d'un menu de case (« Case vide », nom du bouton, nom de la catégorie).</summary>
+public sealed class MenuHeaderViewModel
+{
+    /// <summary>Texte du titre.</summary>
+    public string Text { get; init; } = "";
+}

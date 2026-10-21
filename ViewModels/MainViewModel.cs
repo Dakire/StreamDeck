@@ -34,7 +34,10 @@ public partial class MainViewModel : ObservableObject, INavigator
     readonly IntegrationManager _integrations;
     readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
     bool _integrationRefreshPending;
-    readonly DispatcherTimer _statusTimer = new() { Interval = TimeSpan.FromSeconds(5) };
+    static readonly TimeSpan StatusDelay = TimeSpan.FromSeconds(5);
+    static readonly TimeSpan StatusActionDelay = TimeSpan.FromSeconds(8);
+    Action? _statusAction;
+    readonly DispatcherTimer _statusTimer = new() { Interval = StatusDelay };
     readonly DispatcherTimer _appTimer = new() { Interval = TimeSpan.FromMilliseconds(800) };
     readonly DispatcherTimer _liveTimer = new() { Interval = TimeSpan.FromSeconds(1) };   // horloges et minuteurs visibles
     string _lastMinute = "";
@@ -60,6 +63,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     [ObservableProperty, NotifyPropertyChangedFor(nameof(BrandText))] bool isEdit;
     [ObservableProperty] bool menuOpen;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasStatus))] string? status;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasStatusAction))] string? statusActionText;
     [ObservableProperty] bool statusIsError = true;
     [ObservableProperty] Brush rootBackground = Brushes.Transparent;
     [ObservableProperty] bool isFullscreen;
@@ -70,6 +74,8 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     /// <summary>true si un message est affiché dans la barre d'état.</summary>
     public bool HasStatus => Status != null;
+    /// <summary>true si le message propose un bouton (« Annuler » après une création).</summary>
+    public bool HasStatusAction => StatusActionText != null;
     /// <summary>Texte de la barre du haut : mode, profil et chemin des dossiers ouverts.</summary>
     public string BrandText => (IsEdit ? "TouchDeck  ·  Mode édition" : "TouchDeck")
         + (ProfileCount > 1 ? "  ·  " + CurrentProfile.Name : "") + (PathText.Length > 0 ? "  ›  " + PathText : "");
@@ -183,7 +189,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     {
         // Le deck affiche les erreurs ; les confirmations restent dans l'éditeur quand il est ouvert
         if (n.Kind is NoticeKind.Error or NoticeKind.Warning) SetStatus(n.Message);
-        else if (!_windows.IsEditorOpen) SetStatus(n.Message, error: false);
+        else if (!_windows.IsEditorOpen) SetStatus(n.Message, error: false, n.ActionText, n.Action);
     }
 
     void ApplyBackground()
@@ -194,12 +200,24 @@ public partial class MainViewModel : ObservableObject, INavigator
         RootBackground = Theme.TryBrush(_doc.Config.Background, out var b) ? b : backdrop;   // couleur invalide : fond du thème
     }
 
-    void SetStatus(string? text, bool error = true)
+    /// <summary>Message de la barre d'état. <paramref name="actionText"/> / <paramref name="action"/> : bouton touchable (« Annuler »), qui laisse plus de temps pour l'atteindre.</summary>
+    void SetStatus(string? text, bool error = true, string? actionText = null, Action? action = null)
     {
         StatusIsError = error;
+        _statusAction = text == null ? null : action;
+        StatusActionText = _statusAction == null ? null : actionText;
         Status = text;
         _statusTimer.Stop();
+        _statusTimer.Interval = _statusAction == null ? StatusDelay : StatusActionDelay;
         if (text != null) _statusTimer.Start();
+    }
+
+    [RelayCommand]
+    void RunStatusAction()
+    {
+        var action = _statusAction;
+        SetStatus(null);
+        action?.Invoke();
     }
 
     void ResetNavigation()
@@ -388,8 +406,8 @@ public partial class MainViewModel : ObservableObject, INavigator
                 int at = i - offset;
                 key = IsEdit ? new TileKey("add", place, at, null, null, false, true) : new TileKey("spacer", place, at, null, null, false, false);
                 create = IsEdit
-                    ? () => new AddTileViewModel { Click = new RelayCommand(() => _windows.OpenEditor(place, at, quick: true)) }
-                    : () => new SpacerTileViewModel { Edit = new RelayCommand(() => _windows.OpenEditor(place, at, quick: true)) };   // touche libre, dessinée éteinte
+                    ? () => new AddTileViewModel { Click = new RelayCommand(() => OpenTileMenu(place, at)) }
+                    : () => new SpacerTileViewModel { Edit = new RelayCommand(() => OpenTileMenu(place, at)) };   // touche libre, dessinée éteinte
             }
             else if (view[i].IsBack)
             {
@@ -410,8 +428,8 @@ public partial class MainViewModel : ObservableObject, INavigator
                 int at = view[i].ListIndex;
                 key = IsEdit ? new TileKey("add", place, at, null, null, false, true) : new TileKey("spacer", place, at, null, null, false, false);
                 create = IsEdit
-                    ? () => new AddTileViewModel { Click = new RelayCommand(() => _windows.OpenEditor(place, at, quick: true)) }
-                    : () => new SpacerTileViewModel { Edit = new RelayCommand(() => _windows.OpenEditor(place, at, quick: true)) };
+                    ? () => new AddTileViewModel { Click = new RelayCommand(() => OpenTileMenu(place, at)) }
+                    : () => new SpacerTileViewModel { Edit = new RelayCommand(() => OpenTileMenu(place, at)) };
             }
             else
             {
@@ -422,12 +440,12 @@ public partial class MainViewModel : ObservableObject, INavigator
                 create = () =>
                 {
                     DeckTileViewModel? tile = null;
-                    var editThis = new RelayCommand(() => _windows.OpenEditor(place, idx, quick: true));   // clic droit, appui long, mode édition
+                    var menu = new RelayCommand(() => OpenTileMenu(place, idx));                              // clic droit, appui long
                     tile = new DeckTileViewModel
                     {
-                        Button = def, Label = def.Label, IsEdit = edit, Edit = editThis,
+                        Button = def, Label = def.Label, IsEdit = edit, Edit = menu,
                         Click = edit
-                            ? editThis
+                            ? new RelayCommand(() => _windows.OpenEditor(place, idx, quick: true))        // mode « Modifier au toucher »
                             : def.IsFolder
                                 ? new RelayCommand(() => EnterFolder(idx))
                                 : new AsyncRelayCommand(() => RunTileAsync(tile!), AsyncRelayCommandOptions.AllowConcurrentExecutions),
@@ -577,6 +595,7 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     void BuildMenu()
     {
+        if (_specTrail.Count > 0) { RenderSpecMenu(); return; }
         MenuEntries.Clear();
         void Add(SymbolRegular symbol, string text, Action act, bool danger = false, string? trailing = null, bool keepOpen = false) =>
             MenuEntries.Add(new MenuEntryViewModel
@@ -619,9 +638,9 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     // ---------- commandes de la vue ----------
 
-    [RelayCommand] void OpenMenu() { _profileMenu = false; BuildMenu(); MenuOpen = true; }
+    [RelayCommand] void OpenMenu() { _specTrail.Clear(); _profileMenu = false; BuildMenu(); MenuOpen = true; }
     /// <summary>Pastille du profil : ouvre directement la liste des profils.</summary>
-    [RelayCommand] void OpenProfiles() { if (!HasProfiles) { OpenMenu(); return; } _profileMenu = true; BuildMenu(); MenuOpen = true; }
+    [RelayCommand] void OpenProfiles() { if (!HasProfiles) { OpenMenu(); return; } _specTrail.Clear(); _profileMenu = true; BuildMenu(); MenuOpen = true; }
     [RelayCommand] void CloseMenu() => MenuOpen = false;
     [RelayCommand] void EndEdit() { IsEdit = false; Rebuild(); }
     [RelayCommand] void Minimize() => _shell.Minimize();

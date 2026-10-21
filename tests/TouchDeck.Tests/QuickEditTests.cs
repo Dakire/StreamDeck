@@ -16,8 +16,13 @@ namespace TouchDeck.Tests;
 sealed class FakeAppWindows : IAppWindows
 {
     public List<(Place? Place, int Index, bool Quick)> Opened { get; } = new();
+    public List<string> AddedCatalog { get; } = new();
     public bool IsEditorOpen => Opened.Count > 0;
-    public void OpenEditor(Place? place = null, int index = -1, bool quick = false) => Opened.Add((place, index, quick));
+    public void OpenEditor(Place? place = null, int index = -1, bool quick = false, string? addCatalogId = null)
+    {
+        Opened.Add((place, index, quick));
+        if (addCatalogId != null) AddedCatalog.Add(addCatalogId);
+    }
     public void OpenSettings() { }
 }
 
@@ -123,6 +128,10 @@ public class QuickEditTests
         return (vm, windows);
     }
 
+    /// <summary>Touche une entrée de la feuille de menu du deck.</summary>
+    internal static void Pick(MainViewModel vm, string text) =>
+        vm.MenuEntries.OfType<MenuEntryViewModel>().First(e => e.Text == text).Command.Execute(null);
+
     EditorViewModel NewEditor(FakeShell? shell = null) => _host.Run(() => _host.Create<EditorViewModel>(shell ?? new FakeShell()));
 
     // ---------- deck : le clic droit et l'appui long visent la bonne case ----------
@@ -136,13 +145,19 @@ public class QuickEditTests
             var copy = vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Copier");
             Assert.NotNull(copy.Edit);
             copy.Edit!.Execute(null);
+            Assert.True(vm.MenuOpen);
+            Assert.Empty(windows.Opened);                                      // le geste ouvre un menu, pas l'éditeur
+            Pick(vm, "Modifier…");
             Assert.Equal((new Place("P", 0), 0, true), windows.Opened[^1]);
+            Assert.False(vm.MenuOpen);
 
             // Case vide (6e emplacement, hors édition : un « espaceur »)
             var spacer = vm.Tiles.OfType<SpacerTileViewModel>().Single();
             Assert.NotNull(spacer.Edit);
             spacer.Edit!.Execute(null);
-            Assert.Equal((new Place("P", 0), 5, true), windows.Opened[^1]);
+            Assert.Single(windows.Opened);                                     // toujours pas d'éditeur
+            Pick(vm, "Éditeur complet…");
+            Assert.Equal((new Place("P", 0), 5, false), windows.Opened[^1]);
 
             // Le toucher bref garde son rôle : exécuter, pas éditer
             Assert.Equal(2, windows.Opened.Count);
@@ -158,11 +173,13 @@ public class QuickEditTests
             vm.Tabs[1].Command.Execute(null);                                   // page B
             var home = vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Accueil");
             home.Edit!.Execute(null);
+            Pick(vm, "Modifier…");
             Assert.Equal((new Place("P", 1), 0, true), windows.Opened[^1]);
             var spacers = vm.Tiles.OfType<SpacerTileViewModel>().ToList();
             Assert.Equal(4, spacers.Count);
             spacers[0].Edit!.Execute(null);
-            Assert.Equal((new Place("P", 1), 2, true), windows.Opened[^1]);     // première case libre de la page B
+            Pick(vm, "Éditeur complet…");
+            Assert.Equal((new Place("P", 1), 2, false), windows.Opened[^1]);    // première case libre de la page B
         });
     }
 
@@ -177,6 +194,7 @@ public class QuickEditTests
             Assert.Null(back.Edit);
             var inside = vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Dedans");
             inside.Edit!.Execute(null);
+            Pick(vm, "Modifier…");
             Assert.Equal((new Place("P", 0, new[] { 1 }), 0, true), windows.Opened[^1]);
         });
     }
@@ -193,7 +211,9 @@ public class QuickEditTests
             vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Copier").Click.Execute(null);
             Assert.Equal((new Place("P", 0), 0, true), windows.Opened[^1]);
             var add = vm.Tiles.OfType<AddTileViewModel>().First();
-            add.Click.Execute(null);
+            add.Click.Execute(null);                                                  // « + » : menu de création de la case
+            Assert.True(vm.MenuOpen);
+            Pick(vm, "Éditeur complet…");
             Assert.Equal(5, windows.Opened[^1].Index);
         });
     }

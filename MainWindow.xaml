@@ -197,6 +197,13 @@
     <DataTemplate DataType="{x:Type vm:MenuSeparatorViewModel}">
       <Border Height="1" Background="{DynamicResource DeckLine}" Margin="12,6"/>
     </DataTemplate>
+
+    <!-- Titre d'un menu de case -->
+    <DataTemplate DataType="{x:Type vm:MenuHeaderViewModel}">
+      <TextBlock Text="{Binding Text}" FontWeight="SemiBold" Foreground="{DynamicResource DeckDim}" TextTrimming="CharacterEllipsis"
+                 Margin="14,6,14,8" AutomationProperties.HeadingLevel="Level2"
+                 FontSize="{Binding DataContext.L.MenuFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+    </DataTemplate>
   </ui:FluentWindow.Resources>
 
   <Grid x:Name="Root" Background="{Binding RootBackground}">
@@ -389,7 +396,8 @@
     <!-- ===== Message (erreur ou information) : au-dessus du dock, sans masquer la navigation ===== -->
     <Border Grid.Row="1" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="{Binding L.ToastMargin}"
             BorderThickness="1" CornerRadius="{Binding L.BarRadius}" Padding="{Binding L.StatusPadding}" MaxWidth="900"
-            Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}" AutomationProperties.LiveSetting="Polite" IsHitTestVisible="False">
+            Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}" AutomationProperties.LiveSetting="Polite"
+            IsHitTestVisible="{Binding HasStatusAction}">
       <Border.Style>
         <Style TargetType="Border">
           <Setter Property="Background" Value="{DynamicResource DeckStatusBg}"/>
@@ -432,6 +440,10 @@
             </Style>
           </TextBlock.Style>
         </TextBlock>
+        <!-- « Annuler » après une création : touchable (le deck n'a pas le clavier, donc pas de Ctrl+Z) -->
+        <Button Style="{StaticResource DockAccentButton}" Command="{Binding RunStatusActionCommand}" Content="{Binding StatusActionText}"
+                AutomationProperties.Name="{Binding StatusActionText, TargetNullValue=''}" Margin="16,0,0,0"
+                Visibility="{Binding HasStatusAction, Converter={StaticResource BoolVis}}"/>
       </StackPanel>
     </Border>
 
@@ -448,7 +460,10 @@
         <Border.Effect>
           <DropShadowEffect BlurRadius="36" ShadowDepth="8" Direction="270" Opacity="0.45"/>
         </Border.Effect>
-        <ItemsControl ItemsSource="{Binding MenuEntries}" Focusable="False"/>
+        <!-- Défilement tactile : un menu de catégories ou de modèles dépasse vite la hauteur d'un petit écran -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly" Focusable="False">
+          <ItemsControl ItemsSource="{Binding MenuEntries}" Focusable="False"/>
+        </ScrollViewer>
       </Border>
     </Grid>
   </Grid>

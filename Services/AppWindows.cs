@@ -13,7 +13,11 @@ public interface IAppWindows
     /// Ouvre l'éditeur (ou le ramène devant), éventuellement sur un bouton précis. <paramref name="quick"/> : ouverture directe depuis le deck
     /// (clic droit, appui long) pour modifier ou créer ce seul bouton ; la fenêtre propose alors « Enregistrer » et « Annuler » qui la referment.
     /// </summary>
-    void OpenEditor(Place? place = null, int index = -1, bool quick = false);
+    /// <param name="place">Grille à afficher, ou null pour garder l'actuelle.</param>
+    /// <param name="index">Case visée, ou -1.</param>
+    /// <param name="quick">Ouverture directe depuis le deck.</param>
+    /// <param name="addCatalogId">Avec <paramref name="quick"/> : action du catalogue posée aussitôt dans la case visée (annulable avec « Annuler »).</param>
+    void OpenEditor(Place? place = null, int index = -1, bool quick = false, string? addCatalogId = null);
 
     /// <summary>Ouvre les paramètres (ou les ramène devant), au-dessus de l'éditeur s'il est ouvert.</summary>
     void OpenSettings();
@@ -33,7 +37,7 @@ public sealed class AppWindows : IAppWindows
     public bool IsEditorOpen => _editor != null;
 
     /// <inheritdoc/>
-    public void OpenEditor(Place? place = null, int index = -1, bool quick = false)
+    public void OpenEditor(Place? place = null, int index = -1, bool quick = false, string? addCatalogId = null)
     {
         if (_editor == null)
         {
@@ -42,7 +46,7 @@ public sealed class AppWindows : IAppWindows
             if (Application.Current.MainWindow is { IsVisible: true } main) _editor.Owner = main;
             _editor.Show();
         }
-        _editor.GoTo(place, index, quick);
+        _editor.GoTo(place, index, quick, addCatalogId);
         if (_editor.WindowState == WindowState.Minimized) _editor.WindowState = WindowState.Normal;
         _editor.Activate();
     }
