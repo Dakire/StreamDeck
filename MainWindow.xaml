@@ -34,7 +34,7 @@
 
     <Style x:Key="DockAccentButton" TargetType="Button" BasedOn="{StaticResource DockButton}">
       <Setter Property="Background" Value="{DynamicResource DeckAccent}"/>
-      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="Foreground" Value="{DynamicResource DeckOnAccent}"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
     </Style>
 
@@ -46,8 +46,8 @@
       <Setter Property="Foreground" Value="{DynamicResource DeckDim}"/>
       <Style.Triggers>
         <DataTrigger Binding="{Binding IsActive}" Value="True">
-          <Setter Property="Background" Value="{DynamicResource DeckAccent}"/>
-          <Setter Property="Foreground" Value="White"/>
+          <Setter Property="Background" Value="{DynamicResource DeckSecondaryContainer}"/>
+          <Setter Property="Foreground" Value="{DynamicResource DeckOnSecondaryContainer}"/>
           <Setter Property="FontWeight" Value="SemiBold"/>
         </DataTrigger>
       </Style.Triggers>
@@ -104,9 +104,9 @@
           <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="8,4" CornerRadius="10"
                   Background="{DynamicResource DeckAccent}" Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
             <StackPanel Orientation="Horizontal">
-              <ui:SymbolIcon Symbol="Edit24" Foreground="White" Margin="0,0,6,0"
+              <ui:SymbolIcon Symbol="Edit24" Foreground="{DynamicResource DeckOnAccent}" Margin="0,0,6,0"
                              FontSize="{Binding DataContext.L.EditSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
-              <TextBlock Text="Modifier" Foreground="White" VerticalAlignment="Center" FontWeight="SemiBold"
+              <TextBlock Text="Modifier" Foreground="{DynamicResource DeckOnAccent}" VerticalAlignment="Center" FontWeight="SemiBold"
                          FontSize="{Binding DataContext.L.EditSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
             </StackPanel>
           </Border>
@@ -270,8 +270,8 @@
           <Border Style="{StaticResource TopPill}" Background="{DynamicResource DeckAccent}" BorderBrush="Transparent"
                   Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-              <ui:SymbolIcon Symbol="Edit24" Foreground="White" FontSize="{Binding L.PillFont}" Margin="0,0,6,0"/>
-              <TextBlock Text="Mode édition" Foreground="White" FontWeight="SemiBold" FontSize="{Binding L.PillFont}" VerticalAlignment="Center"/>
+              <ui:SymbolIcon Symbol="Edit24" Foreground="{DynamicResource DeckOnAccent}" FontSize="{Binding L.PillFont}" Margin="0,0,6,0"/>
+              <TextBlock Text="Mode édition" Foreground="{DynamicResource DeckOnAccent}" FontWeight="SemiBold" FontSize="{Binding L.PillFont}" VerticalAlignment="Center"/>
             </StackPanel>
           </Border>
           <Border Style="{StaticResource TopPill}" Background="Transparent" BorderBrush="{DynamicResource DeckSimulation}"
@@ -394,7 +394,7 @@
             </Button>
             <Button Style="{StaticResource DockAccentButton}" Command="{Binding EndEditCommand}" AutomationProperties.Name="Terminer la modification">
               <StackPanel Orientation="Horizontal">
-                <ui:SymbolIcon Symbol="Checkmark24" Foreground="White" Margin="0,0,8,0"/>
+                <ui:SymbolIcon Symbol="Checkmark24" Foreground="{DynamicResource DeckOnAccent}" Margin="0,0,8,0"/>
                 <TextBlock Text="Terminer" VerticalAlignment="Center"/>
               </StackPanel>
             </Button>

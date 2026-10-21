@@ -130,11 +130,11 @@
                 <Setter TargetName="Chip" Property="Background" Value="{DynamicResource DeckSurfaceHi}"/>
               </Trigger>
               <Trigger Property="IsSelected" Value="True">
-                <Setter TargetName="Chip" Property="Background" Value="{DynamicResource DeckAccent}"/>
-                <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource DeckAccent}"/>
-                <Setter TargetName="Label" Property="Foreground" Value="White"/>
+                <Setter TargetName="Chip" Property="Background" Value="{DynamicResource DeckSecondaryContainer}"/>
+                <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource DeckSecondaryContainer}"/>
+                <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource DeckOnSecondaryContainer}"/>
                 <Setter TargetName="Label" Property="FontWeight" Value="SemiBold"/>
-                <Setter TargetName="HiddenIcon" Property="Foreground" Value="White"/>
+                <Setter TargetName="HiddenIcon" Property="Foreground" Value="{DynamicResource DeckOnSecondaryContainer}"/>
               </Trigger>
               <DataTrigger Binding="{Binding IsDropTarget}" Value="True">
                 <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource DeckSuccess}"/>

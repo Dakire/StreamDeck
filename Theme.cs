@@ -8,38 +8,44 @@ namespace TouchDeck;
 public sealed record Palette(
     string Window, string Bar, string TopBar, string Panel, string Surface, string SurfaceHi, string Line, string Grip,
     string Dim, string Text, string TextSoft, string Placeholder, string Accent, string AccentText, string Danger, string Scrim,
-    string Input, string EditorBg, string Focus, string Success, string StatusBg, string StatusLine, string StatusText);
+    string Input, string EditorBg, string Focus, string Success, string StatusBg, string StatusLine, string StatusText,
+    string OnAccent, string AccentContainer, string OnAccentContainer, string SecondaryContainer, string OnSecondaryContainer,
+    string TileTop, string TileBottom);
 
 /// <summary>Palette claire / sombre de l'application ; sombre par défaut pour les nouvelles configurations, « système » suit Windows.</summary>
 public static class Theme
 {
-    // Direction « nuit indigo » : trois niveaux d'élévation (application #0B0E17, panneaux #121624, cartes #1A1F30), accent #6C5CE7.
-    // Accent : fond des boutons principaux (texte blanc, contraste ≥ 4,5) ; AccentText : accent utilisé comme texte ou contour sur fond de panneau.
-    /// <summary>Palette sombre (thème par défaut des nouvelles configurations).</summary>
-    public static readonly Palette DarkPalette = new(
-        Window: "#0B0E17", Bar: "#121624", TopBar: "#00000000", Panel: "#121624", Surface: "#1A1F30", SurfaceHi: "#252B40",
-        Line: "#2B3249", Grip: "#3A4260", Dim: "#A3ABBD", Text: "#F4F6FB", TextSoft: "#CDD3E0", Placeholder: "#737C90",
-        Accent: "#6C5CE7", AccentText: "#B0A8FF", Danger: "#FF8A97", Scrim: "#A6050710",
-        Input: "#0F1320", EditorBg: "#0E121D", Focus: "#FFFFFF", Success: "#5CD6A0",
-        StatusBg: "#3A1F26", StatusLine: "#7A3340", StatusText: "#FFB4BE");
+    /// <summary>Couleur source du thème Material Design 3 : toutes les couleurs de l'interface en sont tirées (palettes tonales, voir <see cref="MaterialColor"/>).</summary>
+    public const string Seed = "#6C5CE7";
 
-    /// <summary>Palette AMOLED : fond noir pur (pixels éteints sur un écran OLED), cartes à peine plus claires.</summary>
-    public static readonly Palette AmoledPalette = DarkPalette with
-    {
-        Window = "#000000", Bar = "#07090F", Panel = "#07090F", Surface = "#0E111A", SurfaceHi = "#181C28",
-        Line = "#222839", Grip = "#323A52", Input = "#05070B", EditorBg = "#000000", Scrim = "#B3000000",
-    };
+    // Thème MD3 : surfaces tonales (l'élévation se lit par le ton, pas par une ombre), accent « primary » (clair en sombre, foncé en clair)
+    // avec la couleur à poser dessus (OnAccent), conteneurs primaire et secondaire pour les éléments sélectionnés.
+    // AccentText : l'accent utilisé comme texte ou contour sur un fond de panneau.
+    /// <summary>Palette sombre (thème par défaut des nouvelles configurations).</summary>
+    public static readonly Palette DarkPalette = Build(MaterialScheme.Create(Seed, dark: true), dark: true, amoled: false);
+
+    /// <summary>Palette AMOLED : fond noir pur (pixels éteints sur un écran OLED), surfaces à peine plus claires.</summary>
+    public static readonly Palette AmoledPalette = Build(MaterialScheme.Create(Seed, dark: true, amoled: true), dark: true, amoled: true);
 
     /// <summary>Palette claire.</summary>
-    public static readonly Palette LightPalette = new(
-        Window: "#F3F4F8", Bar: "#FFFFFF", TopBar: "#00FFFFFF", Panel: "#FFFFFF", Surface: "#FFFFFF", SurfaceHi: "#ECEEF4",
-        Line: "#D5D9E3", Grip: "#C3C8D4", Dim: "#565C6E", Text: "#171A21", TextSoft: "#363B48", Placeholder: "#7A8092",
-        Accent: "#6C5CE7", AccentText: "#4334D6", Danger: "#B3202F", Scrim: "#660B0D14",
-        Input: "#FFFFFF", EditorBg: "#F3F4F8", Focus: "#171A21", Success: "#0F7A52",
-        StatusBg: "#FBE3E6", StatusLine: "#E0A0A8", StatusText: "#8C1D2B");
+    public static readonly Palette LightPalette = Build(MaterialScheme.Create(Seed, dark: false), dark: false, amoled: false);
+
+    /// <summary>Associe les rôles Material Design 3 aux couleurs nommées de l'application.</summary>
+    static Palette Build(MaterialScheme m, bool dark, bool amoled) => new(
+        Window: m.Surface, Bar: m.SurfaceContainer, TopBar: dark ? "#00000000" : "#00FFFFFF", Panel: m.SurfaceContainer,
+        Surface: m.SurfaceContainerHigh, SurfaceHi: m.SurfaceContainerHighest,
+        Line: m.OutlineVariant, Grip: Mix(m.OutlineVariant, m.Outline, 0.5),
+        Dim: m.OnSurfaceVariant, Text: m.OnSurface, TextSoft: Mix(m.OnSurface, m.OnSurfaceVariant, 0.5), Placeholder: m.Outline,
+        Accent: m.Primary, AccentText: dark ? m.Primary : Mix(m.Primary, m.OnPrimaryContainer, 0.25), Danger: m.Error,
+        Scrim: amoled ? "#B3000000" : dark ? "#A6000000" : "#52000000",
+        Input: m.SurfaceContainerLowest, EditorBg: m.Surface, Focus: m.OnSurface, Success: dark ? "#5CD6A0" : "#0F7A52",
+        StatusBg: m.ErrorContainer, StatusLine: Mix(m.ErrorContainer, m.Error, 0.5), StatusText: m.OnErrorContainer,
+        OnAccent: m.OnPrimary, AccentContainer: m.PrimaryContainer, OnAccentContainer: m.OnPrimaryContainer,
+        SecondaryContainer: m.SecondaryContainer, OnSecondaryContainer: m.OnSecondaryContainer,
+        TileTop: dark ? m.SurfaceContainerHighest : m.SurfaceContainerLowest, TileBottom: dark ? m.SurfaceContainerHigh : m.SurfaceContainerLow);
 
     /// <summary>Fond des touches avant teinte (haut, bas) : un cran au-dessus des surfaces pour détacher la grille du fond.</summary>
-    static (string Top, string Bottom) TileBase => Amoled ? ("#141824", "#0E111A") : Dark ? ("#202639", "#1A1F30") : ("#FFFFFF", "#F5F6FA");
+    static (string Top, string Bottom) TileBase => (Current.TileTop, Current.TileBottom);
     /// <summary>Part de la couleur du bouton dans le corps de la touche (haut, bas) : la couleur vive reste sur la pastille d'icône.</summary>
     public const double TintTop = 0.26, TintBottom = 0.16;
 
@@ -80,9 +86,9 @@ public static class Theme
         Amoled = dark && mode.Equals("amoled", StringComparison.OrdinalIgnoreCase);
         var accent = (Color)ColorConverter.ConvertFromString(Current.Accent);
         ApplicationThemeManager.Apply(dark ? ApplicationTheme.Dark : ApplicationTheme.Light);
-        // Même accent en clair et en sombre (WPF-UI l'éclaircit en sombre par défaut)
+        // Notre accent en clair comme en sombre (WPF-UI l'éclaircit en sombre par défaut)
         ApplicationAccentColorManager.Apply(accent, accent,
-            (Color)ColorConverter.ConvertFromString("#5A4AD1"), (Color)ColorConverter.ConvertFromString("#4C3DB8"));
+            (Color)ColorConverter.ConvertFromString(Mix(Current.Accent, Current.AccentContainer, 0.35)), (Color)ColorConverter.ConvertFromString(Mix(Current.Accent, Current.AccentContainer, 0.6)));
         Fills.Clear();
         PublishResources();
         Changed?.Invoke();
@@ -95,13 +101,18 @@ public static class Theme
         var r = System.Windows.Application.Current.Resources;
         // Les boutons « Primary » de WPF-UI suivent notre accent (en sombre, WPF-UI l'éclaircit par défaut)
         r["AccentFillColorDefaultBrush"] = B(p.Accent);
-        r["AccentFillColorSecondaryBrush"] = B("#E66C5CE7");
-        r["AccentFillColorTertiaryBrush"] = B("#CC6C5CE7");
-        r["TextOnAccentFillColorPrimaryBrush"] = B("#FFFFFF");
-        r["TextOnAccentFillColorSecondaryBrush"] = B("#CCFFFFFF");
-        // En thème sombre WPF-UI écrit en noir sur l'accent ; notre accent est assez sombre pour du texte blanc (contraste ≥ 4,5)
+        r["AccentFillColorSecondaryBrush"] = B("#E6" + p.Accent[1..]);
+        r["AccentFillColorTertiaryBrush"] = B("#CC" + p.Accent[1..]);
+        r["TextOnAccentFillColorPrimaryBrush"] = B(p.OnAccent);
+        r["TextOnAccentFillColorSecondaryBrush"] = B("#CC" + p.OnAccent[1..]);
+        // Le texte posé sur l'accent est celui du thème (MD3 « on primary ») : foncé sur l'accent clair du thème sombre, blanc sur l'accent foncé du thème clair
         foreach (var key in new[] { "AccentButtonForeground", "AccentButtonForegroundPointerOver", "AccentButtonForegroundPressed" })
-            r[key] = B("#FFFFFF");
+            r[key] = B(p.OnAccent);
+        r["DeckOnAccent"] = B(p.OnAccent);
+        r["DeckAccentContainer"] = B(p.AccentContainer);
+        r["DeckOnAccentContainer"] = B(p.OnAccentContainer);
+        r["DeckSecondaryContainer"] = B(p.SecondaryContainer);
+        r["DeckOnSecondaryContainer"] = B(p.OnSecondaryContainer);
         r["DeckWindow"] = B(p.Window);
         r["DeckBar"] = B(p.Bar);
         r["DeckTopBar"] = B(p.TopBar);
@@ -124,8 +135,8 @@ public static class Theme
         r["DeckStatusBg"] = B(p.StatusBg);
         r["DeckStatusLine"] = B(p.StatusLine);
         r["DeckStatusText"] = B(p.StatusText);
-        r["DeckAccentSoft"] = B(Dark ? "#336C5CE7" : "#226C5CE7");
-        r["DeckDock"] = B(Amoled ? "#E607090F" : Dark ? "#E6121624" : "#F2FFFFFF");
+        r["DeckAccentSoft"] = B((Dark ? "#33" : "#22") + p.Accent[1..]);
+        r["DeckDock"] = B((Dark ? "#E6" : "#F2") + p.Bar[1..]);
         r["DeckBackdrop"] = Backdrop();
 
         // Repères posés sur la face des touches (voiles d'état, badges, liseré, reflet) : mêmes valeurs dans les deux thèmes,
@@ -193,7 +204,10 @@ public static class Theme
     /// <summary>Fond de la fenêtre du deck : lueur douce en haut, plus profond en bas. Opaque : lisible quel que soit le fond d'écran.</summary>
     static RadialGradientBrush Backdrop()
     {
-        var (glow, mid, deep) = Amoled ? ("#000000", "#000000", "#000000") : Dark ? ("#161B2D", "#0E121D", "#0B0E17") : ("#FFFFFF", "#F3F4F8", "#E8EBF2");
+        var p = Current;
+        var (glow, mid, deep) = Amoled ? (p.Window, p.Window, p.Window)
+            : Dark ? (Mix(p.Window, p.Panel, 0.8), Mix(p.Window, p.Panel, 0.3), p.Window)
+            : (p.Input, p.Window, p.Panel);
         var brush = new RadialGradientBrush
         {
             Center = new System.Windows.Point(0.5, -0.15), GradientOrigin = new System.Windows.Point(0.5, -0.15),

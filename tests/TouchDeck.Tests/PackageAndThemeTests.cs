@@ -274,8 +274,15 @@ public class ThemeTests
     }
 
     [Fact]
-    public void WhiteTextOnTheAccentColorIsReadable() =>
-        Assert.True(Theme.Contrast("#FFFFFF", Theme.DarkPalette.Accent) >= 4.5);
+    public void TextOnTheAccentColorIsReadableInEveryTheme()
+    {
+        foreach (var p in new[] { Theme.DarkPalette, Theme.AmoledPalette, Theme.LightPalette })
+        {
+            Assert.True(Theme.Contrast(p.OnAccent, p.Accent) >= 4.5, "texte sur l'accent");
+            Assert.True(Theme.Contrast(p.OnAccentContainer, p.AccentContainer) >= 4.5, "texte sur le conteneur d'accent");
+            Assert.True(Theme.Contrast(p.OnSecondaryContainer, p.SecondaryContainer) >= 4.5, "texte sur l'onglet actif");
+        }
+    }
 
     [Fact]
     public void StatusBannerIsReadable()

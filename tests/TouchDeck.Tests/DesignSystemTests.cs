@@ -30,10 +30,12 @@ public class DesignSystemTests
     }
 
     [Theory]
-    [InlineData("amoled", "#000000")]
-    [InlineData("dark", "#0B0E17")]
-    public void ThemesPublishTheirWindowColor(string theme, string window)
+    [InlineData("amoled")]
+    [InlineData("dark")]
+    public void ThemesPublishTheirWindowColor(string theme)
     {
+        var window = theme == "amoled" ? Theme.AmoledPalette.Window : Theme.DarkPalette.Window;
+        Assert.Equal(theme == "amoled" ? "#000000" : window, window);   // l'AMOLED reste du noir pur
         _host.Reset();
         _host.SetTheme(theme);
         var brush = (System.Windows.Media.SolidColorBrush)Res("DeckWindow")!;
@@ -80,6 +82,6 @@ public class DesignSystemTests
             Assert.True(Theme.Contrast(p.AccentText, bg) >= 4.5, $"{theme} : AccentText sur {bg}");   // « + », flèche des sous-menus
             Assert.True(Theme.Contrast(p.Danger, bg) >= 4.5, $"{theme} : Danger sur {bg}");     // « Supprimer », messages d'erreur du panneau
         }
-        Assert.True(Theme.Contrast("#FFFFFF", p.Accent) >= 4.5, $"{theme} : texte blanc sur le bouton d'accent (« Annuler », « Créer »)");
+        Assert.True(Theme.Contrast(p.OnAccent, p.Accent) >= 4.5, $"{theme} : texte sur le bouton d'accent (« Annuler », « Créer »)");
     }
 }

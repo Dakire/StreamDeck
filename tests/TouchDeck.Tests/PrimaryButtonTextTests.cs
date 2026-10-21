@@ -21,7 +21,7 @@ public class PrimaryButtonTextTests
     });
 
     [Fact]
-    public void PrimaryButtonsKeepWhiteTextInBothThemes()
+    public void PrimaryButtonsUseTheThemeTextColorOnTheAccent()
     {
         _h.Reset(); _o.WriteLine("dark0  " + Dump());
         _h.SetTheme("light"); _o.WriteLine("light  " + Dump());
@@ -29,8 +29,11 @@ public class PrimaryButtonTextTests
         foreach (var t in new[] { "dark", "light" })
         {
             _h.SetTheme(t);
-            foreach (var k in new[] { "AccentButtonForeground", "AccentButtonForegroundPointerOver", "AccentButtonForegroundPressed" })
-                Assert.Equal(Colors.White, ((SolidColorBrush)_h.Run(() => Application.Current.Resources[k])).Color);
+            var palette = t == "dark" ? Theme.DarkPalette : Theme.LightPalette;
+            var expected = (Color)ColorConverter.ConvertFromString(palette.OnAccent);
+            foreach (var k in new[] { "AccentButtonForeground", "AccentButtonForegroundPointerOver", "AccentButtonForegroundPressed", "TextOnAccentFillColorPrimaryBrush" })
+                Assert.Equal(expected, ((SolidColorBrush)_h.Run(() => Application.Current.Resources[k])).Color);
+            Assert.True(Theme.Contrast(palette.OnAccent, palette.Accent) >= 4.5, t);
         }
     }
 }
