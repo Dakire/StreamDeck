@@ -42,12 +42,15 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
         DataContext = _vm;
         InitializeComponent();
         Icon = Application.Current.MainWindow?.Icon;
+        // Saisie en cours validée avant de fermer ou de quitter la fenêtre : rien de ce qui a été tapé ne se perd
+        Closing += (_, _) => _vm.Properties.Flush();
+        Deactivated += (_, _) => _vm.Properties.Flush();
         Closed += (_, _) => { _vm.Dispose(); persistence.Flush(); };
         SourceInitialized += (_, _) => PlaceOnCursorScreen();
     }
 
     /// <summary>Sélectionne un emplacement (profil, page, dossier) et éventuellement une case.</summary>
-    public void GoTo(Place? place, int index) => _vm.GoTo(place, index);
+    public void GoTo(Place? place, int index, bool quick = false) => _vm.GoTo(place, index, quick);
 
     /// <summary>S'ouvre sur l'écran où se trouve le curseur (l'éditeur se pilote à la souris et au clavier, pas sur l'écran tactile du deck).</summary>
     void PlaceOnCursorScreen()
@@ -189,9 +192,33 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
         }
     }
 
+    /// <summary>Le focus quitte un champ du panneau de propriétés : la saisie est validée (une seule écriture dans le document).</summary>
+    void Properties_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => _vm.Properties.Flush();
+
+    /// <summary>
+    /// Entrée valide la saisie (et, depuis le deck, enregistre et ferme depuis le titre). Échap abandonne la saisie en cours, puis, depuis
+    /// le deck, annule la modification et ferme.
+    /// </summary>
+    void Properties_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.OriginalSource is not TextBox box) return;
+        if (e.Key == Key.Enter && !box.AcceptsReturn)
+        {
+            _vm.Properties.Flush();
+            if (_vm.QuickEdit && ReferenceEquals(box, TitleBox)) _vm.SaveButtonCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            if (!_vm.Properties.RevertDraft() && _vm.QuickEdit) _vm.CancelButtonCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
     void CatalogSearch_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Escape && _vm.Catalog.IsSearching) { _vm.Catalog.Search = ""; e.Handled = true; }
+        if (e.Key == Key.Enter && _vm.Catalog.IsSearching) { _vm.AddFirstCatalogResult(); e.Handled = true; }
+        else if (e.Key == Key.Escape && _vm.Catalog.IsSearching) { _vm.Catalog.Search = ""; e.Handled = true; }
         else if (e.Key == Key.Down) { CatalogSearch.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next)); e.Handled = true; }
     }
 

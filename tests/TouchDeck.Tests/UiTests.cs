@@ -29,6 +29,7 @@ sealed class FakeShell : IEditorShell
     public void FocusIcon() => Calls.Add("focus:icon");
     public void FocusCatalogSearch() => Calls.Add("focus:catalog");
     public void FocusSlot(int listIndex) => Calls.Add("focus:slot" + listIndex);
+    public void Close() => Calls.Add("close");
 }
 
 [Collection("ui")]
@@ -269,19 +270,25 @@ ulle\part.exe" } } });
             Assert.Single(vm.Properties.Steps);
 
             vm.Properties.Title = "Lecture";
+            Assert.Equal("Lecture / Pause", Doc.Get(vm.Place, 0)!.Label);   // brouillon : le document attend la validation
+            vm.Properties.Flush();
             Assert.Equal("Lecture", Doc.Get(vm.Place, 0)!.Label);
             vm.Properties.ShowTitle = false;
             Assert.True(Doc.Get(vm.Place, 0)!.HideTitle);
             vm.Properties.PositionChoices[1].Command.Execute(null);
             Assert.Equal("top", Doc.Get(vm.Place, 0)!.TitlePosition);
             vm.Properties.Color = "#123456";
+            vm.Properties.Flush();
             Assert.Equal("#123456", Doc.Get(vm.Place, 0)!.Color);
             vm.Properties.Color = "pas une couleur";
             Assert.NotEmpty(vm.Properties.ColorError);
+            vm.Properties.Flush();
             Assert.Equal("#123456", Doc.Get(vm.Place, 0)!.Color);      // la valeur invalide n'est pas appliquée
             vm.Properties.TextColor = "#00FF00";
+            vm.Properties.Flush();
             Assert.Equal("#00FF00", Doc.Get(vm.Place, 0)!.TextColor);
             vm.Properties.TextColor = "";
+            vm.Properties.Flush();
             Assert.Null(Doc.Get(vm.Place, 0)!.TextColor);
 
             Assert.True(vm.CanUndo);
@@ -301,12 +308,14 @@ ulle\part.exe" } } });
             vm.SelectIndex(6);                                       // « Bureau » : raccourci win+d
             var step = vm.Properties.Steps[0];
             step.Value = "ctrl+blabla";
-            Assert.True(step.HasIssues);
+            Assert.True(step.HasIssues);                                              // validation en direct, avant même l'écriture
             Assert.Contains("inconnue", step.Issues[0].Message);
+            vm.Properties.Flush();
             Assert.Equal("ctrl+blabla", Doc.Get(vm.Place, 6)!.Actions[0].Value);    // enregistré, mais signalé
             Assert.Equal(Severity.Error, vm.Slots.First(s => s.Index == 6).Issue);   // repère visible sur la case
             step.Value = "ctrl+alt+d";
             Assert.False(step.HasIssues);
+            vm.Properties.Flush();
 
             vm.Properties.AddStepCommand.Execute(null);
             vm.Properties.AddStepCommand.Execute(null);

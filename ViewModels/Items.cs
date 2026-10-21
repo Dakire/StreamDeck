@@ -16,8 +16,15 @@ public enum TileRunState
     Error,
 }
 
+/// <summary>Case du deck qu'on peut modifier directement (clic droit, appui long) : bouton, case vide ou emplacement « + ».</summary>
+public interface IEditableTile
+{
+    /// <summary>Ouvre l'éditeur sur cette case ; null pour une case qui ne se modifie pas (flèche « retour »).</summary>
+    ICommand? Edit { get; }
+}
+
 /// <summary>Bouton de la grille du deck. La face et l'état changent sans reconstruire la grille.</summary>
-public sealed partial class DeckTileViewModel : ObservableObject
+public sealed partial class DeckTileViewModel : ObservableObject, IEditableTile
 {
     [ObservableProperty] TileFaceData _face = TileFaceData.Empty;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsRunning), nameof(IsSuccess), nameof(IsError))] TileRunState _runState;
@@ -31,6 +38,8 @@ public sealed partial class DeckTileViewModel : ObservableObject
     public bool IsEdit { get; init; }
     /// <summary>Exécute le bouton, ouvre le dossier ou l'éditeur selon le mode.</summary>
     public required ICommand Click { get; init; }
+    /// <inheritdoc/>
+    public ICommand? Edit { get; init; }
 
     /// <summary>true pendant une exécution longue.</summary>
     public bool IsRunning => RunState == TileRunState.Running;
@@ -40,14 +49,20 @@ public sealed partial class DeckTileViewModel : ObservableObject
     public bool IsError => RunState == TileRunState.Error;
 }
 
-/// <summary>Case vide hors édition : réserve la place pour que les voisins gardent leur position.</summary>
-public sealed class SpacerTileViewModel { }
+/// <summary>Case vide hors édition : réserve la place pour que les voisins gardent leur position. Un clic droit ou un appui long y crée un bouton.</summary>
+public sealed class SpacerTileViewModel : IEditableTile
+{
+    /// <inheritdoc/>
+    public ICommand? Edit { get; init; }
+}
 
 /// <summary>Emplacement « + » affiché en mode édition.</summary>
-public sealed class AddTileViewModel
+public sealed class AddTileViewModel : IEditableTile
 {
     /// <summary>Ouvre l'éditeur sur cette case.</summary>
     public required ICommand Click { get; init; }
+    /// <inheritdoc/>
+    public ICommand? Edit => Click;
 }
 
 /// <summary>Point de l'indicateur de sous-pages du dock (touchable : va à cette sous-page).</summary>

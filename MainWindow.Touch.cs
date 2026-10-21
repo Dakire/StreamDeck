@@ -7,6 +7,8 @@ using System.Windows.Automation.Provider;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
+using TouchDeck.ViewModels;
 
 namespace TouchDeck;
 
@@ -14,7 +16,8 @@ namespace TouchDeck;
 /// Toucher du deck sans souris système. WPF n'active pas les boutons à partir du toucher : il attend la souris synthétique de Windows,
 /// qui déplace le curseur. Le deck avale donc les WM_POINTER du doigt (voir WndProc) et traite lui-même l'appui : bouton visé trouvé
 /// par test de collision, activé par l'automatisation WPF (même chemin qu'un clic, commande comprise), barre du haut déplaçable
-/// au doigt, double appui sur la barre = plein écran.
+/// au doigt, double appui sur la barre = plein écran. Un appui long (immobile) sur un bouton ou une case vide ouvre l'éditeur sur
+/// cette case, sans exécuter l'action ; le clic droit de la souris fait de même (voir <see cref="OnDeckRightClick"/>).
 /// </summary>
 public partial class MainWindow
 {
@@ -43,28 +46,45 @@ public partial class MainWindow
     bool _dragging;
     (int X, int Y) _dragOffset;
     long _lastBarTapTick;
+    ICommand? _pressEdit;                 // édition de la case sous le doigt (appui long), null si la case ne s'édite pas
+    readonly DispatcherTimer _longPressTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
+    bool _longPressWired;
 
     /// <summary>Un message WM_POINTER d'un doigt ou d'un stylet (déjà retiré du traitement par défaut de Windows).</summary>
     void OnTouchPointer(int msg, IntPtr wParam)
     {
+        if (!_longPressWired)
+        {
+            _longPressWired = true;
+            _longPressTimer.Tick += (_, _) => OnLongPressTick();
+        }
         uint id = (uint)((long)wParam & 0xFFFF);
         if (!GetPointerInfo(id, out var info)) return;
         int x = info.ptPixelLocation.X, y = info.ptPixelLocation.Y;
         switch (msg)
         {
             case WM_POINTERDOWN:
+                bool tracked = _tap.Tracking;
                 _tap.Slop = (int)Math.Ceiling(12 * VisualTreeHelper.GetDpi(this).DpiScaleX);
-                _tap.Down(id, x, y);
+                _tap.Down(id, x, y, Environment.TickCount64);
                 _tapOnBar = Hit(x, y).bar;
                 _dragging = false;
+                // Appui long : seulement pour le doigt suivi (un second doigt est ignoré), sur une case qui s'édite
+                _pressEdit = tracked ? null : EditTargetAt(HitVisual(x, y));
+                if (_pressEdit != null) _longPressTimer.Start(); else _longPressTimer.Stop();
                 break;
             case WM_POINTERUPDATE:
-                if (_tap.Move(id, x, y) && _tapOnBar) DragBarTo(x, y);
+                if (_tap.Move(id, x, y))
+                {
+                    _longPressTimer.Stop();   // le doigt glisse : défilement ou déplacement, pas un appui long
+                    if (_tapOnBar) DragBarTo(x, y);
+                }
                 break;
             case WM_POINTERUP:
+                _longPressTimer.Stop();
                 bool wasDragging = _dragging;
                 _dragging = false;
-                if (!_tap.Up(id, x, y) || wasDragging) break;
+                if (!_tap.Up(id, x, y) || wasDragging) break;   // un appui long consommé n'est pas un appui : l'action ne s'exécute pas
                 var (target, bar, binding) = Hit(x, y);
                 if (target != null) Activate(target);
                 else if (binding != null) { if (binding.CanExecute(null)) binding.Execute(null); }
@@ -72,6 +92,48 @@ public partial class MainWindow
                 break;
         }
     }
+
+    /// <summary>Le doigt est resté immobile assez longtemps sur une case : l'éditeur s'ouvre dessus (une seule fois par appui).</summary>
+    void OnLongPressTick()
+    {
+        if (!_tap.Tracking) { _longPressTimer.Stop(); return; }
+        if (!_tap.TryLongPress(Environment.TickCount64)) return;
+        _longPressTimer.Stop();
+        var edit = _pressEdit;
+        _pressEdit = null;
+        if (edit != null && edit.CanExecute(null)) edit.Execute(null);
+    }
+
+    /// <summary>Élément visuel sous le point (pixels écran), ou null.</summary>
+    DependencyObject? HitVisual(int x, int y) => VisualTreeHelper.HitTest(this, PointFromScreen(new Point(x, y)))?.VisualHit;
+
+    /// <summary>
+    /// Commande d'édition de la case qui contient cet élément (bouton, case vide, emplacement « + »), ou null : barre, dock, menu,
+    /// flèche « retour ». Le contexte de données d'un élément de la case est la case elle-même.
+    /// </summary>
+    internal static ICommand? EditTargetAt(DependencyObject? hit)
+    {
+        for (DependencyObject? d = hit; d != null; d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+            if (d is FrameworkElement { DataContext: IEditableTile tile }) return tile.Edit;
+        return null;
+    }
+
+    /// <summary>
+    /// Clic droit de la souris sur un bouton ou une case vide : l'éditeur s'ouvre directement dessus. Le clic droit que Windows fabrique
+    /// depuis un appui long du doigt est ignoré (l'appui long est déjà traité par <see cref="OnLongPressTick"/>) : pas de double ouverture.
+    /// </summary>
+    void OnDeckRightClick(object sender, MouseButtonEventArgs e)
+    {
+        if (IsSyntheticFromTouch()) { e.Handled = true; return; }
+        if (EditTargetAt(e.OriginalSource as DependencyObject) is { } edit && edit.CanExecute(null))
+        {
+            edit.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>Vrai si le message souris en cours est fabriqué par Windows à partir du toucher (signature 0xFF515700 dans les informations supplémentaires).</summary>
+    static bool IsSyntheticFromTouch() => ((long)GetMessageExtraInfo() & 0xFFFFFF00) == 0xFF515700;
 
     /// <summary>Élément activable sous le point (pixels écran) : bouton, commande d'un MouseBinding, ou barre du haut.</summary>
     (ButtonBase? button, bool bar, ICommand? binding) Hit(int x, int y)

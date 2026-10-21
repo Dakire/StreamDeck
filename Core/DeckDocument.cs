@@ -56,7 +56,9 @@ public enum ChangeKind
 /// <summary>Modification signalée par <see cref="DeckDocument.Changed"/>.</summary>
 /// <param name="Kind">Nature de la modification.</param>
 /// <param name="Label">Libellé affiché dans « Annuler … ».</param>
-public sealed record DocumentChange(ChangeKind Kind, string Label);
+/// <param name="InPlace">true si un seul bouton a été modifié sur place (propriétés, titre, icône, étapes) : ni le nombre de boutons,
+/// ni les pages, ni les profils, ni les réglages n'ont changé, les vues peuvent se contenter d'une mise à jour ciblée.</param>
+public sealed record DocumentChange(ChangeKind Kind, string Label, bool InPlace = false);
 
 /// <summary>Résultat d'une opération du document.</summary>
 /// <param name="Ok">true si l'opération a été faite.</param>
@@ -111,9 +113,9 @@ public sealed class DeckDocument
     string Snapshot() => JsonSerializer.Serialize(Config, ConfigStore.Options);
     static DeckConfig Restore(string json) => JsonSerializer.Deserialize<DeckConfig>(json, ConfigStore.Options)!;
 
-    void Push(string snapshot, string label, string? coalesceKey)
+    void Push(string snapshot, string label, string? coalesceKey, bool coalesce)
     {
-        if (coalesceKey != null && coalesceKey == _lastCoalesceKey && DateTime.UtcNow - _lastCoalesceAt < CoalesceWindow && _undo.Count > 0)
+        if (coalesce)
         {
             _lastCoalesceAt = DateTime.UtcNow;   // même série de frappes : on garde l'état d'avant la première
             _redo.Clear();
@@ -126,14 +128,20 @@ public sealed class DeckDocument
         _lastCoalesceAt = DateTime.UtcNow;
     }
 
+    /// <summary>true si cette modification prolonge la série de frappes précédente : l'état d'avant la série est déjà dans l'historique.</summary>
+    bool Coalesces(string? coalesceKey) =>
+        coalesceKey != null && coalesceKey == _lastCoalesceKey && DateTime.UtcNow - _lastCoalesceAt < CoalesceWindow && _undo.Count > 0;
+
     /// <summary>Applique une modification annulable. <paramref name="mutate"/> retourne false (sans rien modifier) pour refuser.</summary>
-    OpResult Edit(string label, Func<DeckConfig, OpResult> mutate, string? coalesceKey = null)
+    OpResult Edit(string label, Func<DeckConfig, OpResult> mutate, string? coalesceKey = null, bool inPlace = false)
     {
-        var snapshot = Snapshot();
+        // Le cliché (sérialisation de toute la configuration) ne sert qu'au début d'une série : on l'évite pour les frappes suivantes
+        bool coalesce = Coalesces(coalesceKey);
+        var snapshot = coalesce ? "" : Snapshot();
         var result = mutate(Config);
         if (!result.Ok) return result;
-        Push(snapshot, label, coalesceKey);
-        Changed?.Invoke(new DocumentChange(ChangeKind.Content, label));
+        Push(snapshot, label, coalesceKey, coalesce);
+        Changed?.Invoke(new DocumentChange(ChangeKind.Content, label, inPlace));
         return result;
     }
 
@@ -168,7 +176,7 @@ public sealed class DeckDocument
     {
         var snapshot = Snapshot();
         Config = cfg;
-        Push(snapshot, label, null);
+        Push(snapshot, label, null, false);
         Changed?.Invoke(new DocumentChange(ChangeKind.Replaced, label));
     }
 
@@ -294,7 +302,7 @@ public sealed class DeckDocument
             if (b == null) return OpResult.Fail("Aucun bouton à modifier");
             edit(b);
             return OpResult.Success(index);
-        }, coalesceKey);
+        }, coalesceKey, inPlace: true);
 
     /// <summary>Vide la case (les voisines gardent leur position) ; annulable.</summary>
     public OpResult ClearButton(Place place, int index, string label = "Supprimer le bouton") =>

@@ -134,9 +134,10 @@
       </Button>
     </DataTemplate>
 
-    <!-- Emplacement libre hors édition : une touche « éteinte », comme sur un deck physique ; garde la place des voisines -->
+    <!-- Emplacement libre hors édition : une touche « éteinte », comme sur un deck physique ; garde la place des voisines.
+         Sans action au toucher bref, mais un clic droit ou un appui long y crée un bouton. -->
     <DataTemplate DataType="{x:Type vm:SpacerTileViewModel}">
-      <Border IsHitTestVisible="False" Background="{DynamicResource DeckSurface}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1"
+      <Border Background="{DynamicResource DeckSurface}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1"
               Opacity="0.35"
               Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
               CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
@@ -292,6 +293,7 @@
 
     <!-- ===== Grille : centrée, à la taille exacte des touches (aucune touche étirée) ===== -->
     <ItemsControl x:Name="DeckGrid" Grid.Row="1" ItemsSource="{Binding Tiles}" Focusable="False"
+                  PreviewMouseRightButtonDown="OnDeckRightClick"
                   Width="{Binding L.GridW}" Height="{Binding L.GridH}" HorizontalAlignment="Center" VerticalAlignment="Center">
       <ItemsControl.RenderTransform>
         <TranslateTransform x:Name="GridShift"/>

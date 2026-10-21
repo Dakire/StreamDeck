@@ -119,7 +119,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     void OnChanged(DocumentChange c)
     {
-        if (!_loading) Load();
+        if (!_loading && !c.InPlace) Load();   // un bouton modifié sur place ne touche à aucun réglage
     }
 
     void Load()

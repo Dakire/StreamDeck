@@ -60,6 +60,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     readonly IAppWindows _windows;
     readonly PlatformServices _platform;
     readonly IEditorShell _shell;
+    readonly ConfigPersistence _persistence;
     readonly List<int> _folder = new();
     readonly DispatcherTimer _toastTimer = new() { Interval = TimeSpan.FromSeconds(6) };
     string _profile;
@@ -100,6 +101,8 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     [ObservableProperty] bool _isActiveProfile;
     [ObservableProperty] string _appMatchText = "";
     [ObservableProperty] bool _inFolder;
+    /// <summary>true quand l'éditeur a été ouvert depuis le deck (clic droit, appui long) sur une seule case : « Enregistrer » et « Annuler » referment la fenêtre.</summary>
+    [ObservableProperty] bool _quickEdit;
 
     // toast
     [ObservableProperty] bool _toastVisible;
@@ -133,8 +136,9 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     int Offset => _folder.Count > 0 ? 1 : 0;
 
     /// <summary>Éditeur sur le document partagé ; <paramref name="shell"/> fournit dialogues et focus.</summary>
-    public EditorViewModel(IEditorShell shell, DeckDocument doc, DisplayService displays, GridState grid, IAppWindows windows, PlatformServices platform, IntegrationManager integrations)
+    public EditorViewModel(IEditorShell shell, DeckDocument doc, DisplayService displays, GridState grid, IAppWindows windows, PlatformServices platform, IntegrationManager integrations, ConfigPersistence persistence)
     {
+        _persistence = persistence;
         _platform = platform;
         _shell = shell;
         _doc = doc;
@@ -164,9 +168,15 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
 
     // ---------- navigation ----------
 
-    /// <summary>Se place sur un emplacement donné (appelé quand le deck demande à modifier un bouton).</summary>
-    public void GoTo(Place? place, int index)
+    /// <summary>
+    /// Se place sur un emplacement donné (appelé quand le deck demande à modifier un bouton). <paramref name="quick"/> : ouverture directe
+    /// sur cette case, le focus va au titre (bouton) ou à la recherche d'actions (case vide) pour modifier ou créer sans étape intermédiaire.
+    /// </summary>
+    public void GoTo(Place? place, int index, bool quick = false)
     {
+        Properties.Flush();
+        Properties.BeginSession();
+        QuickEdit = false;
         if (place != null && _doc.FindProfile(place.Profile) != null)
         {
             _profile = _doc.FindProfile(place.Profile)!.Name;
@@ -178,7 +188,10 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         }
         RefreshAll();
         SelectIndex(_selectedIndex);
-        _shell.FocusSlot(_selectedIndex);
+        QuickEdit = quick && _selectedIndex >= 0;
+        if (!QuickEdit) _shell.FocusSlot(_selectedIndex);
+        else if (_doc.Get(Place, _selectedIndex) == null) _shell.FocusCatalogSearch();
+        else _shell.FocusTitle();
     }
 
     void ValidatePlace()
@@ -201,7 +214,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     void SwitchProfile(string name)
     {
         if (string.Equals(name, _profile, StringComparison.OrdinalIgnoreCase)) return;
-        _profile = name; _page = 0; _folder.Clear(); _selectedIndex = -1;
+        _profile = name; _page = 0; _folder.Clear(); _selectedIndex = -1; QuickEdit = false;
         RefreshAll();
         SelectIndex(-1);
     }
@@ -209,7 +222,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     void SwitchPage(int index)
     {
         if (index == _page && _folder.Count == 0) return;
-        _page = index; _folder.Clear(); _selectedIndex = -1;
+        _page = index; _folder.Clear(); _selectedIndex = -1; QuickEdit = false;
         RefreshAll();
         SelectIndex(-1);
     }
@@ -219,7 +232,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     {
         if (_selectedIndex < 0 || _doc.Get(Place, _selectedIndex) is not { IsFolder: true }) return;
         _folder.Add(_selectedIndex);
-        _selectedIndex = -1;
+        _selectedIndex = -1; QuickEdit = false;
         RefreshAll();
         SelectIndex(-1);
         _shell.FocusSlot(-1);
@@ -250,15 +263,28 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
 
     // ---------- rafraîchissement ----------
 
+    /// <summary>
+    /// Met à jour ce que la modification touche. Un bouton modifié sur place (titre, icône, étapes) ne change ni les profils, ni les pages,
+    /// ni le catalogue, ni les écrans : seules la grille et le fil d'Ariane sont rafraîchis. Le catalogue ne dépend que des favoris et
+    /// récents (réglages) et les écrans que des réglages : un changement de contenu ne les recalcule pas.
+    /// </summary>
     void OnDocumentChanged(DocumentChange change)
     {
+        // Le document a été remplacé (annuler, rétablir, rechargement, import) : une saisie en attente ne vise plus rien
+        if (change.Kind == ChangeKind.Replaced) Properties.DiscardDraft();
         ValidatePlace();
-        RefreshProfiles();
-        RefreshPages();
+        if (!change.InPlace)
+        {
+            RefreshProfiles();
+            RefreshPages();
+        }
         RefreshCrumbs();
         RefreshSlots();
-        RefreshDevices();
-        Catalog.Refresh();
+        if (change.Kind != ChangeKind.Content)
+        {
+            RefreshDevices();
+            Catalog.Refresh();
+        }
         if (!Properties.IsApplying) Properties.Show(_selectedIndex >= 0 ? Place : null, _selectedIndex);
         NotifyHistory();
     }
@@ -449,6 +475,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     partial void OnSelectedSlotChanged(SlotViewModel? value)
     {
         if (_suppressSelection) return;
+        QuickEdit = false;
         _selectedIndex = value is { IsBack: false } ? value.Index : -1;
         Properties.Show(_selectedIndex >= 0 ? Place : null, _selectedIndex);
         OnPropertyChanged(nameof(HasSelection));
@@ -501,12 +528,14 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
 
     [RelayCommand] void Undo()
     {
+        Properties.Flush();
         var label = _doc.UndoLabel;
         if (_doc.Undo()) Notifier.Info($"Annulé : {label}");
     }
 
     [RelayCommand] void Redo()
     {
+        Properties.Flush();
         var label = _doc.RedoLabel;
         if (_doc.Redo()) Notifier.Info($"Rétabli : {label}");
     }
@@ -515,6 +544,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
 
     bool NeedSelection(string what)
     {
+        Properties.Flush();   // l'opération porte sur le bouton tel qu'il est saisi
         if (_selectedIndex >= 0) return true;
         Notifier.Info($"Sélectionne d'abord une case pour {what}");
         return false;
@@ -540,6 +570,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     [RelayCommand]
     void Paste()
     {
+        Properties.Flush();
         if (!_doc.HasClipboard) { Notifier.Info("Le presse-papiers est vide : copie d'abord un bouton"); return; }
         int target = TargetIndex();
         bool replacing = _doc.Get(Place, target) != null;
@@ -604,6 +635,31 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Properties.ResetAppearance();
     }
 
+    /// <summary>
+    /// Valide la saisie en cours et enregistre sur le disque sans attendre. Ouvert depuis le deck, referme l'éditeur : le bouton est prêt.
+    /// </summary>
+    [RelayCommand]
+    public void SaveButton()
+    {
+        Properties.Flush();
+        Properties.MarkSaved();
+        _persistence.Flush();
+        if (QuickEdit) _shell.Close();
+        else Notifier.Success("Modifications enregistrées");
+    }
+
+    /// <summary>
+    /// Annule ce qui a été fait sur la case depuis son ouverture (saisie en cours comprise) : le bouton retrouve son état d'origine,
+    /// ou la case redevient vide si le bouton vient d'y être créé. Ouvert depuis le deck, referme l'éditeur.
+    /// </summary>
+    [RelayCommand]
+    public void CancelButton()
+    {
+        bool reverted = Properties.RevertToBaseline();
+        if (QuickEdit) _shell.Close();
+        else if (reverted) Notifier.Info("Modifications annulées");
+    }
+
     [RelayCommand] void RenameButton() { if (NeedSelection("modifier son titre")) _shell.FocusTitle(); }
     [RelayCommand] void ShowProperties() { if (NeedSelection("voir ses propriétés")) _shell.FocusProperties(); }
 
@@ -611,6 +667,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     public void MoveSelection(int dx, int dy)
     {
         if (_selectedIndex < 0) return;
+        Properties.Flush();
         int pos = _selectedIndex + Offset;
         int col = pos % Columns, row = pos / Columns;
         int ncol = col + dx, nrow = row + dy;
@@ -629,6 +686,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     /// <summary>Ajoute une action du catalogue dans la case visée, sinon sélectionnée, sinon la première libre.</summary>
     public void AddCatalogAction(CatalogAction action, int? targetIndex = null)
     {
+        Properties.Flush();
         int target = targetIndex ?? (_selectedIndex >= 0 && _doc.Get(Place, _selectedIndex) == null ? _selectedIndex : FirstFree());
         bool replacing = _doc.Get(Place, target) != null;
         var button = action.CreateButton();
@@ -644,6 +702,15 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
             _shell.FocusProperties();
         }
         else Notifier.Success($"« {action.Name} » ajouté", replacing ? "Annuler" : null, replacing ? () => _doc.Undo() : null);
+    }
+
+    /// <summary>Entrée dans la recherche du catalogue : ajoute la première action trouvée à la case visée et vide la recherche.</summary>
+    public void AddFirstCatalogResult()
+    {
+        var first = Catalog.Sections.SelectMany(s => s.Items).FirstOrDefault();
+        if (first == null || !Catalog.IsSearching) return;
+        AddCatalogAction(first.Action);
+        Catalog.Search = "";
     }
 
     /// <summary>Comme <see cref="AddCatalogAction"/>, d'après l'identifiant du catalogue.</summary>

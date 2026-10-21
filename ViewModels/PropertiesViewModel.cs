@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TouchDeck.Actions;
@@ -25,8 +26,10 @@ public enum PropertiesMode
 }
 
 /// <summary>
-/// Panneau de propriétés du bouton sélectionné. Chaque modification est appliquée tout de suite au document
-/// (annulable, regroupée pendant la frappe), l'aperçu et les avertissements se mettent à jour en direct.
+/// Panneau de propriétés du bouton sélectionné. Les champs de saisie (titre, icône, couleurs, valeurs des étapes) forment un
+/// brouillon : l'aperçu se met à jour à chaque frappe sur une copie du bouton, et le document (historique, sauvegarde, deck,
+/// grille de l'éditeur) n'est modifié qu'à la validation (<see cref="Flush"/> : Entrée, perte du focus, autre case, fermeture).
+/// Les choix par pastille ou bascule s'appliquent tout de suite. Chaque application est annulable.
 /// </summary>
 public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
 {
@@ -47,8 +50,18 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     bool _loading;
     List<SymbolRegular>? _allSymbols;
 
+    // brouillon : saisies pas encore écrites dans le document (clé = champ, la dernière frappe remplace la précédente)
+    readonly Dictionary<string, (string Label, Action<DeckButton> Edit)> _draft = new();
+    DeckButton? _target;                  // bouton du document auquel le brouillon s'applique
+    // état de la case à l'ouverture : « Annuler » y revient (null : la case était vide)
+    DeckButton? _baseline;
+    Place? _baselinePlace;
+    int _baselineIndex = -2;
+
     /// <summary>true pendant l'écriture d'une modification dans le document : l'éditeur ne recharge pas les propriétés en retour.</summary>
     public bool IsApplying { get; private set; }
+    /// <summary>true si des saisies attendent d'être validées.</summary>
+    public bool HasDraft => _draft.Count > 0;
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsNone), nameof(IsEmpty), nameof(IsButton), nameof(IsFolder), nameof(IsEditable))] PropertiesMode _mode;
     [ObservableProperty] string _title = "";
@@ -115,8 +128,8 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         }
         FitChoices.Add(new ChoiceViewModel("Remplir", () => ImageFit = "cover"));
         FitChoices.Add(new ChoiceViewModel("Image entière", () => ImageFit = "contain"));
-        foreach (var c in Palette) Swatches.Add(new SwatchViewModel(c, v => Color = v));
-        foreach (var c in TextPalette) TextSwatches.Add(new SwatchViewModel(c, v => TextColor = v));
+        foreach (var c in Palette) Swatches.Add(new SwatchViewModel(c, v => { Color = v; Flush(); }));
+        foreach (var c in TextPalette) TextSwatches.Add(new SwatchViewModel(c, v => { TextColor = v; Flush(); }));
         RebuildIcons();
     }
 
@@ -125,9 +138,19 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     /// <summary>Désigne le bouton à éditer (ou une case vide, ou rien) et recharge les champs.</summary>
     public void Show(Place? place, int index)
     {
+        Flush();   // saisies de la case précédente : validées avant de changer de case
         _place = place; _index = index;
+        if (place != null && index >= 0 && !(_baselineIndex == index && place.Equals(_baselinePlace)))
+        {
+            // Nouvelle case : on retient son état d'origine. La même case rechargée garde le sien (annuler défait aussi une création).
+            _baselinePlace = place; _baselineIndex = index;
+            _baseline = _doc.Get(place, index) is { } cur ? ConfigStore.Clone(cur) : null;
+        }
         Reload();
     }
+
+    /// <summary>La prochaine sélection ouvre une nouvelle session d'édition (ouverture depuis le deck) : l'état d'origine est relevé à nouveau.</summary>
+    public void BeginSession() => _baselineIndex = -2;
 
     /// <summary>Recharge les propriétés depuis le document (modification externe, annuler).</summary>
     public void Reload()
@@ -136,6 +159,8 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         try
         {
             var b = _place != null && _index >= 0 ? _doc.Get(_place, _index) : null;
+            _target = b;
+            _draft.Clear();
             Mode = _place == null || _index < 0 ? PropertiesMode.None
                 : b == null ? PropertiesMode.Empty
                 : b.IsFolder ? PropertiesMode.Folder : PropertiesMode.Button;
@@ -208,6 +233,82 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
 
     // ---------- application au document ----------
 
+    /// <summary>Retient une saisie sans toucher au document : l'aperçu montre le résultat sur une copie du bouton.</summary>
+    void Draft(string key, string label, Action<DeckButton> edit)
+    {
+        if (_loading || _place == null || _index < 0 || _target == null) return;
+        _draft[key] = (label, edit);
+        RefreshDraftPreview();
+    }
+
+    /// <summary>Retire un brouillon devenu invalide (le champ contient une valeur refusée).</summary>
+    void DropDraft(string key)
+    {
+        if (_draft.Remove(key)) RefreshDraftPreview();
+    }
+
+    void RefreshDraftPreview()
+    {
+        if (_target == null) return;
+        var preview = ConfigStore.Clone(_target);
+        foreach (var d in _draft.Values) d.Edit(preview);
+        Preview = TileFaceData.From(preview);
+    }
+
+    /// <summary>Valide les saisies en attente : une écriture dans le document par champ modifié (titre, icône, couleurs, étapes).</summary>
+    public void Flush()
+    {
+        if (_draft.Count == 0) return;
+        var items = _draft.ToList();
+        _draft.Clear();
+        // La case a changé sous nos pieds (déplacée, supprimée, document rechargé) : les saisies ne visent plus ce bouton
+        if (_place == null || _target == null || !ReferenceEquals(_doc.Get(_place, _index), _target)) return;
+        foreach (var (key, d) in items) Apply(d.Edit, d.Label, key);
+    }
+
+    /// <summary>Abandonne les saisies en attente et réaffiche les valeurs du document (Échap dans un champ) ; faux s'il n'y en avait pas.</summary>
+    public bool RevertDraft()
+    {
+        if (_draft.Count == 0) return false;
+        _draft.Clear();
+        Reload();
+        return true;
+    }
+
+    /// <summary>Abandonne les saisies sans recharger (le document vient d'être remplacé).</summary>
+    public void DiscardDraft() => _draft.Clear();
+
+    /// <summary>Enregistrement : l'état actuel de la case devient celui auquel « Annuler » revient.</summary>
+    public void MarkSaved()
+    {
+        if (_place == null || _index < 0) return;
+        _baselinePlace = _place; _baselineIndex = _index;
+        _baseline = _doc.Get(_place, _index) is { } cur ? ConfigStore.Clone(cur) : null;
+    }
+
+    /// <summary>Remet la case dans l'état où elle était à l'ouverture (supprime le bouton qu'on y a créé) ; annulable. Faux si rien n'a été relevé.</summary>
+    public bool RevertToBaseline()
+    {
+        _draft.Clear();
+        if (_place == null || _index < 0 || _baselineIndex != _index || !_place.Equals(_baselinePlace)) { Reload(); return false; }
+        var cur = _doc.Get(_place, _index);
+        if (_baseline == null)
+        {
+            if (cur != null) _doc.ClearButton(_place, _index, "Annuler la création");
+        }
+        else if (cur == null || JsonSerializer.Serialize(cur, ConfigStore.Options) != JsonSerializer.Serialize(_baseline, ConfigStore.Options))
+            _doc.PutButton(_place, _index, ConfigStore.Clone(_baseline), "Annuler les modifications");
+        Reload();
+        return true;
+    }
+
+    /// <summary>Modification immédiate (pastille, bascule, bouton) : les saisies en attente passent d'abord, dans l'ordre.</summary>
+    void ApplyNow(Action<DeckButton> edit, string label, string? coalesce = null)
+    {
+        Flush();
+        Apply(edit, label, coalesce);
+    }
+
     void Apply(Action<DeckButton> edit, string label, string? coalesce = null)
     {
         if (_loading || _place == null || _index < 0) return;
@@ -218,41 +319,46 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
             if (!r.Ok) { Notifier.Error(r.Message ?? "Modification impossible"); return; }
         }
         finally { IsApplying = false; }
-        RefreshDerived(_doc.Get(_place, _index));
+        _target = _doc.Get(_place, _index);
+        RefreshDerived(_target);
         RefreshSelection();
     }
 
-    partial void OnTitleChanged(string value) => Apply(b => b.Label = value, "Modifier le titre", "title");
-    partial void OnShowTitleChanged(bool value) => Apply(b => b.HideTitle = !value, value ? "Afficher le titre" : "Masquer le titre");
+    partial void OnTitleChanged(string value) => Draft("title", "Modifier le titre", b => b.Label = value);
+    partial void OnShowTitleChanged(bool value) => ApplyNow(b => b.HideTitle = !value, value ? "Afficher le titre" : "Masquer le titre");
 
     void SetPosition(string? position)
     {
         TitlePosition = position;
-        Apply(b => b.TitlePosition = position, "Position du titre");
+        ApplyNow(b => b.TitlePosition = position, "Position du titre");
     }
 
-    partial void OnIconChanged(string value) => Apply(b => b.Icon = value, "Modifier l'icône", "icon");
+    partial void OnIconChanged(string value)
+    {
+        Draft("icon", "Modifier l'icône", b => b.Icon = value);
+        if (!_loading) RefreshIconSelection();
+    }
 
     partial void OnIconSearchChanged(string value) => RebuildIcons();
 
     partial void OnColorChanged(string value)
     {
         if (_loading) return;
-        if (!Theme.TryBrush(value, out _)) { ColorError = "Couleur non valide. Exemple : #2563EB"; return; }
+        if (!Theme.TryBrush(value, out _)) { ColorError = "Couleur non valide. Exemple : #2563EB"; DropDraft("color"); return; }
         ColorError = "";
-        Apply(b => b.Color = value.Trim(), "Modifier la couleur", "color");
+        Draft("color", "Modifier la couleur", b => b.Color = value.Trim());
     }
 
     partial void OnTextColorChanged(string value)
     {
         if (_loading) return;
-        if (value.Length == 0) { TextColorError = ""; Apply(b => b.TextColor = null, "Couleur du texte", "textcolor"); return; }
-        if (!Theme.TryBrush(value, out _)) { TextColorError = "Couleur non valide. Exemple : #FFFFFF"; return; }
+        if (value.Length == 0) { TextColorError = ""; Draft("textcolor", "Couleur du texte", b => b.TextColor = null); return; }
+        if (!Theme.TryBrush(value, out _)) { TextColorError = "Couleur non valide. Exemple : #FFFFFF"; DropDraft("textcolor"); return; }
         TextColorError = "";
-        Apply(b => b.TextColor = value.Trim(), "Couleur du texte", "textcolor");
+        Draft("textcolor", "Couleur du texte", b => b.TextColor = value.Trim());
     }
 
-    partial void OnImageFitChanged(string value) => Apply(b => b.ImageFit = value == "contain" ? "contain" : null, "Ajustement de l'image");
+    partial void OnImageFitChanged(string value) => ApplyNow(b => b.ImageFit = value == "contain" ? "contain" : null, "Ajustement de l'image");
 
     void RebuildIcons()
     {
@@ -269,8 +375,13 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         foreach (var sym in source)
         {
             var s = sym;
-            IconChoices.Add(new IconPickViewModel(s, () => Icon = s.ToString()));
+            IconChoices.Add(new IconPickViewModel(s, () => { Icon = s.ToString(); Flush(); }));
         }
+        RefreshIconSelection();
+    }
+
+    void RefreshIconSelection()
+    {
         foreach (var c in IconChoices) c.IsSelected = string.Equals(c.Symbol.ToString(), Icon?.Trim(), StringComparison.Ordinal);
     }
 
@@ -290,14 +401,16 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     /// <inheritdoc/>
     public DeckProfile? Profile => _place == null ? null : _doc.FindProfile(_place.Profile);
 
-    void CommitSteps(string label, string? coalesce)
+    /// <summary>Écrit les étapes : tout de suite (ajout, retrait, ordre) ou en brouillon (<paramref name="draft"/> : saisie d'une valeur).</summary>
+    void CommitSteps(string label, string? coalesce, bool draft = false)
     {
         var actions = Steps.Select(s => s.ToDeckAction()).ToList();
-        Apply(b => b.Actions = actions, label, coalesce);
+        if (draft) Draft("steps", label, b => b.Actions = actions);
+        else ApplyNow(b => b.Actions = actions, label, coalesce);
     }
 
     /// <inheritdoc/>
-    public void StepChanged(ActionStepViewModel step) => CommitSteps("Modifier l'action", "steps");
+    public void StepChanged(ActionStepViewModel step) => CommitSteps("Modifier l'action", "steps", draft: true);
 
     /// <inheritdoc/>
     public void MoveStep(ActionStepViewModel step, int delta)
@@ -336,7 +449,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         {
             var name = IconStore.Import(path);
             ImageName = name;
-            Apply(b => b.ImagePath = name, "Importer une image");
+            ApplyNow(b => b.ImagePath = name, "Importer une image");
             Notifier.Success("Image importée");
         }
         catch (InvalidDataException ex) { Notifier.Error(ex.Message); }
@@ -347,7 +460,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     void RemoveImage()
     {
         ImageName = null;
-        Apply(b => b.ImagePath = null, "Retirer l'image");
+        ApplyNow(b => b.ImagePath = null, "Retirer l'image");
     }
 
     // ---------- réinitialisation et actions rapides ----------
@@ -357,6 +470,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     public void ResetAppearance()
     {
         if (_place == null) return;
+        Flush();
         var current = _doc.Get(_place, _index);
         if (current == null) return;
         var cat = ActionCatalog.Identify(current);

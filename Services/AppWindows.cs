@@ -9,8 +9,11 @@ public interface IAppWindows
     /// <summary>true si l'éditeur est ouvert (le deck laisse alors l'éditeur afficher les confirmations).</summary>
     bool IsEditorOpen { get; }
 
-    /// <summary>Ouvre l'éditeur (ou le ramène devant), éventuellement sur un bouton précis.</summary>
-    void OpenEditor(Place? place = null, int index = -1);
+    /// <summary>
+    /// Ouvre l'éditeur (ou le ramène devant), éventuellement sur un bouton précis. <paramref name="quick"/> : ouverture directe depuis le deck
+    /// (clic droit, appui long) pour modifier ou créer ce seul bouton ; la fenêtre propose alors « Enregistrer » et « Annuler » qui la referment.
+    /// </summary>
+    void OpenEditor(Place? place = null, int index = -1, bool quick = false);
 
     /// <summary>Ouvre les paramètres (ou les ramène devant), au-dessus de l'éditeur s'il est ouvert.</summary>
     void OpenSettings();
@@ -30,7 +33,7 @@ public sealed class AppWindows : IAppWindows
     public bool IsEditorOpen => _editor != null;
 
     /// <inheritdoc/>
-    public void OpenEditor(Place? place = null, int index = -1)
+    public void OpenEditor(Place? place = null, int index = -1, bool quick = false)
     {
         if (_editor == null)
         {
@@ -39,7 +42,7 @@ public sealed class AppWindows : IAppWindows
             if (Application.Current.MainWindow is { IsVisible: true } main) _editor.Owner = main;
             _editor.Show();
         }
-        _editor.GoTo(place, index);
+        _editor.GoTo(place, index, quick);
         if (_editor.WindowState == WindowState.Minimized) _editor.WindowState = WindowState.Normal;
         _editor.Activate();
     }

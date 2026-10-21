@@ -581,7 +581,13 @@
 
         <!-- Propriétés -->
         <Border Grid.Column="4" Background="{DynamicResource DeckPanel}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1,0,0,0">
-          <ScrollViewer x:Name="PropertiesScroll" VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly" Padding="0,0,6,0">
+         <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+          </Grid.RowDefinitions>
+          <ScrollViewer x:Name="PropertiesScroll" VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly" Padding="0,0,6,0"
+                        PreviewKeyDown="Properties_PreviewKeyDown" LostKeyboardFocus="Properties_LostKeyboardFocus">
             <StackPanel Margin="16,12,10,24" DataContext="{Binding Properties}">
               <TextBlock Text="Propriétés" Style="{StaticResource PanelTitle}" Margin="2,0,0,12"/>
 
@@ -723,6 +729,25 @@
               </StackPanel>
             </StackPanel>
           </ScrollViewer>
+
+          <!-- Valider ou annuler la case en cours d'édition (cibles tactiles de 48 px) -->
+          <Border Grid.Row="1" BorderBrush="{DynamicResource DeckLine}" BorderThickness="0,1,0,0" Padding="16,10">
+            <Border.Style>
+              <Style TargetType="Border">
+                <Setter Property="Visibility" Value="Collapsed"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding HasSelection}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </Border.Style>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+              <ui:Button Content="Annuler" Icon="{ui:SymbolIcon Dismiss24}" Command="{Binding CancelButtonCommand}" MinHeight="48" MinWidth="120" Margin="0,0,10,0"
+                         AutomationProperties.Name="Annuler les modifications de cette case" ToolTip="Revenir à l'état de la case à l'ouverture (Échap)"/>
+              <ui:Button Content="Enregistrer" Icon="{ui:SymbolIcon Checkmark24}" Command="{Binding SaveButtonCommand}" Appearance="Primary" MinHeight="48" MinWidth="140"
+                         AutomationProperties.Name="Enregistrer cette case" ToolTip="Valider et enregistrer (Entrée dans le titre)"/>
+            </StackPanel>
+          </Border>
+         </Grid>
         </Border>
       </Grid>
 

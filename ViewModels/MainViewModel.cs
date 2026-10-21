@@ -176,7 +176,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         }
         ApplyBackground();
         OnPropertyChanged(nameof(BrandText));
-        Rebuild();
+        Rebuild(navigation: !change.InPlace);   // un bouton modifié sur place ne change ni les pages ni les onglets
     }
 
     void OnNotice(Notice n)
@@ -303,7 +303,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     int SubPages(int itemCount) =>
         Math.Max(1, (int)Math.Ceiling((itemCount + (IsEdit ? 1 : 0)) / (double)_capacity));
 
-    void Rebuild()
+    void Rebuild(bool navigation = true)
     {
         if (_w < 50 || _h < 50 || _doc.Config.Profiles.Count == 0) return;
 
@@ -345,7 +345,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         PathText = BuildPath();
 
         BuildTiles(view);
-        BuildTabs();
+        if (navigation) BuildTabs();
     }
 
     string BuildPath()
@@ -386,10 +386,10 @@ public partial class MainViewModel : ObservableObject, INavigator
             {
                 // Au-delà du contenu : en édition, chaque case libre propose d'ajouter un bouton
                 int at = i - offset;
-                key = IsEdit ? new TileKey("add", place, at, null, null, false, true) : new TileKey("spacer", place, -1, null, null, false, false);
+                key = IsEdit ? new TileKey("add", place, at, null, null, false, true) : new TileKey("spacer", place, at, null, null, false, false);
                 create = IsEdit
-                    ? () => new AddTileViewModel { Click = new RelayCommand(() => _windows.OpenEditor(place, at)) }
-                    : () => new SpacerTileViewModel();   // touche libre, dessinée éteinte
+                    ? () => new AddTileViewModel { Click = new RelayCommand(() => _windows.OpenEditor(place, at, quick: true)) }
+                    : () => new SpacerTileViewModel { Edit = new RelayCommand(() => _windows.OpenEditor(place, at, quick: true)) };   // touche libre, dessinée éteinte
             }
             else if (view[i].IsBack)
             {
@@ -408,10 +408,10 @@ public partial class MainViewModel : ObservableObject, INavigator
             else if (view[i].Button == null)
             {
                 int at = view[i].ListIndex;
-                key = IsEdit ? new TileKey("add", place, at, null, null, false, true) : new TileKey("spacer", place, -1, null, null, false, false);
+                key = IsEdit ? new TileKey("add", place, at, null, null, false, true) : new TileKey("spacer", place, at, null, null, false, false);
                 create = IsEdit
-                    ? () => new AddTileViewModel { Click = new RelayCommand(() => _windows.OpenEditor(place, at)) }
-                    : () => new SpacerTileViewModel();
+                    ? () => new AddTileViewModel { Click = new RelayCommand(() => _windows.OpenEditor(place, at, quick: true)) }
+                    : () => new SpacerTileViewModel { Edit = new RelayCommand(() => _windows.OpenEditor(place, at, quick: true)) };
             }
             else
             {
@@ -422,11 +422,12 @@ public partial class MainViewModel : ObservableObject, INavigator
                 create = () =>
                 {
                     DeckTileViewModel? tile = null;
+                    var editThis = new RelayCommand(() => _windows.OpenEditor(place, idx, quick: true));   // clic droit, appui long, mode édition
                     tile = new DeckTileViewModel
                     {
-                        Button = def, Label = def.Label, IsEdit = edit,
+                        Button = def, Label = def.Label, IsEdit = edit, Edit = editThis,
                         Click = edit
-                            ? new RelayCommand(() => _windows.OpenEditor(place, idx))
+                            ? editThis
                             : def.IsFolder
                                 ? new RelayCommand(() => EnterFolder(idx))
                                 : new AsyncRelayCommand(() => RunTileAsync(tile!), AsyncRelayCommandOptions.AllowConcurrentExecutions),

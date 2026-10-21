@@ -23,4 +23,6 @@ public interface IEditorShell : IConfirm
     void FocusCatalogSearch();
     /// <summary>Redonne le focus à la case d'index de liste donné (-1 : la case sélectionnée).</summary>
     void FocusSlot(int listIndex);
+    /// <summary>Ferme l'éditeur (fin d'une modification rapide depuis le deck).</summary>
+    void Close();
 }

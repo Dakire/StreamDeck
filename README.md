@@ -48,6 +48,9 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 - Plein écran sur l'écran secondaire ou mode fenêtre, sans masquer la barre des tâches (le deck occupe la zone de travail) ; le deck suit le branchement et le débranchement de l'écran, et se cale exactement même entre écrans de densités différentes.
 - Profil associé à une application : il s'affiche seul quand le programme est au premier plan.
 - Mode édition tactile (menu ⚙ › *Modifier au toucher*) : toucher un bouton ouvre l'éditeur dessus.
+- Édition directe, sans mode : **clic droit** ou **appui long** (environ 0,55 s, doigt immobile) sur un bouton ouvre l'éditeur sur ce
+  bouton, sur une **case vide** il ouvre la création (focus sur la recherche d'actions : taper un nom puis Entrée ajoute la première
+  action trouvée). L'appui long n'exécute pas l'action ; un glissement du doigt l'annule ; le toucher ne déplace jamais le curseur.
 
 **L'éditeur** (menu ⚙ › *Ouvrir l'éditeur*, ou `TouchDeck.exe --edit`)
 
@@ -57,6 +60,10 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
   envoyer vers une autre page), formats 3×2, 5×3, 6×3, 5×4, 8×4 ou automatique.
 - Propriétés : titre (position, affichage), icône Fluent / emoji / texte, image importée, couleurs, étapes multiples
   (ajout, ordre, suppression), aperçu en direct, validation en direct, réinitialisation de l'apparence.
+  La saisie (titre, icône, couleurs, valeur des étapes) est un brouillon : l'aperçu suit chaque caractère, mais la configuration
+  n'est écrite qu'à la validation (Entrée, changement de champ ou de case, fermeture), en une seule modification annulable.
+  Échap abandonne la saisie en cours. Les boutons *Annuler* (retour à l'état de la case à l'ouverture, ou case vide si le bouton
+  vient d'y être créé) et *Enregistrer* sont en bas du panneau ; ouvert par clic droit ou appui long, l'éditeur se referme avec eux.
 - Menus contextuels (clic droit, appui long, touche Menu) sur les cases, profils, pages et catalogue.
 - Annuler / rétablir (100 niveaux), presse-papiers interne, notifications avec bouton *Annuler*.
 - Profils : créer, renommer, dupliquer, supprimer, exporter / importer (`.touchdeck`), définir comme profil actif,
@@ -131,7 +138,7 @@ Dossier : `%APPDATA%\TouchDeck` (ou le dossier de la variable d'environnement `T
 | `config.v1.backup.json` | Copie intacte de l'ancien fichier, faite une seule fois lors du passage aux profils. |
 | `touchdeck.log` | Journal : démarrage (avec le temps de chaque étape), erreurs, actions en échec, changements d'écran. 1 Mo par fichier, 3 fichiers conservés (`touchdeck.log`, `touchdeck_001.log`…). |
 
-L'éditeur enregistre à chaque modification (écriture atomique : un arrêt en cours d'écriture ne corrompt pas le fichier).
+L'éditeur enregistre à chaque modification validée (écriture atomique : un arrêt en cours d'écriture ne corrompt pas le fichier).
 Un fichier `config.json` invalide n'est jamais écrasé sans copie : il est conservé sous `config.invalide-<date>.json`.
 
 Le format complet (modèle, cycle de vie, migrations, exemple) est décrit dans [docs/configuration.md](docs/configuration.md).
