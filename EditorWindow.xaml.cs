@@ -103,21 +103,21 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
     public void FocusProperties() => Later(() =>
     {
         // Première étape à compléter, sinon le titre
-        var invalid = FindVisualChildren<TextBox>(PropertiesScroll)
-            .FirstOrDefault(t => t.DataContext is ActionStepViewModel { HasIssues: true } && t.IsVisible && t.IsEnabled && t != TitleBox);
-        var target = invalid ?? (TitleBox.IsVisible ? TitleBox : null);
+        var invalid = FindVisualChildren<TextBox>(Props.PropertiesScroll)
+            .FirstOrDefault(t => t.DataContext is ActionStepViewModel { HasIssues: true } && t.IsVisible && t.IsEnabled && t != Props.TitleBox);
+        var target = invalid ?? (Props.TitleBox.IsVisible ? Props.TitleBox : null);
         if (target != null) { target.Focus(); Keyboard.Focus(target); }
-        else PropertiesScroll.Focus();
+        else Props.PropertiesScroll.Focus();
     });
 
     /// <inheritdoc/>
-    public void FocusTitle() => Later(() => { if (TitleBox.IsVisible) { TitleBox.Focus(); TitleBox.SelectAll(); } });
+    public void FocusTitle() => Later(() => { if (Props.TitleBox.IsVisible) { Props.TitleBox.Focus(); Props.TitleBox.SelectAll(); } });
     /// <inheritdoc/>
     public void FocusIcon() => Later(() =>
     {
-        AppearanceExpander.IsExpanded = true;   // l'icône est dans les réglages d'apparence, repliés par défaut
-        AppearanceExpander.UpdateLayout();
-        if (IconBox.IsVisible) { IconBox.Focus(); IconBox.SelectAll(); IconBox.BringIntoView(); }
+        Props.AppearanceExpander.IsExpanded = true;   // l'icône est dans les réglages d'apparence, repliés par défaut
+        Props.AppearanceExpander.UpdateLayout();
+        if (Props.IconBox.IsVisible) { Props.IconBox.Focus(); Props.IconBox.SelectAll(); Props.IconBox.BringIntoView(); }
     });
     /// <inheritdoc/>
     public void FocusCatalogSearch() => Later(() => { CatalogSearch.Focus(); CatalogSearch.SelectAll(); });
@@ -194,29 +194,6 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
             else if (slot.IsFolder) _vm.OpenSelectedFolder();
             else if (slot.IsEmpty) FocusCatalogSearch();
             else FocusProperties();
-        }
-    }
-
-    /// <summary>Le focus quitte un champ du panneau de propriétés : la saisie est validée (une seule écriture dans le document).</summary>
-    void Properties_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => _vm.Properties.Flush();
-
-    /// <summary>
-    /// Entrée valide la saisie (et, depuis le deck, enregistre et ferme depuis le titre). Échap abandonne la saisie en cours, puis, depuis
-    /// le deck, annule la modification et ferme.
-    /// </summary>
-    void Properties_PreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.OriginalSource is not TextBox box) return;
-        if (e.Key == Key.Enter && !box.AcceptsReturn)
-        {
-            _vm.Properties.Flush();
-            if (_vm.QuickEdit && ReferenceEquals(box, TitleBox)) _vm.SaveButtonCommand.Execute(null);
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Escape)
-        {
-            if (!_vm.Properties.RevertDraft() && _vm.QuickEdit) _vm.CancelButtonCommand.Execute(null);
-            e.Handled = true;
         }
     }
 

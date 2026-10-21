@@ -1,0 +1,197 @@
+<UserControl x:Class="TouchDeck.Controls.PropertiesPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:b="clr-namespace:TouchDeck.Behaviors"
+             xmlns:vm="clr-namespace:TouchDeck.ViewModels"
+             xmlns:controls="clr-namespace:TouchDeck.Controls">
+  <!-- Panneau de propriétés du bouton sélectionné ; DataContext : EditorViewModel (éditeur, ou mode édition du deck) -->
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/TouchDeck;component/Themes/EditorShared.xaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <Border Background="{DynamicResource DeckPanel}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1,0,0,0">
+   <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <ScrollViewer x:Name="PropertiesScroll" VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly" Padding="0,0,6,0"
+                  PreviewKeyDown="OnPropertiesKeyDown" LostKeyboardFocus="OnPropertiesLostFocus">
+      <StackPanel Margin="16,12,10,24" DataContext="{Binding Properties}">
+        <TextBlock Text="Propriétés" Style="{StaticResource PanelTitle}" Margin="2,0,0,12"/>
+
+        <!-- Rien de sélectionné -->
+        <StackPanel Margin="0,40,0,0" HorizontalAlignment="Center" Visibility="{Binding IsNone, Converter={StaticResource BoolVis}}">
+          <ui:SymbolIcon Symbol="CursorClick24" FontSize="44" Foreground="{DynamicResource DeckDim}" HorizontalAlignment="Center"/>
+          <TextBlock Text="Aucune case sélectionnée" FontWeight="SemiBold" Margin="0,12,0,4" HorizontalAlignment="Center"/>
+          <TextBlock Text="Clique sur une case de la grille pour régler son action, son titre et son icône." Style="{StaticResource EditorHint}"
+                     TextAlignment="Center" MaxWidth="280"/>
+        </StackPanel>
+
+        <!-- Case vide -->
+        <StackPanel Visibility="{Binding IsEmpty, Converter={StaticResource BoolVis}}">
+          <Border Style="{StaticResource Card}" Padding="16,16">
+            <StackPanel>
+              <TextBlock Text="Case vide" FontWeight="SemiBold" FontSize="16"/>
+              <TextBlock Text="Glisse une action du catalogue sur cette case, ou choisis une option ci-dessous." Style="{StaticResource EditorHint}"/>
+              <ui:Button Content="Parcourir les actions" Icon="{ui:SymbolIcon Search24}" Command="{Binding BrowseCatalogCommand}" Appearance="Primary"
+                         Style="{StaticResource EditorChip}" Margin="0,12,0,0" HorizontalAlignment="Left"/>
+              <ui:Button Content="Créer un dossier" Icon="{ui:SymbolIcon FolderAdd24}" Command="{Binding CreateFolderCommand}"
+                         Style="{StaticResource EditorChip}" Margin="0,0,0,0" HorizontalAlignment="Left"/>
+              <ui:Button Content="Coller" Icon="{ui:SymbolIcon ClipboardPaste24}" Command="{Binding PasteCommand}" IsEnabled="{Binding CanPaste}"
+                         Style="{StaticResource EditorChip}" HorizontalAlignment="Left"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- Bouton ou dossier -->
+        <StackPanel Visibility="{Binding IsEditable, Converter={StaticResource BoolVis}}">
+
+          <!-- Aperçu en direct -->
+          <Border Style="{StaticResource Card}" Padding="16">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <Border Width="132" Height="132" CornerRadius="16" Background="{Binding Preview.Background}" BorderBrush="{Binding Preview.Border}" BorderThickness="1"
+                      AutomationProperties.Name="Aperçu du bouton" AutomationProperties.HelpText="Rendu fidèle du bouton sur le deck">
+                <controls:TileFace Face="{Binding Preview}" CornerRadius="16"/>
+              </Border>
+              <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding HeaderText}" FontWeight="SemiBold" FontSize="16" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding Subtitle}" Style="{StaticResource EditorHint}"/>
+                <TextBlock Text="{Binding FolderInfo}" Style="{StaticResource EditorHint}"/>
+                <ItemsControl ItemsSource="{Binding ButtonIssues}" Focusable="False" AutomationProperties.LiveSetting="Polite"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <!-- Apparence -->
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <TextBlock Text="Titre" Style="{StaticResource EditorCaption}"/>
+              <ui:TextBox x:Name="TitleBox" Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"
+                          PlaceholderText="Titre affiché sur le bouton" AutomationProperties.Name="Titre du bouton"/>
+              <ui:ToggleSwitch Content="Afficher le titre sur le bouton" IsChecked="{Binding ShowTitle, Mode=TwoWay}" Margin="2,10,0,0" MinHeight="48"
+                               AutomationProperties.Name="Afficher le titre"/>
+            </StackPanel>
+          </Border>
+
+          <!-- Actions -->
+          <Border Style="{StaticResource Card}" Visibility="{Binding IsButton, Converter={StaticResource BoolVis}}">
+            <StackPanel>
+              <TextBlock Text="{Binding StepsCaption}" Style="{StaticResource EditorCaption}" Margin="2,14,0,10"/>
+              <ItemsControl ItemsSource="{Binding Steps}" Focusable="False"/>
+              <TextBlock Text="Ce bouton n'a encore aucune action." Margin="2,0,0,8">
+                <TextBlock.Style>
+                  <Style TargetType="TextBlock" BasedOn="{StaticResource EditorHint}">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding HasSteps}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </TextBlock.Style>
+              </TextBlock>
+              <ui:Button Content="Ajouter une étape" Icon="{ui:SymbolIcon Add24}" Command="{Binding AddStepCommand}" Style="{StaticResource EditorChip}"/>
+              <TextBlock Text="Plusieurs étapes s'exécutent l'une après l'autre : programme, pause, raccourci, lien…" Style="{StaticResource EditorHint}"/>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Card}" Padding="16" Visibility="{Binding IsFolder, Converter={StaticResource BoolVis}}">
+            <StackPanel>
+              <TextBlock Text="Contenu du dossier" FontWeight="SemiBold"/>
+              <TextBlock Text="{Binding FolderInfo}" Style="{StaticResource EditorHint}"/>
+              <ui:Button Content="Ouvrir le dossier" Icon="{ui:SymbolIcon FolderOpen24}" Command="{Binding OpenFolderCommand}" Appearance="Primary"
+                         Style="{StaticResource EditorChip}" Margin="0,12,0,0"/>
+            </StackPanel>
+          </Border>
+
+          <!-- Réglages d'apparence repliés par défaut : ce que fait le bouton (action) passe avant son habillage -->
+          <Expander x:Name="AppearanceExpander" Margin="0,4,0,6" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                    Header="Apparence : position du titre, icône, image, couleurs" AutomationProperties.Name="Apparence du bouton"
+                    FocusVisualStyle="{StaticResource DeckFocusVisual}" IsExpanded="False">
+            <StackPanel Margin="0,6,0,0">
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <TextBlock Text="Position du titre" Style="{StaticResource EditorCaption}" Margin="2,0,0,6"/>
+              <ItemsControl ItemsSource="{Binding PositionChoices}" Style="{StaticResource ChipWrap}"/>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <TextBlock Text="Icône" Style="{StaticResource EditorCaption}"/>
+              <ui:TextBox x:Name="IconBox" Text="{Binding Icon, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"
+                          PlaceholderText="Nom Fluent (Play24), emoji ou texte court" AutomationProperties.Name="Icône du bouton"/>
+              <ui:TextBox Text="{Binding IconSearch, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}" Margin="0,10,0,0"
+                          PlaceholderText="Chercher une icône (en anglais : speaker, mail…)" Icon="{ui:SymbolIcon Search24}"
+                          AutomationProperties.Name="Chercher une icône"/>
+              <ItemsControl ItemsSource="{Binding IconChoices}" Style="{StaticResource ChipWrap}" Margin="0,10,0,0"/>
+
+              <TextBlock Text="Image personnalisée" Style="{StaticResource EditorCaption}"/>
+              <StackPanel Orientation="Horizontal">
+                <ui:Button Content="Importer une image…" Icon="{ui:SymbolIcon ImageAdd24}" Command="{Binding ImportImageCommand}" Style="{StaticResource EditorChip}"/>
+                <ui:Button Content="Retirer" Icon="{ui:SymbolIcon Delete24}" Command="{Binding RemoveImageCommand}" Style="{StaticResource EditorChip}"
+                           Visibility="{Binding HasImage, Converter={StaticResource BoolVis}}"/>
+              </StackPanel>
+              <ItemsControl ItemsSource="{Binding FitChoices}" Style="{StaticResource ChipWrap}"
+                            Visibility="{Binding HasImage, Converter={StaticResource BoolVis}}"/>
+              <TextBlock Text="PNG, JPEG, BMP, GIF, ICO, TIFF ou WebP, 15 Mo maximum. L'image est réduite à 512 px et copiée dans la configuration."
+                         Style="{StaticResource EditorHint}"/>
+            </StackPanel>
+          </Border>
+
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <TextBlock Text="Couleur du bouton" Style="{StaticResource EditorCaption}"/>
+              <ItemsControl ItemsSource="{Binding Swatches}" Style="{StaticResource ChipWrap}"/>
+              <ui:TextBox Text="{Binding Color, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"
+                          PlaceholderText="#RRGGBB" AutomationProperties.Name="Couleur du bouton en hexadécimal"/>
+              <TextBlock Text="{Binding ColorError}" Foreground="{DynamicResource DeckDanger}" FontSize="12" TextWrapping="Wrap" Margin="2,6,0,0"
+                         AutomationProperties.LiveSetting="Assertive"/>
+
+              <TextBlock Text="Couleur du texte et de l'icône" Style="{StaticResource EditorCaption}"/>
+              <ItemsControl ItemsSource="{Binding TextSwatches}" Style="{StaticResource ChipWrap}"/>
+              <ui:TextBox Text="{Binding TextColor, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"
+                          PlaceholderText="Blanc par défaut" AutomationProperties.Name="Couleur du texte en hexadécimal"/>
+              <TextBlock Text="{Binding TextColorError}" Foreground="{DynamicResource DeckDanger}" FontSize="12" TextWrapping="Wrap" Margin="2,6,0,0"
+                         AutomationProperties.LiveSetting="Assertive"/>
+
+              <ui:Button Content="Réinitialiser l'apparence" Icon="{ui:SymbolIcon ArrowReset24}" Command="{Binding ResetAppearanceCommand}"
+                         Style="{StaticResource EditorChip}" Margin="0,14,0,0"/>
+            </StackPanel>
+          </Border>
+            </StackPanel>
+          </Expander>
+
+          <ui:Button Content="Supprimer ce bouton" Icon="{ui:SymbolIcon Delete24}" Command="{Binding DeleteCommand}" Appearance="Danger"
+                     Style="{StaticResource EditorChip}" HorizontalAlignment="Left"/>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Valider ou annuler la case en cours d'édition (cibles tactiles de 48 px) -->
+    <Border Grid.Row="1" BorderBrush="{DynamicResource DeckLine}" BorderThickness="0,1,0,0" Padding="16,10">
+      <Border.Style>
+        <Style TargetType="Border">
+          <Setter Property="Visibility" Value="Collapsed"/>
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding HasSelection}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </Border.Style>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+        <ui:Button Content="Annuler" Icon="{ui:SymbolIcon Dismiss24}" Command="{Binding CancelButtonCommand}" MinHeight="48" MinWidth="120" Margin="0,0,10,0"
+                   AutomationProperties.Name="Annuler les modifications de cette case" ToolTip="Revenir à l'état de la case à l'ouverture (Échap)"/>
+        <ui:Button Content="Enregistrer" Icon="{ui:SymbolIcon Checkmark24}" Command="{Binding SaveButtonCommand}" Appearance="Primary" MinHeight="48" MinWidth="140"
+                   AutomationProperties.Name="Enregistrer cette case" ToolTip="Valider et enregistrer (Entrée dans le titre)"/>
+      </StackPanel>
+    </Border>
+   </Grid>
+  </Border>
+</UserControl>
