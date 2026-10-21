@@ -113,7 +113,12 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
     /// <inheritdoc/>
     public void FocusTitle() => Later(() => { if (TitleBox.IsVisible) { TitleBox.Focus(); TitleBox.SelectAll(); } });
     /// <inheritdoc/>
-    public void FocusIcon() => Later(() => { if (IconBox.IsVisible) { IconBox.Focus(); IconBox.SelectAll(); IconBox.BringIntoView(); } });
+    public void FocusIcon() => Later(() =>
+    {
+        AppearanceExpander.IsExpanded = true;   // l'icône est dans les réglages d'apparence, repliés par défaut
+        AppearanceExpander.UpdateLayout();
+        if (IconBox.IsVisible) { IconBox.Focus(); IconBox.SelectAll(); IconBox.BringIntoView(); }
+    });
     /// <inheritdoc/>
     public void FocusCatalogSearch() => Later(() => { CatalogSearch.Focus(); CatalogSearch.SelectAll(); });
 

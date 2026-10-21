@@ -64,4 +64,22 @@ public class DesignSystemTests
         Assert.Equal("amoled", cfg.Theme);
         Assert.Equal("system", ConfigStore.Parse("""{ "Version": 2, "Theme": "néon", "Profiles": [] }""").Theme);
     }
+
+    /// <summary>Surfaces où s'affichent les menus de case, le bandeau d'état, le panneau rapide et l'invitation d'une page vide.</summary>
+    [Theory]
+    [InlineData("dark")]
+    [InlineData("amoled")]
+    [InlineData("light")]
+    public void TextStaysReadableOnEverySurfaceTheQuickCreationUses(string theme)
+    {
+        var p = theme switch { "amoled" => Theme.AmoledPalette, "light" => Theme.LightPalette, _ => Theme.DarkPalette };
+        foreach (var bg in new[] { p.Window, p.Panel, p.Surface, p.SurfaceHi })
+        {
+            Assert.True(Theme.Contrast(p.Text, bg) >= 4.5, $"{theme} : Text sur {bg}");
+            Assert.True(Theme.Contrast(p.Dim, bg) >= 4.5, $"{theme} : Dim sur {bg}");           // titre de menu, aide, description des suggestions
+            Assert.True(Theme.Contrast(p.AccentText, bg) >= 4.5, $"{theme} : AccentText sur {bg}");   // « + », flèche des sous-menus
+            Assert.True(Theme.Contrast(p.Danger, bg) >= 4.5, $"{theme} : Danger sur {bg}");     // « Supprimer », messages d'erreur du panneau
+        }
+        Assert.True(Theme.Contrast("#FFFFFF", p.Accent) >= 4.5, $"{theme} : texte blanc sur le bouton d'accent (« Annuler », « Créer »)");
+    }
 }
