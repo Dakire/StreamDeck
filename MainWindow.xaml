@@ -300,7 +300,7 @@
 
     <!-- ===== Grille : centrée, à la taille exacte des touches (aucune touche étirée) ===== -->
     <ItemsControl x:Name="DeckGrid" Grid.Row="1" ItemsSource="{Binding Tiles}" Focusable="False"
-                  PreviewMouseRightButtonDown="OnDeckRightClick"
+                  PreviewMouseRightButtonDown="OnDeckRightClick" AllowDrop="True" DragEnter="OnDeckDragOver" DragOver="OnDeckDragOver" Drop="OnDeckDrop"
                   Width="{Binding L.GridW}" Height="{Binding L.GridH}" HorizontalAlignment="Center" VerticalAlignment="Center">
       <ItemsControl.RenderTransform>
         <TranslateTransform x:Name="GridShift"/>

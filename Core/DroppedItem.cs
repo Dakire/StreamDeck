@@ -73,7 +73,10 @@ public static class DroppedItem
         var t = text?.Trim().Trim('"') ?? "";
         if (t.Contains("://", StringComparison.Ordinal) || t.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
             return TryFromUrl(t, out button, out error);
-        return TryFromPath(t, out button, out error);
+        if (t.Length > 0 && Path.IsPathRooted(t)) return TryFromPath(t, out button, out error);
+        button = new DeckButton();
+        error = "Ce texte n'est ni une adresse web ni un fichier : dépose un lien (https://…), un fichier ou un dossier";
+        return false;
     }
 
     static string Title(string? name, string fallback)

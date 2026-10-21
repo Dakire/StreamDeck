@@ -111,10 +111,13 @@ public partial class MainWindow
     /// Commande d'édition de la case qui contient cet élément (bouton, case vide, emplacement « + »), ou null : barre, dock, menu,
     /// flèche « retour ». Le contexte de données d'un élément de la case est la case elle-même.
     /// </summary>
-    internal static ICommand? EditTargetAt(DependencyObject? hit)
+    internal static ICommand? EditTargetAt(DependencyObject? hit) => TileAt(hit)?.Edit;
+
+    /// <summary>Case (bouton, case vide, emplacement « + », flèche « retour ») qui contient cet élément, ou null.</summary>
+    internal static IEditableTile? TileAt(DependencyObject? hit)
     {
         for (DependencyObject? d = hit; d != null; d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
-            if (d is FrameworkElement { DataContext: IEditableTile tile }) return tile.Edit;
+            if (d is FrameworkElement { DataContext: IEditableTile tile }) return tile;
         return null;
     }
 
