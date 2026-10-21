@@ -1,0 +1,90 @@
+<UserControl x:Class="TouchDeck.Controls.CatalogPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:TouchDeck.ViewModels">
+  <!-- Panneau d'actions du mode édition du deck : toucher une action la pose dans la case sélectionnée (ou la première case libre).
+       DataContext : EditorViewModel. -->
+  <UserControl.Resources>
+    <BooleanToVisibilityConverter x:Key="BoolVis"/>
+
+    <!-- Ligne d'action : tout le rang est une cible tactile de 56 px au moins -->
+    <DataTemplate DataType="{x:Type vm:CatalogItemViewModel}">
+      <Button Command="{Binding AddCommand}" MinHeight="56" Margin="0,1" Padding="8,6" HorizontalContentAlignment="Stretch"
+              Background="Transparent" BorderThickness="0" FocusVisualStyle="{StaticResource DeckFocusVisual}"
+              AutomationProperties.Name="{Binding AutomationName}" ToolTip="{Binding Description}">
+        <Button.Template>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Row" CornerRadius="16" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+              <ContentPresenter/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource DeckSurfaceHi}"/></Trigger>
+              <Trigger Property="IsPressed" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource DeckSecondaryContainer}"/></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Button.Template>
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+          </Grid.ColumnDefinitions>
+          <Border Width="40" Height="40" CornerRadius="12" Background="{Binding Color}" VerticalAlignment="Center">
+            <ui:SymbolIcon Symbol="{Binding Symbol}" FontSize="22" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <StackPanel Grid.Column="1" Margin="12,0,4,0" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource DeckText}"/>
+            <TextBlock Text="{Binding Description}" FontSize="12" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource DeckDim}"/>
+          </StackPanel>
+        </Grid>
+      </Button>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:CatalogSectionViewModel}">
+      <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Margin="0,0,0,6" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                AutomationProperties.Name="{Binding AutomationName}" FocusVisualStyle="{StaticResource DeckFocusVisual}">
+        <Expander.Header>
+          <StackPanel Orientation="Horizontal" MinHeight="40">
+            <ui:SymbolIcon Symbol="{Binding Symbol}" FontSize="20" VerticalAlignment="Center" Foreground="{DynamicResource DeckDim}"/>
+            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding CountText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource DeckDim}"/>
+          </StackPanel>
+        </Expander.Header>
+        <ItemsControl ItemsSource="{Binding Items}" Focusable="False"/>
+      </Expander>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <Grid Margin="12,14,6,0">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+    <TextBlock Text="Actions" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource DeckText}" Margin="4,0,0,10"/>
+    <ui:TextBox x:Name="SearchBox" Grid.Row="1" Style="{StaticResource EditorInput}" Margin="0,0,6,0"
+                PlaceholderText="Rechercher une action…" Icon="{ui:SymbolIcon Search24}" ClearButtonEnabled="True"
+                Text="{Binding Catalog.Search, UpdateSourceTrigger=PropertyChanged}"
+                AutomationProperties.Name="Rechercher une action" PreviewKeyDown="OnSearchKeyDown"/>
+    <TextBlock Grid.Row="2" Text="{Binding Catalog.ResultsText}" Style="{StaticResource EditorHint}" Margin="6,6,0,4"
+               AutomationProperties.LiveSetting="Polite"/>
+    <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" Padding="0,0,6,12" PanningMode="VerticalOnly">
+      <StackPanel>
+        <ItemsControl ItemsSource="{Binding Catalog.Sections}" Focusable="False"/>
+        <TextBlock Text="Aucune action ne correspond.">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource EditorHint}">
+              <Setter Property="Visibility" Value="Collapsed"/>
+              <Setter Property="HorizontalAlignment" Value="Center"/>
+              <Setter Property="Margin" Value="0,32,0,0"/>
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Catalog.HasResults}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

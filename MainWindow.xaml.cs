@@ -55,6 +55,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         // Écran branché ou débranché : le deck suit (ou revient sur l'écran principal si le sien disparaît)
         _displays.Changed += () => PlaceOnScreen(displayChanged: true);
         _vm.Navigated += AnimateGridIn;
+        Closed += (_, _) => { if (_isEditing) { _isEditing = false; _editing = false; } };   // une fenêtre fermée en pleine édition ne laisse pas le toucher détourné
     }
 
     /// <summary>Entrée de la nouvelle page : glissement court dans le sens de la navigation. Purement visuel, la page est déjà affichée.</summary>
@@ -108,6 +109,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     /// </summary>
     internal static IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        // Mode édition (panneaux avec saisie de texte) : la fenêtre est activable et WPF traite le toucher lui-même
+        if (_editing) return IntPtr.Zero;
         if (msg == WM_MOUSEACTIVATE) { handled = true; return new IntPtr(MA_NOACTIVATE); }
         if (TouchTrace) TraceInput(msg, wParam);
         if (_touchOwner != null && IsTouchOrPenPointerMessage(msg, wParam, PointerTypeOf))

@@ -4,9 +4,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
-### Ajouté (Material Design 3)
+### Ajouté (édition intégrée et Material Design 3)
+- **Édition dans le deck** : le mode édition (menu ⚙ › *Modifier au toucher*, ou *Modifier…* sur un bouton) affiche un panneau d'**actions à gauche** et les **propriétés à droite** de la grille, sans autre fenêtre. Toucher une touche la sélectionne (liseré d'accent), toucher une action la pose dans la case choisie, *Annuler* / *Rétablir* sont dans le dock. L'éditeur complet reste disponible en fenêtre séparée.
 - **Thème Material Design 3 dynamique** : les thèmes sombre, AMOLED et clair sont générés depuis une couleur source par des palettes tonales (accent, conteneurs, surfaces, erreur). L'onglet de page actif suit la barre de navigation MD3.
-- **Élévation tonale** : plus d'ombre portée (touches, dock, bandeau, menu), états de survol et d'appui MD3, touches plus arrondies. Rendu de 32 touches 177 → 17 ms hors écran, mémoire privée 105 → 94 Mo (ADR 0015).
+- **Élévation tonale** : plus d'ombre portée (touches, dock, bandeau, menu), états de survol et d'appui MD3, touches plus arrondies. Rendu de 32 touches 177 → 17 ms hors écran, mémoire privée 105 → 94 Mo.
+- Pendant l'édition seulement, la fenêtre du deck est activable (saisie au clavier, toucher WPF) ; en sortant, `WS_EX_NOACTIVATE` est rétabli et le focus est rendu à l'application précédente (ADR 0015).
 
 ### Ajouté (création rapide)
 - **Menu des cases du deck** (clic droit, appui long) : case vide → *Nouveau bouton…*, *Parcourir les actions*, modèles en un clic, *Coller*, *Éditeur complet…* ; bouton → *Modifier…*, *Dupliquer*, *Copier*, *Couper*, *Supprimer*, *Éditeur complet…*. Décrit en `MenuItemSpec`, affiché dans la feuille du deck (lignes de 48 px) pour que le toucher reste traité par le deck (ADR 0013, ADR 0014).

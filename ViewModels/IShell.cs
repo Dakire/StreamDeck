@@ -17,4 +17,11 @@ public interface IShell
     void Minimize();
     /// <summary>Replace la fenêtre sur l'écran cible après un changement de configuration ou d'affichage.</summary>
     void ReapplyPlacement();
+    /// <summary>
+    /// Mode édition du deck : la fenêtre devient activable (les champs de saisie reçoivent le clavier) et le toucher redevient celui de WPF ;
+    /// en sortant, elle ne prend de nouveau jamais le focus et le rend à l'application qui l'avait.
+    /// </summary>
+    void SetEditing(bool editing);
+    /// <summary>Dialogues et focus des panneaux d'édition intégrés au deck (importer une image, saisir un nom…).</summary>
+    IEditorShell EditorShell { get; }
 }

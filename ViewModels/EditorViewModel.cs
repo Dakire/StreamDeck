@@ -146,7 +146,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         _grid = grid;
         _windows = windows;
         _profile = _doc.ActiveProfile.Name;
-        Catalog = new CatalogViewModel(_doc);
+        Catalog = new CatalogViewModel(_doc) { Choose = a => AddCatalogAction(a) };
         Properties = new PropertiesViewModel(_doc, this, shell, platform.Windows, integrations);
 
         _doc.Changed += OnDocumentChanged;
@@ -488,6 +488,18 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     public void SelectIndex(int index)
     {
         _selectedIndex = index;
+        try { SelectIndexCore(index); }
+        finally { SelectionChanged?.Invoke(); }
+    }
+
+    /// <summary>Index de la case sélectionnée dans la grille affichée, ou -1.</summary>
+    public int SelectedIndex => _selectedIndex;
+
+    /// <summary>La sélection a changé (case choisie, désélection) : le deck met en évidence la touche correspondante.</summary>
+    public event Action? SelectionChanged;
+
+    void SelectIndexCore(int index)
+    {
         var slot = index >= 0 ? Slots.FirstOrDefault(s => !s.IsBack && s.Index == index) : null;
         if (index >= 0 && slot == null) { RefreshSlots(); slot = Slots.FirstOrDefault(s => !s.IsBack && s.Index == index); }
         _suppressSelection = true;
