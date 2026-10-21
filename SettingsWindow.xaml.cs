@@ -22,7 +22,7 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow, ISettingsShe
         InitializeComponent();
         ShortcutList.ItemsSource = SettingsViewModel.Shortcuts.Select(s => new { s.Keys, s.What }).ToList();
         Icon = Application.Current.MainWindow?.Icon;
-        Closed += (_, _) => _vm.Dispose();
+        Closed += (_, _) => { _vm.Dispose(); WindowCleanup.ReleaseTitleBars(this); };
     }
 
     /// <inheritdoc/>

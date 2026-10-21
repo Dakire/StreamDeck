@@ -26,6 +26,7 @@ public partial class QuickCreateWindow : Wpf.Ui.Controls.FluentWindow
         _vm.CloseRequested += CloseOnce;
         Loaded += (_, _) => { Search.Focus(); Keyboard.Focus(Search); };
         Deactivated += (_, _) => CloseOnce();
+        Closed += (_, _) => WindowCleanup.ReleaseTitleBars(this);
     }
 
     void CloseOnce()

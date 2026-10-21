@@ -19,6 +19,7 @@ public partial class PromptWindow : Wpf.Ui.Controls.FluentWindow
         InitializeComponent();
         if (owner is { IsVisible: true }) Owner = owner;
         else WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        Closed += (_, _) => WindowCleanup.ReleaseTitleBars(this);
         _mode = mode;
         Title = title;
         Bar.Title = title;

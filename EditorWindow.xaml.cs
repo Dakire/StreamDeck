@@ -45,7 +45,7 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
         // Saisie en cours validée avant de fermer ou de quitter la fenêtre : rien de ce qui a été tapé ne se perd
         Closing += (_, _) => _vm.Properties.Flush();
         Deactivated += (_, _) => _vm.Properties.Flush();
-        Closed += (_, _) => { _vm.Dispose(); persistence.Flush(); };
+        Closed += (_, _) => { _vm.Dispose(); persistence.Flush(); WindowCleanup.ReleaseTitleBars(this); };
         SourceInitialized += (_, _) => PlaceOnCursorScreen();
     }
 
