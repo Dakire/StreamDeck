@@ -17,6 +17,8 @@ sealed class FakeAppWindows : IAppWindows
 {
     public List<(Place? Place, int Index, bool Quick)> Opened { get; } = new();
     public List<string> AddedCatalog { get; } = new();
+    public List<(Place Place, int Index)> QuickCreates { get; } = new();
+    public void OpenQuickCreate(Place place, int index) => QuickCreates.Add((place, index));
     public bool IsEditorOpen => Opened.Count > 0;
     public void OpenEditor(Place? place = null, int index = -1, bool quick = false, string? addCatalogId = null)
     {

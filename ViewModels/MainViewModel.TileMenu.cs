@@ -42,7 +42,8 @@ public partial class MainViewModel
     {
         var items = new List<MenuItemSpec>
         {
-            new("Nouveau bouton…", Icon: SymbolRegular.Add24, Children: CatalogMenu.Categories(a => CreateFromCatalog(a, place, index))),
+            new("Nouveau bouton…", () => _windows.OpenQuickCreate(place, index), SymbolRegular.Add24),
+            new("Parcourir les actions", Icon: SymbolRegular.Apps24, Children: CatalogMenu.Categories(a => CreateFromCatalog(a, place, index))),
             MenuItemSpec.Separator,
         };
         foreach (var template in QuickCreate.Templates)

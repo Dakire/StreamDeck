@@ -30,6 +30,20 @@ public static class QuickCreate
         new("Page", "nav.page", "Document24"),
     };
 
+    /// <summary>Suggestions avant toute saisie : favoris, récents, puis les modèles du menu ; sans doublon, au plus <paramref name="max"/>.</summary>
+    public static IReadOnlyList<CatalogAction> Initial(DeckConfig config, int max = MaxSuggestions)
+    {
+        var result = new List<CatalogAction>();
+        void Add(string id)
+        {
+            if (result.Count < max && ActionCatalog.Find(id) is { } action && !result.Contains(action)) result.Add(action);
+        }
+        foreach (var id in config.Favorites) Add(id);
+        foreach (var id in config.Recents) Add(id);
+        foreach (var template in Templates) Add(template.CatalogId);
+        return result;
+    }
+
     /// <summary>Bouton neuf d'après un identifiant du catalogue, ou null s'il n'existe plus (extension retirée).</summary>
     public static DeckButton? CreateFromCatalog(string? catalogId) => ActionCatalog.Find(catalogId)?.CreateButton();
 

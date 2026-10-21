@@ -65,6 +65,7 @@ public class DeckMenuTests
             Assert.Equal("Case vide", Header(vm));
             var texts = Texts(vm);
             Assert.Equal("Nouveau bouton…", texts[0]);
+            Assert.Equal("Parcourir les actions", texts[1]);
             foreach (var t in QuickCreate.Templates) Assert.Contains(t.Title, texts);
             Assert.Equal("Éditeur complet…", texts[^1]);
         });
@@ -127,6 +128,21 @@ public class DeckMenuTests
     }
 
     [Fact]
+    public void NewButtonOpensTheQuickPanelOnThatSlotWithoutWriting()
+    {
+        var (vm, windows) = NewDeck();
+        _host.Run(() =>
+        {
+            OpenFreeSlotMenu(vm);
+            Pick(vm, "Nouveau bouton…");
+            Assert.False(vm.MenuOpen);
+            Assert.Equal((Root, 5), windows.QuickCreates.Single());
+            Assert.Empty(windows.Opened);
+            Assert.False(Doc.CanUndo);
+        });
+    }
+
+    [Fact]
     public void ATemplateThatNeedsSettingsHandsTheCellToTheQuickEditorWithoutWriting()
     {
         var (vm, windows) = NewDeck();
@@ -142,21 +158,21 @@ public class DeckMenuTests
     }
 
     [Fact]
-    public void NewButtonBrowsesTheCatalogByCategoryAndCreatesWithOneTouchEach()
+    public void BrowsingTheCatalogByCategoryCreatesWithOneTouchEach()
     {
         var (vm, _) = NewDeck();
         _host.Run(() =>
         {
             OpenFreeSlotMenu(vm);
-            Pick(vm, "Nouveau bouton…");
-            Assert.Equal("Nouveau bouton", Header(vm));
+            Pick(vm, "Parcourir les actions");
+            Assert.Equal("Parcourir les actions", Header(vm));
             Assert.Contains("Retour", Texts(vm));
             Assert.Contains(ActionCatalog.Multimedia, Texts(vm));
 
             Pick(vm, ActionCatalog.Multimedia);
             Assert.Equal(ActionCatalog.Multimedia, Header(vm));
             Pick(vm, "Retour");                                              // revient aux catégories
-            Assert.Equal("Nouveau bouton", Header(vm));
+            Assert.Equal("Parcourir les actions", Header(vm));
 
             Pick(vm, ActionCatalog.Multimedia);
             Pick(vm, "Stop");
@@ -172,7 +188,7 @@ public class DeckMenuTests
         _host.Run(() =>
         {
             OpenFreeSlotMenu(vm);
-            Pick(vm, "Nouveau bouton…");
+            Pick(vm, "Parcourir les actions");
             vm.CloseMenuCommand.Execute(null);
             vm.OpenMenuCommand.Execute(null);                                // menu général
             Assert.Contains("Paramètres", Texts(vm));

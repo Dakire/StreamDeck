@@ -19,6 +19,9 @@ public interface IAppWindows
     /// <param name="addCatalogId">Avec <paramref name="quick"/> : action du catalogue posée aussitôt dans la case visée (annulable avec « Annuler »).</param>
     void OpenEditor(Place? place = null, int index = -1, bool quick = false, string? addCatalogId = null);
 
+    /// <summary>Ouvre le panneau de création rapide pour cette case vide (une seule instance : un nouveau panneau remplace l'ancien).</summary>
+    void OpenQuickCreate(Place place, int index);
+
     /// <summary>Ouvre les paramètres (ou les ramène devant), au-dessus de l'éditeur s'il est ouvert.</summary>
     void OpenSettings();
 }
@@ -29,6 +32,7 @@ public sealed class AppWindows : IAppWindows
     readonly IServiceProvider _services;
     EditorWindow? _editor;
     SettingsWindow? _settings;
+    Controls.QuickCreateWindow? _quick;
 
     /// <summary>Gestionnaire de fenêtres ; <paramref name="services"/> sert à construire l'éditeur et les paramètres à la demande.</summary>
     public AppWindows(IServiceProvider services) { _services = services; }
@@ -49,6 +53,19 @@ public sealed class AppWindows : IAppWindows
         _editor.GoTo(place, index, quick, addCatalogId);
         if (_editor.WindowState == WindowState.Minimized) _editor.WindowState = WindowState.Normal;
         _editor.Activate();
+    }
+
+    /// <inheritdoc/>
+    public void OpenQuickCreate(Place place, int index)
+    {
+        _quick?.Close();
+        var window = new Controls.QuickCreateWindow(_services, place, index);
+        _quick = window;
+        window.Closed += (_, _) => { if (ReferenceEquals(_quick, window)) _quick = null; };
+        if (Application.Current.MainWindow is { IsVisible: true } main) window.Owner = main;
+        else window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        window.Show();
+        window.Activate();
     }
 
     /// <inheritdoc/>

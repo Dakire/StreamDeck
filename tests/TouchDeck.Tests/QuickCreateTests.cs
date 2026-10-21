@@ -159,6 +159,19 @@ public class QuickCreateTests
     }
 
     [Fact]
+    public void InitialSuggestionsListFavoritesThenRecentsThenTemplatesWithoutDuplicates()
+    {
+        var cfg = ConfigStore.DefaultConfig();
+        cfg.Favorites = new() { "chrome.focus", "n'existe.pas", "media.next" };
+        cfg.Recents = new() { "media.next", "audio.mic" };
+        var ids = QuickCreate.Initial(cfg, 6).Select(a => a.Id).ToArray();
+        Assert.Equal(new[] { "chrome.focus", "media.next", "audio.mic", "key.hotkey", "app.launch", "web.url" }, ids);
+        Assert.Equal(ids.Length, ids.Distinct().Count());
+        Assert.Equal(QuickCreate.Templates.Count, QuickCreate.Initial(ConfigStore.DefaultConfig(), 50).Count);
+        Assert.Equal(3, QuickCreate.Initial(cfg, 3).Count);
+    }
+
+    [Fact]
     public void ExactNameBeatsPartialMatches()
     {
         var ranked = QuickCreate.Rank("coller");
