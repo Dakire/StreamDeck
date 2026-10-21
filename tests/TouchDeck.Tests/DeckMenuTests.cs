@@ -305,6 +305,67 @@ public class DeckMenuTests
         });
     }
 
+    // ---------- annuler / rétablir, exécution, focus ----------
+
+    [Fact]
+    public void EveryKindOfCreationUndoesAndRedoesFromTheEditorButtonsAndShortcuts()
+    {
+        var (vm, _) = NewDeck();
+        var editor = _host.Run(() => _host.Create<EditorViewModel>(new FakeShell()));
+        _host.Run(() =>
+        {
+            OpenFreeSlotMenu(vm);
+            Pick(vm, "Média : suivant");                                     // modèle du menu
+            var panel = _host.Create<QuickCreateViewModel>(new FakeAppWindows(), Root, 6);
+            panel.Query = "muet";
+            panel.CreateCommand.Execute(null);                               // panneau rapide
+            Assert.NotNull(Doc.Get(Root, 5));
+            Assert.NotNull(Doc.Get(Root, 6));
+
+            Assert.True(editor.CanUndo);
+            editor.UndoCommand.Execute(null);                                // le bouton « Annuler » de l'éditeur (Ctrl+Z)
+            Assert.Null(Doc.Get(Root, 6));
+            editor.UndoCommand.Execute(null);
+            Assert.Null(Doc.Get(Root, 5));
+            Assert.True(editor.CanRedo);
+            editor.RedoCommand.Execute(null);                                // Ctrl+Y
+            editor.RedoCommand.Execute(null);
+            Assert.NotNull(Doc.Get(Root, 5));
+            Assert.NotNull(Doc.Get(Root, 6));
+            Assert.False(editor.CanRedo);
+        });
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task ACreatedButtonRunsLikeAnyOtherOnTheSimulatedPlatform()
+    {
+        var (vm, _) = NewDeck();
+        _host.Run(() => { OpenFreeSlotMenu(vm); Pick(vm, "Parcourir les actions"); Pick(vm, ActionCatalog.Apps); Pick(vm, "Bloc-notes"); });
+        var tile = _host.Run(() => vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Bloc-notes"));
+        await _host.Run(() => vm.RunTileAsync(tile));                        // plateforme simulée : rien n'est lancé sur le bureau
+        _host.Settle();
+        _host.Run(() =>
+        {
+            Assert.Equal(TileRunState.Idle, tile.RunState);
+            Assert.Contains("notepad.exe", vm.Status);
+            Assert.False(vm.StatusIsError);
+        });
+    }
+
+    [Fact]
+    public void TheDeckStillNeverTakesTheFocus()
+    {
+        var t = typeof(MainWindow);
+        const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
+        Assert.Equal(0x08000000, (int)t.GetField("WS_EX_NOACTIVATE", flags)!.GetRawConstantValue()!);
+        Assert.Equal(0x0021, (int)t.GetField("WM_MOUSEACTIVATE", flags)!.GetRawConstantValue()!);
+        Assert.Equal(3, (int)t.GetField("MA_NOACTIVATE", flags)!.GetRawConstantValue()!);
+        _host.Reset(Config());
+        var win = _host.Run(() => new MainWindow(_host.Services));
+        try { Assert.False(_host.Run(() => win.ShowActivated)); }
+        finally { _host.Run(win.Close); }
+    }
+
     // ---------- affichage : cibles tactiles et liaisons ----------
 
     [Fact]
