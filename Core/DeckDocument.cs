@@ -442,6 +442,36 @@ public sealed class DeckDocument
         });
     }
 
+    /// <summary>Crée un bouton dans une case vide (refuse une case occupée) ; une seule modification annulable.</summary>
+    public OpResult AddButton(Place place, int index, DeckButton button, string label = "Ajouter un bouton") =>
+        AddButtons(place, index, new[] { button }, label);
+
+    /// <summary>Crée un bouton dans la première case libre de la grille désignée ; une seule modification annulable.</summary>
+    public OpResult AddButtonFirstFree(Place place, DeckButton button, string label = "Ajouter un bouton") =>
+        AddButtons(place, FirstEmptyIndex(place), new[] { button }, label);
+
+    /// <summary>
+    /// Crée plusieurs boutons : le premier dans la case vide <paramref name="startIndex"/>, les suivants dans les cases libres qui suivent.
+    /// Une seule modification annulable, quel que soit le nombre de boutons ; le résultat porte l'index du premier.
+    /// </summary>
+    public OpResult AddButtons(Place place, int startIndex, IReadOnlyList<DeckButton> buttons, string label = "Ajouter des boutons")
+    {
+        if (buttons.Count == 0 || buttons.Any(b => b == null || b.Blank)) return OpResult.Fail("Aucun bouton à ajouter");
+        return Edit(label, _ =>
+        {
+            var list = Container(place);
+            if (list == null || startIndex < 0) return OpResult.Fail("Emplacement introuvable");
+            if (Take(list, startIndex) != null) return OpResult.Fail("La case n'est pas vide");
+            int at = startIndex;
+            foreach (var b in buttons)
+            {
+                Put(list, at, b);
+                at = FirstEmptyIndex(place, at + 1);
+            }
+            return OpResult.Success(startIndex);
+        });
+    }
+
     // ---------- pages ----------
 
     /// <summary>Ajoute une page (nom unique) à la fin du profil ; l'index de la page est dans le résultat.</summary>
