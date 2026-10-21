@@ -206,7 +206,7 @@
     </Grid.RowDefinitions>
 
     <!-- ===== Barre du haut : marque, profil, mode ; poignée de déplacement ; commandes de fenêtre ===== -->
-    <Border Grid.Row="0" Background="{DynamicResource DeckTopBar}" MouseLeftButtonDown="OnDragBarDown">
+    <Border x:Name="DragBar" Grid.Row="0" Background="{DynamicResource DeckTopBar}" MouseLeftButtonDown="OnDragBarDown">
       <Grid Margin="{Binding L.TopMargin}">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*"/>

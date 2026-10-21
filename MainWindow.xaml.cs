@@ -20,23 +20,18 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     const int WS_EX_NOACTIVATE = 0x08000000;
     const int WM_MOUSEACTIVATE = 0x0021;
     const int MA_NOACTIVATE = 3;
+    const int WM_POINTERDOWN = 0x0246, WM_POINTERUP = 0x0247, WM_POINTERUPDATE = 0x0245;
+    const uint PT_TOUCH = 2, PT_PEN = 3;
     static readonly IntPtr HWND_TOPMOST = new(-1);
     static readonly IntPtr HWND_NOTOPMOST = new(-2);
     const uint SWP_NOACTIVATE = 0x0010;
 
-    // Famille WM_POINTER (Windows 8+) : touch, stylet et souris unifiés
-    const int WM_POINTERDOWN   = 0x0246;
-    const int WM_POINTERUP     = 0x0247;
-    const int WM_POINTERUPDATE = 0x0245;
-    // Types de pointeur (POINTER_INPUT_TYPE)
-    const uint PT_TOUCH = 2;
-    const uint PT_PEN   = 3;
-
     [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr hWnd, int nIndex);
     [DllImport("user32.dll")] static extern int SetWindowLong(IntPtr hWnd, int nIndex, int value);
     [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
-    // GetPointerType : récupère le type du pointeur (touch / pen / mouse) à partir de son identifiant
     [DllImport("user32.dll")] static extern bool GetPointerType(uint pointerId, out uint pointerType);
+    [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT p);
+    [DllImport("user32.dll")] static extern IntPtr GetMessageExtraInfo();
     [StructLayout(LayoutKind.Sequential)] struct POINT { public int X, Y; }
 
     readonly MainViewModel _vm;
@@ -86,23 +81,56 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         _ = SetWindowLong(Hwnd, GWL_EXSTYLE, GetWindowLong(Hwnd, GWL_EXSTYLE) | WS_EX_NOACTIVATE);
         // Cœur du produit : sans ce style, les raccourcis partiraient vers le deck au lieu de l'application active
         if ((GetWindowLong(Hwnd, GWL_EXSTYLE) & WS_EX_NOACTIVATE) == 0) Log.Error("Style WS_EX_NOACTIVATE non appliqué à la fenêtre du deck");
-        HwndSource.FromHwnd(Hwnd)?.AddHook(WndProc);
+        _touchOwner = this;
+        var source = HwndSource.FromHwnd(Hwnd);
+        source?.AddHook(WndProc);
+        if (source != null)
+        {
+            _wpfInput = BindWpfInput(source);
+            if (_wpfInput == null) Log.Warn("Entrée interne de WPF introuvable : le défilement tactile peut être limité");
+        }
+        if (TouchTrace)
+        {
+            AppContext.TryGetSwitch("Switch.System.Windows.Input.Stylus.EnablePointerSupport", out bool ptr);
+            Log.Info($"[tactile] pile pointeur WPF activée={ptr}, tablettes={System.Windows.Input.Tablet.TabletDevices.Count}");
+        }
         PlaceOnScreen();
     }
 
-    static IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    /// <summary>Entrée d'un message dans le traitement d'entrée de WPF (HwndSource.InputFilterMessage, interne).</summary>
+    delegate IntPtr InputFilter(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled);
+    static InputFilter? _wpfInput;
+
+    /// <summary>
+    /// WM_MOUSEACTIVATE : jamais d'activation. WM_POINTER d'un doigt ou d'un stylet : retiré du traitement par défaut (DefWindowProc le
+    /// promouvrait en souris système, ce qui déplace le curseur) et traité par la fenêtre (MainWindow.Touch.cs). WPF reçoit quand même
+    /// le message, si son entrée interne est accessible, pour la manipulation et le défilement. La souris (PT_MOUSE) n'est jamais touchée.
+    /// </summary>
+    internal static IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == WM_MOUSEACTIVATE) { handled = true; return new IntPtr(MA_NOACTIVATE); }
-
-        // Bloquer la promotion tactile → souris pour WM_POINTER issus d'un doigt ou d'un stylet.
-        // Sans cette interception, DefWindowProc synthétise un WM_MOUSEMOVE qui déplace le curseur
-        // avant même que WPF ne reçoive quoi que ce soit. Les vrais messages souris (PT_MOUSE) ne
-        // sont pas bloqués : déplacement, clics et survol fonctionnent normalement.
-        // WPF continue à traiter le toucher via son propre pipeline Stylus/Manipulation, indépendant
-        // de ce chemin Win32. handled = true empêche DefWindowProc : le curseur reste en place.
-        if (IsTouchOrPenPointerMessage(msg, wParam, PointerTypeOf)) handled = true;
-
+        if (TouchTrace) TraceInput(msg, wParam);
+        if (_touchOwner != null && IsTouchOrPenPointerMessage(msg, wParam, PointerTypeOf))
+        {
+            if (_wpfInput != null) { bool inner = false; _wpfInput(hwnd, msg, wParam, lParam, ref inner); }
+            _touchOwner.OnTouchPointer(msg, wParam);
+            handled = true;
+        }
         return IntPtr.Zero;
+    }
+
+    /// <summary>Accès à HwndSource.InputFilterMessage (membre interne de WPF) ; null si la version de WPF ne l'expose plus.</summary>
+    static InputFilter? BindWpfInput(HwndSource source)
+    {
+        try
+        {
+            var method = typeof(HwndSource).GetMethod("InputFilterMessage", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            return method == null ? null : (InputFilter)Delegate.CreateDelegate(typeof(InputFilter), source, method);
+        }
+        catch (Exception ex) when (ex is ArgumentException or MissingMethodException or System.Reflection.TargetException)
+        {
+            return null;
+        }
     }
 
     /// <summary>Type du pointeur (PT_*), ou null si Windows ne le connaît pas.</summary>
@@ -112,9 +140,25 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     internal static bool IsTouchOrPenPointerMessage(int msg, IntPtr wParam, Func<uint, uint?> pointerType)
     {
         if (msg is not (WM_POINTERDOWN or WM_POINTERUP or WM_POINTERUPDATE)) return false;
-        // L'identifiant du pointeur est dans les 16 bits bas de wParam (GET_POINTERID_WPARAM)
-        uint pointerId = (uint)((long)wParam & 0xFFFF);
+        uint pointerId = (uint)((long)wParam & 0xFFFF);   // GET_POINTERID_WPARAM
         return pointerType(pointerId) is PT_TOUCH or PT_PEN;
+    }
+
+    // Diagnostic : TOUCHDECK_TOUCHLOG=1 journalise les messages pointeur / souris et la position du curseur (touchdeck.log)
+    static readonly bool TouchTrace = Environment.GetEnvironmentVariable("TOUCHDECK_TOUCHLOG") == "1";
+
+    static void TraceInput(int msg, IntPtr wParam)
+    {
+        string? name = msg switch { 0x0245 => "WM_POINTERUPDATE", 0x0246 => "WM_POINTERDOWN", 0x0247 => "WM_POINTERUP",
+            0x0200 => "WM_MOUSEMOVE", 0x0201 => "WM_LBUTTONDOWN", 0x0202 => "WM_LBUTTONUP", 0x0240 => "WM_TOUCH", _ => null };
+        if (name == null) return;
+        GetCursorPos(out var c);
+        string detail = "";
+        if (msg is >= 0x0245 and <= 0x0247)
+            detail = GetPointerType((uint)((long)wParam & 0xFFFF), out uint t) ? $" type={t}" : " type=?";
+        else
+            detail = ((long)GetMessageExtraInfo() & 0xFFFFFF00) == 0xFF515700 ? " depuis-tactile" : " souris-reelle";
+        Log.Info($"[tactile] {name}{detail} curseur=({c.X},{c.Y})");
     }
 
     void PlaceOnScreen(bool displayChanged = false)

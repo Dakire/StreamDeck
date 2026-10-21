@@ -31,6 +31,10 @@
     <Page Remove="tests\**" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Pile WM_POINTER de WPF : seule à recevoir le toucher par messages de fenêtre (voir MainWindow.WndProc et ADR 0013) -->
+    <RuntimeHostConfigurationOption Include="Switch.System.Windows.Input.Stylus.EnablePointerSupport" Value="true" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="TouchDeck.Tests" />
   </ItemGroup>
   <ItemGroup>

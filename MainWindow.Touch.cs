@@ -1,0 +1,122 @@
+using System;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Windows;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
+
+namespace TouchDeck;
+
+/// <summary>
+/// Toucher du deck sans souris système. WPF n'active pas les boutons à partir du toucher : il attend la souris synthétique de Windows,
+/// qui déplace le curseur. Le deck avale donc les WM_POINTER du doigt (voir WndProc) et traite lui-même l'appui : bouton visé trouvé
+/// par test de collision, activé par l'automatisation WPF (même chemin qu'un clic, commande comprise), barre du haut déplaçable
+/// au doigt, double appui sur la barre = plein écran.
+/// </summary>
+public partial class MainWindow
+{
+    [StructLayout(LayoutKind.Sequential)]
+    struct POINTER_INFO
+    {
+        public uint pointerType, pointerId, frameId, pointerFlags;
+        public IntPtr sourceDevice, hwndTarget;
+        public POINT ptPixelLocation, ptHimetricLocation, ptPixelLocationRaw, ptHimetricLocationRaw;
+        public uint dwTime, historyCount;
+        public int inputData;
+        public uint dwKeyStates;
+        public ulong performanceCount;
+        public int buttonChangeType;
+    }
+
+    [DllImport("user32.dll")] static extern bool GetPointerInfo(uint pointerId, out POINTER_INFO info);
+    [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
+    [StructLayout(LayoutKind.Sequential)] struct RECT { public int Left, Top, Right, Bottom; }
+    const uint SWP_NOSIZE = 0x0001, SWP_NOZORDER = 0x0004;
+    const int DoubleTapMs = 450;
+
+    static MainWindow? _touchOwner;
+    readonly TapRecognizer _tap = new();
+    bool _tapOnBar;
+    bool _dragging;
+    (int X, int Y) _dragOffset;
+    long _lastBarTapTick;
+
+    /// <summary>Un message WM_POINTER d'un doigt ou d'un stylet (déjà retiré du traitement par défaut de Windows).</summary>
+    void OnTouchPointer(int msg, IntPtr wParam)
+    {
+        uint id = (uint)((long)wParam & 0xFFFF);
+        if (!GetPointerInfo(id, out var info)) return;
+        int x = info.ptPixelLocation.X, y = info.ptPixelLocation.Y;
+        switch (msg)
+        {
+            case WM_POINTERDOWN:
+                _tap.Slop = (int)Math.Ceiling(12 * VisualTreeHelper.GetDpi(this).DpiScaleX);
+                _tap.Down(id, x, y);
+                _tapOnBar = Hit(x, y).bar;
+                _dragging = false;
+                break;
+            case WM_POINTERUPDATE:
+                if (_tap.Move(id, x, y) && _tapOnBar) DragBarTo(x, y);
+                break;
+            case WM_POINTERUP:
+                bool wasDragging = _dragging;
+                _dragging = false;
+                if (!_tap.Up(id, x, y) || wasDragging) break;
+                var (target, bar, binding) = Hit(x, y);
+                if (target != null) Activate(target);
+                else if (binding != null) { if (binding.CanExecute(null)) binding.Execute(null); }
+                else if (bar) OnBarTap();
+                break;
+        }
+    }
+
+    /// <summary>Élément activable sous le point (pixels écran) : bouton, commande d'un MouseBinding, ou barre du haut.</summary>
+    (ButtonBase? button, bool bar, ICommand? binding) Hit(int x, int y)
+    {
+        var p = PointFromScreen(new Point(x, y));
+        var hit = VisualTreeHelper.HitTest(this, p)?.VisualHit;
+        bool bar = false;
+        ICommand? binding = null;
+        for (DependencyObject? d = hit; d != null; d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+        {
+            if (d is ButtonBase { IsEnabled: true } b) return (b, false, null);
+            if (d == DragBar) bar = true;
+            if (binding == null && d is UIElement ue)
+                binding = ue.InputBindings.OfType<MouseBinding>().FirstOrDefault(m => m.MouseAction == MouseAction.LeftClick)?.Command;
+        }
+        return (null, bar, binding);
+    }
+
+    /// <summary>Active un bouton comme le ferait un clic (commande, bascule), sans événement souris.</summary>
+    static void Activate(ButtonBase button)
+    {
+        var peer = UIElementAutomationPeer.CreatePeerForElement(button);
+        if (peer?.GetPattern(PatternInterface.Invoke) is IInvokeProvider invoke) invoke.Invoke();
+        else if (peer?.GetPattern(PatternInterface.Toggle) is IToggleProvider toggle) toggle.Toggle();
+    }
+
+    /// <summary>Double appui sur la barre : plein écran / fenêtre.</summary>
+    void OnBarTap()
+    {
+        long now = Environment.TickCount64;
+        bool second = now - _lastBarTapTick <= DoubleTapMs;
+        _lastBarTapTick = second ? 0 : now;
+        if (second) ToggleFullscreen();
+    }
+
+    /// <summary>Déplace la fenêtre sous le doigt depuis la barre du haut (sort du plein écran au premier mouvement).</summary>
+    void DragBarTo(int x, int y)
+    {
+        if (!_dragging)
+        {
+            if (_full) GoWindowed(CurrentScreen(), new POINT { X = x, Y = y });
+            GetWindowRect(Hwnd, out var r);
+            _dragOffset = (x - r.Left, y - r.Top);
+            _dragging = true;
+        }
+        SetWindowPos(Hwnd, IntPtr.Zero, x - _dragOffset.X, y - _dragOffset.Y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+}

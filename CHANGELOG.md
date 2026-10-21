@@ -4,6 +4,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Corrigé (tactile)
+- **Le toucher ne déplace plus le curseur** : le deck traite lui-même les appuis du doigt (boutons, menu, barre du haut déplaçable, double appui = plein écran) au lieu de laisser Windows les convertir en souris. La souris reste indépendante. Diagnostic : `TOUCHDECK_TOUCHLOG=1` (`docs/adr/0013-pile-pointeur-wpf.md`).
+
 ### Ajouté (phase 8, Google Workspace)
 - **Google Workspace** avec ton projet Google Cloud (OAuth de bureau, PKCE, jeton chiffré) : ajouter une ligne ou écrire une cellule Sheets, ajouter du texte à un Docs, créer un événement Agenda (`docs/integrations/google.md`).
 
