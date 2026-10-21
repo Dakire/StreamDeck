@@ -65,6 +65,18 @@ public sealed class AddTileViewModel : IEditableTile
     public ICommand? Edit => Click;
 }
 
+/// <summary>
+/// Première case d'une page ou d'un dossier encore vide, hors mode édition : invite à ajouter un bouton au toucher (au lieu d'une grille éteinte).
+/// Dès qu'un bouton existe, la case redevient une case vide ordinaire.
+/// </summary>
+public sealed class WelcomeTileViewModel : IEditableTile
+{
+    /// <summary>Ouvre le menu de création de cette case.</summary>
+    public required ICommand Click { get; init; }
+    /// <inheritdoc/>
+    public ICommand? Edit => Click;
+}
+
 /// <summary>Point de l'indicateur de sous-pages du dock (touchable : va à cette sous-page).</summary>
 public sealed class PageDotViewModel
 {

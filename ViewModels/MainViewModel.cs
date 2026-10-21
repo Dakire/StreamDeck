@@ -395,6 +395,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         var place = CurrentPlace;
         int offset = _folder.Count > 0 ? 1 : 0;
         int first = _sub * _capacity;
+        bool empty = !view.Any(v => v.Button != null);   // aucune touche : la première case invite à ajouter un bouton
         for (int slot = 0; slot < _capacity; slot++)
         {
             int i = first + slot;
@@ -403,11 +404,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             if (i >= view.Count)
             {
                 // Au-delà du contenu : en édition, chaque case libre propose d'ajouter un bouton
-                int at = i - offset;
-                key = IsEdit ? new TileKey("add", place, at, null, null, false, true) : new TileKey("spacer", place, at, null, null, false, false);
-                create = IsEdit
-                    ? () => new AddTileViewModel { Click = new RelayCommand(() => OpenTileMenu(place, at)) }
-                    : () => new SpacerTileViewModel { Edit = new RelayCommand(() => OpenTileMenu(place, at)) };   // touche libre, dessinée éteinte
+                (key, create) = FreeTile(place, i - offset, i == offset && empty);
             }
             else if (view[i].IsBack)
             {
@@ -425,11 +422,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             }
             else if (view[i].Button == null)
             {
-                int at = view[i].ListIndex;
-                key = IsEdit ? new TileKey("add", place, at, null, null, false, true) : new TileKey("spacer", place, at, null, null, false, false);
-                create = IsEdit
-                    ? () => new AddTileViewModel { Click = new RelayCommand(() => OpenTileMenu(place, at)) }
-                    : () => new SpacerTileViewModel { Edit = new RelayCommand(() => OpenTileMenu(place, at)) };
+                (key, create) = FreeTile(place, view[i].ListIndex, i == offset && empty);
             }
             else
             {
@@ -470,6 +463,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             _tileKeys.RemoveAt(_tileKeys.Count - 1);
         }
         UpdateLiveTimer();
+        ShowDiscoveryHintOnce(view.Count(v => v.Button != null));
     }
 
     // ---------- exécution et retour visuel ----------

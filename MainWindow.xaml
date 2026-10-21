@@ -153,6 +153,21 @@
       </Button>
     </DataTemplate>
 
+    <!-- Page ou dossier vide : la première case invite à ajouter un bouton (toucher = menu de création) -->
+    <DataTemplate DataType="{x:Type vm:WelcomeTileViewModel}">
+      <Button Style="{StaticResource AddTileButton}" Command="{Binding Click}" AutomationProperties.Name="Ajouter un bouton"
+              AutomationProperties.HelpText="Ouvre le menu de création. Un appui long sur n'importe quelle case vide fait de même."
+              Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+              Tag="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+          <ui:SymbolIcon Symbol="Add24" Foreground="{DynamicResource DeckAccentText}" HorizontalAlignment="Center"
+                         FontSize="{Binding DataContext.L.AddGlyphSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+          <TextBlock Text="Ajouter un bouton" Foreground="{DynamicResource DeckText}" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,8,0,0"
+                     TextWrapping="Wrap" TextAlignment="Center" FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+        </StackPanel>
+      </Button>
+    </DataTemplate>
+
     <!-- Point de sous-page : cible tactile pleine hauteur, le point lui-même reste discret -->
     <DataTemplate DataType="{x:Type vm:PageDotViewModel}">
       <Button Style="{StaticResource FlatButton}" Command="{Binding Command}" AutomationProperties.Name="{Binding Text}" ToolTip="{Binding Text}"

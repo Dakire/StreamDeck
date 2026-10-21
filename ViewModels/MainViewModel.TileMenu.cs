@@ -13,10 +13,30 @@ public partial class MainViewModel
 
     /// <summary>Niveaux de menu ouverts (le dernier est affiché) ; vide quand la feuille montre le menu général.</summary>
     readonly List<SpecLevel> _specTrail = new();
+    bool _hintShown;
 
     partial void OnMenuOpenChanged(bool value)
     {
         if (!value) _specTrail.Clear();
+    }
+
+    /// <summary>
+    /// Clé et fabrique d'une case sans bouton : emplacement « + » en édition, invitation sur la première case d'une page vide,
+    /// sinon case éteinte qui ouvre le menu de création (clic droit, appui long).
+    /// </summary>
+    (TileKey Key, Func<object> Create) FreeTile(Place place, int at, bool welcome)
+    {
+        if (IsEdit) return (new TileKey("add", place, at, null, null, false, true), () => new AddTileViewModel { Click = new RelayCommand(() => OpenTileMenu(place, at)) });
+        if (welcome) return (new TileKey("welcome", place, at, null, null, false, false), () => new WelcomeTileViewModel { Click = new RelayCommand(() => OpenTileMenu(place, at)) });
+        return (new TileKey("spacer", place, at, null, null, false, false), () => new SpacerTileViewModel { Edit = new RelayCommand(() => OpenTileMenu(place, at)) });
+    }
+
+    /// <summary>Indice affiché une fois par lancement, tant que la page est vide ou presque : jamais en permanence, jamais par-dessus un autre message.</summary>
+    void ShowDiscoveryHintOnce(int buttons)
+    {
+        if (_hintShown || buttons > 2 || Status != null || MenuOpen) return;
+        _hintShown = true;
+        SetStatus("Astuce : appui long (ou clic droit) sur une case vide pour ajouter un bouton", error: false);
     }
 
     /// <summary>Ouvre le menu de la case : création sur une case vide, actions sur un bouton.</summary>
