@@ -11,6 +11,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 - **Bouton *Annuler*** dans le bandeau d'état après une création, une duplication ou un dépôt ; **bouton *Modifier*** quand un bouton échoue.
 - `DeckDocument.AddButton`, `AddButtonFirstFree`, `AddButtons` (lot = une annulation), `QuickCreate`, `DroppedItem`, `DropPayload`.
 
+### Corrigé (performance)
+- **Fuite des fenêtres fermées** : la barre de titre de WPF-UI restait abonnée à un événement statique de thème, donc éditeur, paramètres, panneau rapide et invites restaient en mémoire une fois fermés (42 Mo pour 50 ouvertures de l'éditeur, 0,7 Mo maintenant). Test de non-régression chiffré.
+- **Démarrage** : la publication est précompilée (ReadyToRun), environ 80 ms de moins.
+
 ### Modifié (simplicité d'usage)
 - Page ou dossier vide : la première case propose *Ajouter un bouton* ; un indice « appui long ou clic droit » s'affiche une fois par lancement (sans clé de configuration).
 - Éditeur : l'action passe avant l'apparence ; position du titre, icône, image et couleurs sont dans un bloc replié par défaut.
