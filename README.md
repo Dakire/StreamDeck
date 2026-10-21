@@ -47,7 +47,11 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 - Fenêtre qui ne prend pas le focus : les raccourcis arrivent à l'application active.
 - Plein écran sur l'écran secondaire ou mode fenêtre, sans masquer la barre des tâches (le deck occupe la zone de travail) ; le deck suit le branchement et le débranchement de l'écran, et se cale exactement même entre écrans de densités différentes.
 - Profil associé à une application : il s'affiche seul quand le programme est au premier plan.
-- Mode édition tactile (menu ⚙ › *Modifier au toucher*) : toucher un bouton ouvre l'éditeur dessus.
+- **Édition intégrée** (menu ⚙ › *Modifier au toucher*, ou *Modifier…* dans le menu d'un bouton) : un panneau d'**actions** apparaît à gauche et
+  les **propriétés** du bouton choisi à droite, la grille garde le même nombre de cases. Toucher une touche la sélectionne, toucher une action
+  la pose dans la case choisie ; *Annuler* / *Rétablir* sont dans le dock, *Terminer* quitte le mode. La fenêtre n'est activable que pendant
+  l'édition (saisie au clavier) ; en sortant elle ne prend de nouveau jamais le focus et le rend à l'application précédente.
+- Thème **Material Design 3** : palettes tonales (sombre, AMOLED, clair) générées depuis une couleur source, surfaces à élévation tonale, sans ombre portée.
 - **Création rapide**, sans ouvrir l'éditeur : **clic droit** ou **appui long** (environ 0,55 s, doigt immobile) sur une **case vide**
   ouvre un menu : *Nouveau bouton…* (panneau où l'on tape un nom d'action, « chrome » ou « vol », puis Entrée), *Parcourir les actions*
   (catégories, au toucher), des **modèles en un clic** (raccourci clavier, lancer une application, ouvrir un site, volume / muet,
@@ -235,11 +239,11 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 | `Integrations/<Nom>/` | Un projet par connecteur : Obs, Vmix, ElgatoLight, Hue, WindowsSystem, XPlane, Teams, Twitch, ClickUp, Notion, Monday |
 | `samples/HelloPlugin` | Exemple de plugin |
 | `Services/` | `AppHost` (racine de composition, journal Serilog), `ConfigPersistence` (sauvegarde auto, rechargement à chaud), `AppearanceService`, `AppWindows`, `DisplayService`, `IconStore`, `DropPayload` (lecture d'un glisser-déposer), `ProfilePackage`, `TransferService`, `Notifier`, `Motion` |
-| `ViewModels/` | `MainViewModel` (deck ; menu des cases et glisser-déposer en classes partielles), `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `QuickCreateViewModel`, `SettingsViewModel`, `MenuSpec`, `CatalogMenu` |
-| `Controls/` | `TileFace` (rendu d'un bouton), `ContextMenuFactory`, `PromptWindow`, `QuickCreateWindow` (panneau de création rapide) |
+| `ViewModels/` | `MainViewModel` (deck ; menu des cases, glisser-déposer et mode édition en classes partielles), `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `QuickCreateViewModel`, `SettingsViewModel`, `MenuSpec`, `CatalogMenu` |
+| `Controls/` | `TileFace` (rendu d'un bouton), `ContextMenuFactory`, `PromptWindow`, `QuickCreateWindow` (panneau de création rapide), `PropertiesPanel` et `CatalogPanel` (panneaux d'édition de l'éditeur et du deck) |
 | `MainWindow.xaml(.cs)` | Deck ; code-behind limité à Win32 et au placement multi-écran |
 | `EditorWindow.xaml(.cs)`, `SettingsWindow.xaml(.cs)` | Éditeur et paramètres (dialogues, focus, clavier, glisser-déposer) |
-| `Theme.cs`, `IconCatalog.cs`, `App.xaml` | Palettes claire / sombre (contrastes vérifiés), icônes, styles |
+| `Theme.cs`, `Core/MaterialColor.cs`, `IconCatalog.cs`, `App.xaml` | Palettes Material Design 3 générées depuis une couleur source (contrastes vérifiés), icônes, styles |
 | `docs/` | Architecture, configuration, développement, décisions (`adr/`), parité fonctionnelle, intégrations, bilans |
 | `tests/TouchDeck.Tests` | Tests xUnit : logique, migration, import, contrastes, navigation du deck, robustesse, composition (conteneur), architecture (frontières entre projets), rendu hors écran des fenêtres, mesures de performance (facultatives) |
 | `Directory.Build.props`, `.editorconfig` | Analyseurs, style vérifié à la compilation, avertissements bloquants, documentation XML obligatoire |

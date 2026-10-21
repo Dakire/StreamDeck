@@ -19,5 +19,6 @@ effacée : elle passe au statut « Remplacée par … ».
 | [0012](0012-plugins-et-api-locale.md) | Plugins locaux et API locale par canal nommé | Acceptée |
 | [0013](0013-pile-pointeur-wpf.md) | Toucher du deck sans souris système | Acceptée |
 | [0014](0014-creation-rapide.md) | Création rapide d'un bouton depuis le deck | Acceptée |
+| [0015](0015-edition-integree-et-material-design-3.md) | Édition intégrée au deck et thème Material Design 3 | Acceptée |
 
 Modèle d'une nouvelle décision : contexte, décision, conséquences, statut et date.
