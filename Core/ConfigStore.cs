@@ -97,11 +97,20 @@ public static class ConfigStore
     {
         Directory.CreateDirectory(Dir);
         var json = Serialize(cfg);
+        // Le fichier a déjà ce contenu : pas d'écriture, donc pas de remplacement de fichier ni de rechargement à chaud déclenché
+        if (HasSameContent(json)) { _lastWrittenHash = Hash(json); return; }
         var tmp = FilePath + ".tmp";
         File.WriteAllText(tmp, json, new UTF8Encoding(false));
         _lastWrittenHash = Hash(json);
         if (File.Exists(FilePath)) File.Replace(tmp, FilePath, null);
         else File.Move(tmp, FilePath);
+    }
+
+    /// <summary>true si config.json existe déjà avec exactement ce contenu (lecture impossible : on réécrira).</summary>
+    static bool HasSameContent(string json)
+    {
+        try { return File.Exists(FilePath) && new FileInfo(FilePath).Length == Encoding.UTF8.GetByteCount(json) && File.ReadAllText(FilePath) == json; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
     }
 
     /// <summary>true si le fichier sur disque est exactement ce que nous venons d'écrire (le rechargement à chaud l'ignore).</summary>

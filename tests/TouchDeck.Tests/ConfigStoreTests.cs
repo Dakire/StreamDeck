@@ -89,6 +89,36 @@ public class ConfigStoreTests
     }
 
     [Fact]
+    public void SavingUnchangedContentDoesNotRewriteTheFile()
+    {
+        using var dir = new TempConfigDir();
+        var cfg = ConfigStore.DefaultConfig();
+        ConfigStore.Save(cfg);
+        var stamp = new System.DateTime(2020, 1, 2, 3, 4, 5, System.DateTimeKind.Utc);
+        File.SetLastWriteTimeUtc(ConfigStore.FilePath, stamp);
+
+        ConfigStore.Save(cfg);                                                    // même contenu : aucune écriture
+        Assert.Equal(stamp, File.GetLastWriteTimeUtc(ConfigStore.FilePath));
+        Assert.True(ConfigStore.IsOwnWrite());                                    // et le rechargement à chaud l'ignore toujours
+
+        cfg.Spacing += 1;
+        ConfigStore.Save(cfg);                                                    // contenu différent : écrit
+        Assert.NotEqual(stamp, File.GetLastWriteTimeUtc(ConfigStore.FilePath));
+        Assert.Equal(cfg.Spacing, ConfigStore.Load().Spacing);
+    }
+
+    [Fact]
+    public void AnExternallyEditedFileIsStillOverwrittenByTheNextRealSave()
+    {
+        using var dir = new TempConfigDir();
+        var cfg = ConfigStore.DefaultConfig();
+        ConfigStore.Save(cfg);
+        File.WriteAllText(ConfigStore.FilePath, "{ pas du JSON");                 // éditeur externe : fichier invalide, refusé au rechargement
+        ConfigStore.Save(cfg);                                                    // le contenu en mémoire reste la référence
+        Assert.Equal(ConfigStore.Serialize(cfg), File.ReadAllText(ConfigStore.FilePath));
+    }
+
+    [Fact]
     public void InvalidJsonRaisesInvalidDataException()
     {
         Assert.Throws<InvalidDataException>(() => ConfigStore.Parse("{ not json"));
