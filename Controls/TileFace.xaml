@@ -13,9 +13,6 @@
       <!-- Standard, média, navigation : pastille d'icône puis titre -->
       <StackPanel x:Name="StackLayer" HorizontalAlignment="Center" VerticalAlignment="Center">
         <Border x:Name="Plate" HorizontalAlignment="Center">
-          <Border.Effect>
-            <DropShadowEffect x:Name="PlateShadow" BlurRadius="14" ShadowDepth="3" Direction="270" Opacity="0.35" Color="Black"/>
-          </Border.Effect>
           <Grid>
             <ui:SymbolIcon x:Name="StackSymbol" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             <TextBlock x:Name="StackIconText" FontFamily="Segoe UI Emoji, Segoe UI Variable Display, Segoe UI" TextAlignment="Center"

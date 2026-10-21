@@ -134,7 +134,6 @@ public partial class TileFace : UserControl
         Plate.Background = outline ? DimLight : f.Plate;
         Plate.BorderBrush = outline ? f.Plate : null;
         Plate.BorderThickness = new Thickness(outline ? Math.Max(2, plate * 0.045) : 0);
-        PlateShadow.Opacity = outline ? 0 : 0.35;
 
         double icon = plate * 0.56;
         StackSymbol.Symbol = f.Symbol;

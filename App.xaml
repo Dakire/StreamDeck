@@ -17,8 +17,8 @@
 
     <!-- ===== Deck tactile ===== -->
 
-    <!-- Touche du deck : corps teinté (Background), liseré de sa couleur (BorderBrush), ombre douce et reflet en haut.
-         L'appui répond immédiatement (50 ms) : l'action part au relâchement, l'animation ne la retarde jamais. -->
+    <!-- Touche du deck (MD3) : corps teinté (Background) et liseré de sa couleur (BorderBrush), sans ombre : l'élévation se lit par le ton.
+         Couches d'état : survol 8 %, appui 12 %. L'appui répond immédiatement (50 ms) : l'action part au relâchement, l'animation ne la retarde jamais. -->
     <Style x:Key="DeckButton" TargetType="Button">
       <Setter Property="Focusable" Value="False"/>
       <Setter Property="Foreground" Value="White"/>
@@ -30,13 +30,7 @@
             <Grid RenderTransformOrigin="0.5,0.5">
               <Grid.RenderTransform><ScaleTransform x:Name="Scale" ScaleX="1" ScaleY="1"/></Grid.RenderTransform>
               <Border x:Name="Card" CornerRadius="{TemplateBinding Tag}" Background="{TemplateBinding Background}"
-                      BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
-                <Border.Effect>
-                  <DropShadowEffect x:Name="Shadow" BlurRadius="22" ShadowDepth="6" Direction="270" Opacity="0.28" Color="#000000"/>
-                </Border.Effect>
-              </Border>
-              <!-- reflet très léger sur le haut : du volume sans effet « verre » -->
-              <Border CornerRadius="{TemplateBinding Tag}" IsHitTestVisible="False" Margin="1" Background="{DynamicResource DeckTileSheen}"/>
+                      BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"/>
               <Border x:Name="Hover" CornerRadius="{TemplateBinding Tag}" Background="White" Opacity="0" IsHitTestVisible="False"/>
               <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
               <Border x:Name="Press" CornerRadius="{TemplateBinding Tag}" Background="White" Opacity="0" IsHitTestVisible="False"/>
@@ -46,10 +40,9 @@
                 <Trigger.EnterActions>
                   <BeginStoryboard>
                     <Storyboard>
-                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="0.95" Duration="0:0:0.05"/>
-                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="0.95" Duration="0:0:0.05"/>
-                      <DoubleAnimation Storyboard.TargetName="Press" Storyboard.TargetProperty="Opacity" To="0.16" Duration="0:0:0.05"/>
-                      <DoubleAnimation Storyboard.TargetName="Shadow" Storyboard.TargetProperty="Opacity" To="0.1" Duration="0:0:0.05"/>
+                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="0.96" Duration="0:0:0.05"/>
+                      <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="0.96" Duration="0:0:0.05"/>
+                      <DoubleAnimation Storyboard.TargetName="Press" Storyboard.TargetProperty="Opacity" To="0.12" Duration="0:0:0.05"/>
                     </Storyboard>
                   </BeginStoryboard>
                 </Trigger.EnterActions>
@@ -63,13 +56,12 @@
                         <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.5"/></DoubleAnimation.EasingFunction>
                       </DoubleAnimation>
                       <DoubleAnimation Storyboard.TargetName="Press" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.25"/>
-                      <DoubleAnimation Storyboard.TargetName="Shadow" Storyboard.TargetProperty="Opacity" To="0.28" Duration="0:0:0.25"/>
                     </Storyboard>
                   </BeginStoryboard>
                 </Trigger.ExitActions>
               </Trigger>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Hover" Property="Opacity" Value="0.05"/>
+                <Setter TargetName="Hover" Property="Opacity" Value="0.08"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>

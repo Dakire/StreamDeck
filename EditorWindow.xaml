@@ -495,7 +495,6 @@
       <Border Grid.Row="2" Grid.RowSpan="2" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,52" MaxWidth="760"
               Background="{DynamicResource DeckSurfaceHi}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1" CornerRadius="12" Padding="16,4,6,4"
               Visibility="{Binding ToastVisible, Converter={StaticResource BoolVis}}" AutomationProperties.LiveSetting="Polite">
-        <Border.Effect><DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.45"/></Border.Effect>
         <StackPanel Orientation="Horizontal" MinHeight="48">
           <ui:SymbolIcon FontSize="20" VerticalAlignment="Center" Margin="0,0,12,0">
             <ui:SymbolIcon.Style>

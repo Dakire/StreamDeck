@@ -166,7 +166,7 @@ public sealed class LayoutMetrics
         if (cellW > cellH * MaxAspect) cellW = cellH * MaxAspect;
         if (cellH > cellW * MaxAspect) cellH = cellW * MaxAspect;
         double cellMin = Math.Min(cellW, cellH) - gap;
-        double radius = Math.Clamp(cellMin * 0.16, 12, 34);
+        double radius = Math.Clamp(cellMin * 0.17, 16, 30);   // MD3 : formes « large » à « extra large »
         double rowH = Math.Clamp(H * 0.075, 52, 76);
         double fs = Math.Max(15, rowH * 0.32);
         double pillH = Math.Max(34, topH * 0.74);
