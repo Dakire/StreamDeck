@@ -119,7 +119,7 @@ public sealed partial class QuickCreateViewModel : ObservableObject
         if (!result.Ok) { Message = result.Message ?? "Création impossible."; return; }
         _doc.AddRecent(action.Id);
         if (QuickCreate.NeedsSetup(button, _doc.Config, _doc.FindProfile(_place.Profile)))
-            _windows.EditOnDeck(_place, _index);
+            _windows.OpenEditor(_place, _index, quick: true);
         else
             Notifier.Success($"« {button.Label} » ajouté", "Annuler", () => _doc.Undo());
         CloseRequested?.Invoke();

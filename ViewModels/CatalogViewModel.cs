@@ -33,17 +33,13 @@ public sealed partial class CatalogItemViewModel : ObservableObject
     public string AutomationName => $"{Name} — {Description}";
     /// <summary>Ajoute ou retire l'action des favoris.</summary>
     public ICommand ToggleFavoriteCommand { get; }
-    /// <summary>Choisit l'action (toucher d'une ligne du panneau d'actions du deck) : le propriétaire la pose dans la case visée.</summary>
-    public ICommand AddCommand { get; }
 
     /// <summary>Ligne du catalogue.</summary>
     /// <param name="action">Action représentée.</param>
     /// <param name="favorite">État favori initial.</param>
     /// <param name="toggle">Appelé par l'étoile : le catalogue met à jour les favoris du document.</param>
-    /// <param name="choose">Appelé au toucher de la ligne (panneau d'actions du deck) ; null si la ligne n'est pas touchable.</param>
-    public CatalogItemViewModel(CatalogAction action, bool favorite, Action<CatalogItemViewModel> toggle, Action<CatalogItemViewModel>? choose = null)
+    public CatalogItemViewModel(CatalogAction action, bool favorite, Action<CatalogItemViewModel> toggle)
     {
-        AddCommand = new RelayCommand(() => choose?.Invoke(this));
         Action = action;
         _isFavorite = favorite;
         Symbol = IconCatalog.TryResolve(action.Icon, out var s) ? s : SymbolRegular.Apps24;
@@ -84,9 +80,6 @@ public sealed partial class CatalogViewModel : ObservableObject
     readonly Dictionary<string, bool> _expanded = new() { [FavoritesTitle] = true, [RecentsTitle] = true };
     bool _refreshing;
 
-    /// <summary>Action choisie au toucher dans le panneau d'actions du deck ; branchée par l'éditeur.</summary>
-    public Action<CatalogAction>? Choose { get; set; }
-
     /// <summary>Sections affichées : favoris, récents puis catégories, ou résultats de recherche.</summary>
     public ObservableCollection<CatalogSectionViewModel> Sections { get; } = new();
 
@@ -123,7 +116,7 @@ public sealed partial class CatalogViewModel : ObservableObject
             var matches = ActionCatalog.Search(Search).ToList();
             bool searching = IsSearching;
 
-            CatalogItemViewModel Make(CatalogAction a) => new(a, cfg.Favorites.Contains(a.Id), Toggle, item => Choose?.Invoke(item.Action));
+            CatalogItemViewModel Make(CatalogAction a) => new(a, cfg.Favorites.Contains(a.Id), Toggle);
 
             var favs = cfg.Favorites.Select(ActionCatalog.Find).Where(a => a != null && matches.Contains(a!)).Select(a => a!).ToList();
             if (favs.Count > 0) AddSection(FavoritesTitle, SymbolRegular.Star24, favs.Select(Make), searching);

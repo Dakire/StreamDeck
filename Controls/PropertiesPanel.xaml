@@ -13,9 +13,7 @@
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </UserControl.Resources>
-  <Border Background="{DynamicResource DeckPanel}" BorderBrush="{DynamicResource DeckLine}"
-          BorderThickness="{Binding EdgeThickness, RelativeSource={RelativeSource AncestorType=UserControl}}"
-          CornerRadius="{Binding PanelRadius, RelativeSource={RelativeSource AncestorType=UserControl}}">
+  <Border Background="{DynamicResource DeckPanel}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1,0,0,0">
    <Grid>
     <Grid.RowDefinitions>
       <RowDefinition Height="*"/>

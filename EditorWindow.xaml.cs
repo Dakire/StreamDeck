@@ -102,7 +102,12 @@ public partial class EditorWindow : Wpf.Ui.Controls.FluentWindow, IEditorShell
     /// <inheritdoc/>
     public void FocusProperties() => Later(() =>
     {
-        Props.FocusFirstField();   // première étape à compléter, sinon le titre
+        // Première étape à compléter, sinon le titre
+        var invalid = FindVisualChildren<TextBox>(Props.PropertiesScroll)
+            .FirstOrDefault(t => t.DataContext is ActionStepViewModel { HasIssues: true } && t.IsVisible && t.IsEnabled && t != Props.TitleBox);
+        var target = invalid ?? (Props.TitleBox.IsVisible ? Props.TitleBox : null);
+        if (target != null) { target.Focus(); Keyboard.Focus(target); }
+        else Props.PropertiesScroll.Focus();
     });
 
     /// <inheritdoc/>

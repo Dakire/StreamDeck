@@ -74,9 +74,7 @@ public class ExecutionFeedbackTests
             Assert.True(vm.HasStatusAction);
             Assert.Equal("Modifier", vm.StatusActionText);
             vm.RunStatusActionCommand.Execute(null);
-            Assert.Empty(windows.Opened);                                          // aucune fenêtre : le deck passe en mode édition
-            Assert.True(vm.IsEdit);
-            Assert.Equal((Root, 0), (vm.Editor!.Place, vm.Editor.SelectedIndex));  // le panneau de droite montre ce bouton
+            Assert.Equal((Root, 0, true), windows.Opened.Single());                // l'éditeur rapide s'ouvre sur ce bouton
             Assert.False(vm.HasStatus);
         });
         await run;

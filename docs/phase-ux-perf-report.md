@@ -89,11 +89,10 @@ en alternance, médianes ; CPU sur 30 s au repos. Version de départ construite 
 - `ArchitectureTests` au vert : `QuickCreate` et `DroppedItem` sont dans le Core, sans WPF.
 - Docs : README, CHANGELOG, ARCHITECTURE, ADR 0014.
 
-## 5. Édition intégrée et Material Design 3 (demande ultérieure)
+## 5. Material Design 3 (demande ultérieure)
 
 | Demande | Réalisation | Test |
 |---|---|---|
-| Actions et propriétés à gauche et à droite des boutons, sans nouvelle fenêtre | Mode édition du deck : `CatalogPanel` (gauche) et `PropertiesPanel` (droite), grille au même nombre de cases, sélection par liseré, annuler / rétablir dans le dock | `DeckEditModeTests` (11) |
 | Palette MD3 dynamique | `MaterialColor` / `MaterialScheme` (Core) : trois thèmes générés depuis la couleur source #6C5CE7 ; accent, conteneurs, surfaces tonales, erreur ; onglet actif en conteneur secondaire | `MaterialColorTests`, `DesignSystemTests`, `ThemeTests` |
 | Look MD3 | Élévation tonale (plus d'ombres), états survol 8 % / appui 12 %, touches de 16 à 30 px de rayon | rendus hors écran, `BenchmarkTests` |
 
@@ -107,16 +106,14 @@ Mesures (hors écran, `BenchmarkTests`, 32 touches, 1920×1080, même machine) e
 | Démarrage de l'application | 690 à 725 ms | 686 ms | inchangé |
 | CPU de l'application au repos (30 s) | 47 ms | 31 ms | inchangé (un pic isolé sur trois lancements) |
 
-À noter : le CPU du *processus de test* pendant 5 s de repos du benchmark varie beaucoup (219 ms avant, 330 à 1890 ms après, selon l'ordre des
-variantes) ; ce n'est pas une mesure de l'application et je ne l'ai pas retenue.
+Le CPU du *processus de test* pendant 5 s de repos du benchmark varie beaucoup (219 ms avant, 330 à 1890 ms après, selon l'ordre des
+variantes) ; ce n'est pas une mesure de l'application et je ne l'ai pas retenu.
 
 Écarts et points d'attention :
-- **Exception à la règle du focus** (validée) : pendant le mode édition seulement, la fenêtre devient activable et le toucher est celui de WPF
-  (le curseur bouge) ; à la sortie, `WS_EX_NOACTIVATE` est rétabli (test) et le focus est rendu à l'application précédente
-  (`SetForegroundWindow`, **non vérifié sur le bureau réel**). ADR 0015, `AGENTS.md` mis à jour.
+- **Édition intégrée au deck (panneaux de chaque côté de la grille) : réalisée puis retirée** à la demande de l'utilisateur. Elle demandait de
+  rendre la fenêtre activable pendant l'édition ; la règle du focus n'a donc plus d'exception (`AGENTS.md` rétabli).
 - Une première tentative d'arrondir tous les boutons WPF-UI par un style implicite a cassé leur gabarit (visible sur les rendus) : retirée.
 - **Typographie MD3 non appliquée** : l'échelle actuelle est figée par `DesignSystemTests`.
-- `TouchDeck.exe` lancé depuis `bin\Release` n'a pas été arrêté (il était en cours) ; mes builds ont été faits dans `bin\work\`.
 
 ## Décisions qui vous attendent
 

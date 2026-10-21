@@ -143,22 +143,17 @@ public class DeckMenuTests
     }
 
     [Fact]
-    public void ATemplateThatNeedsSettingsOpensTheDeckPropertiesPanelOnTheNewButton()
+    public void ATemplateThatNeedsSettingsHandsTheCellToTheQuickEditorWithoutWriting()
     {
         var (vm, windows) = NewDeck();
         _host.Run(() =>
         {
             OpenFreeSlotMenu(vm);
             Pick(vm, "Raccourci clavier");
-            Assert.Empty(windows.Opened);                                    // aucune fenêtre séparée
-            Assert.True(vm.IsEdit);
-            Assert.Equal((Root, 5), (vm.Editor!.Place, vm.Editor.SelectedIndex));
-            Assert.Equal("Raccourci clavier", Doc.Get(Root, 5)!.Label);      // posé par le mode édition, à compléter dans le panneau de droite
-            Assert.Equal("Ajouter « Raccourci clavier »", Doc.UndoLabel);
-
-            vm.Editor.CancelButtonCommand.Execute(null);                     // « Annuler » du panneau : la case redevient vide
-            Assert.Null(Doc.Get(Root, 5));
-            Assert.Equal("Annuler la création", Doc.UndoLabel);                // l'annulation est elle-même annulable
+            Assert.Equal((Root, 5, true), windows.Opened.Single());
+            Assert.Equal("key.hotkey", windows.AddedCatalog.Single());
+            Assert.Null(Doc.Get(Root, 5));                                   // c'est l'éditeur qui pose le bouton (« Annuler » le retire)
+            Assert.False(Doc.CanUndo);
         });
     }
 
@@ -304,11 +299,7 @@ public class DeckMenuTests
         {
             vm.OpenMenuCommand.Execute(null);
             Pick(vm, "Modifier au toucher");
-            var add = vm.Tiles.OfType<AddTileViewModel>().First();
-            add.Click.Execute(null);                                                  // un toucher sélectionne la case : propriétés à droite
-            Assert.False(vm.MenuOpen);
-            Assert.Equal(5, vm.Editor!.SelectedIndex);
-            add.Edit!.Execute(null);                                                  // un appui long ouvre le menu de création
+            vm.Tiles.OfType<AddTileViewModel>().First().Click.Execute(null);
             Assert.Equal("Case vide", Header(vm));
             Assert.Contains("Nouveau bouton…", Texts(vm));
         });

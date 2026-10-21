@@ -196,14 +196,6 @@ sortirait du traitement tactile du deck, ADR 0013). Un modèle qui demande un r�
 sinon le bouton est créé tout de suite. Les suggestions viennent de `ActionCatalog` (actions natives, applications cibles,
 intégrations) classées par `QuickCreate.Rank`.
 
-## Édition intégrée au deck
-
-En mode édition, `MainViewModel` crée un `EditorViewModel` (fabrique injectée `Func<IEditorShell, EditorViewModel>`) et le libère à la sortie.
-`MainWindow` sert de « shell » (dialogues, focus) et affiche `CatalogPanel` (gauche) et `PropertiesPanel` (droite) autour de la grille ;
-les ressources des panneaux sont dans `Themes/EditorShared.xaml`, partagées avec l'éditeur séparé. La grille garde ses colonnes et lignes
-(`LayoutMetrics.GridSize` sur la taille complète) et rétrécit. `MainWindow.SetEditing` retire `WS_EX_NOACTIVATE` et suspend le filtre
-d'activation et du toucher pendant l'édition, puis les rétablit et rend le focus (ADR 0015).
-
 ## Thème
 
 `Core/MaterialColor.cs` calcule des palettes tonales (clarté CIELAB, chroma réduite au gamut sRGB) et `MaterialScheme` en tire les rôles

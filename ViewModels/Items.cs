@@ -29,8 +29,6 @@ public sealed partial class DeckTileViewModel : ObservableObject, IEditableTile
     [ObservableProperty] TileFaceData _face = TileFaceData.Empty;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsRunning), nameof(IsSuccess), nameof(IsError))] TileRunState _runState;
     [ObservableProperty] string _accessibleName = "";
-    /// <summary>true pour la touche sélectionnée dans le mode édition du deck (liseré d'accent).</summary>
-    [ObservableProperty] bool _isSelected;
 
     /// <summary>Bouton de la configuration représenté (null pour la case « retour »).</summary>
     public DeckButton? Button { get; init; }
@@ -58,14 +56,13 @@ public sealed class SpacerTileViewModel : IEditableTile
     public ICommand? Edit { get; init; }
 }
 
-/// <summary>Emplacement « + » affiché en mode édition : un toucher le sélectionne, un appui long ouvre le menu de création.</summary>
-public sealed partial class AddTileViewModel : ObservableObject, IEditableTile
+/// <summary>Emplacement « + » affiché en mode édition.</summary>
+public sealed class AddTileViewModel : IEditableTile
 {
-    [ObservableProperty] bool _isSelected;
-    /// <summary>Sélectionne cette case (le panneau de propriétés propose alors de la remplir).</summary>
+    /// <summary>Ouvre l'éditeur sur cette case.</summary>
     public required ICommand Click { get; init; }
     /// <inheritdoc/>
-    public ICommand? Edit { get; init; }
+    public ICommand? Edit => Click;
 }
 
 /// <summary>

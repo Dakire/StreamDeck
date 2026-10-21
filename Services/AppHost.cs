@@ -124,9 +124,6 @@ public static class AppHost
         services.AddSingleton<ConfigPersistence>();
         services.AddSingleton<AppearanceService>();
         services.AddSingleton<IAppWindows, AppWindows>();
-        // Éditeur intégré au deck (mode édition) : le deck le crée à l'entrée du mode et le libère à la sortie
-        services.AddSingleton<Func<TouchDeck.ViewModels.IEditorShell, TouchDeck.ViewModels.EditorViewModel>>(sp =>
-            shell => ActivatorUtilities.CreateInstance<TouchDeck.ViewModels.EditorViewModel>(sp, shell));
         services.AddSingleton<IApiShell, ApiShell>();
         services.AddSingleton<LocalApi>();
 

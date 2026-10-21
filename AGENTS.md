@@ -21,8 +21,7 @@ Ajouter ou adapter un test pour tout changement de logique (`Core/`, `Services/`
 ## Règles à respecter
 
 - **Fenêtre sans focus** : `WS_EX_NOACTIVATE` et `WM_MOUSEACTIVATE` dans `MainWindow.xaml.cs` ne doivent
-  pas être retirés. Sans eux, les raccourcis envoyés ne parviennent plus à l'application active. Seule exception : le mode
-  édition du deck (`MainWindow.SetEditing`, ADR 0015) les suspend le temps de la saisie, puis les rétablit et rend le focus.
+  pas être retirés. Sans eux, les raccourcis envoyés ne parviennent plus à l'application active.
 - **Cibles tactiles** : minimum 48 px de haut pour tout contrôle interactif (deck et éditeur).
 - **Compatibilité de configuration** : `config.json` d'utilisateurs existants doit rester lisible.
   Ajouter des propriétés avec valeur par défaut (et `JsonIgnore(WhenWritingDefault/Null)` pour ne pas alourdir le fichier),

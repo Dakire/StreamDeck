@@ -199,8 +199,7 @@ public class QuickCreatePanelTests
             Assert.Equal("key.hotkey", vm.Selected!.Action.Id);
             vm.CreateCommand.Execute(null);
             Assert.Equal("Raccourci clavier", Doc.Get(Root, 5)!.Label);
-            Assert.Equal((Root, 5), windows.EditedOnDeck.Single());                // le deck passe en mode édition sur ce bouton
-            Assert.Empty(windows.Opened);
+            Assert.Equal((Root, 5, true), windows.Opened.Single());
             Assert.Equal(1, closed.Count);
             Assert.True(Doc.Undo());
             Assert.False(Doc.CanUndo);
