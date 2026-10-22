@@ -422,7 +422,7 @@
       </Border>
 
       <ItemsControl x:Name="DeckGrid" Grid.Column="1" ItemsSource="{Binding Tiles}" Focusable="False"
-                    PreviewMouseRightButtonDown="OnDeckRightClick" AllowDrop="True" DragEnter="OnDeckDragOver" DragOver="OnDeckDragOver" Drop="OnDeckDrop"
+                    PreviewMouseRightButtonDown="OnDeckRightClick" PreviewMouseLeftButtonDown="OnDeckMouseDown" PreviewMouseMove="OnDeckMouseMove" AllowDrop="True" DragEnter="OnDeckDragOver" DragOver="OnDeckDragOver" Drop="OnDeckDrop"
                     Width="{Binding L.GridW}" Height="{Binding L.GridH}" HorizontalAlignment="Center" VerticalAlignment="Center">
         <ItemsControl.RenderTransform>
           <TranslateTransform x:Name="GridShift"/>

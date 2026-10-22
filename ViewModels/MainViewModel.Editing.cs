@@ -76,6 +76,23 @@ public partial class MainViewModel
         if (_doc.Get(place, index) != null) _shell.EditorShell.FocusTitle(); else if (addCatalogId == null) _shell.EditorShell.FocusCatalogSearch();
     }
 
+    /// <summary>
+    /// Glisser-déposer d'une touche sur une autre case, en mode édition (souris ou doigt) : déplacée sur une case vide, rangée dans un dossier,
+    /// échangée avec un autre bouton. Une seule modification annulable. Sans effet hors édition ou pour une case de départ vide.
+    /// </summary>
+    public void MoveTile(object from, object to)
+    {
+        if (!IsEdit || !TryGetSlot(from, out var sourcePlace, out int sourceIndex) || !TryGetSlot(to, out var targetPlace, out int targetIndex)) return;
+        var source = _doc.Get(sourcePlace, sourceIndex);
+        if (source == null || (sourcePlace.Equals(targetPlace) && sourceIndex == targetIndex)) return;
+        var existing = _doc.Get(targetPlace, targetIndex);
+        bool intoFolder = existing is { IsFolder: true };
+        var result = intoFolder ? _doc.MoveIntoFolder(sourcePlace, sourceIndex, targetPlace, targetIndex) : _doc.MoveButton(sourcePlace, sourceIndex, targetPlace, targetIndex);
+        if (!result.Ok) { Notifier.Error(result.Message ?? "Déplacement impossible"); return; }
+        if (!intoFolder) SelectTile(targetPlace, targetIndex);
+        Notifier.Success(intoFolder ? "Bouton déplacé dans le dossier" : existing == null ? "Bouton déplacé" : "Boutons échangés", "Annuler", () => _doc.Undo());
+    }
+
     /// <summary>Met en évidence la touche sélectionnée (liseré d'accent) sans reconstruire la grille.</summary>
     void ApplySelection()
     {

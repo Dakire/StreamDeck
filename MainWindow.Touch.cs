@@ -45,6 +45,8 @@ public partial class MainWindow
     internal readonly TapRecognizer _tap = new();
     bool _tapOnBar;
     bool _dragging;
+    DeckTileViewModel? _touchDragTile;   // touche saisie au doigt en mode édition
+    bool _touchDragging;
     (int X, int Y) _dragOffset;
     long _lastBarTapTick;
     ICommand? _pressEdit;                 // édition de la case sous le doigt (appui long), null si la case ne s'édite pas
@@ -58,6 +60,8 @@ public partial class MainWindow
         _longPressTimer.Stop();
         _pressEdit = null;
         _dragging = false;
+        _touchDragTile = null;
+        _touchDragging = false;
     }
 
     /// <summary>Vrai tant qu'un doigt est suivi par le deck (posé, pas encore relâché).</summary>
@@ -85,6 +89,8 @@ public partial class MainWindow
                 _tap.Down(id, x, y, Environment.TickCount64);
                 _tapOnBar = Hit(x, y).bar;
                 _dragging = false;
+                _touchDragging = false;
+                _touchDragTile = _vm.IsEdit && !tracked ? TileAt(HitVisual(x, y)) as DeckTileViewModel : null;   // glisser une touche pour la déplacer
                 // Appui long : seulement pour le doigt suivi (un second doigt est ignoré), sur une case qui s'édite
                 _pressEdit = tracked ? null : EditTargetAt(HitVisual(x, y));
                 if (_pressEdit != null) _longPressTimer.Start(); else _longPressTimer.Stop();
@@ -94,12 +100,23 @@ public partial class MainWindow
                 {
                     _longPressTimer.Stop();   // le doigt glisse : défilement ou déplacement, pas un appui long
                     if (_tapOnBar) DragBarTo(x, y);
+                    if (_touchDragTile != null) _touchDragging = true;
                 }
                 break;
             case WM_POINTERUP:
                 _longPressTimer.Stop();
                 bool wasDragging = _dragging;
                 _dragging = false;
+                if (_touchDragging && _touchDragTile is { } dragged)
+                {
+                    // Doigt relâché après un glissement depuis une touche : déposée sur la case sous le doigt
+                    var dropAt = TileAt(HitVisual(x, y));
+                    _tap.Up(id, x, y);
+                    _touchDragging = false;
+                    _touchDragTile = null;
+                    if (dropAt != null) Dispatcher.BeginInvoke(DispatcherPriority.Input, () => _vm.MoveTile(dragged, dropAt));
+                    break;
+                }
                 if (!_tap.Up(id, x, y) || wasDragging) break;   // un appui long consommé n'est pas un appui : l'action ne s'exécute pas
                 var (target, bar, binding) = Hit(x, y);
                 var field = FieldAt(HitVisual(x, y));

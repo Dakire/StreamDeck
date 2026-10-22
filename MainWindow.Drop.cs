@@ -1,4 +1,6 @@
+using System;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using TouchDeck.ViewModels;
 
@@ -14,8 +16,35 @@ public partial class MainWindow
     IEditableTile? TileUnder(DragEventArgs e) =>
         TileAt(VisualTreeHelper.HitTest(DeckGrid, e.GetPosition(DeckGrid))?.VisualHit);
 
+    const string TileFormat = "TouchDeck.Tile";
+    Point _dragStart;
+    DeckTileViewModel? _dragSource;
+
+    /// <summary>Appui de la souris sur une touche en mode édition : le glisser-déposer pour la déplacer peut commencer.</summary>
+    void OnDeckMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        _dragSource = _vm.IsEdit && !IsSyntheticFromTouch() ? TileAt(e.OriginalSource as DependencyObject) as DeckTileViewModel : null;
+        _dragStart = e.GetPosition(null);
+    }
+
+    void OnDeckMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_dragSource == null || e.LeftButton != MouseButtonState.Pressed) return;
+        var now = e.GetPosition(null);
+        if (Math.Abs(now.X - _dragStart.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(now.Y - _dragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+        var source = _dragSource;
+        _dragSource = null;
+        DragDrop.DoDragDrop(DeckGrid, new DataObject(TileFormat, source), DragDropEffects.Move);
+    }
+
     void OnDeckDragOver(object sender, DragEventArgs e)
     {
+        if (e.Data.GetDataPresent(TileFormat))
+        {
+            e.Effects = _vm.IsEdit && TileUnder(e) != null ? DragDropEffects.Move : DragDropEffects.None;
+            e.Handled = true;
+            return;
+        }
         bool accepted = DropPayload.CanAccept(e.Data) && TileUnder(e) is { } tile && _vm.IsFreeSlot(tile);
         e.Effects = accepted ? DragDropEffects.Copy : DragDropEffects.None;   // le curseur « interdit » dit que la case est prise
         e.Handled = true;
@@ -24,6 +53,11 @@ public partial class MainWindow
     void OnDeckDrop(object sender, DragEventArgs e)
     {
         e.Handled = true;
+        if (e.Data.GetData(TileFormat) is DeckTileViewModel moved)
+        {
+            if (TileUnder(e) is { } target) _vm.MoveTile(moved, target);
+            return;
+        }
         if (TileUnder(e) is not { } tile) return;
         var dropped = DropPayload.Read(e.Data);
         _vm.DropOnTile(tile, dropped.Buttons, dropped.Problems);

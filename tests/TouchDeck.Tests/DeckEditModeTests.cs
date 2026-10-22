@@ -346,6 +346,36 @@ public class DeckEditModeTests
         finally { _host.Run(win.Close); }
     }
 
+    // ---------- glisser-déposer d'une touche (souris ou doigt) ----------
+
+    [Fact]
+    public void DraggingATileMovesSwapsOrStoresItAndIsOneUndoStep()
+    {
+        var (vm, _, _) = NewDeck();
+        _host.Run(() =>
+        {
+            var un = vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Un");
+            var trois = vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Trois");
+            vm.MoveTile(un, trois);                                            // hors édition : sans effet
+            Assert.Equal("Un", Doc.Get(Root, 0)!.Label);
+
+            EnterEdit(vm);
+            un = vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Un");
+            trois = vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Trois");
+            vm.MoveTile(un, trois);                                            // case occupée : échange
+            Assert.Equal("Trois", Doc.Get(Root, 0)!.Label);
+            Assert.Equal("Un", Doc.Get(Root, 2)!.Label);
+            Assert.True(Doc.Undo());
+            Assert.Equal("Un", Doc.Get(Root, 0)!.Label);
+
+            var free = vm.Tiles.OfType<AddTileViewModel>().First();            // case vide : déplacement
+            vm.MoveTile(vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Un"), free);
+            Assert.Null(Doc.Get(Root, 0));
+            Assert.Contains(Doc.Config.Profiles[0].Pages[0].Buttons.Where(b => !b.Blank), b => b.Label == "Un");
+            Assert.Equal(3, Doc.Config.Profiles[0].Pages[0].Buttons.Count(b => !b.Blank));   // rien perdu ni dupliqué
+        });
+    }
+
     // ---------- clavier et mise au premier plan ----------
 
     [Fact]
