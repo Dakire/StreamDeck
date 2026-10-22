@@ -104,7 +104,7 @@ public partial class MainWindow
                 var (target, bar, binding) = Hit(x, y);
                 var field = FieldAt(HitVisual(x, y));
                 if (TouchTrace)
-                    Log.Info($"[tactile] appui ({x},{y}) visuel={HitVisual(x, y)?.GetType().Name ?? "aucun"} bouton={target?.GetType().Name ?? "-"} actif={target?.IsEnabled} liaison={binding != null} barre={bar} menu={_vm.MenuOpen} édition={_vm.IsEdit} dialogue={_vm.HasDialog}");
+                    Log.Info($"[tactile] appui ({x},{y}) visuel={Chain(HitVisual(x, y))} bouton={target?.GetType().Name ?? "-"} actif={target?.IsEnabled} liaison={binding != null} barre={bar} menu={_vm.MenuOpen} édition={_vm.IsEdit} dialogue={_vm.HasDialog}");
                 // L'action part APRÈS le message : une commande qui ouvre une boîte de dialogue (boucle modale) ou démarre un traitement
                 // ne doit pas tourner dans le WM_POINTERUP, sinon Windows n'a pas fini de traiter ce toucher et le deck semble figé.
                 Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
@@ -152,6 +152,7 @@ public partial class MainWindow
     /// </summary>
     void OnDeckRightClick(object sender, MouseButtonEventArgs e)
     {
+        if (TouchTrace) Log.Info($"[tactile] clic droit synthétique={IsSyntheticFromTouch()} source={e.OriginalSource?.GetType().Name} menu={_vm.MenuOpen}");
         if (IsSyntheticFromTouch()) { e.Handled = true; return; }
         if (EditTargetAt(e.OriginalSource as DependencyObject) is { } edit && edit.CanExecute(null))
         {
@@ -178,6 +179,14 @@ public partial class MainWindow
                 binding = ue.InputBindings.OfType<MouseBinding>().FirstOrDefault(m => m.MouseAction == MouseAction.LeftClick)?.Command;
         }
         return (null, bar, binding);
+    }
+
+    /// <summary>Types des 8 premiers ancêtres visuels d'un élément (diagnostic).</summary>
+    static string Chain(DependencyObject? d)
+    {
+        var names = new System.Collections.Generic.List<string>();
+        for (int i = 0; d != null && i < 8; i++, d = d is Visual ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d)) names.Add(d.GetType().Name);
+        return names.Count == 0 ? "aucun" : string.Join("<", names);
     }
 
     /// <summary>Champ de saisie qui contient cet élément, ou null.</summary>

@@ -166,6 +166,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
 
     static void TraceInput(int msg, IntPtr wParam)
     {
+        if (msg is 0x0200 or 0x0245) return;   // mouvements : des centaines de lignes qui noient le reste
         string? name = msg switch { 0x0245 => "WM_POINTERUPDATE", 0x0246 => "WM_POINTERDOWN", 0x0247 => "WM_POINTERUP",
             0x0200 => "WM_MOUSEMOVE", 0x0201 => "WM_LBUTTONDOWN", 0x0202 => "WM_LBUTTONUP", 0x0240 => "WM_TOUCH", _ => null };
         if (name == null) return;
