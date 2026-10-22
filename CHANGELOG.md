@@ -4,6 +4,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Ajouté (widgets)
+- **Widgets** : horloge, agenda Google et page web (WebView2 isolé), sur plusieurs cases (`TileGridPanel`, ADR 0017). Catégorie *Widgets* du catalogue, taille et réglages dans le panneau de propriétés.
+- **Agenda Google** : l'intégration Google lit l'agenda principal toutes les 5 minutes (valeurs `calendar.events` et `calendar.error`).
+- `config.json` : clés facultatives `Widget`, `WidgetOptions`, `ColSpan`, `RowSpan` (absentes d'un bouton ordinaire ; anciens fichiers inchangés).
+- Dépendance : `Microsoft.Web.WebView2`.
+
 ### Modifié (édition sans fenêtre, stabilité du toucher)
 - **Plus de fenêtre d'édition** : *Nouveau bouton…*, *Modifier…*, *Éditeur complet…*, l'icône de la zone de notification et `--edit` ouvrent le mode édition du deck (panneaux d'actions et de propriétés autour de la grille). Supprimés : `EditorWindow`, `QuickCreateWindow`, `QuickCreateViewModel`.
 - **Options de page et de profil dans le deck** : bouton *Page* du dock (renommer, dupliquer, masquer, déplacer, supprimer) ; pastille du profil (changer de profil, format de la grille, renommer, exporter, importer, nouveau profil depuis un modèle, supprimer). En édition, un appui long sur une case ouvre le menu complet de l'éditeur (déplacer, dossier, réinitialiser…).

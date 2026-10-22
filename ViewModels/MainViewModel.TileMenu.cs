@@ -19,6 +19,7 @@ public partial class MainViewModel
     partial void OnMenuOpenChanged(bool value)
     {
         if (!value) _specTrail.Clear();
+        UpdateWebSuspension();
     }
 
     /// <summary>

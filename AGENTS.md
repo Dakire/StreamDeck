@@ -28,7 +28,8 @@ Ajouter ou adapter un test pour tout changement de logique (`Core/`, `Services/`
   Ajouter des propriétés avec valeur par défaut (et `JsonIgnore(WhenWritingDefault/Null)` pour ne pas alourdir le fichier),
   ne jamais renommer ni supprimer une clé sans migration (`ConfigNormalizer`) ni test.
 - **Sécurité** : ne pas ajouter d'exécution de code issu d'une source distante. Les actions `script` et `launch`
-  s'exécutent avec les droits de l'utilisateur.
+  s'exécutent avec les droits de l'utilisateur. Seule exception acceptée : l'affichage d'une page web saisie par l'utilisateur dans le
+  cadre isolé du widget web (WebView2, ADR 0017), sans pont vers l'application.
 - **Win32** : les appels P/Invoke et COM restent dans le projet `Platform/Windows/` (`NativeInput.cs`, `WindowFocus.cs`, `NativeAudio.cs`,
   internes) et dans `MainWindow.xaml.cs` (placement de la fenêtre). Les actions et les ViewModels n'y accèdent qu'à travers les interfaces de
   `Core/Actions/Platform.cs` (implémentation : `Platform/Windows/WindowsPlatform.cs`) ; `Core/` ne référence ni WPF ni Win32 (`ArchitectureTests`).

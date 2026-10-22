@@ -179,7 +179,7 @@
       <Border Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1" AutomationProperties.Name="{Binding AccessibleName}"
               Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
               CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
-        <Viewbox Margin="14" Stretch="Uniform">
+        <Viewbox Margin="28,20" Stretch="Uniform">
           <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
             <TextBlock Text="{Binding Time}" FontSize="64" FontWeight="SemiBold" Foreground="{Binding Face.LabelBrush}" HorizontalAlignment="Center"
                        FontFamily="Segoe UI Variable Display, Segoe UI" AutomationProperties.LiveSetting="Off"/>
@@ -242,18 +242,9 @@
       </Border>
     </DataTemplate>
 
-    <!-- Page web : le cadre isolé (WebView2) est ajouté par la fenêtre ; sans adresse valable, le message explique quoi renseigner -->
+    <!-- Page web : bande de commandes et cadre isolé (WebView2) -->
     <DataTemplate DataType="{x:Type vm:WebWidgetViewModel}">
-      <Border Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1" AutomationProperties.Name="{Binding AccessibleName}"
-              Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-              CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16">
-          <ui:SymbolIcon Symbol="Globe24" Foreground="{DynamicResource DeckDim}" HorizontalAlignment="Center"
-                         FontSize="{Binding DataContext.L.AddGlyphSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
-          <TextBlock Text="{Binding Status}" TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource DeckDim}" Margin="0,8,0,0"
-                     FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
-        </StackPanel>
-      </Border>
+      <controls:WebWidgetView/>
     </DataTemplate>
 
     <!-- Page ou dossier vide : la première case invite à ajouter un bouton (toucher = menu de création) -->

@@ -492,6 +492,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             Tiles.RemoveAt(Tiles.Count - 1);
             _tileKeys.RemoveAt(_tileKeys.Count - 1);
         }
+        if (_typing && !Tiles.OfType<WebWidgetViewModel>().Any(w => w.IsTyping)) StopTyping();   // la tuile en saisie a disparu (page changée)
         UpdateLiveTimer();
         ApplySelection();
         ShowDiscoveryHintOnce(view.Count(v => v.Button != null));
@@ -509,15 +510,50 @@ public partial class MainViewModel : ObservableObject, INavigator
         WidgetTileViewModel tile = def.Widget switch
         {
             WidgetTypes.Agenda => new AgendaWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
-            WidgetTypes.Web => WidgetTypes.IsWebAddress(def.Option(WidgetOptionKeys.Url), out var uri)
-                ? new WebWidgetViewModel { Button = def, Edit = edit, AccessibleName = name, Source = uri }
-                : new WebWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
+            WidgetTypes.Web => CreateWebWidget(def, edit, name),
             _ => new ClockWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
         };
         tile.Face = TileFaceData.From(def);
         if (tile is ClockWidgetViewModel clock) clock.Update(DateTime.Now);
         else if (tile is AgendaWidgetViewModel agenda) RefreshAgenda(agenda);
         return tile;
+    }
+
+    WebWidgetViewModel CreateWebWidget(DeckButton def, System.Windows.Input.ICommand edit, string name)
+    {
+        WidgetTypes.IsWebAddress(def.Option(WidgetOptionKeys.Url), out var uri);   // adresse absente ou refusée : uri reste null, la tuile le dit
+        var web = new WebWidgetViewModel { Button = def, Edit = edit, AccessibleName = name, Source = uri, Suspended = MenuOpen || HasDialog };
+        web.TypingRequested = on => SetTyping(on ? web : null, on);
+        return web;
+    }
+
+    // ---------- widget web : saisie au clavier et masquage sous les feuilles ----------
+
+    bool _typing;
+
+    /// <summary>
+    /// Saisie au clavier dans un widget web : la fenêtre devient activable comme en mode édition (le clavier va à la page), puis redevient
+    /// sans focus et rend le focus à l'application précédente.
+    /// </summary>
+    void SetTyping(WebWidgetViewModel? tile, bool on)
+    {
+        if (on && IsEdit) return;   // en édition la fenêtre est déjà activable
+        foreach (var w in Tiles.OfType<WebWidgetViewModel>()) w.IsTyping = on && ReferenceEquals(w, tile);
+        if (_typing == on) return;
+        _typing = on;
+        _shell.SetEditing(on);
+    }
+
+    void StopTyping()
+    {
+        if (_typing) SetTyping(null, false);
+    }
+
+    /// <summary>Le cadre d'une page web est une fenêtre Win32 : un menu ou une boîte de dialogue ouvert le masque (la page garde son état).</summary>
+    void UpdateWebSuspension()
+    {
+        bool suspended = MenuOpen || HasDialog;
+        foreach (var w in Tiles.OfType<WebWidgetViewModel>()) w.Suspended = suspended;
     }
 
     /// <summary>Contenu d'un widget agenda : les prochains événements de l'intégration Google, ou ce qu'il manque pour en afficher.</summary>

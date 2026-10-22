@@ -9,6 +9,8 @@ public partial class MainViewModel
     /// <summary>Boîte de dialogue affichée, ou null.</summary>
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDialog))] DeckDialogViewModel? dialog;
 
+    partial void OnDialogChanged(DeckDialogViewModel? value) => UpdateWebSuspension();
+
     /// <summary>true si une boîte de dialogue est affichée.</summary>
     public bool HasDialog => Dialog != null;
 

@@ -177,6 +177,14 @@ Tant que cette identité ne change pas, la tuile existante est gardée et seule 
 faite dans l'éditeur ne régénère donc que les cases touchées. Mesure hors écran, 32 touches : 135 ms → 12 ms par
 modification. Un changement de thème recrée toutes les tuiles.
 
+## Widgets
+
+Un widget est un `DeckButton` avec `Widget` (horloge, agenda, web) et une emprise `ColSpan` × `RowSpan` (`Core/Widgets.cs`, ADR 0017).
+`MainViewModel.BuildTiles` pose une tuile par case non recouverte et y inscrit sa place (`PlacedTile` : case, emprise) ; `TileGridPanel`
+(remplace `UniformGrid`) la lit. Hors édition, un widget est un `WidgetTileViewModel` (`ClockWidgetViewModel`, `AgendaWidgetViewModel`,
+`WebWidgetViewModel`) ; en édition c'est une touche sélectionnable. L'agenda vient des valeurs de l'intégration Google (`CalendarFeed`,
+`AgendaFormatter` dans Core) ; la page web est un `WebWidgetView` (WebView2 isolé) masqué sous les menus et boîtes de dialogue.
+
 ## Création rapide d'un bouton
 
 ```mermaid

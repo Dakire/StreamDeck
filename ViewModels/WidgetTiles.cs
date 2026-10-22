@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace TouchDeck.ViewModels;
 
@@ -72,13 +73,67 @@ public sealed partial class AgendaWidgetViewModel : WidgetTileViewModel
     }
 }
 
-/// <summary>Widget page web : l'adresse à afficher dans un cadre isolé (WebView2).</summary>
+/// <summary>Widget page web : l'adresse à afficher dans un cadre isolé (WebView2), et ce que la vue en dit (échec, saisie au clavier, masqué).</summary>
 public sealed partial class WebWidgetViewModel : WidgetTileViewModel
 {
+    string _failure = "";
+
     /// <summary>Adresse affichée, ou null si elle manque ou n'est pas une adresse http(s).</summary>
     public Uri? Source { get; init; }
-    /// <summary>true si la page peut être affichée.</summary>
-    public bool HasSource => Source != null;
-    /// <summary>Message quand il n'y a pas de page à afficher.</summary>
-    public string Status => Source == null ? "Renseigne l'adresse de la page dans les propriétés" : "";
+
+    /// <summary>Nom du site (en-tête de la tuile).</summary>
+    public string Title => Source?.Host ?? "Page web";
+
+    /// <summary>Message à la place de la page : adresse manquante, page injoignable, composant WebView2 absent. Vide quand la page s'affiche.</summary>
+    public string Status => _failure.Length > 0 ? _failure : Source == null ? "Renseigne l'adresse de la page dans les propriétés (mode édition)" : "";
+
+    /// <summary>true si un message remplace la page.</summary>
+    public bool HasStatus => Status.Length > 0;
+
+    /// <summary>true tant qu'un menu ou une boîte de dialogue est ouvert : le cadre est une fenêtre Win32 qui masquerait leur contenu.</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowPage))] bool _suspended;
+
+    /// <summary>true quand le cadre de la page est affiché.</summary>
+    public bool ShowPage => !HasStatus && !Suspended;
+
+    /// <summary>true pendant la saisie au clavier : la fenêtre du deck est activable et le focus est dans la page.</summary>
+    [ObservableProperty] bool _isTyping;
+
+    /// <summary>Demande de la vue : recharger la page (renseignée par la vue).</summary>
+    public Action? ReloadRequested { get; set; }
+
+    /// <summary>Demande de la tuile : commencer (true) ou finir (false) la saisie au clavier (renseignée par le deck).</summary>
+    public Action<bool>? TypingRequested { get; set; }
+
+    /// <summary>La page ne peut pas s'afficher : le message prend sa place.</summary>
+    public void Fail(string message)
+    {
+        _failure = message;
+        NotifyStatus();
+    }
+
+    /// <summary>La page s'est chargée : l'éventuel message d'échec disparaît.</summary>
+    public void Recover()
+    {
+        if (_failure.Length == 0) return;
+        _failure = "";
+        NotifyStatus();
+    }
+
+    void NotifyStatus()
+    {
+        OnPropertyChanged(nameof(Status));
+        OnPropertyChanged(nameof(HasStatus));
+        OnPropertyChanged(nameof(ShowPage));
+    }
+
+    [RelayCommand]
+    void Reload()
+    {
+        Recover();
+        ReloadRequested?.Invoke();
+    }
+
+    [RelayCommand]
+    void ToggleTyping() => TypingRequested?.Invoke(!IsTyping);
 }

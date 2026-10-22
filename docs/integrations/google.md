@@ -36,7 +36,13 @@ Rien n'est écrit dans `config.json` hors identifiants non secrets, ni dans le j
 - « Google refuse l'ID client ou le secret » : recopie-les depuis la console.
 - « n'a pas renvoyé d'autorisation durable » : révoque TouchDeck sur [myaccount.google.com/permissions](https://myaccount.google.com/permissions) puis recommence.
 
+## Widget agenda
+
+Une fois connecté, l'intégration lit l'agenda principal toutes les 5 minutes (`events.list`, 14 jours, droit `calendar.events` déjà demandé) et publie
+`calendar.events` (JSON) ou `calendar.error`. Le widget *Agenda* du deck les affiche ; il n'y a rien de plus à régler. Une lecture en échec
+n'empêche pas les actions Sheets, Docs et Agenda.
+
 ## Limites
 
 Flux joué contre un faux Google (`GoogleTests`) : le comportement exact de l'écran de consentement et l'expiration à 7 jours sont à confirmer
-chez toi (**à vérifier**). Pas de lecture (cellules, événements) ni d'état dans les titres pour l'instant ; Gmail et Drive complet sont exclus volontairement.
+chez toi (**à vérifier**). Pas de lecture des cellules ni d'état dans les titres pour l'instant (les événements sont lus pour le widget agenda, **à vérifier** avec un vrai compte) ; Gmail et Drive complet sont exclus volontairement.

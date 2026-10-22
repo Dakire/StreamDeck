@@ -260,6 +260,125 @@ public class DeckWidgetTests
         });
     }
 
+    // ---------- page web ----------
+
+    static DeckButton WebWidget(string? url)
+    {
+        var b = Widget("web", 2, 1);
+        b.SetOption(WidgetOptionKeys.Url, url);
+        return b;
+    }
+
+    [Fact]
+    public void AWebWidgetWithoutAValidAddressSaysWhatToFillInAndNeverLoadsAnything()
+    {
+        foreach (var url in new[] { null, "javascript:alert(1)", "file:///C:/secret.txt", "pas une adresse" })
+        {
+            var vm = NewDeck(Config(WebWidget(url), new DeckButton { Blank = true }));
+            _host.Run(() =>
+            {
+                var web = Assert.IsType<WebWidgetViewModel>(vm.Tiles[0]);
+                Assert.Null(web.Source);
+                Assert.True(web.HasStatus);
+                Assert.False(web.ShowPage);
+                Assert.Contains("adresse", web.Status);
+            });
+        }
+    }
+
+    [Fact]
+    public void AWebWidgetWithAnAddressShowsThePageUntilAMenuOrADialogCoversIt()
+    {
+        var vm = NewDeck(Config(WebWidget("https://example.org/chat"), new DeckButton { Blank = true }));
+        _host.Run(() =>
+        {
+            var web = Assert.IsType<WebWidgetViewModel>(vm.Tiles[0]);
+            Assert.Equal("example.org", web.Title);
+            Assert.True(web.ShowPage);
+
+            vm.OpenMenuCommand.Execute(null);                                  // le cadre est une fenêtre Win32 : il se masque sous la feuille
+            Assert.True(web.Suspended);
+            Assert.False(web.ShowPage);
+            vm.CloseMenuCommand.Execute(null);
+            Assert.False(web.Suspended);
+            Assert.True(web.ShowPage);
+
+            _ = vm.ConfirmAsync("Titre", "Message", "OK");                      // idem pour une boîte de dialogue
+            Assert.True(web.Suspended);
+            vm.Dialog!.CancelCommand.Execute(null);
+        });
+    }
+
+    [Fact]
+    public void ALoadFailureReplacesThePageWithAMessageAndReloadingClearsIt()
+    {
+        var vm = NewDeck(Config(WebWidget("https://example.org"), new DeckButton { Blank = true }));
+        _host.Run(() =>
+        {
+            var web = Assert.IsType<WebWidgetViewModel>(vm.Tiles[0]);
+            int reloads = 0;
+            web.ReloadRequested = () => reloads++;
+            web.Fail("La page n'a pas pu être chargée");
+            Assert.True(web.HasStatus);
+            Assert.False(web.ShowPage);
+            web.ReloadCommand.Execute(null);
+            Assert.Equal(1, reloads);
+            Assert.False(web.HasStatus);
+            Assert.True(web.ShowPage);
+        });
+    }
+
+    [Fact]
+    public void TypingInAWebWidgetMakesTheWindowActivatableThenGivesTheFocusBack()
+    {
+        _host.Reset(Config(WebWidget("https://example.org"), new DeckButton { Blank = true }, Btn("Un")));
+        var shell = new FakeDeckShell();
+        var vm = _host.Run(() => { var v = _host.Create<MainViewModel>(shell, new FakeAppWindows()); v.Resize(1600, 900); return v; });
+        _host.Settle();
+        _host.Run(() =>
+        {
+            var web = Assert.IsType<WebWidgetViewModel>(vm.Tiles[0]);
+            Assert.False(shell.Editing);
+            web.ToggleTypingCommand.Execute(null);
+            Assert.True(web.IsTyping);
+            Assert.True(shell.Editing);                                        // la fenêtre devient activable : le clavier va à la page
+            web.ToggleTypingCommand.Execute(null);
+            Assert.False(web.IsTyping);
+            Assert.False(shell.Editing);                                       // sans focus de nouveau, focus rendu
+
+            web.ToggleTypingCommand.Execute(null);
+            vm.OpenMenuCommand.Execute(null);
+            vm.MenuEntries.OfType<MenuEntryViewModel>().First(e => e.Text == "Modifier le deck").Command.Execute(null);
+            Assert.False(web.IsTyping);                                        // le mode édition prend la main
+            Assert.True(shell.Editing);
+            vm.EndEditCommand.Execute(null);
+            Assert.False(shell.Editing);
+        });
+    }
+
+    [Fact]
+    public void AWebWidgetRendersItsHeaderWithTouchSizedCommands()
+    {
+        _host.Reset(Config(WebWidget("https://example.org"), new DeckButton { Blank = true }, WebWidget(null), new DeckButton { Blank = true }));
+        var win = _host.Run(() => new MainWindow(_host.Services));
+        try
+        {
+            _host.Render(win, "deck-widget-web", 1600, 900);
+            _host.Run(() =>
+            {
+                var views = WpfHost.Descendants<TouchDeck.Controls.WebWidgetView>((DependencyObject)win.Content).ToList();
+                Assert.Equal(2, views.Count);
+                foreach (var view in views)
+                {
+                    var buttons = WpfHost.Descendants<System.Windows.Controls.Primitives.ButtonBase>(view).ToList();
+                    Assert.Equal(2, buttons.Count);                            // recharger, saisie au clavier
+                    Assert.All(buttons, b => Assert.True(b.ActualHeight >= 48 && b.ActualWidth >= 48, $"{b.ActualWidth}×{b.ActualHeight} px"));
+                }
+            });
+        }
+        finally { _host.Run(win.Close); }
+    }
+
     // ---------- panneau de propriétés ----------
 
     [Fact]

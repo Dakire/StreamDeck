@@ -1,0 +1,52 @@
+<UserControl x:Class="TouchDeck.Controls.WebWidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+             xmlns:vm="clr-namespace:TouchDeck.ViewModels">
+  <!--
+    Widget page web : une bande de commandes (48 px, tactile) et la page dans un cadre WebView2 isolé. Le cadre est une fenêtre Win32 enfant :
+    rien de WPF ne peut le recouvrir, donc MainViewModel le masque quand un menu ou une boîte de dialogue est ouvert (Suspended).
+  -->
+  <Border Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1" AutomationProperties.Name="{Binding AccessibleName}"
+          Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+          CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+      </Grid.RowDefinitions>
+
+      <Grid Margin="14,4,6,4" Height="48">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <ui:SymbolIcon Symbol="Globe24" Foreground="{DynamicResource DeckAccentText}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="1" Text="{Binding Title}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" FontWeight="SemiBold"
+                   Foreground="{Binding Face.LabelBrush}"/>
+        <Button Grid.Column="2" Command="{Binding ReloadCommand}" Width="48" Height="48" Padding="0" Background="Transparent" BorderThickness="0"
+                AutomationProperties.Name="Recharger la page" ToolTip="Recharger la page">
+          <ui:SymbolIcon Symbol="ArrowClockwise24"/>
+        </Button>
+        <ToggleButton Grid.Column="3" IsChecked="{Binding IsTyping, Mode=OneWay}" Command="{Binding ToggleTypingCommand}" Width="48" Height="48" Padding="0"
+                      Background="Transparent" BorderThickness="0" AutomationProperties.Name="Saisie au clavier"
+                      ToolTip="Saisie au clavier : la fenêtre prend le focus pour taper dans la page (touche à nouveau pour le rendre)">
+          <ui:SymbolIcon Symbol="Keyboard24"/>
+        </ToggleButton>
+      </Grid>
+
+      <Grid Grid.Row="1" Margin="2,0,2,2">
+        <wv2:WebView2 x:Name="Web" Visibility="{Binding ShowPage, Converter={StaticResource BoolVis}}" DefaultBackgroundColor="Transparent"/>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16"
+                    Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}">
+          <ui:SymbolIcon Symbol="Warning24" Foreground="{DynamicResource DeckDim}" HorizontalAlignment="Center" FontSize="32"/>
+          <TextBlock Text="{Binding Status}" TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource DeckDim}" Margin="0,8,0,0"
+                     AutomationProperties.LiveSetting="Polite"/>
+        </StackPanel>
+      </Grid>
+    </Grid>
+  </Border>
+</UserControl>

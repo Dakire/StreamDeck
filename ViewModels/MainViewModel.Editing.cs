@@ -33,6 +33,7 @@ public partial class MainViewModel
 
     partial void OnIsEditChanged(bool value)
     {
+        StopTyping();   // la saisie au clavier d'un widget web et le mode édition se disputent l'activation de la fenêtre
         if (value)
         {
             if (Editor == null)

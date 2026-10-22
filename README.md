@@ -81,6 +81,17 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 
 Toucher un bouton en mode édition ne l'exécute jamais.
 
+**Widgets** (catalogue › *Widgets*, ou clic droit › *Parcourir les actions*) : des cases qui affichent une information au lieu de lancer une action,
+sur plusieurs cases (de 1 × 1 à 5 × 3, réglable dans les propriétés ; les cases voisines doivent être vides).
+
+- **Horloge** : l'heure en grand, la date, secondes et 12 heures en option.
+- **Agenda** : les prochains événements de ton agenda Google (nombre et période réglables), mis à jour toutes les 5 minutes. Demande de connecter
+  Google Workspace (Paramètres › Intégrations, voir `docs/integrations/google.md`) ; sans cela, la tuile dit quoi faire.
+- **Page web** : un site dans un cadre isolé (WebView2) : chat, tableau de bord, météo. Adresse `https://…` saisie dans les propriétés.
+  La page ne peut rien faire sur TouchDeck (pas de téléchargement, de fenêtre, de caméra ni de micro). Un menu ou une boîte de dialogue
+  masque temporairement la page ; le bouton *Saisie au clavier* de la tuile active le clavier pour taper dans la page, puis rend le focus.
+  Pour modifier ce widget, passe en mode édition (le toucher dans la page appartient à la page).
+
 **Intégrations** (Paramètres › Intégrations, chacune activée à la demande)
 
 - Connecteurs livrés : **OBS Studio**, **vMix**, **lampes Elgato**, **Philips Hue**, **Système Windows** (processeur, mémoire, média en cours,
