@@ -128,6 +128,18 @@ public class DeckButton
     /// <summary>Contenu du dossier (dans l'ordre de la grille), si <see cref="IsFolder"/>.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<DeckButton>? Children { get; set; }
+    /// <summary>Widget affiché à la place d'un bouton : « clock », « agenda » ou « web » (voir <see cref="WidgetTypes"/>). Absent pour un bouton ordinaire.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Widget { get; set; }
+    /// <summary>Réglages du widget, par clé (voir <see cref="WidgetOptionKeys"/>) : format de l'heure, nombre d'événements, adresse de la page…</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, string>? WidgetOptions { get; set; }
+    /// <summary>Largeur d'un widget en cases (0 ou 1 : une case). Les cases recouvertes à droite doivent être vides.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int ColSpan { get; set; }
+    /// <summary>Hauteur d'un widget en cases (0 ou 1 : une case). Les cases recouvertes en dessous doivent être vides.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int RowSpan { get; set; }
 }
 
 /// <summary>Une étape d'un bouton. <see cref="Type"/> est l'un des identifiants de <see cref="ActionTypes"/>.</summary>

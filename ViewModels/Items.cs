@@ -23,8 +23,22 @@ public interface IEditableTile
     ICommand? Edit { get; }
 }
 
+/// <summary>
+/// Place d'une case dans la grille affichée : numéro de case (ligne par ligne, 0 = en haut à gauche) et emprise en cases. Un widget
+/// peut en occuper plusieurs ; les cases qu'il recouvre n'ont alors pas de tuile. Lue par <c>TileGridPanel</c>.
+/// </summary>
+public abstract class PlacedTile : ObservableObject
+{
+    /// <summary>Numéro de la case d'ancrage dans la page affichée.</summary>
+    public int Cell { get; set; }
+    /// <summary>Largeur en cases.</summary>
+    public int ColSpan { get; set; } = 1;
+    /// <summary>Hauteur en cases.</summary>
+    public int RowSpan { get; set; } = 1;
+}
+
 /// <summary>Bouton de la grille du deck. La face et l'état changent sans reconstruire la grille.</summary>
-public sealed partial class DeckTileViewModel : ObservableObject, IEditableTile
+public sealed partial class DeckTileViewModel : PlacedTile, IEditableTile
 {
     [ObservableProperty] TileFaceData _face = TileFaceData.Empty;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsRunning), nameof(IsSuccess), nameof(IsError))] TileRunState _runState;
@@ -52,14 +66,14 @@ public sealed partial class DeckTileViewModel : ObservableObject, IEditableTile
 }
 
 /// <summary>Case vide hors édition : réserve la place pour que les voisins gardent leur position. Un clic droit ou un appui long y ouvre le menu de création.</summary>
-public sealed class SpacerTileViewModel : IEditableTile
+public sealed class SpacerTileViewModel : PlacedTile, IEditableTile
 {
     /// <inheritdoc/>
     public ICommand? Edit { get; init; }
 }
 
 /// <summary>Emplacement « + » affiché en mode édition : un toucher le sélectionne, un appui long ouvre le menu de création.</summary>
-public sealed partial class AddTileViewModel : ObservableObject, IEditableTile
+public sealed partial class AddTileViewModel : PlacedTile, IEditableTile
 {
     [ObservableProperty] bool _isSelected;
     /// <summary>Sélectionne cette case (le panneau de propriétés propose alors de la remplir).</summary>
@@ -72,7 +86,7 @@ public sealed partial class AddTileViewModel : ObservableObject, IEditableTile
 /// Première case d'une page ou d'un dossier encore vide, hors mode édition : invite à ajouter un bouton au toucher (au lieu d'une grille éteinte).
 /// Dès qu'un bouton existe, la case redevient une case vide ordinaire.
 /// </summary>
-public sealed class WelcomeTileViewModel : IEditableTile
+public sealed class WelcomeTileViewModel : PlacedTile, IEditableTile
 {
     /// <summary>Ouvre le menu de création de cette case.</summary>
     public required ICommand Click { get; init; }

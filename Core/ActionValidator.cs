@@ -134,6 +134,12 @@ public static class ActionValidator
         var issues = new List<Issue>();
         if (b.Blank) return issues;
         if (b.IsFolder) return issues;
+        if (b.Widget != null)
+        {
+            if (b.Widget == WidgetTypes.Web && !WidgetTypes.IsWebAddress(b.Option(WidgetOptionKeys.Url), out _))
+                issues.Add(new Issue(Severity.Warning, "Renseigne l'adresse de la page (https://…)"));
+            return issues;
+        }
         // Une horloge ({time}, {date}) n'a pas besoin d'action : elle sert d'affichage
         if (b.Actions.Count == 0 && !LabelTemplate.IsDynamic(b.Label)) issues.Add(new Issue(Severity.Warning, "Ce bouton n'a aucune action"));
         foreach (var a in b.Actions) issues.AddRange(Validate(a, cfg, profile));

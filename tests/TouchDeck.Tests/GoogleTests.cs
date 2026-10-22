@@ -22,6 +22,9 @@ public class GoogleTests
         public string? LastVerifier, LastRedirect;
         public string RefreshReply = "ok";   // ok | invalid_grant | invalid_client
         public bool OmitRefreshToken;
+        public string? EventsReply;   // null : l'agenda répond 404
+        public int EventsCalls;
+        public string? LastEventsQuery;
 
         public (int, string) Handle(SeenRequest r)
         {
@@ -48,6 +51,12 @@ public class GoogleTests
             if (path.StartsWith("/g/sheets/v4/spreadsheets/SHEET/values/", StringComparison.Ordinal)) return (200, "{}");
             if (path == "/g/docs/v1/documents/DOC:batchUpdate") return (200, "{}");
             if (path == "/g/calendar/calendars/primary/events/quickAdd") return (200, """{"summary":"Dentiste"}""");
+            if (path == "/g/calendar/calendars/primary/events")
+            {
+                EventsCalls++;
+                LastEventsQuery = r.PathAndQuery;
+                return EventsReply == null ? (404, "{}") : (200, EventsReply);
+            }
             return (404, "{}");
         }
     }
@@ -64,7 +73,7 @@ public class GoogleTests
         return new IntegrationSettings { Values = values, Secrets = secrets };
     }
 
-    static GoogleIntegration NewGoogle() => new() { Now = () => new DateTime(2026, 10, 21, 9, 5, 0) };
+    static GoogleIntegration NewGoogle() => new() { Now = () => new DateTime(2026, 10, 21, 9, 5, 0), ReadCalendar = false };
 
     [Fact]
     public async Task SignInRunsTheWholeAuthorizationCodeFlowWithPkceAndReturnsTheRefreshToken()
@@ -226,5 +235,111 @@ public class GoogleTests
         Assert.Equal("02/01/2026 03:04 | 02/01/2026 | 03:04", GoogleIntegration.Expand("{DATETIME} | {date} | {time}", now));
         Assert.Equal(3, GoogleIntegration.Scopes.Split(' ').Length);
         Assert.All(new GoogleIntegration().Fields.Where(f => f.Key is "clientsecret" or "token"), f => Assert.Equal(SettingKind.Secret, f.Kind));
+    }
+
+    // ---------- lecture de l'agenda (widget agenda) ----------
+
+    const string Events = """
+        {"items":[
+          {"summary":"Réunion d'équipe","status":"confirmed","start":{"dateTime":"2026-10-21T10:00:00+02:00"},"end":{"dateTime":"2026-10-21T11:00:00+02:00"}},
+          {"summary":"Férié","start":{"date":"2026-10-22"},"end":{"date":"2026-10-23"}},
+          {"summary":"Annulé","status":"cancelled","start":{"dateTime":"2026-10-21T12:00:00+02:00"},"end":{"dateTime":"2026-10-21T13:00:00+02:00"}},
+          {"start":{"dateTime":"2026-10-21T15:30:00+02:00"},"end":{"dateTime":"2026-10-21T16:00:00+02:00"}}
+        ]}
+        """;
+
+    static async Task<string?> WaitForValueAsync(GoogleIntegration integration, string key)
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            if (integration.Values.TryGetValue(key, out var v)) return v;
+            await Task.Delay(30);
+        }
+        return null;
+    }
+
+    [Fact]
+    public async Task ConnectingStartsReadingTheCalendarAndPublishesTheEvents()
+    {
+        using var server = new FakeHttpServer();
+        var google = new FakeGoogle { EventsReply = Events };
+        server.Handler = google.Handle;
+        using var integration = new GoogleIntegration { Now = () => new DateTime(2026, 10, 21, 9, 5, 0), CalendarRefresh = TimeSpan.FromMinutes(30) };
+        await integration.ConnectAsync(For(server), CancellationToken.None);
+
+        var json = await WaitForValueAsync(integration, CalendarFeed.EventsKey);
+        Assert.NotNull(json);
+        var events = CalendarFeed.Parse(json);
+        Assert.Equal(3, events.Count);                                          // l'événement annulé est ignoré
+        Assert.Contains(events, e => e.Title == "Réunion d'équipe" && !e.AllDay);
+        Assert.Contains(events, e => e.Title == "Férié" && e.AllDay);
+        Assert.Contains(events, e => e.Title == "(sans titre)");
+        Assert.DoesNotContain(CalendarFeed.ErrorKey, integration.Values.Keys);
+        var query = System.Web.HttpUtility.ParseQueryString(google.LastEventsQuery!.Split('?')[1]);
+        Assert.Equal("true", query["singleEvents"]);
+        Assert.StartsWith("2026-10-21T00:00:00", query["timeMin"]);
+        Assert.StartsWith("2026-11-04T00:00:00", query["timeMax"]);               // 14 jours
+        await integration.DisconnectAsync();
+        Assert.DoesNotContain(CalendarFeed.EventsKey, integration.Values.Keys);   // déconnecté : plus d'événements affichés
+    }
+
+    [Fact]
+    public async Task AFailingCalendarReportsItsErrorButTheOtherCommandsKeepWorking()
+    {
+        using var server = new FakeHttpServer();
+        var google = new FakeGoogle();                                          // l'agenda répond 404
+        server.Handler = google.Handle;
+        using var integration = new GoogleIntegration { Now = () => new DateTime(2026, 10, 21, 9, 5, 0), CalendarRefresh = TimeSpan.FromMinutes(30) };
+        await integration.ConnectAsync(For(server), CancellationToken.None);
+
+        var error = await WaitForValueAsync(integration, CalendarFeed.ErrorKey);
+        Assert.Contains("Google Workspace a répondu 404", error);
+        Assert.Equal(ConnectionState.Connected, integration.State);
+        Assert.Equal("Ligne ajoutée (1 cellule)", await integration.ExecuteAsync("sheet-append", "a", default));
+    }
+
+    [Fact]
+    public async Task TheCalendarIsReadAgainAfterTheRefreshDelayAndStopsWhenDisconnected()
+    {
+        using var server = new FakeHttpServer();
+        var google = new FakeGoogle { EventsReply = Events };
+        server.Handler = google.Handle;
+        using var integration = new GoogleIntegration { Now = () => new DateTime(2026, 10, 21, 9, 5, 0), CalendarRefresh = TimeSpan.FromMilliseconds(80) };
+        await integration.ConnectAsync(For(server), CancellationToken.None);
+        for (int i = 0; i < 100 && google.EventsCalls < 3; i++) await Task.Delay(30);
+        Assert.True(google.EventsCalls >= 3, $"{google.EventsCalls} lectures");
+        await integration.DisconnectAsync();
+        int after = google.EventsCalls;
+        await Task.Delay(250);
+        Assert.True(google.EventsCalls <= after + 1, "la lecture continue après la déconnexion");
+    }
+
+    [Fact]
+    public void GoogleEventsAreParsedAndFormattedForTheAgendaWidget()
+    {
+        var fr = System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+        var events = CalendarFeed.FromGoogle(JsonNode.Parse(Events));
+        var now = new DateTime(2026, 10, 21, 10, 30, 0);
+        var lines = AgendaFormatter.Upcoming(events, now, 7, 10, fr);
+
+        Assert.Equal(new[] { "Réunion d'équipe", "(sans titre)", "Férié" }, lines.Select(l => l.Title));
+        Assert.True(lines[0].IsNow);                                              // 10:00-11:00 : en cours à 10:30
+        Assert.Equal("Aujourd'hui", lines[0].Day);
+        Assert.Equal("", lines[1].Day);                                           // même jour : pas répété
+        Assert.Equal("15:30", lines[1].When);
+        Assert.Equal("Demain", lines[2].Day);
+        Assert.Equal("Journée", lines[2].When);
+        Assert.Equal(2, AgendaFormatter.Upcoming(events, now, 7, 2, fr).Count);   // limité au nombre demandé
+        var evening = new DateTime(2026, 10, 21, 17, 0, 0);
+        Assert.Empty(AgendaFormatter.Upcoming(events, evening, 1, 10, fr));          // un jour : les événements d'aujourd'hui sont finis, « Férié » est demain
+        Assert.Equal(new[] { "Férié" }, AgendaFormatter.Upcoming(events, evening, 2, 10, fr).Select(l => l.Title));
+    }
+
+    [Fact]
+    public void AnUnreadableEventsValueGivesAnEmptyList()
+    {
+        Assert.Empty(CalendarFeed.Parse(null));
+        Assert.Empty(CalendarFeed.Parse("pas du json"));
+        Assert.Empty(CalendarFeed.Parse("{\"a\":1}"));
     }
 }

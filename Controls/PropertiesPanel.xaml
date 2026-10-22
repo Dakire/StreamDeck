@@ -84,8 +84,42 @@
             </StackPanel>
           </Border>
 
+          <!-- Widget : taille en cases et réglages propres au widget -->
+          <Border Style="{StaticResource Card}" Visibility="{Binding IsWidget, Converter={StaticResource BoolVis}}">
+            <StackPanel>
+              <TextBlock Text="{Binding WidgetName}" FontWeight="SemiBold" FontSize="16"/>
+              <TextBlock Text="{Binding WidgetDescription}" Style="{StaticResource EditorHint}"/>
+              <TextBlock Text="Taille en cases (largeur × hauteur)" Style="{StaticResource EditorCaption}"/>
+              <ItemsControl ItemsSource="{Binding SizeChoices}" Style="{StaticResource ChipWrap}"/>
+              <TextBlock Text="Les cases à droite et en dessous doivent être vides." Style="{StaticResource EditorHint}"/>
+
+              <StackPanel Visibility="{Binding IsClockWidget, Converter={StaticResource BoolVis}}" Margin="0,8,0,0">
+                <ui:ToggleSwitch Content="Afficher la date" IsChecked="{Binding ClockDate, Mode=TwoWay}" MinHeight="48" AutomationProperties.Name="Afficher la date"/>
+                <ui:ToggleSwitch Content="Afficher les secondes" IsChecked="{Binding ClockSeconds, Mode=TwoWay}" MinHeight="48" AutomationProperties.Name="Afficher les secondes"/>
+                <ui:ToggleSwitch Content="Heure sur 12 heures (AM / PM)" IsChecked="{Binding ClockHour12, Mode=TwoWay}" MinHeight="48" AutomationProperties.Name="Heure sur 12 heures"/>
+              </StackPanel>
+
+              <StackPanel Visibility="{Binding IsAgendaWidget, Converter={StaticResource BoolVis}}">
+                <TextBlock Text="Événements affichés" Style="{StaticResource EditorCaption}"/>
+                <ItemsControl ItemsSource="{Binding AgendaCountChoices}" Style="{StaticResource ChipWrap}"/>
+                <TextBlock Text="Période" Style="{StaticResource EditorCaption}"/>
+                <ItemsControl ItemsSource="{Binding AgendaDaysChoices}" Style="{StaticResource ChipWrap}"/>
+                <TextBlock Text="Lit l'agenda principal de ton compte Google : connecte-le dans Paramètres › Intégrations › Google Workspace." Style="{StaticResource EditorHint}"/>
+              </StackPanel>
+
+              <StackPanel Visibility="{Binding IsWebWidget, Converter={StaticResource BoolVis}}">
+                <TextBlock Text="Adresse de la page" Style="{StaticResource EditorCaption}"/>
+                <ui:TextBox Text="{Binding WidgetUrl, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"
+                            PlaceholderText="https://…" AutomationProperties.Name="Adresse de la page web"/>
+                <TextBlock Text="{Binding WidgetUrlError}" Foreground="{DynamicResource DeckDanger}" FontSize="12" TextWrapping="Wrap" Margin="2,6,0,0"
+                           AutomationProperties.LiveSetting="Assertive"/>
+                <TextBlock Text="La page s'affiche dans un cadre isolé : elle ne peut pas agir sur TouchDeck. Le clavier reste à l'application active." Style="{StaticResource EditorHint}"/>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
           <!-- Actions -->
-          <Border Style="{StaticResource Card}" Visibility="{Binding IsButton, Converter={StaticResource BoolVis}}">
+          <Border Style="{StaticResource Card}" Visibility="{Binding IsPlainButton, Converter={StaticResource BoolVis}}">
             <StackPanel>
               <TextBlock Text="{Binding StepsCaption}" Style="{StaticResource EditorCaption}" Margin="2,14,0,10"/>
               <ItemsControl ItemsSource="{Binding Steps}" Focusable="False"/>

@@ -7,7 +7,7 @@ namespace TouchDeck;
 /// <summary>Une entrée du catalogue : un bouton prêt à poser, avec ses actions pré-remplies.</summary>
 public sealed record CatalogAction(
     string Id, string Category, string Name, string Description, string Icon, string Color,
-    DeckAction[] Actions, string? Note = null, bool IsFolder = false, string Keywords = "", string? Label = null)
+    DeckAction[] Actions, string? Note = null, bool IsFolder = false, string Keywords = "", string? Label = null, string? Widget = null)
 {
     /// <summary>Titre du bouton créé (par défaut le nom ; « {time} » pour l'horloge).</summary>
     public string ButtonLabel => Label ?? Name;
@@ -16,6 +16,8 @@ public sealed record CatalogAction(
     public DeckButton CreateButton()
     {
         if (IsFolder) return DeckDocument.NewFolder(Name);
+        if (WidgetTypes.Find(Widget) is { } widget)
+            return new DeckButton { Label = ButtonLabel, Icon = Icon, Color = Color, Widget = widget.Id, ColSpan = widget.Cols, RowSpan = widget.Rows };
         return new DeckButton
         {
             Label = ButtonLabel, Icon = Icon, Color = Color,
@@ -43,8 +45,10 @@ public static class ActionCatalog
     public const string Automation = "Automatisation";
     /// <summary>Catégorie : changement de page et de profil.</summary>
     public const string Navigation = "Profils et navigation";
+    /// <summary>Catégorie : widgets (horloge, agenda, page web), qui affichent une information au lieu de lancer une action.</summary>
+    public const string Widgets = "Widgets";
 
-    static readonly string[] BuiltInCategories = { SystemCategory, Apps, AppShortcutPresets.Category, Multimedia, Audio, Keyboard, Web, Automation, Navigation };
+    static readonly string[] BuiltInCategories = { Widgets, SystemCategory, Apps, AppShortcutPresets.Category, Multimedia, Audio, Keyboard, Web, Automation, Navigation };
     static readonly object Gate = new();
     static readonly List<string> ExtraCategories = new();
     static readonly Dictionary<string, CatalogAction> Extra = new();
@@ -56,7 +60,7 @@ public static class ActionCatalog
     public static readonly Dictionary<string, string> CategoryIcons = new(StringComparer.Ordinal)
     {
         [SystemCategory] = "Desktop24", [Apps] = "Apps24", [Multimedia] = "Play24", [Audio] = "Speaker224",
-        [Keyboard] = "Keyboard24", [Web] = "Globe24", [Automation] = "Flash24", [Navigation] = "Navigation24", [AppShortcutPresets.Category] = AppShortcutPresets.CategoryIcon,
+        [Widgets] = "Board24", [Keyboard] = "Keyboard24", [Web] = "Globe24", [Automation] = "Flash24", [Navigation] = "Navigation24", [AppShortcutPresets.Category] = AppShortcutPresets.CategoryIcon,
     };
 
     static DeckAction A(string type, string value, string? args = null) => new() { Type = type, Value = value, Args = args };
@@ -187,7 +191,11 @@ public static class ActionCatalog
         C("nav.profile", Navigation, "Changer de profil", "Affiche un autre profil sur le deck.", "PersonSwap24", "#7C3AED", new[] { A(ActionTypes.Profile, "") }),
     };
 
-    static readonly IReadOnlyList<CatalogAction> BuiltIn = CoreEntries.Concat(AppShortcutPresets.Entries).ToList();
+    static readonly CatalogAction[] WidgetEntries = WidgetTypes.All.Select(w => new CatalogAction("widget." + w.Id, Widgets, w.Name, w.Description, w.Icon, w.Color,
+        Array.Empty<DeckAction>(), "Un widget occupe plusieurs cases : les cases voisines doivent être vides. Taille réglable dans les propriétés.",
+        false, "widget affichage information", null, w.Id)).ToArray();
+
+    static readonly IReadOnlyList<CatalogAction> BuiltIn = WidgetEntries.Concat(CoreEntries).Concat(AppShortcutPresets.Entries).ToList();
 
     static readonly Dictionary<string, CatalogAction> ById = BuiltIn.ToDictionary(a => a.Id);
 

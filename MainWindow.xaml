@@ -172,6 +172,90 @@
       </Button>
     </DataTemplate>
 
+    <!-- ===== Widgets : tuiles d'affichage (hors édition). Un toucher bref ne fait rien ; appui long ou clic droit : menu de la case ===== -->
+
+    <!-- Horloge : l'heure en grand et la date, mises à l'échelle de la tuile -->
+    <DataTemplate DataType="{x:Type vm:ClockWidgetViewModel}">
+      <Border Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1" AutomationProperties.Name="{Binding AccessibleName}"
+              Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+              CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+        <Viewbox Margin="14" Stretch="Uniform">
+          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Time}" FontSize="64" FontWeight="SemiBold" Foreground="{Binding Face.LabelBrush}" HorizontalAlignment="Center"
+                       FontFamily="Segoe UI Variable Display, Segoe UI" AutomationProperties.LiveSetting="Off"/>
+            <TextBlock Text="{Binding Date}" FontSize="20" Foreground="{DynamicResource DeckTextSoft}" HorizontalAlignment="Center"
+                       Visibility="{Binding ShowDate, Converter={StaticResource BoolVis}}"/>
+          </StackPanel>
+        </Viewbox>
+      </Border>
+    </DataTemplate>
+
+    <!-- Agenda : prochains événements, ou ce qu'il manque pour en afficher -->
+    <DataTemplate DataType="{x:Type vm:AgendaWidgetViewModel}">
+      <Border Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1" AutomationProperties.Name="{Binding AccessibleName}"
+              Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+              CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+        <Grid Margin="18,14">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+          </Grid.RowDefinitions>
+          <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+            <ui:SymbolIcon Symbol="CalendarLtr24" Foreground="{DynamicResource DeckAccentText}" Margin="0,0,8,0"
+                           FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+            <TextBlock Text="Agenda" FontWeight="SemiBold" Foreground="{Binding Face.LabelBrush}" VerticalAlignment="Center"
+                       FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+          </StackPanel>
+          <ItemsControl Grid.Row="1" ItemsSource="{Binding Entries}" Focusable="False" ClipToBounds="True"
+                        Visibility="{Binding HasEntries, Converter={StaticResource BoolVis}}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="{x:Type vm:AgendaEntry}">
+                <StackPanel Margin="0,0,0,6">
+                  <TextBlock Text="{Binding Day}" FontWeight="SemiBold" Foreground="{DynamicResource DeckDim}" Margin="0,4,0,2"
+                             FontSize="{Binding DataContext.L.SubFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                    <TextBlock.Style>
+                      <Style TargetType="TextBlock">
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding Day}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </TextBlock.Style>
+                  </TextBlock>
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" MinWidth="64"/>
+                      <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding When}" Foreground="{DynamicResource DeckAccentText}" FontWeight="SemiBold" Margin="0,0,10,0"
+                               FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding Title}" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource DeckText}"
+                               FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+                  </Grid>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Grid.Row="1" Text="{Binding Status}" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource DeckDim}"
+                     FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                     Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}"/>
+        </Grid>
+      </Border>
+    </DataTemplate>
+
+    <!-- Page web : le cadre isolé (WebView2) est ajouté par la fenêtre ; sans adresse valable, le message explique quoi renseigner -->
+    <DataTemplate DataType="{x:Type vm:WebWidgetViewModel}">
+      <Border Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1" AutomationProperties.Name="{Binding AccessibleName}"
+              Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+              CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16">
+          <ui:SymbolIcon Symbol="Globe24" Foreground="{DynamicResource DeckDim}" HorizontalAlignment="Center"
+                         FontSize="{Binding DataContext.L.AddGlyphSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+          <TextBlock Text="{Binding Status}" TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource DeckDim}" Margin="0,8,0,0"
+                     FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+
     <!-- Page ou dossier vide : la première case invite à ajouter un bouton (toucher = menu de création) -->
     <DataTemplate DataType="{x:Type vm:WelcomeTileViewModel}">
       <Button Style="{StaticResource AddTileButton}" Command="{Binding Click}" AutomationProperties.Name="Ajouter un bouton"
@@ -354,9 +438,17 @@
         </ItemsControl.RenderTransform>
         <ItemsControl.ItemsPanel>
           <ItemsPanelTemplate>
-            <UniformGrid Columns="{Binding L.Columns}" Rows="{Binding L.Rows}"/>
+            <controls:TileGridPanel Columns="{Binding L.Columns}" Rows="{Binding L.Rows}"/>
           </ItemsPanelTemplate>
         </ItemsControl.ItemsPanel>
+        <!-- Place de chaque tuile : case d'ancrage et emprise (un widget peut occuper plusieurs cases) -->
+        <ItemsControl.ItemContainerStyle>
+          <Style TargetType="ContentPresenter">
+            <Setter Property="controls:TileGridPanel.Cell" Value="{Binding Cell}"/>
+            <Setter Property="controls:TileGridPanel.ColSpan" Value="{Binding ColSpan}"/>
+            <Setter Property="controls:TileGridPanel.RowSpan" Value="{Binding RowSpan}"/>
+          </Style>
+        </ItemsControl.ItemContainerStyle>
       </ItemsControl>
 
       <!-- Mode édition : propriétés de la case choisie à droite -->

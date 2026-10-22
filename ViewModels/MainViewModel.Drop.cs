@@ -9,7 +9,7 @@ public partial class MainViewModel
     public bool TryGetSlot(object tile, out Place place, out int index)
     {
         int at = Tiles.IndexOf(tile);
-        if (at >= 0 && at < _tileKeys.Count && _tileKeys[at].Kind is "button" or "spacer" or "add" or "welcome")
+        if (at >= 0 && at < _tileKeys.Count && _tileKeys[at].Kind is "button" or "widget" or "spacer" or "add" or "welcome")
         {
             place = _tileKeys[at].Place;
             index = _tileKeys[at].Index;

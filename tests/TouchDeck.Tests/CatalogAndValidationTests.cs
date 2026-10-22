@@ -32,7 +32,7 @@ public class CatalogTests
     {
         foreach (var a in ActionCatalog.All.Where(x => !x.IsFolder))
         {
-            if (!LabelTemplate.IsDynamic(a.ButtonLabel)) Assert.NotEmpty(a.Actions);   // horloge et date : affichage seul
+            if (a.Widget == null && !LabelTemplate.IsDynamic(a.ButtonLabel)) Assert.NotEmpty(a.Actions);   // horloge, date et widgets : affichage seul
             foreach (var act in a.Actions) Assert.Contains(act.Type, ActionValidator.KnownTypes);
             Assert.True(Theme.TryBrush(a.Color, out _), $"{a.Id} : couleur invalide");
         }

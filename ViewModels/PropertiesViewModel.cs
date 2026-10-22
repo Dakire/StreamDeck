@@ -130,6 +130,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         FitChoices.Add(new ChoiceViewModel("Image entière", () => ImageFit = "contain"));
         foreach (var c in Palette) Swatches.Add(new SwatchViewModel(c, v => { Color = v; Flush(); }));
         foreach (var c in TextPalette) TextSwatches.Add(new SwatchViewModel(c, v => { TextColor = v; Flush(); }));
+        InitWidgetChoices();
         RebuildIcons();
     }
 
@@ -166,6 +167,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
                 : b.IsFolder ? PropertiesMode.Folder : PropertiesMode.Button;
             CanPaste = _doc.HasClipboard;
             Steps.Clear();
+            LoadWidget(b);
             if (b == null) { Preview = TileFaceData.Empty; ButtonIssues.Clear(); ButtonIssueCount = 0; StepCount = 0; return; }
 
             Title = b.Label; ShowTitle = !b.HideTitle; TitlePosition = b.TitlePosition;
@@ -203,6 +205,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         foreach (var s in Swatches) s.IsSelected = string.Equals(s.Color, Color, StringComparison.OrdinalIgnoreCase);
         foreach (var s in TextSwatches) s.IsSelected = string.Equals(s.Color, TextColor, StringComparison.OrdinalIgnoreCase);
         foreach (var c in IconChoices) c.IsSelected = string.Equals(c.Symbol.ToString(), Icon?.Trim(), StringComparison.Ordinal);
+        RefreshWidgetSelection(_target);
     }
 
     void RefreshDerived(DeckButton? b)
@@ -210,13 +213,17 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         if (b == null) return;
         Preview = TileFaceData.From(b);
         var cat = ActionCatalog.Identify(b);
-        HeaderText = b.IsFolder ? "Dossier" : cat?.Name ?? (b.Actions.Count == 1 ? TypeName(b.Actions[0].Type) : b.Actions.Count == 0 ? "Bouton sans action" : "Multi-actions");
+        HeaderText = b.IsFolder ? "Dossier" : WidgetTypes.Find(b.Widget)?.Name ?? cat?.Name ?? (b.Actions.Count == 1 ? TypeName(b.Actions[0].Type) : b.Actions.Count == 0 ? "Bouton sans action" : "Multi-actions");
         Subtitle = b.IsFolder ? "" : b.Actions.Count switch { 0 => "", 1 => cat?.Description ?? "", _ => $"{b.Actions.Count} étapes" };
         FolderInfo = b.IsFolder ? (b.Children?.Count(c => !c.Blank) ?? 0) switch { 0 => "Dossier vide", 1 => "1 bouton dans ce dossier", var n => $"{n} boutons dans ce dossier" } : "";
 
         // Les problèmes d'une étape s'affichent sous l'étape ; le bouton ne garde que les siens (aucune action, image absente)
         ButtonIssues.Clear();
-        if (!b.IsFolder && b.Actions.Count == 0)
+        if (b.Widget != null)
+        {
+            foreach (var issue in ActionValidator.Validate(b, _doc.Config, Profile)) ButtonIssues.Add(new IssueViewModel(issue.Severity, issue.Message));
+        }
+        else if (!b.IsFolder && b.Actions.Count == 0)
             ButtonIssues.Add(new IssueViewModel(Severity.Warning, "Ce bouton n'a aucune action"));
         if (!string.IsNullOrEmpty(b.ImagePath) && IconStore.Resolve(b.ImagePath) is { } img && !File.Exists(img))
             ButtonIssues.Add(new IssueViewModel(Severity.Warning, "L'image du bouton est introuvable"));

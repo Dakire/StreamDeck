@@ -391,23 +391,30 @@ public partial class MainViewModel : ObservableObject, INavigator
     /// Le bouton est comparé par référence (le document modifie les boutons en place) ; le titre et le dossier font partie
     /// de la clé car ils fixent le nom de la tuile et sa commande.
     /// </summary>
-    readonly record struct TileKey(string Kind, Place Place, int Index, DeckButton? Button, string? Label, bool IsFolder, bool IsEdit);
+    readonly record struct TileKey(string Kind, Place Place, int Index, DeckButton? Button, string? Label, bool IsFolder, bool IsEdit,
+        int Slot = -1, int Cols = 1, int Rows = 1, string? Options = null);
 
     readonly List<TileKey> _tileKeys = new();
 
     void BuildTiles(List<ViewItem> view)
     {
-        // Réconciliation case par case plutôt que Clear + Add : une modification de document (titre tapé dans l'éditeur,
+        // Réconciliation tuile par tuile plutôt que Clear + Add : une modification de document (titre tapé dans l'éditeur,
         // réglage) ne régénère plus les 32 conteneurs de la grille, seulement les cases qui ont réellement changé.
         var place = CurrentPlace;
         int offset = _folder.Count > 0 ? 1 : 0;
         int first = _sub * _capacity;
+        int cols = Math.Max(1, L.Columns), rows = Math.Max(1, L.Rows);
         bool empty = !view.Any(v => v.Button != null);   // aucune touche : la première case invite à ajouter un bouton
+        bool Occupied(int cell) => first + cell < view.Count && (view[first + cell].IsBack || view[first + cell].Button != null);
+        var covered = new HashSet<int>();                 // cases recouvertes par un widget : pas de tuile
+        int at = 0;                                       // position dans Tiles (une tuile par case non recouverte)
         for (int slot = 0; slot < _capacity; slot++)
         {
+            if (covered.Contains(slot)) continue;
             int i = first + slot;
             TileKey key;
             Func<object> create;
+            int spanCols = 1, spanRows = 1;
             if (i >= view.Count)
             {
                 // Au-delà du contenu : en édition, chaque case libre propose d'ajouter un bouton
@@ -436,35 +443,51 @@ public partial class MainViewModel : ObservableObject, INavigator
                 var def = view[i].Button!;
                 int idx = view[i].ListIndex;
                 bool edit = IsEdit;
-                key = new TileKey("button", place, idx, def, def.Label, def.IsFolder, edit);
-                create = () =>
+                bool widget = def.Widget != null;
+                string? signature = null;
+                if (widget)
                 {
-                    DeckTileViewModel? tile = null;
-                    var menu = new RelayCommand(() => OpenTileMenu(place, idx));                              // clic droit, appui long
-                    tile = new DeckTileViewModel
+                    var (wantCols, wantRows) = def.Span();
+                    (spanCols, spanRows) = TileSpans.Effective(slot, wantCols, wantRows, cols, rows, Occupied);
+                    foreach (var cell in TileSpans.Covered(slot, spanCols, spanRows, cols)) covered.Add(cell);
+                    signature = WidgetSignature(def);
+                }
+                // Hors édition, un widget est une tuile d'affichage ; en édition, c'est une touche comme les autres (sélectionnable)
+                key = new TileKey(widget && !edit ? "widget" : "button", place, idx, def, def.Label, def.IsFolder, edit, slot, spanCols, spanRows, signature);
+                create = widget && !edit
+                    ? () => CreateWidgetTile(def, place, idx)
+                    : () =>
                     {
-                        Button = def, Label = def.Label, IsEdit = edit, Edit = menu,
-                        Click = edit
-                            ? new RelayCommand(() => SelectTile(place, idx))                              // mode édition : sélectionne la touche
-                            : def.IsFolder
-                                ? new RelayCommand(() => EnterFolder(idx))
-                                : new AsyncRelayCommand(() => RunTileAsync(tile!), AsyncRelayCommandOptions.AllowConcurrentExecutions),
+                        DeckTileViewModel? tile = null;
+                        var menu = new RelayCommand(() => OpenTileMenu(place, idx));                              // clic droit, appui long
+                        tile = new DeckTileViewModel
+                        {
+                            Button = def, Label = def.Label, IsEdit = edit, Edit = menu,
+                            Click = edit
+                                ? new RelayCommand(() => SelectTile(place, idx))                              // mode édition : sélectionne la touche
+                                : def.IsFolder
+                                    ? new RelayCommand(() => EnterFolder(idx))
+                                    : new AsyncRelayCommand(() => RunTileAsync(tile!), AsyncRelayCommandOptions.AllowConcurrentExecutions),
+                        };
+                        return tile;
                     };
-                    return tile;
-                };
             }
 
-            if (slot < Tiles.Count && _tileKeys[slot] == key)
+            if (at < Tiles.Count && _tileKeys[at] == key)
             {
-                if (Tiles[slot] is DeckTileViewModel kept && key.Kind == "button") UpdateFace(kept);   // couleur, icône, thème…
+                if (Tiles[at] is DeckTileViewModel kept && key.Kind == "button") UpdateFace(kept);   // couleur, icône, thème…
+                else if (Tiles[at] is WidgetTileViewModel keptWidget) keptWidget.Face = TileFaceData.From(keptWidget.Button);
+                at++;
                 continue;
             }
             var item = create();
             if (item is DeckTileViewModel created && key.Kind == "button") UpdateFace(created);
-            if (slot < Tiles.Count) { Tiles[slot] = item; _tileKeys[slot] = key; }
+            if (item is PlacedTile placed) { placed.Cell = slot; placed.ColSpan = spanCols; placed.RowSpan = spanRows; }
+            if (at < Tiles.Count) { Tiles[at] = item; _tileKeys[at] = key; }
             else { Tiles.Add(item); _tileKeys.Add(key); }
+            at++;
         }
-        while (Tiles.Count > _capacity)
+        while (Tiles.Count > at)
         {
             Tiles.RemoveAt(Tiles.Count - 1);
             _tileKeys.RemoveAt(_tileKeys.Count - 1);
@@ -473,6 +496,49 @@ public partial class MainViewModel : ObservableObject, INavigator
         ApplySelection();
         ShowDiscoveryHintOnce(view.Count(v => v.Button != null));
     }
+
+    /// <summary>Empreinte des réglages d'un widget : une tuile n'est gardée que si rien de ce qui la décrit n'a changé.</summary>
+    static string WidgetSignature(DeckButton def) =>
+        def.Widget + "|" + def.Color + "|" + string.Join(";", (def.WidgetOptions ?? new()).OrderBy(o => o.Key, StringComparer.Ordinal).Select(o => o.Key + "=" + o.Value));
+
+    /// <summary>Tuile d'affichage d'un widget (heure, agenda ou page web).</summary>
+    WidgetTileViewModel CreateWidgetTile(DeckButton def, Place place, int index)
+    {
+        var edit = new RelayCommand(() => OpenTileMenu(place, index));            // clic droit, appui long
+        string name = WidgetTypes.Find(def.Widget)?.Name ?? "Widget";
+        WidgetTileViewModel tile = def.Widget switch
+        {
+            WidgetTypes.Agenda => new AgendaWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
+            WidgetTypes.Web => WidgetTypes.IsWebAddress(def.Option(WidgetOptionKeys.Url), out var uri)
+                ? new WebWidgetViewModel { Button = def, Edit = edit, AccessibleName = name, Source = uri }
+                : new WebWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
+            _ => new ClockWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
+        };
+        tile.Face = TileFaceData.From(def);
+        if (tile is ClockWidgetViewModel clock) clock.Update(DateTime.Now);
+        else if (tile is AgendaWidgetViewModel agenda) RefreshAgenda(agenda);
+        return tile;
+    }
+
+    /// <summary>Contenu d'un widget agenda : les prochains événements de l'intégration Google, ou ce qu'il manque pour en afficher.</summary>
+    void RefreshAgenda(AgendaWidgetViewModel agenda)
+    {
+        var none = Array.Empty<AgendaEntry>();
+        var google = _integrations.Find(GoogleId);
+        if (google == null || !_integrations.IsEnabled(GoogleId)) { agenda.Show(none, "Active Google Workspace dans Paramètres › Intégrations pour voir ton agenda"); return; }
+        if (google.State != ConnectionState.Connected)
+        {
+            agenda.Show(none, google.State == ConnectionState.Error && google.Error != null ? google.Error : "Connexion à Google en cours…");
+            return;
+        }
+        if (_integrations.GetValue($"{GoogleId}.{CalendarFeed.ErrorKey}") is { Length: > 0 } error) { agenda.Show(none, error); return; }
+        var lines = AgendaFormatter.Upcoming(CalendarFeed.Parse(_integrations.GetValue($"{GoogleId}.{CalendarFeed.EventsKey}")), DateTime.Now,
+            agenda.Button.OptionInt(WidgetOptionKeys.Days, 7, 1, 60), agenda.Button.OptionInt(WidgetOptionKeys.Count, 4, 1, 20));
+        if (lines.Count == 0) agenda.Show(none, "Aucun événement à venir");
+        else agenda.Show(lines.Select(l => new AgendaEntry(l.When, l.Title, l.Day, l.IsNow)).ToList(), "");
+    }
+
+    const string GoogleId = "google";
 
     // ---------- exécution et retour visuel ----------
 
@@ -529,6 +595,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             foreach (var t in Tiles.OfType<DeckTileViewModel>())
                 if (t.Button is { IsFolder: false } b && (LabelTemplate.ValueKeys(b.Label).Count > 0 || b.Actions.Any(a => _integrations.Find(a.Type) != null)))
                     UpdateFace(t);
+            foreach (var agenda in Tiles.OfType<AgendaWidgetViewModel>()) RefreshAgenda(agenda);
         });
     }
 
@@ -538,7 +605,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     /// <summary>L'horloge ne tourne que si une tuile visible l'utilise (ou qu'un minuteur est en cours).</summary>
     void UpdateLiveTimer()
     {
-        bool needed = _engine.Context.Countdowns.Any || Tiles.OfType<DeckTileViewModel>().Any(IsLive);
+        bool needed = _engine.Context.Countdowns.Any || Tiles.OfType<DeckTileViewModel>().Any(IsLive) || Tiles.OfType<ClockWidgetViewModel>().Any() || Tiles.OfType<AgendaWidgetViewModel>().Any();
         if (needed && !_liveTimer.IsEnabled) _liveTimer.Start();
         else if (!needed) _liveTimer.Stop();
     }
@@ -547,9 +614,12 @@ public partial class MainViewModel : ObservableObject, INavigator
     void RefreshLive()
     {
         _engine.Context.Countdowns.Tick();
+        var now = DateTime.Now;
+        foreach (var clock in Tiles.OfType<ClockWidgetViewModel>()) clock.Update(now);
         var minute = DateTime.Now.ToString("yyyyMMddHHmm", CultureInfo.InvariantCulture);
         bool newMinute = minute != _lastMinute;
         _lastMinute = minute;
+        if (newMinute) foreach (var agenda in Tiles.OfType<AgendaWidgetViewModel>()) RefreshAgenda(agenda);   // un événement commence ou se termine
         foreach (var t in Tiles.OfType<DeckTileViewModel>())
         {
             if (t.Button is not { } b) continue;

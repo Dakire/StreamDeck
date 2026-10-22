@@ -133,6 +133,7 @@ public static class ConfigNormalizer
             if (b.ImageFit is not (null or "cover" or "contain")) b.ImageFit = null;
             if (string.IsNullOrWhiteSpace(b.ImagePath)) b.ImagePath = null;
             if (string.IsNullOrWhiteSpace(b.TextColor)) b.TextColor = null;
+            NormalizeWidget(b);
 
             if (b.IsFolder)
             {
@@ -152,6 +153,23 @@ public static class ConfigNormalizer
         // Les cases vides de fin ne servent à rien
         while (list.Count > 0 && list[^1].Blank) list.RemoveAt(list.Count - 1);
         return list;
+    }
+
+    /// <summary>Widget inconnu retiré (le bouton redevient ordinaire), emprise bornée, réglages nettoyés ; un widget n'a ni dossier ni action.</summary>
+    static void NormalizeWidget(DeckButton b)
+    {
+        var info = WidgetTypes.Find(b.Widget);
+        if (info == null) { b.Widget = null; b.WidgetOptions = null; b.ColSpan = 0; b.RowSpan = 0; return; }
+        b.Widget = info.Id;
+        b.ColSpan = Math.Clamp(b.ColSpan, 0, WidgetTypes.MaxSpan);
+        b.RowSpan = Math.Clamp(b.RowSpan, 0, WidgetTypes.MaxSpan);
+        if (b.WidgetOptions != null)
+        {
+            b.WidgetOptions = b.WidgetOptions.Where(o => !string.IsNullOrWhiteSpace(o.Key) && !string.IsNullOrWhiteSpace(o.Value) && o.Value.Length <= 2000)
+                .ToDictionary(o => o.Key, o => o.Value);
+            if (b.WidgetOptions.Count == 0) b.WidgetOptions = null;
+        }
+        b.IsFolder = false;
     }
 
     /// <summary>Tous les boutons descendants d'un dossier, à plat ; les sous-dossiers sont gardés, vidés de leur contenu.</summary>

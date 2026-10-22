@@ -1,0 +1,84 @@
+using System;
+using System.Collections.ObjectModel;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+
+namespace TouchDeck.ViewModels;
+
+/// <summary>
+/// Tuile d'un widget (hors mode édition) : elle affiche une information au lieu de lancer une action. Un toucher bref n'a pas d'effet ;
+/// un appui long ou un clic droit ouvre le menu de la case, comme pour un bouton.
+/// </summary>
+public abstract partial class WidgetTileViewModel : PlacedTile, IEditableTile
+{
+    /// <summary>Fond teinté et liseré de la couleur du bouton (même rendu que les touches).</summary>
+    [ObservableProperty] TileFaceData _face = TileFaceData.Empty;
+
+    /// <summary>Bouton de la configuration représenté.</summary>
+    public required DeckButton Button { get; init; }
+    /// <inheritdoc/>
+    public ICommand? Edit { get; init; }
+    /// <summary>Nom accessible du widget.</summary>
+    public string AccessibleName { get; init; } = "";
+}
+
+/// <summary>Widget horloge : l'heure en grand, la date dessous.</summary>
+public sealed partial class ClockWidgetViewModel : WidgetTileViewModel
+{
+    [ObservableProperty] string _time = "";
+    [ObservableProperty] string _date = "";
+
+    /// <summary>true si la date est affichée.</summary>
+    public bool ShowDate => Button.OptionFlag(WidgetOptionKeys.Date, true);
+
+    /// <summary>true si l'heure change chaque seconde (secondes affichées).</summary>
+    public bool NeedsSeconds => Button.OptionFlag(WidgetOptionKeys.Seconds, false);
+
+    /// <summary>Recalcule l'heure et la date.</summary>
+    public void Update(DateTime now)
+    {
+        Time = WidgetClock.Time(now, NeedsSeconds, Button.OptionFlag(WidgetOptionKeys.Hour12, false));
+        Date = ShowDate ? WidgetClock.Date(now) : "";
+    }
+}
+
+/// <summary>Un événement de l'agenda affiché par le widget.</summary>
+/// <param name="When">Heure de début (« 14:30 »), « Toute la journée » ou le jour pour un événement à venir.</param>
+/// <param name="Title">Titre de l'événement.</param>
+/// <param name="Day">Libellé du jour (« Aujourd'hui », « Demain », « Lundi 26 »), vide si le même que l'événement précédent.</param>
+/// <param name="IsNow">true si l'événement est en cours.</param>
+public sealed record AgendaEntry(string When, string Title, string Day, bool IsNow);
+
+/// <summary>Widget agenda : les prochains événements, ou l'explication de ce qui manque (compte non connecté, aucun événement).</summary>
+public sealed partial class AgendaWidgetViewModel : WidgetTileViewModel
+{
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasStatus), nameof(HasEntries))] string _status = "";
+
+    /// <summary>Événements affichés, dans l'ordre.</summary>
+    public ObservableCollection<AgendaEntry> Entries { get; } = new();
+
+    /// <summary>true si un message remplace la liste.</summary>
+    public bool HasStatus => Status.Length > 0;
+    /// <summary>true si la liste a des événements à montrer.</summary>
+    public bool HasEntries => Status.Length == 0 && Entries.Count > 0;
+
+    /// <summary>Remplace le contenu : une liste d'événements, ou un message si elle est vide.</summary>
+    public void Show(System.Collections.Generic.IReadOnlyList<AgendaEntry> entries, string status)
+    {
+        Entries.Clear();
+        foreach (var e in entries) Entries.Add(e);
+        Status = status;
+        OnPropertyChanged(nameof(HasEntries));
+    }
+}
+
+/// <summary>Widget page web : l'adresse à afficher dans un cadre isolé (WebView2).</summary>
+public sealed partial class WebWidgetViewModel : WidgetTileViewModel
+{
+    /// <summary>Adresse affichée, ou null si elle manque ou n'est pas une adresse http(s).</summary>
+    public Uri? Source { get; init; }
+    /// <summary>true si la page peut être affichée.</summary>
+    public bool HasSource => Source != null;
+    /// <summary>Message quand il n'y a pas de page à afficher.</summary>
+    public string Status => Source == null ? "Renseigne l'adresse de la page dans les propriétés" : "";
+}

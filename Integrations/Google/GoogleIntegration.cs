@@ -102,6 +102,72 @@ public sealed class GoogleIntegration : RestIntegrationBase, IPairableIntegratio
         _accessToken = "";
         _accessExpiry = DateTime.MinValue;
         await EnsureAccessTokenAsync(cancellation);   // vérifie que l'autorisation est encore valable
+        StartCalendar();
+    }
+
+    // ---------- lecture de l'agenda (widget agenda) ----------
+
+    /// <summary>Jours d'agenda lus à chaque rafraîchissement (le widget en affiche au plus 14).</summary>
+    const int CalendarDays = 14;
+    CancellationTokenSource? _calendar;
+
+    /// <summary>Délai entre deux lectures de l'agenda ; réduit dans les tests.</summary>
+    public TimeSpan CalendarRefresh { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>false : l'agenda n'est pas lu en arrière-plan (tests des autres commandes, qui comptent les requêtes).</summary>
+    public bool ReadCalendar { get; set; } = true;
+
+    void StartCalendar()
+    {
+        StopCalendar();
+        if (!ReadCalendar) return;
+        var cts = new CancellationTokenSource();
+        _calendar = cts;
+        _ = Task.Run(() => CalendarLoopAsync(cts.Token), CancellationToken.None);
+    }
+
+    void StopCalendar() => Interlocked.Exchange(ref _calendar, null)?.Cancel();
+
+    async Task CalendarLoopAsync(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            await RefreshCalendarAsync(token);
+            try { await Task.Delay(CalendarRefresh, token); }
+            catch (OperationCanceledException) { return; }
+        }
+    }
+
+    /// <summary>
+    /// Lit les événements de l'agenda principal pour les prochains jours et les publie (<see cref="CalendarFeed.EventsKey"/>). Un échec
+    /// (autorisation expirée, réseau) est publié dans <see cref="CalendarFeed.ErrorKey"/> et n'interrompt jamais l'intégration : les actions
+    /// Sheets, Docs et Agenda continuent de marcher. Ne lève pas d'exception.
+    /// </summary>
+    public async Task RefreshCalendarAsync(CancellationToken cancellation)
+    {
+        try
+        {
+            var from = Now().Date;
+            var window = $"timeMin={Uri.EscapeDataString(new DateTimeOffset(from).ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture))}"
+                + $"&timeMax={Uri.EscapeDataString(new DateTimeOffset(from.AddDays(CalendarDays)).ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture))}";
+            var reply = await SendAsync(HttpMethod.Get, $"{Calendar()}/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=50&{window}", null, cancellation);
+            SetValue(CalendarFeed.EventsKey, CalendarFeed.Serialize(CalendarFeed.FromGoogle(reply)));
+            RemoveValue(CalendarFeed.ErrorKey);
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { /* arrêt demandé */ }
+        catch (InvalidOperationException ex)
+        {
+            Log.Warn($"Google Agenda : lecture impossible ({ex.Message})");
+            SetValue(CalendarFeed.ErrorKey, ex.Message);
+        }
+    }
+
+    /// <inheritdoc/>
+    protected override Task DisconnectCoreAsync()
+    {
+        StopCalendar();
+        RemoveValues("calendar.");
+        return base.DisconnectCoreAsync();
     }
 
     /// <inheritdoc/>
