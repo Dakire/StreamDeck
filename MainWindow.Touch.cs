@@ -102,11 +102,13 @@ public partial class MainWindow
                 _dragging = false;
                 if (!_tap.Up(id, x, y) || wasDragging) break;   // un appui long consommé n'est pas un appui : l'action ne s'exécute pas
                 var (target, bar, binding) = Hit(x, y);
+                var field = FieldAt(HitVisual(x, y));
                 // L'action part APRÈS le message : une commande qui ouvre une boîte de dialogue (boucle modale) ou démarre un traitement
                 // ne doit pas tourner dans le WM_POINTERUP, sinon Windows n'a pas fini de traiter ce toucher et le deck semble figé.
                 Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
                 {
-                    if (target != null) { if (target.IsEnabled) Activate(target); }
+                    if (field != null) field.Focus();   // champ de saisie des panneaux d'édition : le toucher lui donne le focus
+                    else if (target != null) { if (target.IsEnabled) Activate(target); }
                     else if (binding != null) { if (binding.CanExecute(null)) binding.Execute(null); }
                     else if (bar) OnBarTap();
                 });
@@ -174,6 +176,14 @@ public partial class MainWindow
                 binding = ue.InputBindings.OfType<MouseBinding>().FirstOrDefault(m => m.MouseAction == MouseAction.LeftClick)?.Command;
         }
         return (null, bar, binding);
+    }
+
+    /// <summary>Champ de saisie qui contient cet élément, ou null.</summary>
+    static TextBoxBase? FieldAt(DependencyObject? hit)
+    {
+        for (DependencyObject? d = hit; d != null; d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+            if (d is TextBoxBase { IsEnabled: true } box) return box;
+        return null;
     }
 
     /// <summary>Active un bouton comme le ferait un clic (commande, bascule), sans événement souris.</summary>

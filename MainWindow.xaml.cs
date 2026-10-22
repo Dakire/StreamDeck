@@ -119,7 +119,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     internal static IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         // Mode édition (panneaux avec saisie de texte) : la fenêtre est activable et WPF traite le toucher lui-même
-        if (_editing) return IntPtr.Zero;
+        // Mode édition : la fenêtre est activable (saisie au clavier) mais le toucher reste traité par le deck, comme hors édition :
+        // WPF n'active pas les boutons à partir du toucher (ADR 0013), les panneaux d'édition ne répondraient plus au doigt
+        if (msg == WM_MOUSEACTIVATE && _editing) return IntPtr.Zero;
         if (msg == WM_MOUSEACTIVATE) { handled = true; return new IntPtr(MA_NOACTIVATE); }
         if (TouchTrace) TraceInput(msg, wParam);
         if (_touchOwner != null && IsTouchOrPenPointerMessage(msg, wParam, PointerTypeOf))
