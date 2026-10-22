@@ -130,7 +130,17 @@ public partial class MainWindow
     }
 
     /// <summary>Élément visuel sous le point (pixels écran), ou null.</summary>
-    DependencyObject? HitVisual(int x, int y) => VisualTreeHelper.HitTest(this, PointFromScreen(new Point(x, y)))?.VisualHit;
+    DependencyObject? HitVisual(int x, int y)
+    {
+        DependencyObject? hit = null;
+        // Un élément invisible n'intercepte jamais un appui ; le fond du menu (seul élément à MouseBinding) ne l'intercepte que menu ouvert
+        VisualTreeHelper.HitTest(this,
+            d => d is UIElement ue && (!ue.IsVisible || (!_vm.MenuOpen && ue.InputBindings.OfType<MouseBinding>().Any()))
+                ? HitTestFilterBehavior.ContinueSkipSelfAndChildren : HitTestFilterBehavior.Continue,
+            r => { hit = r.VisualHit; return HitTestResultBehavior.Stop; },
+            new PointHitTestParameters(PointFromScreen(new Point(x, y))));
+        return hit;
+    }
 
     /// <summary>
     /// Commande d'édition de la case qui contient cet élément (bouton, case vide, emplacement « + »), ou null : barre, dock, menu,
@@ -167,8 +177,7 @@ public partial class MainWindow
     /// <summary>Élément activable sous le point (pixels écran) : bouton, commande d'un MouseBinding, ou barre du haut.</summary>
     (ButtonBase? button, bool bar, ICommand? binding) Hit(int x, int y)
     {
-        var p = PointFromScreen(new Point(x, y));
-        var hit = VisualTreeHelper.HitTest(this, p)?.VisualHit;
+        var hit = HitVisual(x, y);
         bool bar = false;
         ICommand? binding = null;
         for (DependencyObject? d = hit; d != null; d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
