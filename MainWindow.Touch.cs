@@ -103,6 +103,8 @@ public partial class MainWindow
                 if (!_tap.Up(id, x, y) || wasDragging) break;   // un appui long consommé n'est pas un appui : l'action ne s'exécute pas
                 var (target, bar, binding) = Hit(x, y);
                 var field = FieldAt(HitVisual(x, y));
+                if (TouchTrace)
+                    Log.Info($"[tactile] appui ({x},{y}) visuel={HitVisual(x, y)?.GetType().Name ?? "aucun"} bouton={target?.GetType().Name ?? "-"} actif={target?.IsEnabled} liaison={binding != null} barre={bar} menu={_vm.MenuOpen} édition={_vm.IsEdit} dialogue={_vm.HasDialog}");
                 // L'action part APRÈS le message : une commande qui ouvre une boîte de dialogue (boucle modale) ou démarre un traitement
                 // ne doit pas tourner dans le WM_POINTERUP, sinon Windows n'a pas fini de traiter ce toucher et le deck semble figé.
                 Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
