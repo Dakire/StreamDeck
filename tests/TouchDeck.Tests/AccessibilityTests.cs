@@ -5,7 +5,6 @@ using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using TouchDeck.Controls;
 using TouchDeck.ViewModels;
 using Xunit;
 using Xunit.Abstractions;
@@ -71,32 +70,18 @@ public class AccessibilityTests
         finally { _host.Run(win.Close); }
     }
 
-    [Fact]
-    public void EveryInteractiveControlOfTheQuickPanelHasAName()
-    {
-        _host.Reset(ConfigStore.DefaultConfig());
-        var win = _host.Run(() => new QuickCreateWindow(_host.Services, new Place("Principal", 0), 30));
-        try
-        {
-            _host.Render(win, "a11y-creation-rapide", 540, 780);
-            var unnamed = Unnamed(win);
-            Assert.True(unnamed.Count == 0, string.Join("\n", unnamed));
-        }
-        finally { _host.Run(win.Close); }
-    }
-
     [Theory]
     [InlineData(0)]    // bouton à une action
     [InlineData(30)]   // case vide
-    public void EveryInteractiveControlOfTheEditorHasAName(int index)
+    public void EveryInteractiveControlOfTheDeckEditPanelsHasAName(int index)
     {
         _host.Reset(ConfigStore.DefaultConfig());
-        var win = _host.Run(() => new EditorWindow(_host.Services));
+        var win = _host.Run(() => new MainWindow(_host.Services));
         try
         {
-            _host.Run(() => win.GoTo(new Place("Principal", 0), index));
+            _host.Run(() => win.EditCell(new Place("Principal", 0), index));
             _host.Settle();
-            _host.Render(win, $"a11y-editeur-{index}", 1400, 880);
+            _host.Render(win, $"a11y-edition-deck-{index}", 1600, 900);
             var unnamed = Unnamed(win);
             Assert.True(unnamed.Count == 0, string.Join("\n", unnamed));
         }

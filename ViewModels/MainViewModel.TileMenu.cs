@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using CommunityToolkit.Mvvm.Input;
 using Wpf.Ui.Controls;
 
@@ -41,21 +42,62 @@ public partial class MainViewModel
         SetStatus("Astuce : appui long (ou clic droit) sur une case vide pour ajouter un bouton", error: false);
     }
 
-    /// <summary>Ouvre le menu de la case : création sur une case vide, actions sur un bouton.</summary>
+    /// <summary>
+    /// Ouvre le menu de la case : création sur une case vide, actions sur un bouton. En mode édition, c'est le menu complet de l'éditeur
+    /// (copier, déplacer, dossier, réinitialiser…) : les panneaux autour du deck remplacent l'ancienne fenêtre d'édition.
+    /// </summary>
     void OpenTileMenu(Place place, int index)
     {
         var button = _doc.Get(place, index);
         var title = button == null ? "Case vide" : button.Label.Length > 0 ? button.Label : "Bouton";
+        var items = BuildTileMenu(place, index);
+        if (IsEdit && Editor is { } editor)
+        {
+            editor.GoTo(place, index);
+            if (editor.Slots.FirstOrDefault(s => s.Index == index && !s.IsBack) is { } slot) items = editor.BuildSlotMenu(slot);
+        }
+        OpenSpecMenu(title, items);
+    }
+
+    /// <summary>Affiche une description de menu dans la feuille du deck.</summary>
+    void OpenSpecMenu(string title, IReadOnlyList<MenuItemSpec> items)
+    {
         _profileMenu = false;
         _specTrail.Clear();
-        _specTrail.Add(new SpecLevel(title, BuildTileMenu(place, index)));
+        _specTrail.Add(new SpecLevel(title, items));
         RenderSpecMenu();
         MenuOpen = true;
     }
 
+    /// <summary>Options de la page affichée (renommer, dupliquer, masquer, déplacer, supprimer), en mode édition.</summary>
+    [RelayCommand]
+    void OpenPageMenu()
+    {
+        if (Editor is not { } editor || editor.Pages.FirstOrDefault(p => p.Index == _page) is not { } page) return;
+        OpenSpecMenu($"Page « {page.Name} »", editor.BuildPageMenu(page));
+    }
+
     /// <summary>
-    /// Menu d'une case. Case vide : Nouveau bouton, modèles en un clic, Coller, Éditeur complet. Bouton : Modifier, Dupliquer,
-    /// Copier, Couper, Supprimer, Éditeur complet. Chaque entrée écrit une seule fois dans le document (un seul pas d'annulation).
+    /// Options du profil affiché, en mode édition : changer de profil, format de la grille, puis renommer, dupliquer, exporter, importer,
+    /// nouveau profil depuis un modèle et suppression.
+    /// </summary>
+    void OpenProfileEditMenu()
+    {
+        if (Editor is not { } editor) return;
+        var items = new List<MenuItemSpec>();
+        if (ProfileCount > 1)
+            items.Add(new("Changer de profil", Icon: SymbolRegular.PersonSwap24, Children: _doc.Config.Profiles
+                .Select(p => new MenuItemSpec(p.Name, () => SwitchProfile(p.Name), SymbolRegular.Person24, Checked: p.Name.Equals(CurrentProfile.Name, StringComparison.Ordinal))).ToList()));
+        items.Add(new("Format de la grille", Icon: SymbolRegular.Grid24, Children: editor.Formats
+            .Select(f => new MenuItemSpec(f.Text, () => editor.SelectedFormat = f, Checked: f.Equals(editor.SelectedFormat))).ToList()));
+        items.Add(MenuItemSpec.Separator);
+        items.AddRange(editor.BuildProfileMenu(CurrentProfile.Name));
+        OpenSpecMenu($"Profil « {CurrentProfile.Name} »", items);
+    }
+
+    /// <summary>
+    /// Menu d'une case. Case vide : Nouveau bouton, modèles en un clic, Coller. Bouton : Modifier, Dupliquer,
+    /// Copier, Couper, Supprimer. Chaque entrée écrit une seule fois dans le document (un seul pas d'annulation).
     /// </summary>
     public IReadOnlyList<MenuItemSpec> BuildTileMenu(Place place, int index) =>
         _doc.Get(place, index) is { } button ? BuildButtonMenu(place, index, button) : BuildEmptyTileMenu(place, index);
@@ -64,7 +106,7 @@ public partial class MainViewModel
     {
         var items = new List<MenuItemSpec>
         {
-            new("Nouveau bouton…", () => _windows.OpenQuickCreate(place, index), SymbolRegular.Add24),
+            new("Nouveau bouton…", () => StartEditing(place, index), SymbolRegular.Add24),
             new("Parcourir les actions", Icon: SymbolRegular.Apps24, Children: CatalogMenu.Categories(a => CreateFromCatalog(a, place, index))),
             MenuItemSpec.Separator,
         };
@@ -75,7 +117,6 @@ public partial class MainViewModel
         }
         items.Add(MenuItemSpec.Separator);
         if (_doc.HasClipboard) items.Add(new("Coller", () => PasteHere(place, index), SymbolRegular.ClipboardPaste24));
-        items.Add(new("Éditeur complet…", () => _windows.OpenEditor(place, index), SymbolRegular.WindowEdit20));
         return items;
     }
 
@@ -87,8 +128,6 @@ public partial class MainViewModel
         new("Couper", () => CutHere(place, index), SymbolRegular.Cut24),
         MenuItemSpec.Separator,
         new(button.IsFolder ? "Supprimer le dossier" : "Supprimer", () => DeleteHere(place, index, button.IsFolder), SymbolRegular.Delete24, Danger: true),
-        MenuItemSpec.Separator,
-        new("Éditeur complet…", () => _windows.OpenEditor(place, index), SymbolRegular.WindowEdit20),
     };
 
     // ---------- création et opérations : une écriture, un pas d'annulation, « Annuler » touchable ----------

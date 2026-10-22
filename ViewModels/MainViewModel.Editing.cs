@@ -45,6 +45,7 @@ public partial class MainViewModel
         }
         else
         {
+            Dialog?.Abandon();   // une boîte ouverte ne survit pas à la fin de l'édition
             if (Editor is { } e)
             {
                 e.Properties.Flush();

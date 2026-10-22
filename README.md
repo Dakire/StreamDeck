@@ -47,43 +47,39 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 - Fenêtre qui ne prend pas le focus : les raccourcis arrivent à l'application active.
 - Plein écran sur l'écran secondaire ou mode fenêtre, sans masquer la barre des tâches (le deck occupe la zone de travail) ; le deck suit le branchement et le débranchement de l'écran, et se cale exactement même entre écrans de densités différentes.
 - Profil associé à une application : il s'affiche seul quand le programme est au premier plan.
-- **Édition intégrée** (menu ⚙ › *Modifier au toucher*, ou *Modifier…* dans le menu d'un bouton) : un panneau d'**actions** apparaît à gauche et
+- **Édition intégrée**, sans aucune fenêtre séparée (menu ⚙ › *Modifier le deck*, *Modifier…* ou *Nouveau bouton…* dans le menu d'une case, ou `TouchDeck.exe --edit`) : un panneau d'**actions** apparaît à gauche et
   les **propriétés** du bouton choisi à droite, la grille garde le même nombre de cases. Toucher une touche la sélectionne, toucher une action
   la pose dans la case choisie ; *Annuler* / *Rétablir* sont dans le dock, *Terminer* quitte le mode. La fenêtre n'est activable que pendant
   l'édition (saisie au clavier) ; en sortant elle ne prend de nouveau jamais le focus et le rend à l'application précédente.
 - Thème **Material Design 3** : palettes tonales (sombre, AMOLED, clair) générées depuis une couleur source, surfaces à élévation tonale, sans ombre portée.
 - **Création rapide**, sans ouvrir l'éditeur : **clic droit** ou **appui long** (environ 0,55 s, doigt immobile) sur une **case vide**
-  ouvre un menu : *Nouveau bouton…* (panneau où l'on tape un nom d'action, « chrome » ou « vol », puis Entrée), *Parcourir les actions*
+  ouvre un menu : *Nouveau bouton…* (le panneau d'actions s'ouvre à gauche, avec sa recherche : « chrome » ou « vol »), *Parcourir les actions*
   (catégories, au toucher), des **modèles en un clic** (raccourci clavier, lancer une application, ouvrir un site, volume / muet,
-  média, script, dossier, page), *Coller* et *Éditeur complet…*. Chaque création est une seule modification annulable, avec un bouton
+  média, script, dossier, page) et *Coller*. Chaque création est une seule modification annulable, avec un bouton
   *Annuler* dans le bandeau d'état. Une page ou un dossier vide propose *Ajouter un bouton* sur sa première case.
 - **Glisser-déposer** d'un fichier, d'un raccourci `.lnk`, d'un exécutable, d'un dossier, d'un raccourci Internet ou d'une adresse
   web sur une case vide : le bouton *Lancer* ou *Ouvrir* est créé sans dialogue, avec le bon titre et l'icône de l'application.
   Plusieurs éléments remplissent les cases libres suivantes (douze au plus), en une seule annulation.
 - Sur un **bouton**, le même geste ouvre son menu : *Modifier…* (éditeur rapide : le titre est sélectionné), *Dupliquer* (dans la
-  prochaine case libre), *Copier*, *Couper*, *Supprimer*, *Éditeur complet…*. L'appui long n'exécute pas l'action ; un glissement du
+  prochaine case libre), *Copier*, *Couper*, *Supprimer*. En mode édition, le même geste ouvre le menu complet de la case (déplacer, ranger dans un dossier, réinitialiser…). L'appui long n'exécute pas l'action ; un glissement du
   doigt l'annule ; le toucher ne déplace jamais le curseur. Un bouton qui échoue propose *Modifier* dans le bandeau d'état.
 
-**L'éditeur** (menu ⚙ › *Ouvrir l'éditeur*, ou `TouchDeck.exe --edit`)
+**Le mode édition** (il n'y a plus de fenêtre d'édition : tout se passe autour de la grille du deck)
 
-- Trois panneaux inspirés d'Elgato Stream Deck : catalogue d'actions, grille du deck, propriétés du bouton.
-- Catalogue : recherche instantanée, 8 catégories repliables, favoris, actions récentes, glisser vers une case.
-- Grille fidèle au deck : sélection, case vide, glisser-déposer (déplacer, échanger, copier avec Ctrl, ranger dans un dossier,
-  envoyer vers une autre page), formats 3×2, 5×3, 6×3, 5×4, 8×4 ou automatique.
+- Panneau d'**actions** à gauche (recherche instantanée, 8 catégories repliables, favoris, récentes) et **propriétés** du bouton à droite,
+  comme Elgato Stream Deck ou Corsair iCUE. Les boîtes de dialogue (nom d'une page, confirmation d'une suppression) s'affichent
+  elles aussi dans le deck : plus de fenêtre qui s'ouvre derrière lui ou sur un autre écran.
+- Dock en édition : annuler / rétablir (100 niveaux), *Page* (renommer, dupliquer, masquer, déplacer, supprimer la page), *Terminer*.
+  La pastille du profil ouvre ses options : changer de profil, format de la grille (3×2, 5×3, 6×3, 5×4, 8×4 ou automatique),
+  renommer, dupliquer, exporter / importer (`.touchdeck`), associer à une application, nouveau profil depuis un modèle, supprimer.
 - Propriétés : aperçu, titre, étapes multiples (ajout, ordre, suppression), validation en direct ; position du titre, icône Fluent /
   emoji / texte, image importée et couleurs sont dans un bloc *Apparence* replié par défaut, avec réinitialisation de l'apparence.
-  La saisie (titre, icône, couleurs, valeur des étapes) est un brouillon : l'aperçu suit chaque caractère, mais la configuration
-  n'est écrite qu'à la validation (Entrée, changement de champ ou de case, fermeture), en une seule modification annulable.
-  Échap abandonne la saisie en cours. Les boutons *Annuler* (retour à l'état de la case à l'ouverture, ou case vide si le bouton
-  vient d'y être créé) et *Enregistrer* sont en bas du panneau ; ouvert par clic droit ou appui long, l'éditeur se referme avec eux.
-- Menus contextuels (clic droit, appui long, touche Menu) sur les cases, profils, pages et catalogue.
-- Annuler / rétablir (100 niveaux), presse-papiers interne, notifications avec bouton *Annuler*.
-- Profils : créer, renommer, dupliquer, supprimer, exporter / importer (`.touchdeck`), définir comme profil actif,
-  associer à une application.
-- Paramètres : thème, animations, icônes, fond, plein écran, premier plan, grille, écran du deck, lancement avec Windows,
-  sauvegardes (export, import, restauration), raccourcis.
+  La saisie est un brouillon : l'aperçu suit chaque caractère, mais la configuration n'est écrite qu'à la validation, en une seule
+  modification annulable. Échap abandonne la saisie en cours ; *Annuler* rend à la case son état d'avant.
+- Paramètres (fenêtre séparée, menu ⚙ › *Paramètres*) : thème, animations, icônes, fond, plein écran, premier plan, grille, écran du
+  deck, lancement avec Windows, sauvegardes (export, import, restauration), raccourcis.
 
-Cliquer un bouton dans l'éditeur ne l'exécute jamais.
+Toucher un bouton en mode édition ne l'exécute jamais.
 
 **Intégrations** (Paramètres › Intégrations, chacune activée à la demande)
 
@@ -125,7 +121,7 @@ Ces raccourcis ne s'appliquent jamais pendant la saisie dans un champ de texte.
 ```powershell
 dotnet run -c Release
 dotnet run -c Release -- --simulate  # essai sans risque : les actions sont affichées, rien n'est envoyé au système
-dotnet run -c Release -- --edit      # ouvre aussi l'éditeur
+dotnet run -c Release -- --edit      # démarre en mode édition
 dotnet build -c Release              # aucun avertissement toléré (analyseurs, style, documentation XML)
 dotnet test tests/TouchDeck.Tests    # tests automatisés (l'interface est rendue hors écran)
 ```
@@ -239,10 +235,10 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 | `Integrations/<Nom>/` | Un projet par connecteur : Obs, Vmix, ElgatoLight, Hue, WindowsSystem, XPlane, Teams, Twitch, ClickUp, Notion, Monday |
 | `samples/HelloPlugin` | Exemple de plugin |
 | `Services/` | `AppHost` (racine de composition, journal Serilog), `ConfigPersistence` (sauvegarde auto, rechargement à chaud), `AppearanceService`, `AppWindows`, `DisplayService`, `IconStore`, `DropPayload` (lecture d'un glisser-déposer), `ProfilePackage`, `TransferService`, `Notifier`, `Motion` |
-| `ViewModels/` | `MainViewModel` (deck ; menu des cases, glisser-déposer et mode édition en classes partielles), `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `QuickCreateViewModel`, `SettingsViewModel`, `MenuSpec`, `CatalogMenu` |
-| `Controls/` | `TileFace` (rendu d'un bouton), `ContextMenuFactory`, `PromptWindow`, `QuickCreateWindow` (panneau de création rapide), `PropertiesPanel` et `CatalogPanel` (panneaux d'édition de l'éditeur et du deck) |
+| `ViewModels/` | `MainViewModel` (deck ; menu des cases, glisser-déposer et mode édition en classes partielles), `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `DeckDialogViewModel`, `SettingsViewModel`, `MenuSpec`, `CatalogMenu` |
+| `Controls/` | `TileFace` (rendu d'un bouton), `ContextMenuFactory`, `PromptWindow` (confirmations des paramètres), `PropertiesPanel` et `CatalogPanel` (panneaux d'édition du deck) |
 | `MainWindow.xaml(.cs)` | Deck ; code-behind limité à Win32 et au placement multi-écran |
-| `EditorWindow.xaml(.cs)`, `SettingsWindow.xaml(.cs)` | Éditeur et paramètres (dialogues, focus, clavier, glisser-déposer) |
+| `SettingsWindow.xaml(.cs)` | Paramètres (dialogues, focus, clavier) |
 | `Theme.cs`, `Core/MaterialColor.cs`, `IconCatalog.cs`, `App.xaml` | Palettes Material Design 3 générées depuis une couleur source (contrastes vérifiés), icônes, styles |
 | `docs/` | Architecture, configuration, développement, décisions (`adr/`), parité fonctionnelle, intégrations, bilans |
 | `tests/TouchDeck.Tests` | Tests xUnit : logique, migration, import, contrastes, navigation du deck, robustesse, composition (conteneur), architecture (frontières entre projets), rendu hors écran des fenêtres, mesures de performance (facultatives) |

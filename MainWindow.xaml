@@ -430,10 +430,11 @@
                     AutomationProperties.Name="Rétablir la modification annulée" ToolTip="{Binding Editor.RedoTooltip}">
               <ui:SymbolIcon Symbol="ArrowRedo24"/>
             </Button>
-            <Button Style="{StaticResource DockButton}" Command="{Binding OpenEditorHereCommand}" AutomationProperties.Name="Ouvrir l'éditeur complet" ToolTip="Éditeur complet (fenêtre séparée)">
+            <Button Style="{StaticResource DockButton}" Command="{Binding OpenPageMenuCommand}" AutomationProperties.Name="Options de la page"
+                    ToolTip="Renommer, dupliquer, déplacer ou supprimer cette page">
               <StackPanel Orientation="Horizontal">
-                <ui:SymbolIcon Symbol="WindowEdit20" Margin="0,0,8,0"/>
-                <TextBlock Text="Éditeur" VerticalAlignment="Center"/>
+                <ui:SymbolIcon Symbol="MoreHorizontal24" Margin="0,0,8,0"/>
+                <TextBlock Text="Page" VerticalAlignment="Center"/>
               </StackPanel>
             </Button>
             <Button Style="{StaticResource DockAccentButton}" Command="{Binding EndEditCommand}" AutomationProperties.Name="Terminer la modification">
@@ -517,6 +518,39 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly" Focusable="False">
           <ItemsControl ItemsSource="{Binding MenuEntries}" Focusable="False"/>
         </ScrollViewer>
+      </Border>
+    </Grid>
+
+    <!-- ===== Boîte de dialogue (nom, confirmation, information) : par-dessus le deck, jamais une fenêtre séparée ===== -->
+    <Grid Grid.RowSpan="3" Visibility="{Binding HasDialog, Converter={StaticResource BoolVis}}">
+      <Border Background="{DynamicResource DeckScrim}"/>
+      <Border x:Name="DialogCard" DataContext="{Binding Dialog}" Background="{DynamicResource DeckPanel}" BorderBrush="{DynamicResource DeckLine}"
+              BorderThickness="1" CornerRadius="28" Padding="28,24,28,22" HorizontalAlignment="Center" VerticalAlignment="Center"
+              Width="520" MaxWidth="900">
+        <Border.InputBindings>
+          <KeyBinding Key="Escape" Command="{Binding CancelCommand}"/>
+        </Border.InputBindings>
+        <StackPanel>
+          <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource DeckText}" TextWrapping="Wrap"
+                     AutomationProperties.HeadingLevel="Level1"/>
+          <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly" Focusable="False" Margin="0,10,0,0">
+            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="15" Foreground="{DynamicResource DeckTextSoft}"/>
+          </ScrollViewer>
+          <ui:TextBox x:Name="DialogInput" Style="{StaticResource EditorInput}" Margin="0,14,0,0" AutomationProperties.Name="Valeur"
+                      Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                      Visibility="{Binding ShowInput, Converter={StaticResource BoolVis}}">
+            <ui:TextBox.InputBindings>
+              <KeyBinding Key="Return" Command="{Binding ConfirmCommand}"/>
+            </ui:TextBox.InputBindings>
+          </ui:TextBox>
+          <TextBlock Text="{Binding ErrorText}" Foreground="{DynamicResource DeckDanger}" FontSize="13" Margin="2,6,0,0"
+                     AutomationProperties.LiveSetting="Assertive" Visibility="{Binding HasError, Converter={StaticResource BoolVis}}"/>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
+            <ui:Button Content="Annuler" Command="{Binding CancelCommand}" MinHeight="52" MinWidth="120" Padding="24,0" Margin="0,0,10,0"
+                       Visibility="{Binding ShowCancel, Converter={StaticResource BoolVis}}"/>
+            <ui:Button x:Name="DialogOk" Content="{Binding ConfirmText}" Command="{Binding ConfirmCommand}" Appearance="Primary" MinHeight="52" MinWidth="120" Padding="24,0"/>
+          </StackPanel>
+        </StackPanel>
       </Border>
     </Grid>
   </Grid>

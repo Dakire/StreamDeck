@@ -20,5 +20,6 @@ effacée : elle passe au statut « Remplacée par … ».
 | [0013](0013-pile-pointeur-wpf.md) | Toucher du deck sans souris système | Acceptée |
 | [0014](0014-creation-rapide.md) | Création rapide d'un bouton depuis le deck | Acceptée |
 | [0015](0015-edition-integree-et-material-design-3.md) | Édition intégrée au deck et thème Material Design 3 | Acceptée |
+| [0016](0016-edition-sans-fenetre.md) | Plus de fenêtre d'édition, dialogues dans le deck, action du toucher hors du message | Acceptée |
 
 Modèle d'une nouvelle décision : contexte, décision, conséquences, statut et date.

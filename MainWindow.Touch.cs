@@ -102,9 +102,14 @@ public partial class MainWindow
                 _dragging = false;
                 if (!_tap.Up(id, x, y) || wasDragging) break;   // un appui long consommé n'est pas un appui : l'action ne s'exécute pas
                 var (target, bar, binding) = Hit(x, y);
-                if (target != null) Activate(target);
-                else if (binding != null) { if (binding.CanExecute(null)) binding.Execute(null); }
-                else if (bar) OnBarTap();
+                // L'action part APRÈS le message : une commande qui ouvre une boîte de dialogue (boucle modale) ou démarre un traitement
+                // ne doit pas tourner dans le WM_POINTERUP, sinon Windows n'a pas fini de traiter ce toucher et le deck semble figé.
+                Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
+                {
+                    if (target != null) { if (target.IsEnabled) Activate(target); }
+                    else if (binding != null) { if (binding.CanExecute(null)) binding.Execute(null); }
+                    else if (bar) OnBarTap();
+                });
                 break;
         }
     }

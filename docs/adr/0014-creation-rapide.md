@@ -1,6 +1,6 @@
 # 0014 — Création rapide d'un bouton depuis le deck
 
-- **Statut** : acceptée.
+- **Statut** : acceptée ; le panneau `QuickCreateWindow` est remplacé par le mode édition du deck (ADR 0016).
 - **Date** : 21 octobre 2026.
 
 ## Contexte

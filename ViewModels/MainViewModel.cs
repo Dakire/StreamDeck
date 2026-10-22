@@ -156,7 +156,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         }
     }
 
-    Place CurrentPlace => new(CurrentProfile.Name, _page, _folder.ToArray());
+    internal Place CurrentPlace => new(CurrentProfile.Name, _page, _folder.ToArray());
 
     /// <summary>Grille affichée ; si le chemin de dossier n'existe plus (modification externe), retour à la racine de la page.</summary>
     List<DeckButton> CurrentList
@@ -192,9 +192,8 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     void OnNotice(Notice n)
     {
-        // Le deck affiche les erreurs ; les confirmations restent dans l'éditeur quand il est ouvert
         if (n.Kind is NoticeKind.Error or NoticeKind.Warning) SetStatus(n.Message);
-        else if (!_windows.IsEditorOpen) SetStatus(n.Message, error: false, n.ActionText, n.Action);
+        else SetStatus(n.Message, error: false, n.ActionText, n.Action);
     }
 
     void ApplyBackground()
@@ -621,8 +620,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             return;
         }
 
-        Add(SymbolRegular.Edit24, "Ouvrir l'éditeur", () => _windows.OpenEditor(CurrentPlace));
-        Add(SymbolRegular.Cursor24, IsEdit ? "Terminer la modification" : "Modifier au toucher", () => IsEdit = !IsEdit);
+        Add(SymbolRegular.Edit24, IsEdit ? "Terminer la modification" : "Modifier le deck", () => IsEdit = !IsEdit);
         if (ProfileCount > 1)
             Add(SymbolRegular.PersonSwap24, "Changer de profil", () => { _profileMenu = true; BuildMenu(); }, trailing: CurrentProfile.Name, keepOpen: true);
         Add(SymbolRegular.Settings24, "Paramètres", _windows.OpenSettings);
@@ -645,14 +643,13 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     [RelayCommand] void OpenMenu() { _specTrail.Clear(); _profileMenu = false; BuildMenu(); MenuOpen = true; }
     /// <summary>Pastille du profil : ouvre directement la liste des profils.</summary>
-    [RelayCommand] void OpenProfiles() { if (!HasProfiles) { OpenMenu(); return; } _specTrail.Clear(); _profileMenu = true; BuildMenu(); MenuOpen = true; }
+    [RelayCommand] void OpenProfiles() { if (IsEdit) { OpenProfileEditMenu(); return; } if (!HasProfiles) { OpenMenu(); return; } _specTrail.Clear(); _profileMenu = true; BuildMenu(); MenuOpen = true; }
     [RelayCommand] void CloseMenu() => MenuOpen = false;
     [RelayCommand] void EndEdit() { IsEdit = false; Rebuild(); }
     [RelayCommand] void Minimize() => _shell.Minimize();
     [RelayCommand] void ToggleFullscreen() { _shell.ToggleFullscreen(); IsFullscreen = _shell.IsFullscreen; }
     [RelayCommand] void CloseApp() => Application.Current.Shutdown();
     [RelayCommand] void ParentFolder() => FolderUp();
-    [RelayCommand] void OpenEditorHere() => _windows.OpenEditor(CurrentPlace);
 
     /// <summary>La fenêtre signale un changement de placement (plein écran / fenêtre) pour mettre à jour l'icône.</summary>
     public void NotifyWindowState() => IsFullscreen = _shell.IsFullscreen;

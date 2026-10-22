@@ -4,6 +4,17 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Modifié (édition sans fenêtre, stabilité du toucher)
+- **Plus de fenêtre d'édition** : *Nouveau bouton…*, *Modifier…*, *Éditeur complet…*, l'icône de la zone de notification et `--edit` ouvrent le mode édition du deck (panneaux d'actions et de propriétés autour de la grille). Supprimés : `EditorWindow`, `QuickCreateWindow`, `QuickCreateViewModel`.
+- **Options de page et de profil dans le deck** : bouton *Page* du dock (renommer, dupliquer, masquer, déplacer, supprimer) ; pastille du profil (changer de profil, format de la grille, renommer, exporter, importer, nouveau profil depuis un modèle, supprimer). En édition, un appui long sur une case ouvre le menu complet de l'éditeur (déplacer, dossier, réinitialiser…).
+- **Boîtes de dialogue dans le deck** (`DeckDialogViewModel`) à la place des fenêtres modales : saisie d'un nom, confirmation, information.
+- Le menu ⚙ propose *Modifier le deck* (ancien *Modifier au toucher*) ; *Ouvrir l'éditeur* disparaît.
+
+### Corrigé (toucher, blocages)
+- Un appui bref exécute désormais l'action **après** le message `WM_POINTERUP` (et non pendant) : une commande qui ouvre une boîte de dialogue ne fige plus le traitement du toucher.
+- Le doigt qui ouvre le mode édition par appui long n'est plus gardé « posé » : tous les appuis suivants étaient ignorés. Un doigt suivi qui ne touche plus l'écran n'empêche plus un nouvel appui.
+- **Chien de garde** (`UiWatchdog`) : une interface sans réponse pendant plus de 3 s est consignée dans `touchdeck.log` (« Interface sans réponse depuis … ms »).
+
 ### Ajouté (édition intégrée et Material Design 3)
 - **Édition dans le deck** : le mode édition (menu ⚙ › *Modifier au toucher*, ou *Modifier…* sur un bouton) affiche un panneau d'**actions à gauche** et les **propriétés à droite** de la grille, sans autre fenêtre. Toucher une touche la sélectionne (liseré d'accent), toucher une action la pose dans la case choisie, *Annuler* / *Rétablir* sont dans le dock. L'éditeur complet reste disponible en fenêtre séparée.
 - **Thème Material Design 3 dynamique** : les thèmes sombre, AMOLED et clair sont générés depuis une couleur source par des palettes tonales (accent, conteneurs, surfaces, erreur). L'onglet de page actif suit la barre de navigation MD3.

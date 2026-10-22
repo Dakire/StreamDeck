@@ -52,20 +52,17 @@ public class UiTests
     [Theory]
     [InlineData("dark")]
     [InlineData("light")]
-    public void EditorWindowRendersWithoutBindingErrors(string theme)
+    public void DeckEditPanelsRenderWithoutBindingErrors(string theme)
     {
         _host.Reset();
         _host.SetTheme(theme);
-        EditorWindow win = _host.Run(() => new EditorWindow(_host.Services));
+        var win = _host.Run(() => new MainWindow(_host.Services));
         try
         {
-            _host.Run(() => win.GoTo(new Place("Principal", 0), 0));
+            _host.Run(() => win.EditCell(new Place("Principal", 0), 0));
             _host.Settle();
-            var path = _host.Render(win, $"editeur-{theme}", 1400, 880);
+            var path = _host.Render(win, $"deck-edition-{theme}", 1600, 900);
             Assert.True(new FileInfo(path).Length > 20_000, "image trop petite : fenêtre vide ?");
-
-            var items = _host.Run(() => WpfHost.Descendants<ListBoxItem>((DependencyObject)win.Content).Where(i => i.DataContext is SlotViewModel).ToList());
-            Assert.True(items.Count >= 12, $"{items.Count} cases dessinées");
             Assert.Empty(BindingProblems());
         }
         finally { _host.Run(win.Close); }
@@ -198,7 +195,7 @@ public class UiTests
     }
 
     [Fact]
-    public void EditorStatesRenderWithoutBindingErrors()
+    public void DeckEditStatesRenderWithoutBindingErrors()
     {
         var cfg = ConfigStore.DefaultConfig();
         var icon = IconStore.StoreBytes(PackageTests_TinyPng());
@@ -215,27 +212,21 @@ ulle\part.exe" } } });
         page.Buttons.Add(folder);
         cfg.Profiles.Add(new DeckProfile { Name = "Navigateur", AppMatch = "chrome", Columns = 3, Rows = 2 });
         _host.Reset(cfg);
-        var win = _host.Run(() => new EditorWindow(_host.Services));
+        var win = _host.Run(() => new MainWindow(_host.Services));
         try
         {
-            _host.Run(() => win.GoTo(new Place("Principal", 0), 6));
+            _host.Run(() => win.EditCell(new Place("Principal", 0), 6));
             _host.Settle();
-            _host.Render(win, "editeur-erreur", 1400, 1700);
-            _host.Run(() => win.GoTo(new Place("Principal", 0), 8));
+            _host.Render(win, "edition-deck-erreur", 1600, 900);
+            _host.Run(() => win.EditCell(new Place("Principal", 0), 8));
             _host.Settle();
-            _host.Render(win, "editeur-multi-actions", 1400, 3400);
-            _host.Run(() => win.GoTo(new Place("Principal", 0), 10));      // case vide
+            _host.Render(win, "edition-deck-multi-actions", 1600, 900);
+            _host.Run(() => win.EditCell(new Place("Principal", 0), 10));      // case vide
             _host.Settle();
-            _host.Render(win, "editeur-case-vide", 1400, 880);
-            _host.Run(() => win.GoTo(new Place("Principal", 0, new[] { 11 }), 0));
+            _host.Render(win, "edition-deck-case-vide", 1600, 900);
+            _host.Run(() => win.EditCell(new Place("Principal", 0, new[] { 11 }), 0));   // dans un dossier
             _host.Settle();
-            _host.Render(win, "editeur-dossier", 1400, 1700);
-            var crumbs = _host.Run(() => WpfHost.Descendants<ItemsControl>((DependencyObject)win.Content)
-                .First(i => i.DataContext is EditorViewModel && i.ItemsSource is System.Collections.ObjectModel.ObservableCollection<CrumbViewModel>));
-            Assert.True(_host.Run(() => crumbs.IsVisible || crumbs.Visibility == Visibility.Visible), "fil d'Ariane masqué dans un dossier");
-            _host.Run(() => win.GoTo(new Place("Principal", 0), 1));
-            _host.Settle();
-            Assert.Equal(Visibility.Collapsed, _host.Run(() => crumbs.Visibility));
+            _host.Render(win, "edition-deck-dossier", 1600, 900);
             Assert.Empty(BindingProblems());
         }
         finally { _host.Run(win.Close); }

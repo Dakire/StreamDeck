@@ -15,7 +15,6 @@ flowchart TB
     subgraph App["TouchDeck : application WPF"]
         subgraph Vues["Vues"]
             MW["MainWindow (deck)<br/>Win32 : NOACTIVATE, placement"]
-            EW[EditorWindow]
             SW[SettingsWindow]
             TF[Controls/TileFace]
         end
@@ -127,7 +126,7 @@ locale sont décrits dans `docs/plugins.md` et `docs/local-api.md` (ADR 0012).
 | Identifiants du format | `Core/ActionTypes.cs` | `ActionTypes`, `PageTargets`, `AudioCommands` : clés stables de `config.json`, figées par un test. |
 | Journal | `Core/Log.cs`, `Services/AppHost.cs` | Façade `Log` (Core) branchée sur Serilog ; `ILogger<T>` dans les services injectés. `touchdeck.log` (1 Mo, 3 fichiers) : démarrage, erreurs, échecs d'action, changements d'écran. |
 | Notifications | `Services/Notifier.cs` | Toast de l'éditeur, message du deck (avec bouton *Annuler* ou *Modifier*). |
-| Création rapide | `Core/QuickCreate.cs`, `ViewModels/MainViewModel.TileMenu.cs`, `ViewModels/QuickCreateViewModel.cs`, `Controls/QuickCreateWindow` | Modèles, classement des suggestions, menu des cases, panneau de saisie. Une écriture = `DeckDocument.AddButton(s)` (ADR 0014). |
+| Création rapide | `Core/QuickCreate.cs`, `ViewModels/MainViewModel.TileMenu.cs`, `ViewModels/DeckDialogViewModel.cs` | Modèles, classement des suggestions, menu des cases, panneau de saisie. Une écriture = `DeckDocument.AddButton(s)` (ADR 0014). |
 | Glisser-déposer | `Core/DroppedItem.cs`, `Services/DropPayload.cs`, `MainWindow.Drop.cs`, `ViewModels/MainViewModel.Drop.cs` | Classe un chemin ou une adresse (Core, pur), lit l'objet OLE et l'icône (application), crée les boutons dans les cases libres. |
 
 ## Exécution d'un bouton
@@ -184,8 +183,8 @@ modification. Un changement de thème recrée toutes les tuiles.
 flowchart LR
     G["Clic droit · appui long<br/>sur une case"] --> M["Menu de la case<br/>(MenuItemSpec, feuille du deck)"]
     M -- "modèle · catégorie" --> A["DeckDocument.AddButton<br/>(une écriture)"]
-    M -- "Nouveau bouton…" --> P["QuickCreateWindow<br/>brouillon, aucune écriture"]
-    P -- "Créer" --> A
+    M -- "Nouveau bouton…" --> P["Mode édition du deck<br/>panneau d'actions à gauche"]
+    P -- "toucher une action" --> A
     D["Glisser-déposer<br/>fichier · .lnk · adresse"] --> DP["DropPayload · DroppedItem"] --> B["DeckDocument.AddButtons<br/>(lot, une annulation)"]
     A --> N["Notifier : bandeau + Annuler"]
     B --> N

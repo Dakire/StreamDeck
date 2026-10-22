@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using TouchDeck.Controls;
 using TouchDeck.ViewModels;
 using Xunit;
 
@@ -41,38 +40,28 @@ public class ResourceLeakTests
     }
 
     [Fact]
-    public void AClosedEditorIsNotRetainedByTheDocumentOrTheMessageBus()
+    public void AClosedSettingsWindowIsNotRetainedByTheDocumentOrTheMessageBus()
     {
         _host.Reset();
-        var refs = Enumerable.Range(0, 5).SelectMany(_ => Open(() => new EditorWindow(_host.Services))).ToArray();
+        var refs = Enumerable.Range(0, 5).SelectMany(_ => Open(() => new SettingsWindow(_host.Services))).ToArray();
         _host.Run(() => _host.Document.UpdateSettings(c => c.Spacing += 0.5));   // un événement du document après les fermetures
         AssertCollected(refs);
     }
 
     /// <summary>
-    /// Sans <see cref="WindowCleanup"/>, chaque ouverture de l'éditeur laissait ≈ 0,86 Mo (la barre de titre de WPF-UI reste abonnée à
+    /// Sans <see cref="WindowCleanup"/>, chaque ouverture d'une fenêtre laissait ≈ 0,86 Mo (la barre de titre de WPF-UI reste abonnée à
     /// l'événement statique de thème) : 42 Mo pour 50 ouvertures, contre moins de 1 Mo avec.
     /// </summary>
     [Fact]
-    public void FiftyOpenedAndClosedEditorsLeaveAlmostNothingBehind()
+    public void FiftyOpenedAndClosedSettingsWindowsLeaveAlmostNothingBehind()
     {
         _host.Reset();
         long Mem() { for (int i = 0; i < 3; i++) { GC.Collect(); GC.WaitForPendingFinalizers(); _host.Settle(); } return GC.GetTotalMemory(true); }
-        for (int i = 0; i < 3; i++) Open(() => new EditorWindow(_host.Services));   // chauffe : caches et JIT
+        for (int i = 0; i < 3; i++) Open(() => new SettingsWindow(_host.Services));   // chauffe : caches et JIT
         long before = Mem();
-        for (int i = 0; i < 50; i++) Open(() => new EditorWindow(_host.Services));
+        for (int i = 0; i < 50; i++) Open(() => new SettingsWindow(_host.Services));
         double leakedMb = (Mem() - before) / 1024.0 / 1024.0;
-        Assert.True(leakedMb < 5, $"{leakedMb:0.0} Mo retenus après 50 ouvertures de l'éditeur");
-    }
-
-    [Fact]
-    public void AClosedQuickPanelAndSettingsWindowAreNotRetained()
-    {
-        _host.Reset();
-        var panels = Enumerable.Range(0, 5).SelectMany(_ => Open(() => new QuickCreateWindow(_host.Services, new Place("Principal", 0), 30))).ToArray();
-        var settings = Enumerable.Range(0, 3).SelectMany(_ => Open(() => new SettingsWindow(_host.Services))).ToArray();
-        AssertCollected(panels);
-        AssertCollected(settings);
+        Assert.True(leakedMb < 5, $"{leakedMb:0.0} Mo retenus après 50 ouvertures des paramètres");
     }
 
     [Fact]

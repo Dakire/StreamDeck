@@ -53,7 +53,7 @@ public class DeckEditModeTests
     static void EnterEdit(MainViewModel vm)
     {
         vm.OpenMenuCommand.Execute(null);
-        QuickEditTests.Pick(vm, "Modifier au toucher");
+        QuickEditTests.Pick(vm, "Modifier le deck");
     }
 
     // ---------- entrée et sortie ----------
@@ -219,6 +219,131 @@ public class DeckEditModeTests
             Assert.True(Doc.CanUndo);                                            // l'historique appartient au document, pas à l'éditeur intégré
             Assert.True(Doc.Undo());
         });
+    }
+
+    // ---------- boîtes de dialogue et menus dans le deck (aucune fenêtre séparée) ----------
+
+    // Les tâches des boîtes reprennent sur le thread d'interface : leur résultat se lit hors de _host.Run (sinon le thread serait bloqué)
+    [Fact]
+    public async System.Threading.Tasks.Task DialogsAreShownInTheDeckAndAnswerWithTheTypedTextOrNull()
+    {
+        var (vm, _, windows) = NewDeck();
+        var ask = _host.Run(() => vm.AskAsync("Renommer", "Nouveau nom", "Un", "Renommer"));
+        _host.Run(() =>
+        {
+            Assert.True(vm.HasDialog);
+            Assert.True(vm.Dialog!.ShowInput);
+            vm.Dialog.Text = "  Premier ";
+            vm.Dialog.ConfirmCommand.Execute(null);
+        });
+        Assert.Equal("Premier", await ask);                                   // texte validé, espaces retirés
+        _host.Run(() => Assert.False(vm.HasDialog));
+
+        var cancelled = _host.Run(() => vm.AskAsync("Renommer", "Nouveau nom", "Un"));
+        _host.Run(() => vm.Dialog!.CancelCommand.Execute(null));
+        Assert.Null(await cancelled);
+
+        var empty = _host.Run(() => vm.AskAsync("Renommer", "Nouveau nom", "Un"));
+        _host.Run(() =>
+        {
+            vm.Dialog!.Text = "   ";
+            Assert.False(vm.Dialog.ConfirmCommand.CanExecute(null));           // un nom vide est refusé
+            Assert.True(vm.Dialog.HasError);
+            vm.Dialog.CancelCommand.Execute(null);
+        });
+        Assert.Null(await empty);
+
+        var yes = _host.Run(() => vm.ConfirmAsync("Supprimer", "Sûr ?", "Supprimer", danger: true));
+        _host.Run(() => vm.Dialog!.ConfirmCommand.Execute(null));
+        Assert.True(await yes);
+        var no = _host.Run(() => vm.ConfirmAsync("Supprimer", "Sûr ?", "Supprimer"));
+        _host.Run(() => vm.Dialog!.CancelCommand.Execute(null));
+        Assert.False(await no);
+
+        var info = _host.Run(() => vm.InfoAsync("Info", "Texte"));
+        _host.Run(() =>
+        {
+            Assert.False(vm.Dialog!.ShowCancel);
+            vm.Dialog.ConfirmCommand.Execute(null);
+        });
+        await info;
+        Assert.Empty(windows.Opened);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task ANewDialogReplacesTheOpenOneAndEndingTheEditDismissesIt()
+    {
+        var (vm, _, _) = NewDeck();
+        _host.Run(() => EnterEdit(vm));
+        var first = _host.Run(() => vm.ConfirmAsync("A", "a", "OK"));
+        var second = _host.Run(() => vm.ConfirmAsync("B", "b", "OK"));
+        Assert.False(await first);                                            // la première est annulée
+        _host.Run(() => Assert.Equal("B", vm.Dialog!.Title));
+        _host.Run(() => vm.EndEditCommand.Execute(null));
+        Assert.False(await second);                                           // une boîte ne survit pas à la fin de l'édition
+        _host.Run(() => Assert.False(vm.HasDialog));
+    }
+
+    [Fact]
+    public void PageAndProfileOptionsOpenInTheDeckSheetDuringEditing()
+    {
+        var (vm, _, windows) = NewDeck();
+        _host.Run(() =>
+        {
+            EnterEdit(vm);
+            vm.OpenPageMenuCommand.Execute(null);
+            Assert.True(vm.MenuOpen);
+            Assert.Equal("Page « A »", vm.MenuEntries.OfType<MenuHeaderViewModel>().First().Text);
+            var texts = vm.MenuEntries.OfType<MenuEntryViewModel>().Select(e => e.Text).ToList();
+            Assert.Contains("Renommer", texts);
+            Assert.Contains("Supprimer la page", texts);
+
+            vm.CloseMenuCommand.Execute(null);
+            vm.OpenProfilesCommand.Execute(null);                              // la pastille de profil, en édition : options du profil
+            Assert.Equal("Profil « P »", vm.MenuEntries.OfType<MenuHeaderViewModel>().First().Text);
+            texts = vm.MenuEntries.OfType<MenuEntryViewModel>().Select(e => e.Text).ToList();
+            Assert.Contains("Format de la grille", texts);
+            Assert.Contains("Renommer", texts);
+            Assert.Empty(windows.Opened);
+        });
+    }
+
+    [Fact]
+    public void ALongPressOnATileDuringEditingOffersTheFullEditorMenu()
+    {
+        var (vm, _, _) = NewDeck();
+        _host.Run(() =>
+        {
+            EnterEdit(vm);
+            vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Deux").Edit!.Execute(null);
+            var texts = vm.MenuEntries.OfType<MenuEntryViewModel>().Select(e => e.Text).ToList();
+            Assert.Contains("Déplacer le bouton", texts);
+            Assert.Contains("Réinitialiser le bouton", texts);
+            Assert.Equal(1, vm.Editor!.SelectedIndex);                         // le menu vise la case touchée
+        });
+    }
+
+    [Fact]
+    public void TheDialogOverlayRendersWithTouchSizedButtonsAndNoBindingError()
+    {
+        _host.Reset(Config());
+        var win = _host.Run(() => new MainWindow(_host.Services));
+        try
+        {
+            var vm = (MainViewModel)_host.Run(() => win.DataContext);
+            _host.Run(() => win.EditCell(Root, 1));
+            _ = _host.Run(() => vm.AskAsync("Renommer la page", "Choisis un nouveau nom pour cette page.", "A", "Renommer"));
+            _host.Render(win, "deck-dialogue", 1600, 900);
+            _host.Run(() =>
+            {
+                var buttons = WpfHost.Descendants<Wpf.Ui.Controls.Button>(win.DialogCard).Where(b => b.Content is string).ToList();   // hors bouton d'effacement du champ
+                Assert.NotEmpty(buttons);
+                Assert.All(buttons, b => Assert.True(b.ActualHeight >= 48, $"{b.Content}: {b.ActualHeight} px"));
+                Assert.True(win.DialogInput.ActualHeight >= 48, $"champ : {win.DialogInput.ActualHeight} px");
+            });
+            vm.Dialog?.CancelCommand.Execute(null);
+        }
+        finally { _host.Run(win.Close); }
     }
 
     // ---------- clavier et mise au premier plan ----------

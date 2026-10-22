@@ -55,7 +55,7 @@ public class DeckMenuTests
     // ---------- contenu des menus ----------
 
     [Fact]
-    public void AnEmptySlotMenuOffersNewButtonTemplatesAndTheFullEditor()
+    public void AnEmptySlotMenuOffersNewButtonAndTemplates()
     {
         var (vm, _) = NewDeck();
         _host.Run(() =>
@@ -67,7 +67,7 @@ public class DeckMenuTests
             Assert.Equal("Nouveau bouton…", texts[0]);
             Assert.Equal("Parcourir les actions", texts[1]);
             foreach (var t in QuickCreate.Templates) Assert.Contains(t.Title, texts);
-            Assert.Equal("Éditeur complet…", texts[^1]);
+            Assert.DoesNotContain("Éditeur complet…", texts);                    // plus de fenêtre : l'édition se fait dans le deck
         });
     }
 
@@ -87,14 +87,14 @@ public class DeckMenuTests
     }
 
     [Fact]
-    public void AButtonMenuOffersEditDuplicateCopyCutDeleteAndTheFullEditor()
+    public void AButtonMenuOffersEditDuplicateCopyCutAndDelete()
     {
         var (vm, _) = NewDeck();
         _host.Run(() =>
         {
             OpenMenuOf(vm, "Trois");
             Assert.Equal("Trois", Header(vm));
-            Assert.Equal(new[] { "Modifier…", "Dupliquer", "Copier", "Couper", "Supprimer", "Éditeur complet…" }, Texts(vm));
+            Assert.Equal(new[] { "Modifier…", "Dupliquer", "Copier", "Couper", "Supprimer" }, Texts(vm));
             Assert.True(vm.MenuEntries.OfType<MenuEntryViewModel>().First(e => e.Text == "Supprimer").IsDanger);
         });
     }
@@ -128,7 +128,7 @@ public class DeckMenuTests
     }
 
     [Fact]
-    public void NewButtonOpensTheQuickPanelOnThatSlotWithoutWriting()
+    public void NewButtonEntersEditModeOnThatSlotWithoutWriting()
     {
         var (vm, windows) = NewDeck();
         _host.Run(() =>
@@ -136,8 +136,9 @@ public class DeckMenuTests
             OpenFreeSlotMenu(vm);
             Pick(vm, "Nouveau bouton…");
             Assert.False(vm.MenuOpen);
-            Assert.Equal((Root, 5), windows.QuickCreates.Single());
-            Assert.Empty(windows.Opened);
+            Assert.True(vm.IsEdit);                                          // panneaux d'actions et de propriétés autour du deck
+            Assert.Equal((Root, 5), (vm.Editor!.Place, vm.Editor.SelectedIndex));
+            Assert.Empty(windows.Opened);                                    // aucune fenêtre
             Assert.False(Doc.CanUndo);
         });
     }
@@ -294,7 +295,7 @@ public class DeckMenuTests
         });
     }
 
-    // ---------- éditeur : le mode « Modifier au toucher » garde son comportement ----------
+    // ---------- éditeur : le mode « Modifier le deck » garde son comportement ----------
 
     [Fact]
     public void ATapOnTheAddTileInEditModeOpensTheCreationMenu()
@@ -303,14 +304,14 @@ public class DeckMenuTests
         _host.Run(() =>
         {
             vm.OpenMenuCommand.Execute(null);
-            Pick(vm, "Modifier au toucher");
+            Pick(vm, "Modifier le deck");
             var add = vm.Tiles.OfType<AddTileViewModel>().First();
             add.Click.Execute(null);                                                  // un toucher sélectionne la case : propriétés à droite
             Assert.False(vm.MenuOpen);
             Assert.Equal(5, vm.Editor!.SelectedIndex);
             add.Edit!.Execute(null);                                                  // un appui long ouvre le menu de création
             Assert.Equal("Case vide", Header(vm));
-            Assert.Contains("Nouveau bouton…", Texts(vm));
+            Assert.Contains("Ajouter une action", Texts(vm));                         // en édition : le menu complet de l'éditeur
         });
     }
 
@@ -325,9 +326,7 @@ public class DeckMenuTests
         {
             OpenFreeSlotMenu(vm);
             Pick(vm, "Média : suivant");                                     // modèle du menu
-            var panel = _host.Create<QuickCreateViewModel>(new FakeAppWindows(), Root, 6);
-            panel.Query = "muet";
-            panel.CreateCommand.Execute(null);                               // panneau rapide
+            Assert.True(Doc.AddButton(Root, 6, ActionCatalog.Find("media.playpause")!.CreateButton(), "Ajouter « Lecture / pause »").Ok);   // seconde création
             Assert.NotNull(Doc.Get(Root, 5));
             Assert.NotNull(Doc.Get(Root, 6));
 
@@ -418,7 +417,7 @@ public class DeckMenuTests
             _host.Render(win, "deck-annuler", 1400, 800);
             _host.Run(() =>
             {
-                var undo = WpfHost.Descendants<Button>((DependencyObject)win.Content).Single(b => Equals(b.Content, "Annuler"));
+                var undo = WpfHost.Descendants<Button>((DependencyObject)win.Content).Single(b => Equals(b.Content, "Annuler") && b.DataContext is MainViewModel);
                 Assert.Equal(Visibility.Visible, undo.Visibility);
                 Assert.True(undo.ActualHeight >= 48, $"{undo.ActualHeight} px");
                 Assert.Equal("Annuler", System.Windows.Automation.AutomationProperties.GetName(undo));

@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
-using TouchDeck.Controls;
 using TouchDeck.ViewModels;
 
 namespace TouchDeck;
@@ -59,8 +58,8 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>Passe en mode édition sur une case (menu « Modifier… », échec d'un bouton, création qui demande un réglage).</summary>
-    internal void EditCell(Place place, int index) => _vm.StartEditing(place, index);
+    /// <summary>Passe en mode édition sur une case (menu « Modifier… », échec d'un bouton, création qui demande un réglage) ; sans grille, celle qui est affichée.</summary>
+    internal void EditCell(Place? place, int index) => _vm.StartEditing(place ?? _vm.CurrentPlace, index);
 
     /// <summary>Ctrl+Z / Ctrl+Y en mode édition (le deck en a le clavier) : hors champ de saisie, pour ne pas voler l'annulation du texte.</summary>
     protected override void OnPreviewKeyDown(KeyEventArgs e)
@@ -71,23 +70,19 @@ public partial class MainWindow
         else if (e.Key == Key.Y) { editor.RedoCommand.Execute(null); e.Handled = true; }
     }
 
-    /// <summary>Dialogues et focus des panneaux intégrés : la fenêtre du deck est le parent des boîtes de dialogue.</summary>
+    /// <summary>Dialogues (affichés dans le deck) et focus des panneaux intégrés ; seuls les sélecteurs de fichiers de Windows restent des fenêtres.</summary>
     sealed class EditShell : IEditorShell
     {
         readonly MainWindow _w;
         public EditShell(MainWindow window) { _w = window; }
 
         public Task<string?> PromptAsync(string title, string message, string initial, string confirmText = "OK", bool allowEmpty = false) =>
-            Task.FromResult(PromptWindow.Ask(_w, title, message, initial, confirmText, allowEmpty));
+            _w._vm.AskAsync(title, message, initial, confirmText, allowEmpty);
 
         public Task<bool> ConfirmAsync(string title, string message, string confirmText, bool danger = false) =>
-            Task.FromResult(PromptWindow.Confirm(_w, title, message, confirmText, danger));
+            _w._vm.ConfirmAsync(title, message, confirmText, danger);
 
-        public Task InfoAsync(string title, string message)
-        {
-            PromptWindow.Info(_w, title, message);
-            return Task.CompletedTask;
-        }
+        public Task InfoAsync(string title, string message) => _w._vm.InfoAsync(title, message);
 
         public string? PickOpenFile(string title, string filter)
         {

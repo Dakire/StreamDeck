@@ -24,9 +24,10 @@ Le projet s'appelle `TouchDeck` (assembly et namespace), le dépôt `StreamDeck`
 - **Journal** : façade `Log` (Core) branchée sur Serilog (`touchdeck.log`) ; `ILogger<T>` pour les services injectés.
 - Deck : `MainWindow.xaml` + `MainViewModel` (profil, page, dossier, sous-page, menu) + `LayoutMetrics`. `MainWindow.xaml.cs` ne garde que
   Win32 et le placement (NOACTIVATE, plein écran multi-écran) et implémente `IShell`.
-- Éditeur : `EditorWindow` (fenêtre activable normale, séparée du deck qui ne prend jamais le focus) + `EditorViewModel`,
-  `PropertiesViewModel`, `CatalogViewModel`, `ActionStepViewModel`. Les menus contextuels sont décrits en `MenuSpec` par les ViewModels
-  et construits par `ContextMenuFactory`. `Controls/TileFace` dessine un bouton partout (deck, grille, aperçu).
+- Édition : plus de fenêtre d'édition (ADR 0016). Le mode édition du deck (`MainWindow.Edit.cs`, `MainViewModel.Editing.cs`) affiche `CatalogPanel` à gauche et
+  `PropertiesPanel` à droite de la grille ; moteur : `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `ActionStepViewModel`. Dialogues :
+  `DeckDialogViewModel` (dans le deck, jamais de fenêtre modale). Les menus contextuels sont décrits en `MenuSpec` par les ViewModels
+  et affichés dans la feuille du deck. `Controls/TileFace` dessine un bouton partout (deck, grille, aperçu).
 - Format de config : `Version` 2, `Profiles[].Pages[].Buttons[]` ; l'ancien format (`Pages` racine) est migré par `ConfigNormalizer`.
   Les images vivent dans `Icons\` et ne sont référencées que par un nom de hachage validé (`IconStore`).
 - Thème : `Theme.cs` (palettes `DarkPalette` / `LightPalette`, contrastes testés) publie les brushes `Deck*` ; le XAML les consomme en `DynamicResource`.

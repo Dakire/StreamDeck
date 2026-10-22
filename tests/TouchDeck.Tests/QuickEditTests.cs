@@ -12,22 +12,11 @@ using Xunit.Abstractions;
 
 namespace TouchDeck.Tests;
 
-/// <summary>Gestionnaire de fenêtres factice : note les ouvertures de l'éditeur demandées par le deck.</summary>
+/// <summary>Gestionnaire de fenêtres factice : note les entrées en édition demandées hors du deck (API locale, icône de la zone de notification).</summary>
 sealed class FakeAppWindows : IAppWindows
 {
-    public List<(Place? Place, int Index, bool Quick)> Opened { get; } = new();
-    public List<string> AddedCatalog { get; } = new();
-    public List<(Place Place, int Index)> QuickCreates { get; } = new();
-    /// <summary>Le deck a été passé en mode édition sur ces cases (panneaux intégrés, sans autre fenêtre).</summary>
-    public List<(Place Place, int Index)> EditedOnDeck { get; } = new();
-    public void EditOnDeck(Place place, int index) => EditedOnDeck.Add((place, index));
-    public void OpenQuickCreate(Place place, int index) => QuickCreates.Add((place, index));
-    public bool IsEditorOpen => Opened.Count > 0;
-    public void OpenEditor(Place? place = null, int index = -1, bool quick = false, string? addCatalogId = null)
-    {
-        Opened.Add((place, index, quick));
-        if (addCatalogId != null) AddedCatalog.Add(addCatalogId);
-    }
+    public List<(Place? Place, int Index)> Opened { get; } = new();
+    public void OpenEditor(Place? place = null, int index = -1) => Opened.Add((place, index));
     public void OpenSettings() { }
 }
 
@@ -163,12 +152,10 @@ public class QuickEditTests
             var spacer = vm.Tiles.OfType<SpacerTileViewModel>().Single();
             Assert.NotNull(spacer.Edit);
             spacer.Edit!.Execute(null);
-            Assert.Empty(windows.Opened);                                      // toujours pas d'éditeur
-            Pick(vm, "Éditeur complet…");
-            Assert.Equal((new Place("P", 0), 5, false), windows.Opened[^1]);
-
-            // Le toucher bref garde son rôle : exécuter, pas éditer
-            Assert.Single(windows.Opened);
+            Assert.Empty(windows.Opened);                                      // toujours aucune fenêtre
+            Pick(vm, "Nouveau bouton…");
+            Assert.Equal((new Place("P", 0), 5), (vm.Editor!.Place, vm.Editor.SelectedIndex));   // les panneaux s'ouvrent sur cette case
+            Assert.Empty(windows.Opened);
         });
     }
 
@@ -188,8 +175,8 @@ public class QuickEditTests
             var spacers = vm.Tiles.OfType<SpacerTileViewModel>().ToList();
             Assert.Equal(4, spacers.Count);
             spacers[0].Edit!.Execute(null);
-            Pick(vm, "Éditeur complet…");
-            Assert.Equal((new Place("P", 1), 2, false), windows.Opened[^1]);    // première case libre de la page B
+            Pick(vm, "Nouveau bouton…");
+            Assert.Equal((new Place("P", 1), 2), (vm.Editor!.Place, vm.Editor.SelectedIndex));   // première case libre de la page B
         });
     }
 
@@ -217,7 +204,7 @@ public class QuickEditTests
         _host.Run(() =>
         {
             vm.OpenMenuCommand.Execute(null);
-            vm.MenuEntries.OfType<MenuEntryViewModel>().First(e => e.Text.StartsWith("Modifier au toucher", StringComparison.Ordinal)).Command.Execute(null);
+            vm.MenuEntries.OfType<MenuEntryViewModel>().First(e => e.Text.StartsWith("Modifier le deck", StringComparison.Ordinal)).Command.Execute(null);
             Assert.True(vm.IsEdit);
             vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Copier").Click.Execute(null);   // sélectionne la touche
             Assert.Empty(windows.Opened);
@@ -227,8 +214,8 @@ public class QuickEditTests
             Assert.Equal(5, vm.Editor.SelectedIndex);
             add.Edit!.Execute(null);                                                  // appui long : menu de création de la case
             Assert.True(vm.MenuOpen);
-            Pick(vm, "Éditeur complet…");
-            Assert.Equal(5, windows.Opened[^1].Index);
+            Assert.Contains("Ajouter une action", vm.MenuEntries.OfType<MenuEntryViewModel>().Select(e => e.Text));   // menu complet de l'éditeur, dans le deck
+            Assert.Empty(windows.Opened);
         });
     }
 

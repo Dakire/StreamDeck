@@ -55,8 +55,17 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         // Écran branché ou débranché : le deck suit (ou revient sur l'écran principal si le sien disparaît)
         _displays.Changed += () => PlaceOnScreen(displayChanged: true);
         _vm.Navigated += AnimateGridIn;
+        _vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MainViewModel.Dialog)) FocusDialog(); };
         Closed += (_, _) => { if (_isEditing) { _isEditing = false; _editing = false; } };   // une fenêtre fermée en pleine édition ne laisse pas le toucher détourné
     }
+
+    /// <summary>Boîte de dialogue ouverte : le champ de saisie (texte sélectionné) ou le bouton de validation reçoit le focus.</summary>
+    void FocusDialog() => Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, () =>
+    {
+        if (_vm.Dialog is not { } box) return;
+        if (box.ShowInput) { DialogInput.Focus(); DialogInput.SelectAll(); }
+        else DialogOk.Focus();
+    });
 
     /// <summary>Entrée de la nouvelle page : glissement court dans le sens de la navigation. Purement visuel, la page est déjà affichée.</summary>
     void AnimateGridIn(int direction)

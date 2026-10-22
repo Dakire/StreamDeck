@@ -15,6 +15,7 @@ public partial class App : Application
     System.Threading.Mutex? _instance;
     LocalApiServer? _api;
     TrayIcon? _tray;
+    UiWatchdog? _watchdog;
 
     /// <summary>
     /// Hôte de tests : le constructeur d'<see cref="Application"/> programme <see cref="OnStartup"/> au premier tour du
@@ -41,6 +42,7 @@ public partial class App : Application
         _api = new LocalApiServer(_services.GetRequiredService<LocalApi>());
         _api.Start();
         _tray = new TrayIcon(_services.GetRequiredService<IApiShell>());
+        _watchdog = new UiWatchdog(Dispatcher);
         // « TouchDeck.exe --edit » ouvre aussi l'éditeur au lancement
         if (options.OpenEditor)
         {
@@ -53,6 +55,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         Log.Info("Arrêt");   // avant la libération du conteneur : celle-ci ferme le fichier du journal
+        _watchdog?.Dispose();
         _tray?.Dispose();
         _api?.Dispose();
         _services?.Dispose();

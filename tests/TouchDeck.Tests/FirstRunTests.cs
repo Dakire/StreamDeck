@@ -55,7 +55,6 @@ public class FirstRunTests
             Assert.True(vm.MenuOpen);
             Assert.Contains(vm.MenuEntries.OfType<MenuHeaderViewModel>(), h => h.Text == "Case vide");
             Assert.Empty(windows.Opened);                                              // aucune fenêtre imposée
-            Assert.Empty(windows.QuickCreates);
         });
     }
 
@@ -90,7 +89,7 @@ public class FirstRunTests
             Assert.IsType<WelcomeTileViewModel>(vm.Tiles[1]);                          // dossier vide : invitation juste après la flèche
 
             vm.OpenMenuCommand.Execute(null);
-            QuickEditTests.Pick(vm, "Modifier au toucher");
+            QuickEditTests.Pick(vm, "Modifier le deck");
             Assert.DoesNotContain(vm.Tiles, t => t is WelcomeTileViewModel);
             Assert.NotEmpty(vm.Tiles.OfType<AddTileViewModel>());                      // en édition : emplacements « + » habituels
         });
@@ -116,7 +115,6 @@ public class FirstRunTests
         {
             Assert.DoesNotContain(vm.Tiles, t => t is WelcomeTileViewModel);
             Assert.Empty(windows.Opened);
-            Assert.Empty(windows.QuickCreates);
             Assert.False(vm.MenuOpen);
             Assert.False(vm.HasStatus);                                                // pas d'indice non plus : la page est déjà garnie
         });
