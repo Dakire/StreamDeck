@@ -64,6 +64,7 @@ public partial class WebWidgetView : UserControl
         {
             await Web.EnsureCoreWebView2Async(await GetEnvironment());
             Configure(Web.CoreWebView2);
+            Log.Info($"Widget page web : WebView2 {Web.CoreWebView2.Environment.BrowserVersionString} prêt, ouverture de {source.Host}");
             Web.CoreWebView2.Navigate(source.AbsoluteUri);
         }
         catch (Exception ex) when (ex is WebView2RuntimeNotFoundException or COMException or InvalidOperationException or ArgumentException or IOException or UnauthorizedAccessException)
@@ -87,14 +88,23 @@ public partial class WebWidgetView : UserControl
         core.NewWindowRequested += (_, a) => a.Handled = true;                                   // pas de fenêtre
         core.PermissionRequested += (_, a) => a.State = CoreWebView2PermissionState.Deny;        // ni caméra, ni micro, ni position, ni notifications
         core.DownloadStarting += (_, a) => a.Cancel = true;                                      // ni téléchargement
-        core.NavigationStarting += (sender, a) => { if (!WidgetTypes.IsWebAddress(a.Uri, out _)) a.Cancel = true; };
+        core.NavigationStarting += (sender, a) =>
+        {
+            bool allowed = WidgetTypes.IsWebAddress(a.Uri, out _);
+            Log.Info($"Widget page web : navigation vers {HostOf(a.Uri)} {(allowed ? "" : "REFUSÉE (ni http ni https)")}");
+            if (!allowed) a.Cancel = true;
+        };
         core.ProcessFailed += (_, _) => _vm?.Fail("La page a cessé de répondre : touche « Recharger ».");
         core.NavigationCompleted += (_, a) =>
         {
+            Log.Info($"Widget page web : chargement terminé succès={a.IsSuccess} erreur={a.WebErrorStatus} http={a.HttpStatusCode}");
             if (a.IsSuccess) _vm?.Recover();
             else if (a.WebErrorStatus != CoreWebView2WebErrorStatus.OperationCanceled) _vm?.Fail("La page n'a pas pu être chargée : vérifie l'adresse et la connexion.");
         };
     }
+
+    /// <summary>Nom d'hôte d'une adresse pour le journal (jamais le chemin ni les paramètres : ils peuvent porter des jetons).</summary>
+    static string HostOf(string uri) => Uri.TryCreate(uri, UriKind.Absolute, out var u) ? (u.Host.Length > 0 ? u.Host : u.Scheme + ":") : "?";
 
     void OnUnloaded(object sender, RoutedEventArgs e)
     {
