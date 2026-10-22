@@ -116,6 +116,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     /// promouvrait en souris système, ce qui déplace le curseur) et traité par la fenêtre (MainWindow.Touch.cs). WPF reçoit quand même
     /// le message, si son entrée interne est accessible, pour la manipulation et le défilement. La souris (PT_MOUSE) n'est jamais touchée.
     /// </summary>
+    static int _touchLogBudget;
+
     internal static IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         // Mode édition (panneaux avec saisie de texte) : la fenêtre est activable et WPF traite le toucher lui-même
@@ -126,6 +128,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         if (TouchTrace) TraceInput(msg, wParam);
         if (_touchOwner != null && IsTouchOrPenPointerMessage(msg, wParam, PointerTypeOf))
         {
+            if (_touchLogBudget > 0) { _touchLogBudget--; Log.Info($"[tactile] message pointeur 0x{msg:X} édition={_editing}"); }
             if (_wpfInput != null) { bool inner = false; _wpfInput(hwnd, msg, wParam, lParam, ref inner); }
             _touchOwner.OnTouchPointer(msg, wParam);
             handled = true;

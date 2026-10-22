@@ -37,6 +37,8 @@ public partial class MainWindow
         if (_isEditing == editing) return;
         _isEditing = editing;
         _editing = editing;
+        _touchLogBudget = 12;   // diagnostic permanent : les premiers messages tactiles après chaque changement de mode sont journalisés
+        Log.Info($"[mode] édition={(editing ? "oui" : "non")} premier plan={GetForegroundWindow() == Hwnd}");
         ResetTouchTracking();   // le relâchement du doigt qui a ouvert ou fermé l'édition n'arrive plus ici : sans cela le doigt resterait « posé » et plus aucun appui ne passerait
         var hwnd = Hwnd;
         if (hwnd == IntPtr.Zero) return;   // fenêtre pas encore créée (tests hors écran) : le drapeau suffit
