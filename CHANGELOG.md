@@ -4,6 +4,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Ajouté (édition : glissement, quitter, pages Google)
+- **Glissement visible** : la touche glissée s'atténue, la case visée s'allume (cadre et voile d'accent) et une étiquette suit le pointeur avec l'effet du dépôt (déplacer, échanger, ranger dans le dossier), à la souris comme au doigt.
+- **Bouton *Quitter*** dans le dock en édition : annule les modifications faites depuis l'ouverture du mode (confirmation s'il y en a ; annulable). *Terminer* les garde.
+- **Pages Google** dans le catalogue *Widgets* : Google Chat, Google Agenda (page web), Gmail.
+- `DeckDocument.Checkpoint`, `HasChangesSince`, `RevertTo`.
+
 ### Ajouté (widgets)
 - **Widgets** : horloge, agenda Google et page web (WebView2 isolé), sur plusieurs cases (`TileGridPanel`, ADR 0017). Catégorie *Widgets* du catalogue, taille et réglages dans le panneau de propriétés.
 - **Agenda Google** : l'intégration Google lit l'agenda principal toutes les 5 minutes (valeurs `calendar.events` et `calendar.error`).

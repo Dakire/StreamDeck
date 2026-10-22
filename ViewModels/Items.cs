@@ -45,6 +45,10 @@ public sealed partial class DeckTileViewModel : PlacedTile, IEditableTile
     [ObservableProperty] string _accessibleName = "";
     /// <summary>true pour la touche sélectionnée dans le mode édition du deck (liseré d'accent).</summary>
     [ObservableProperty] bool _isSelected;
+    /// <summary>true pour la touche qu'on est en train de glisser (atténuée).</summary>
+    [ObservableProperty] bool _isDragSource;
+    /// <summary>true pour la case sous le pointeur pendant un glissement (surbrillance).</summary>
+    [ObservableProperty] bool _isDropTarget;
 
     /// <summary>Bouton de la configuration représenté (null pour la case « retour »).</summary>
     public DeckButton? Button { get; init; }
@@ -76,6 +80,8 @@ public sealed class SpacerTileViewModel : PlacedTile, IEditableTile
 public sealed partial class AddTileViewModel : PlacedTile, IEditableTile
 {
     [ObservableProperty] bool _isSelected;
+    /// <summary>true pour la case sous le pointeur pendant un glissement (surbrillance).</summary>
+    [ObservableProperty] bool _isDropTarget;
     /// <summary>Sélectionne cette case (le panneau de propriétés propose alors de la remplir).</summary>
     public required ICommand Click { get; init; }
     /// <inheritdoc/>

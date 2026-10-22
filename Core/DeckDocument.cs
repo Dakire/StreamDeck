@@ -110,6 +110,15 @@ public sealed partial class DeckDocument
 
     // ---------- historique ----------
 
+    /// <summary>Point de contrôle : l'état courant de la configuration, pour y revenir (« Quitter » le mode édition sans enregistrer).</summary>
+    public string Checkpoint() => Snapshot();
+
+    /// <summary>true si la configuration n'est plus celle du point de contrôle.</summary>
+    public bool HasChangesSince(string checkpoint) => Snapshot() != checkpoint;
+
+    /// <summary>Revient à l'état d'un point de contrôle ; l'opération est annulable.</summary>
+    public void RevertTo(string checkpoint, string label) => ReplaceAll(Restore(checkpoint), label);
+
     string Snapshot() => JsonSerializer.Serialize(Config, ConfigStore.Options);
     static DeckConfig Restore(string json) => JsonSerializer.Deserialize<DeckConfig>(json, ConfigStore.Options)!;
 

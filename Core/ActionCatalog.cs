@@ -7,7 +7,7 @@ namespace TouchDeck;
 /// <summary>Une entrée du catalogue : un bouton prêt à poser, avec ses actions pré-remplies.</summary>
 public sealed record CatalogAction(
     string Id, string Category, string Name, string Description, string Icon, string Color,
-    DeckAction[] Actions, string? Note = null, bool IsFolder = false, string Keywords = "", string? Label = null, string? Widget = null)
+    DeckAction[] Actions, string? Note = null, bool IsFolder = false, string Keywords = "", string? Label = null, string? Widget = null, string? WidgetUrl = null)
 {
     /// <summary>Titre du bouton créé (par défaut le nom ; « {time} » pour l'horloge).</summary>
     public string ButtonLabel => Label ?? Name;
@@ -17,7 +17,11 @@ public sealed record CatalogAction(
     {
         if (IsFolder) return DeckDocument.NewFolder(Name);
         if (WidgetTypes.Find(Widget) is { } widget)
-            return new DeckButton { Label = ButtonLabel, Icon = Icon, Color = Color, Widget = widget.Id, ColSpan = widget.Cols, RowSpan = widget.Rows };
+        {
+            var button = new DeckButton { Label = ButtonLabel, Icon = Icon, Color = Color, Widget = widget.Id, ColSpan = widget.Cols, RowSpan = widget.Rows };
+            if (WidgetUrl != null) button.SetOption(WidgetOptionKeys.Url, WidgetUrl);   // page prête à l'emploi : adresse déjà renseignée
+            return button;
+        }
         return new DeckButton
         {
             Label = ButtonLabel, Icon = Icon, Color = Color,
@@ -195,7 +199,20 @@ public static class ActionCatalog
         Array.Empty<DeckAction>(), "Un widget occupe plusieurs cases : les cases voisines doivent être vides. Taille réglable dans les propriétés.",
         false, "widget affichage information", null, w.Id)).ToArray();
 
-    static readonly IReadOnlyList<CatalogAction> BuiltIn = WidgetEntries.Concat(CoreEntries).Concat(AppShortcutPresets.Entries).ToList();
+    // Pages Google prêtes à l'emploi : le widget web avec l'adresse déjà renseignée (la connexion à Google se fait une fois dans le cadre)
+    static CatalogAction GooglePage(string id, string name, string description, string icon, string color, string url) =>
+        new("widget." + id, Widgets, name, description, icon, color, Array.Empty<DeckAction>(),
+            "S'affiche dans un cadre isolé : connecte-toi à Google une fois dans ce cadre (touche « Saisie au clavier » pour taper). Taille réglable.",
+            false, "google widget web iframe " + id, null, WidgetTypes.Web, url);
+
+    static readonly CatalogAction[] GoogleEntries =
+    {
+        GooglePage("gchat", "Google Chat", "Google Chat dans un cadre du deck.", "Chat24", "#188038", "https://chat.google.com/"),
+        GooglePage("gcalendar", "Google Agenda (page web)", "L'agenda Google complet, en semaine.", "CalendarLtr24", "#1A73E8", "https://calendar.google.com/calendar/u/0/r/week"),
+        GooglePage("gmail", "Gmail", "Ta boîte de réception Gmail.", "Mail24", "#C5221F", "https://mail.google.com/mail/u/0/#inbox"),
+    };
+
+    static readonly IReadOnlyList<CatalogAction> BuiltIn = WidgetEntries.Concat(GoogleEntries).Concat(CoreEntries).Concat(AppShortcutPresets.Entries).ToList();
 
     static readonly Dictionary<string, CatalogAction> ById = BuiltIn.ToDictionary(a => a.Id);
 

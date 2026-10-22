@@ -62,7 +62,9 @@ public partial class MainWindow
         _dragging = false;
         _touchDragTile = null;
         _touchDragging = false;
+        _vm.EndDrag();
     }
+
 
     /// <summary>Vrai tant qu'un doigt est suivi par le deck (posé, pas encore relâché).</summary>
     internal bool IsTouchTracking => _tap.Tracking;
@@ -100,7 +102,12 @@ public partial class MainWindow
                 {
                     _longPressTimer.Stop();   // le doigt glisse : défilement ou déplacement, pas un appui long
                     if (_tapOnBar) DragBarTo(x, y);
-                    if (_touchDragTile != null) _touchDragging = true;
+                    if (_touchDragTile != null)
+                    {
+                        if (!_touchDragging) _vm.BeginDrag(_touchDragTile);
+                        _touchDragging = true;
+                    }
+                    if (_touchDragging) { var at = Root.PointFromScreen(new Point(x, y)); _vm.UpdateDrag(at.X, at.Y, TileAt(HitVisual(x, y))); }
                 }
                 break;
             case WM_POINTERUP:
@@ -114,6 +121,7 @@ public partial class MainWindow
                     _tap.Up(id, x, y);
                     _touchDragging = false;
                     _touchDragTile = null;
+                    _vm.EndDrag();
                     if (dropAt != null) Dispatcher.BeginInvoke(DispatcherPriority.Input, () => _vm.MoveTile(dragged, dropAt));
                     break;
                 }

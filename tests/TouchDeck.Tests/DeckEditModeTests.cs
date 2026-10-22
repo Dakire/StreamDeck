@@ -376,6 +376,90 @@ public class DeckEditModeTests
         });
     }
 
+    [Fact]
+    public void ADragDimsTheSourceLightsTheTargetAndAlwaysEndsClean()
+    {
+        var (vm, _, _) = NewDeck();
+        _host.Run(() =>
+        {
+            EnterEdit(vm);
+            var un = vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Un");
+            var trois = vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Trois");
+            var free = vm.Tiles.OfType<AddTileViewModel>().First();
+
+            vm.BeginDrag(un);
+            Assert.True(vm.IsDragging);
+            Assert.True(un.IsDragSource);
+            Assert.Equal("Un", vm.DragFace!.Label);
+            vm.UpdateDrag(100, 50, trois);
+            Assert.True(trois.IsDropTarget);
+            Assert.Equal("Échanger", vm.DragHint);
+            Assert.Equal((114, 64), (vm.DragX, vm.DragY));                    // l'étiquette suit le pointeur
+            vm.UpdateDrag(120, 60, free);
+            Assert.False(trois.IsDropTarget);                                 // une seule case allumée à la fois
+            Assert.True(free.IsDropTarget);
+            Assert.Equal("Déplacer ici", vm.DragHint);
+            vm.UpdateDrag(120, 60, un);                                       // sur elle-même : rien à déposer
+            Assert.False(un.IsDropTarget);
+            Assert.Equal("Déposer sur une case", vm.DragHint);
+
+            vm.EndDrag();
+            Assert.False(vm.IsDragging);
+            Assert.False(un.IsDragSource);
+            Assert.False(free.IsDropTarget);
+        });
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task QuitRevertsTheEditSessionAfterConfirmationWhileFinishKeepsIt()
+    {
+        var (vm, _, _) = NewDeck();
+        _host.Run(() =>
+        {
+            EnterEdit(vm);
+            Doc.ClearButton(Root, 0);                                          // une modification pendant l'édition
+        });
+        var quit = _host.Run(() => vm.QuitEditCommand.ExecuteAsync(null));
+        _host.Run(() =>
+        {
+            Assert.True(vm.HasDialog);                                         // quelque chose à perdre : confirmation
+            vm.Dialog!.CancelCommand.Execute(null);
+        });
+        await quit;
+        _host.Run(() =>
+        {
+            Assert.True(vm.IsEdit);                                            // refusé : on reste en édition, rien n'est annulé
+            Assert.Null(Doc.Get(Root, 0));
+        });
+
+        quit = _host.Run(() => vm.QuitEditCommand.ExecuteAsync(null));
+        _host.Run(() => vm.Dialog!.ConfirmCommand.Execute(null));
+        await quit;
+        _host.Run(() =>
+        {
+            Assert.False(vm.IsEdit);
+            Assert.Equal("Un", Doc.Get(Root, 0)!.Label);                       // état d'avant l'édition
+            Assert.True(Doc.Undo());                                           // et le retour en arrière lui-même est annulable
+            Assert.Null(Doc.Get(Root, 0));
+        });
+
+        _host.Run(() =>
+        {
+            EnterEdit(vm);
+            Doc.ClearButton(Root, 1);
+            vm.EndEditCommand.Execute(null);                                   // Terminer garde les modifications
+            Assert.Null(Doc.Get(Root, 1));
+        });
+
+        _host.Run(() => EnterEdit(vm));
+        await _host.Run(() => vm.QuitEditCommand.ExecuteAsync(null));         // rien à perdre : sortie directe, sans question
+        _host.Run(() =>
+        {
+            Assert.False(vm.IsEdit);
+            Assert.False(vm.HasDialog);
+        });
+    }
+
     // ---------- clavier et mise au premier plan ----------
 
     [Fact]

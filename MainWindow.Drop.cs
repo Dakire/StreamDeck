@@ -34,14 +34,19 @@ public partial class MainWindow
         if (Math.Abs(now.X - _dragStart.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(now.Y - _dragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
         var source = _dragSource;
         _dragSource = null;
-        DragDrop.DoDragDrop(DeckGrid, new DataObject(TileFormat, source), DragDropEffects.Move);
+        _vm.BeginDrag(source);
+        try { DragDrop.DoDragDrop(DeckGrid, new DataObject(TileFormat, source), DragDropEffects.Move); }
+        finally { _vm.EndDrag(); }
     }
 
     void OnDeckDragOver(object sender, DragEventArgs e)
     {
         if (e.Data.GetDataPresent(TileFormat))
         {
-            e.Effects = _vm.IsEdit && TileUnder(e) != null ? DragDropEffects.Move : DragDropEffects.None;
+            var over = TileUnder(e);
+            var at = e.GetPosition(Root);
+            _vm.UpdateDrag(at.X, at.Y, over);
+            e.Effects = _vm.IsEdit && over != null ? DragDropEffects.Move : DragDropEffects.None;
             e.Handled = true;
             return;
         }

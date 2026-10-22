@@ -115,12 +115,25 @@ public class WidgetCoreTests
     public void TheCatalogOffersTheThreeWidgetsWithTheirDefaultSize()
     {
         var entries = ActionCatalog.All.Where(a => a.Category == ActionCatalog.Widgets).ToList();
-        Assert.Equal(new[] { "widget.clock", "widget.agenda", "widget.web" }, entries.Select(e => e.Id));
+        Assert.Equal(new[] { "widget.clock", "widget.agenda", "widget.web", "widget.gchat", "widget.gcalendar", "widget.gmail" }, entries.Select(e => e.Id));
         var clock = ActionCatalog.Find("widget.clock")!.CreateButton();
         Assert.Equal(WidgetTypes.Clock, clock.Widget);
         Assert.Empty(clock.Actions);
         Assert.Equal((2, 1), clock.Span());
         Assert.Equal(ActionCatalog.Widgets, ActionCatalog.Categories[0]);   // en tête du catalogue
+    }
+
+    [Fact]
+    public void TheGooglePagesAreWebWidgetsWithTheirAddressAlreadyFilledIn()
+    {
+        foreach (var id in new[] { "widget.gchat", "widget.gcalendar", "widget.gmail" })
+        {
+            var button = ActionCatalog.Find(id)!.CreateButton();
+            Assert.Equal(WidgetTypes.Web, button.Widget);
+            Assert.True(WidgetTypes.IsWebAddress(button.Option(WidgetOptionKeys.Url), out var uri), id);
+            Assert.EndsWith("google.com", uri.Host);
+            Assert.Empty(ActionValidator.Validate(button, ConfigStore.DefaultConfig(), null));   // prêts à l'emploi : rien à compléter
+        }
     }
 
     [Fact]

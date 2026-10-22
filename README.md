@@ -69,7 +69,8 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 - Panneau d'**actions** à gauche (recherche instantanée, 8 catégories repliables, favoris, récentes) et **propriétés** du bouton à droite,
   comme Elgato Stream Deck ou Corsair iCUE. Les boîtes de dialogue (nom d'une page, confirmation d'une suppression) s'affichent
   elles aussi dans le deck : plus de fenêtre qui s'ouvre derrière lui ou sur un autre écran.
-- Dock en édition : annuler / rétablir (100 niveaux), *Page* (renommer, dupliquer, masquer, déplacer, supprimer la page), *Terminer*.
+- Dock en édition : annuler / rétablir (100 niveaux), *Page* (renommer, dupliquer, masquer, déplacer, supprimer la page), *Quitter* (sort en annulant tout ce qui a été fait depuis l'ouverture, après confirmation) et *Terminer* (garde les modifications).
+- **Glisser une touche** (souris ou doigt) pour la déplacer : elle s'atténue, la case visée s'allume et une étiquette qui suit le pointeur dit ce que ferait le dépôt (déplacer, échanger, ranger dans le dossier).
   La pastille du profil ouvre ses options : changer de profil, format de la grille (3×2, 5×3, 6×3, 5×4, 8×4 ou automatique),
   renommer, dupliquer, exporter / importer (`.touchdeck`), associer à une application, nouveau profil depuis un modèle, supprimer.
 - Propriétés : aperçu, titre, étapes multiples (ajout, ordre, suppression), validation en direct ; position du titre, icône Fluent /
@@ -87,6 +88,7 @@ sur plusieurs cases (de 1 × 1 à 5 × 3, réglable dans les propriétés ; les 
 - **Horloge** : l'heure en grand, la date, secondes et 12 heures en option.
 - **Agenda** : les prochains événements de ton agenda Google (nombre et période réglables), mis à jour toutes les 5 minutes. Demande de connecter
   Google Workspace (Paramètres › Intégrations, voir `docs/integrations/google.md`) ; sans cela, la tuile dit quoi faire.
+- **Google Chat, Google Agenda (page web) et Gmail** : trois pages prêtes à l'emploi (catalogue › *Widgets*), à connecter une fois à ton compte dans le cadre.
 - **Page web** : un site dans un cadre isolé (WebView2) : chat, tableau de bord, météo. Adresse `https://…` saisie dans les propriétés.
   La page ne peut rien faire sur TouchDeck (pas de téléchargement, de fenêtre, de caméra ni de micro). Un menu ou une boîte de dialogue
   masque temporairement la page ; le bouton *Saisie au clavier* de la tuile active le clavier pour taper dans la page, puis rend le focus.
