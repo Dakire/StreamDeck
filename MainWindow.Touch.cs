@@ -39,9 +39,10 @@ public partial class MainWindow
     [StructLayout(LayoutKind.Sequential)] struct RECT { public int Left, Top, Right, Bottom; }
     const uint SWP_NOSIZE = 0x0001, SWP_NOZORDER = 0x0004;
     const int DoubleTapMs = 450;
+    const uint POINTER_FLAG_INCONTACT = 0x0004;
 
     static MainWindow? _touchOwner;
-    readonly TapRecognizer _tap = new();
+    internal readonly TapRecognizer _tap = new();
     bool _tapOnBar;
     bool _dragging;
     (int X, int Y) _dragOffset;
@@ -49,6 +50,18 @@ public partial class MainWindow
     ICommand? _pressEdit;                 // édition de la case sous le doigt (appui long), null si la case ne s'édite pas
     readonly DispatcherTimer _longPressTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
     bool _longPressWired;
+
+    /// <summary>Oublie le doigt suivi (fin ou début du mode édition : son relâchement est traité par WPF, pas par le deck).</summary>
+    internal void ResetTouchTracking()
+    {
+        _tap.Cancel();
+        _longPressTimer.Stop();
+        _pressEdit = null;
+        _dragging = false;
+    }
+
+    /// <summary>Vrai tant qu'un doigt est suivi par le deck (posé, pas encore relâché).</summary>
+    internal bool IsTouchTracking => _tap.Tracking;
 
     /// <summary>Un message WM_POINTER d'un doigt ou d'un stylet (déjà retiré du traitement par défaut de Windows).</summary>
     void OnTouchPointer(int msg, IntPtr wParam)
@@ -64,6 +77,9 @@ public partial class MainWindow
         switch (msg)
         {
             case WM_POINTERDOWN:
+                // Un doigt suivi qui ne touche plus l'écran (relâchement jamais reçu) ne doit pas bloquer les appuis suivants
+                if (_tap.Tracking && _tap.TrackedId is { } old && (old == id || !(GetPointerInfo(old, out var oldInfo) && (oldInfo.pointerFlags & POINTER_FLAG_INCONTACT) != 0)))
+                    ResetTouchTracking();
                 bool tracked = _tap.Tracking;
                 _tap.Slop = (int)Math.Ceiling(12 * VisualTreeHelper.GetDpi(this).DpiScaleX);
                 _tap.Down(id, x, y, Environment.TickCount64);

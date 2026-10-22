@@ -38,6 +38,7 @@ public partial class MainWindow
         if (_isEditing == editing) return;
         _isEditing = editing;
         _editing = editing;
+        ResetTouchTracking();   // le relâchement du doigt qui a ouvert ou fermé l'édition n'arrive plus ici : sans cela le doigt resterait « posé » et plus aucun appui ne passerait
         var hwnd = Hwnd;
         if (hwnd == IntPtr.Zero) return;   // fenêtre pas encore créée (tests hors écran) : le drapeau suffit
         int style = GetWindowLong(hwnd, GWL_EXSTYLE);

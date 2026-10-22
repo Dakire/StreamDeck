@@ -23,6 +23,9 @@ internal sealed class TapRecognizer
     /// <summary>Vrai tant qu'un doigt est suivi (posé, pas encore relâché).</summary>
     public bool Tracking => _id != null;
 
+    /// <summary>Identifiant du pointeur suivi, ou null.</summary>
+    public uint? TrackedId => _id;
+
     /// <summary>Vrai si le doigt suivi a dépassé la tolérance.</summary>
     public bool Moved { get; private set; }
 

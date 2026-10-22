@@ -245,6 +245,27 @@ public class DeckEditModeTests
         finally { _host.Run(win.Close); }
     }
 
+    [Fact]
+    public void EnteringOrLeavingEditForgetsTheFingerThatOpenedIt()
+    {
+        // Un appui long ouvre l'édition : le relâchement du doigt est traité par WPF et n'arrive jamais au deck. Un doigt resté « posé »
+        // ferait ignorer tous les appuis suivants une fois le deck de retour.
+        _host.Reset(Config());
+        var win = _host.Run(() => new MainWindow(_host.Services));
+        try
+        {
+            _host.Run(() => win._tap.Down(7, 100, 100, 0));
+            Assert.True(_host.Run(() => win.IsTouchTracking));
+            _host.Run(() => win.SetEditing(true));
+            Assert.False(_host.Run(() => win.IsTouchTracking));
+
+            _host.Run(() => win._tap.Down(8, 100, 100, 0));
+            _host.Run(() => win.SetEditing(false));
+            Assert.False(_host.Run(() => win.IsTouchTracking));
+        }
+        finally { _host.Run(win.Close); }
+    }
+
     // ---------- rendu ----------
 
     [Fact]
