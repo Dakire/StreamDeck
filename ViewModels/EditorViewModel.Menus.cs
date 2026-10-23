@@ -119,6 +119,8 @@ public sealed partial class EditorViewModel
         int count = Pages.Count;
         return new List<MenuItemSpec>
         {
+            new("Nouvelle page…", () => AddPageCommand.Execute(null), SymbolRegular.DocumentAdd24),
+            MenuItemSpec.Separator,
             new("Renommer", async () => await RenamePageAsync(page), SymbolRegular.Rename24),
             new("Dupliquer", () => DuplicatePage(page), SymbolRegular.CopyAdd24),
             page.IsWeb

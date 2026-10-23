@@ -90,6 +90,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     void AnimateGridIn(int direction)
     {
         if (!Motion.Enabled) return;
+        // Un cadre web est une fenêtre Win32 : il ne suit pas le glissement de la grille et resterait décalé à la fin de l'animation
+        if (_vm.Tiles.OfType<ViewModels.WebWidgetViewModel>().Any()) return;
         var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
         var duration = TimeSpan.FromMilliseconds(180);
         GridShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,

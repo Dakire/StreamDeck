@@ -49,6 +49,42 @@ public class UiTests
 
     // ---------- rendu des fenêtres réelles ----------
 
+    [Fact]
+    public void TheAddPageButtonStaysVisibleInEditModeEvenWithManyLongPageNames()
+    {
+        var cfg = ConfigStore.DefaultConfig();
+        var profile = cfg.Profiles[0];
+        for (int i = 0; i < 8; i++) profile.Pages.Add(new DeckPage { Name = $"Page au nom assez long {i}" });
+        _host.Reset(cfg);
+        var win = _host.Run(() => new MainWindow(_host.Services));
+        try
+        {
+            _host.Run(() => win.EditCell(new Place(profile.Name, 0), 0));
+            _host.Settle();
+            _host.Render(win, "deck-edition-pages-nombreuses", 1600, 900);
+            _host.Run(() =>
+            {
+                var add = WpfHost.Descendants<System.Windows.Controls.Button>((System.Windows.DependencyObject)win.Content)
+                    .Single(b => System.Windows.Automation.AutomationProperties.GetName(b) == "Ajouter une page");
+                Assert.Equal(System.Windows.Visibility.Visible, add.Visibility);
+                Assert.True(add.ActualWidth >= 48, $"bouton de {add.ActualWidth} px de large");
+                // Hors de la zone défilante des onglets : jamais poussé hors de l'écran par les pages
+                Assert.Null(Ancestor<System.Windows.Controls.ScrollViewer>(add));
+                var at = add.TransformToAncestor((System.Windows.Media.Visual)win.Content).Transform(new System.Windows.Point(0, 0));
+                Assert.InRange(at.X, 0, 1600 - add.ActualWidth);
+                Assert.True(add.ActualHeight >= 48, $"cible tactile de {add.ActualHeight} px");
+            });
+        }
+        finally { _host.Run(win.Close); }
+    }
+
+    static T? Ancestor<T>(System.Windows.DependencyObject d) where T : System.Windows.DependencyObject
+    {
+        for (var p = System.Windows.Media.VisualTreeHelper.GetParent(d); p != null; p = System.Windows.Media.VisualTreeHelper.GetParent(p))
+            if (p is T t) return t;
+        return null;
+    }
+
     [Theory]
     [InlineData("dark")]
     [InlineData("light")]

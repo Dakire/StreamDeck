@@ -518,10 +518,15 @@
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*"/>
           <ColumnDefinition Width="Auto"/>
-          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Pages : contrôle segmenté, défilant si elles sont nombreuses -->
+        <!-- Pages : contrôle segmenté, défilant si elles sont nombreuses ; « + » toujours visible juste après -->
+        <Grid HorizontalAlignment="Left">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
         <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly"
                       Focusable="False" HorizontalAlignment="Left">
           <StackPanel Orientation="Horizontal">
@@ -542,12 +547,13 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <Button Style="{StaticResource DockButton}" Command="{Binding AddPageCommand}" AutomationProperties.Name="Ajouter une page"
-                    Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}" ToolTip="Ajouter une page">
-              <ui:SymbolIcon Symbol="Add24"/>
-            </Button>
           </StackPanel>
         </ScrollViewer>
+        <Button Grid.Column="1" Style="{StaticResource DockButton}" Command="{Binding AddPageCommand}" AutomationProperties.Name="Ajouter une page"
+                Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}" ToolTip="Ajouter une page">
+          <ui:SymbolIcon Symbol="Add24"/>
+        </Button>
+        </Grid>
 
         <!-- Sous-pages : flèches et points -->
         <StackPanel Grid.Column="1" Orientation="Horizontal" Visibility="{Binding HasSubs, Converter={StaticResource BoolVis}}">

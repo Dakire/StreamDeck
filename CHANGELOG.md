@@ -4,6 +4,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Corrigé (dock et page web)
+- Le bouton **+ (ajouter une page)** du mode édition disparaissait derrière les onglets quand les pages étaient nombreuses : il reste maintenant toujours visible ; *Nouvelle page…* est aussi dans le menu *Page*.
+- Une page web restait **décalée** d'environ 35 px après un changement de page (l'animation de glissement ne déplace pas le cadre WebView2) : pas d'animation quand la page affiche un cadre web.
+
 ### Corrigé (cadre web : autorisations)
 - **Google Agenda se croyait bloqué pour les notifications** : les versions précédentes refusaient tout et le profil du navigateur avait mémorisé ces refus
   (sans barre d'adresse, aucun moyen de les lever). Les refus mémorisés des notifications, du micro et de la caméra sont remis à « demander » à l'ouverture
