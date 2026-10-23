@@ -27,7 +27,10 @@
           <ColumnDefinition Width="Auto"/>
           <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <ui:SymbolIcon Symbol="Globe24" Foreground="{DynamicResource DeckAccentText}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+        <Button Command="{Binding GoBackCommand}" Width="48" Height="48" Padding="0" Margin="-10,0,4,0" Background="Transparent" BorderThickness="0"
+                AutomationProperties.Name="Retour" ToolTip="Retour : page précédente, ou page de départ du cadre">
+          <ui:SymbolIcon Symbol="ArrowLeft24" Foreground="{DynamicResource DeckAccentText}"/>
+        </Button>
         <TextBlock Grid.Column="1" Text="{Binding Title}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" FontWeight="SemiBold"
                    Foreground="{Binding Face.LabelBrush}"/>
         <Button Grid.Column="2" Command="{Binding ZoomOutCommand}" Width="48" Height="48" Padding="0" Background="Transparent" BorderThickness="0"

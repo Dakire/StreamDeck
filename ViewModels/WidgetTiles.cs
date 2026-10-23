@@ -135,6 +135,16 @@ public sealed partial class WebWidgetViewModel : WidgetTileViewModel
     [RelayCommand]
     void ZoomReset() => SetZoom(WebZoom.Normal);
 
+    /// <summary>Demande de la vue : page précédente, ou adresse de départ s'il n'y en a pas (renseignée par la vue).</summary>
+    public Action? BackRequested { get; set; }
+
+    [RelayCommand]
+    void GoBack()
+    {
+        Recover();
+        BackRequested?.Invoke();
+    }
+
     /// <summary>Demande de la vue : recharger la page (renseignée par la vue).</summary>
     public Action? ReloadRequested { get; set; }
 

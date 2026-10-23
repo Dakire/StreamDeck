@@ -63,6 +63,11 @@ nouvel onglet, et le cadre refusait toute nouvelle fenêtre sans rien charger. C
 `window.open`) s'ouvre dans le cadre lui-même, toujours sans fenêtre et seulement en http(s) (test `ALinkThatOpensANewTabLoadsInsideTheFrame`,
 qui échoue sans le correctif). La connexion qui suit reste soumise aux règles de Google, voir ci-dessous.
 
+**Révision (liens reçus dans Chat).** Ouvrir *tous* les liens « nouvel onglet » dans le cadre a enfermé l'utilisateur dans un Google Docs reçu
+dans Chat (pas d'onglets, pas de retour). Règle actuelle (`WebLinks.OpensInFrame`) : dans le cadre seulement pour le même hôte que l'adresse
+saisie ou que la page affichée, et pour les pages de connexion (`accounts.google.com`, connexion Microsoft) ; tout le reste part dans le navigateur
+par défaut. La barre du cadre a un bouton **Retour** (page précédente, sinon adresse saisie).
+
 **Décision : l'agent utilisateur n'est pas modifié.** Il n'a aucun effet mesurable sur ces pages, et usurper l'identité d'un navigateur pour
 passer une protection de Google contre les navigateurs intégrés n'est ni souhaitable ni honnête. L'étape suivante (envoi d'un identifiant)
 n'a pas été automatisée. À la place :

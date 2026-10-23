@@ -384,7 +384,7 @@ public class DeckWidgetTests
                 foreach (var view in views)
                 {
                     var buttons = WpfHost.Descendants<System.Windows.Controls.Primitives.ButtonBase>(view).ToList();
-                    Assert.Equal(6, buttons.Count);                            // dézoomer, zoom, zoomer, recharger, ouvrir dans le navigateur, saisie au clavier
+                    Assert.Equal(7, buttons.Count);                            // retour, dézoomer, zoom, zoomer, recharger, ouvrir dans le navigateur, saisie au clavier
                     Assert.All(buttons, b => Assert.True(b.ActualHeight >= 48 && b.ActualWidth >= 48, $"{b.ActualWidth}×{b.ActualHeight} px"));
                 }
             });

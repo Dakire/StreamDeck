@@ -101,8 +101,9 @@ sur plusieurs cases (de 1 × 1 à 5 × 3, réglable dans les propriétés ; les 
 du doigt ou à Ctrl + molette, mémorisé. **Notifications, micro et caméra** sont autorisés aux pages `https` du même site que l'adresse saisie (rappels de
 Google Agenda, Meet) ; tout autre droit est refusé, et Windows doit aussi autoriser micro et caméra aux applications de bureau.
 La saisie au clavier démarre toute seule quand un champ de texte de la page a le focus (et rend le focus en le quittant) ; le bouton *Saisie au clavier* de la tuile la force.
-  Pour modifier ce widget, passe en mode édition (le toucher dans la page appartient à la page). Le bouton *Ouvrir dans le navigateur* de la
-  barre du cadre ouvre l'adresse dans le navigateur par défaut ; si Google refuse la connexion dans un cadre intégré, la tuile le dit.
+  Pour modifier ce widget, passe en mode édition (le toucher dans la page appartient à la page). Le bouton *Retour* de la barre du cadre revient à
+  la page précédente (ou à la page de départ) ; un lien « nouvel onglet » vers un autre site (un document reçu dans Chat) s'ouvre dans le navigateur
+  par défaut. Le bouton *Ouvrir dans le navigateur* de la barre du cadre ouvre l'adresse dans le navigateur par défaut ; si Google refuse la connexion dans un cadre intégré, la tuile le dit.
 
 **Page web en plein cadre** : une page entière peut afficher un site à la place de la grille de boutons. En mode édition, bouton *Page* du dock ›
 *Afficher une page web…* (« calendar.google.com » est complété en `https://…`), puis *Adresse de la page web…* pour la changer ou *Afficher une

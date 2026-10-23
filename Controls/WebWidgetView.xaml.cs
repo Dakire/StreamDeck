@@ -71,6 +71,7 @@ public partial class WebWidgetView : UserControl
         {
             _vm.PropertyChanged += OnViewModelChanged;
             _vm.ReloadRequested = () => Web?.CoreWebView2?.Reload();
+            _vm.BackRequested = GoBack;
         }
     }
 
@@ -80,6 +81,14 @@ public partial class WebWidgetView : UserControl
         if (e.PropertyName == nameof(WebWidgetViewModel.ZoomPercent) && Web != null && _vm != null) Web.ZoomFactor = _vm.ZoomPercent / 100.0;
         if (e.PropertyName == nameof(WebWidgetViewModel.IsTyping) && _vm is { IsTyping: true })
             Dispatcher.BeginInvoke(DispatcherPriority.Input, () => { if (Web?.CoreWebView2 != null) Web.Focus(); });
+    }
+
+    /// <summary>Retour : page précédente du cadre, sinon l'adresse saisie (on n'est jamais bloqué sur une page sans issue).</summary>
+    void GoBack()
+    {
+        if (Web?.CoreWebView2 is not { } core) return;
+        if (core.CanGoBack) core.GoBack();
+        else if (_frame?.Source is { } home) core.Navigate(home.AbsoluteUri);
     }
 
     /// <summary>Profil de navigation propre à StreamDak, créé une fois : le dossier de configuration (ou STREAMDAK_DATA_DIR) contient WebView2.</summary>
@@ -141,10 +150,15 @@ public partial class WebWidgetView : UserControl
         settings.IsPasswordAutosaveEnabled = false;
         core.NewWindowRequested += (_, a) =>
         {
-            // Jamais de fenêtre ni d'onglet : un lien « nouvel onglet » (target="_blank", window.open) s'ouvre dans le cadre lui-même.
-            // Sans cela le bouton « Sign in » de Google Agenda, qui ouvre un nouvel onglet, ne faisait rien.
+            // Jamais de fenêtre ni d'onglet. Un lien « nouvel onglet » (target="_blank", window.open) du même site ou vers une page de connexion s'ouvre
+            // dans le cadre (« Sign in » de Google Agenda) ; tout autre lien (un Google Docs reçu dans Chat) s'ouvre dans le navigateur par défaut.
             a.Handled = true;
-            if (WidgetTypes.IsWebAddress(a.Uri, out var target)) core.Navigate(target.AbsoluteUri);
+            if (!WidgetTypes.IsWebAddress(a.Uri, out var target)) return;
+            Uri.TryCreate(core.Source, UriKind.Absolute, out var current);
+            bool inFrame = WebLinks.OpensInFrame(target, frame.Source, current);
+            Log.Info($"Widget page web : lien nouvel onglet vers {target.Host} ouvert {(inFrame ? "dans le cadre" : "dans le navigateur")}");
+            if (inFrame) core.Navigate(target.AbsoluteUri);
+            else frame.Vm?.BrowserRequested?.Invoke(target);
         };
         core.PermissionRequested += (_, a) => OnPermissionRequested(frame, a);
         core.DownloadStarting += (_, a) => a.Cancel = true;                                      // ni téléchargement
@@ -261,7 +275,7 @@ public partial class WebWidgetView : UserControl
     void Unmount()
     {
         _fieldTimer.Stop();
-        if (_vm != null) _vm.ReloadRequested = null;
+        if (_vm != null) { _vm.ReloadRequested = null; _vm.BackRequested = null; }
         if (_frame is not { } frame) return;
         frame.Web.ZoomFactorChanged -= OnZoomFactorChanged;
         WebHost.Children.Remove(frame.Web);

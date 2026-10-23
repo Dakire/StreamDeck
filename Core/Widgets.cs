@@ -104,6 +104,25 @@ public static class WebZoom
     public static int ForStorage(int percent) => percent is 0 or Normal ? 0 : Clamp(percent);
 }
 
+/// <summary>Où s'ouvre un lien « nouvel onglet » (target="_blank", window.open) d'un cadre web : dans le cadre, ou dans le navigateur de l'utilisateur.</summary>
+public static class WebLinks
+{
+    /// <summary>Pages de connexion : elles doivent rester dans le cadre, sinon la session ouverte n'arrive pas au cadre (bouton « Sign in » de Google Agenda).</summary>
+    static readonly HashSet<string> SignInHosts = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "accounts.google.com", "login.microsoftonline.com", "login.live.com", "account.live.com",
+    };
+
+    /// <summary>
+    /// true si le lien reste dans le cadre : même hôte que l'adresse saisie ou que la page affichée, ou page de connexion. Tout autre lien (un document
+    /// Google envoyé dans Chat, un site externe) s'ouvre dans le navigateur par défaut : le cadre n'a ni onglets ni barre d'adresse pour en revenir.
+    /// </summary>
+    public static bool OpensInFrame(Uri target, Uri configured, Uri? current) =>
+        SameHost(target, configured) || (current != null && SameHost(target, current)) || SignInHosts.Contains(target.Host);
+
+    static bool SameHost(Uri a, Uri b) => string.Equals(a.Host, b.Host, StringComparison.OrdinalIgnoreCase);
+}
+
 /// <summary>Qui a le droit d'utiliser la caméra, le micro et les notifications dans un cadre web (décision de l'utilisateur, ADR 0018).</summary>
 public static class WebPermissions
 {

@@ -16,6 +16,19 @@ namespace StreamDak.Tests;
 public class WebPermissionsTests
 {
     [Theory]
+    [InlineData("https://chat.google.com/room/x", true)]                         // même hôte que l'adresse saisie
+    [InlineData("https://accounts.google.com/ServiceLogin", true)]               // connexion : reste dans le cadre
+    [InlineData("https://docs.google.com/spreadsheets/d/abc", false)]            // un document reçu dans Chat : navigateur
+    [InlineData("https://www.google.com/url?q=https://example.org", false)]      // redirection de lien de Google : navigateur
+    [InlineData("https://example.org/", false)]
+    public void ANewTabLinkStaysInTheFrameOnlyForTheSameHostOrASignInPage(string target, bool inFrame) =>
+        Assert.Equal(inFrame, WebLinks.OpensInFrame(new Uri(target), new Uri("https://chat.google.com/"), new Uri("https://chat.google.com/room/x")));
+
+    [Fact]
+    public void ALinkToTheHostOfTheDisplayedPageStaysInTheFrame() =>
+        Assert.True(WebLinks.OpensInFrame(new Uri("https://workspace.google.com/b"), new Uri("https://calendar.google.com/"), new Uri("https://workspace.google.com/a")));
+
+    [Theory]
     [InlineData("calendar.google.com", "google.com")]
     [InlineData("meet.google.com", "google.com")]
     [InlineData("a.b.example.org", "example.org")]

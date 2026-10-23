@@ -87,6 +87,73 @@ public class WebFrameLinksTests
     }
 
     [Fact]
+    public async Task ANewTabLinkToAnotherSiteOpensInTheBrowserAndBackReturnsToTheStart()
+    {
+        using var listener = new HttpListener();
+        int port;
+        using (var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0))
+        {
+            probe.Start();
+            port = ((IPEndPoint)probe.LocalEndpoint).Port;
+        }
+        listener.Prefixes.Add($"http://localhost:{port}/");
+        listener.Start();
+        using var stop = new CancellationTokenSource();
+        _ = Task.Run(async () =>
+        {
+            while (!stop.IsCancellationRequested)
+            {
+                HttpListenerContext ctx;
+                try { ctx = await listener.GetContextAsync(); }
+                catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException) { return; }
+                var html = ctx.Request.Url!.AbsolutePath == "/seconde" ? "<html><body>seconde</body></html>"
+                    : "<html><body><a id='ext' target='_blank' href='https://docs.example.org/doc'>doc</a><a id='in' href='/seconde'>dedans</a></body></html>";
+                var bytes = Encoding.UTF8.GetBytes(html);
+                ctx.Response.ContentType = "text/html; charset=utf-8";
+                ctx.Response.ContentLength64 = bytes.Length;
+                await ctx.Response.OutputStream.WriteAsync(bytes);
+                ctx.Response.Close();
+            }
+        });
+
+        WidgetTypes.IsWebAddress($"http://localhost:{port}/", out var uri);
+        var vm = new WebWidgetViewModel { Button = new DeckButton { Widget = WidgetTypes.Web }, Source = uri };
+        var opened = new System.Collections.Concurrent.ConcurrentQueue<Uri>();
+        vm.BrowserRequested = opened.Enqueue;                                            // le deck, simulé : rien n'est réellement lancé
+        var window = _host.Run(() => new System.Windows.Window { Left = -30000, Top = -30000, Width = 800, Height = 600, ShowInTaskbar = false, ShowActivated = false });
+        try
+        {
+            var view = _host.Run(() => { var v = new WebWidgetView { DataContext = vm }; window.Content = v; window.Show(); return v; });
+            WebView2 web = _host.Run(() => WpfHost.Descendants<WebView2>(view).Single());
+            async Task Until(Func<bool> condition)
+            {
+                var end = DateTime.UtcNow.AddSeconds(15);
+                while (!_host.Run(condition) && DateTime.UtcNow < end) await Task.Delay(100);
+            }
+            string Source() => web.CoreWebView2?.Source ?? "";
+            await Until(() => Source().StartsWith("http://localhost", StringComparison.Ordinal));
+            await Task.Delay(500);
+            async Task Click(string id) => await _host.Dispatcher.InvokeAsync(async () => await web.CoreWebView2.ExecuteScriptAsync($"document.getElementById('{id}').click()")).Task.Unwrap();
+
+            await Click("ext");                                                          // autre site, nouvel onglet : le navigateur, pas le cadre
+            await Task.Delay(1500);
+            Assert.Equal(new[] { new Uri("https://docs.example.org/doc") }, opened.ToArray());
+            Assert.Equal($"http://localhost:{port}/", _host.Run(Source));
+
+            await Click("in");                                                           // lien ordinaire du même site : dans le cadre
+            await Until(() => Source().EndsWith("/seconde", StringComparison.Ordinal));
+            _host.Run(() => vm.GoBackCommand.Execute(null));                             // Retour : on n'est jamais bloqué
+            await Until(() => Source() == $"http://localhost:{port}/");
+            Assert.Equal($"http://localhost:{port}/", _host.Run(Source));
+        }
+        finally
+        {
+            await stop.CancelAsync();
+            _host.Run(window.Close);
+        }
+    }
+
+    [Fact]
     public async Task ALinkThatOpensANewTabLoadsInsideTheFrame()
     {
         using var listener = new HttpListener();

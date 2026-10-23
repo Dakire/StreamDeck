@@ -5,6 +5,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 ## [Non publié]
 
 ### Corrigé (dock et page web)
+- **Un lien reçu dans Google Chat (Google Docs…) s'ouvrait dans le cadre, sans moyen d'en sortir** : un lien « nouvel onglet » vers un autre site
+  s'ouvre maintenant dans le navigateur par défaut ; seuls les liens du même site et les pages de connexion (Google, Microsoft) restent dans le cadre.
+  Nouveau bouton **Retour** dans la barre du cadre : page précédente, ou page de départ du cadre.
 - Le bouton **+ (ajouter une page)** du mode édition disparaissait derrière les onglets quand les pages étaient nombreuses : il reste maintenant toujours visible ; *Nouvelle page…* est aussi dans le menu *Page*.
 - Une page web restait **décalée** d'environ 35 px après un changement de page (l'animation de glissement ne déplace pas le cadre WebView2) : pas d'animation quand la page affiche un cadre web.
 
