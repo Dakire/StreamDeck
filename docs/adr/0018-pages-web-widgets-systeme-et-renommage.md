@@ -92,6 +92,11 @@ Windows doit aussi autoriser le micro et la caméra aux applications de bureau (
 notification Windows, un vrai micro ou une vraie caméra (pas de matériel ni de compte dans les tests ; la décision d'accorder ou de refuser est testée
 avec un vrai WebView2 sur `Notification.requestPermission`).
 
+**Refus mémorisés.** Avant cette décision, chaque refus était enregistré dans le profil WebView2 (comportement par défaut). Une page qui avait déjà
+demandé (Google Agenda) restait donc « bloquée » et ne redemandait plus, et le cadre n'a pas de barre d'adresse pour lever le blocage. À chaque création
+d'un cadre, les refus mémorisés de ces trois droits sont remis à « demander » (`ResetStoredDenialsAsync`), et un refus n'est plus mémorisé
+(`SavesInProfile = false`). Les autorisations accordées, elles, restent mémorisées.
+
 ### Cadres conservés d'une page du deck à l'autre
 
 Changer de page détruisait le cadre : la page web se rechargeait à chaque retour. Le cadre est maintenant **rangé** (`WebFramePool`) quand sa tuile quitte

@@ -227,6 +227,33 @@ public class WebFramePoolTests
         finally { _host.Run(() => { window.Content = null; window.Close(); WebFramePool.Clear(); }); }
     }
 
+    [Fact]
+    public async Task AnOldStoredRefusalIsResetSoThePageAsksAgainAndANewRefusalIsNeverStored()
+    {
+        WebFramePool.Clear();
+        using var site = new Site(_ => "<html><body>page</body></html>");
+        var window = _host.Run(() => new System.Windows.Window { Content = new System.Windows.Controls.Grid(), Left = -30000, Top = -30000, Width = 800, Height = 600, ShowInTaskbar = false, ShowActivated = false });
+        string origin = $"http://localhost:{site.Port}";
+        try
+        {
+            _host.Run(window.Show);
+            var first = _host.Run(() => { var v = new WebWidgetView { DataContext = Tile(site.Port, null) }; window.Content = v; return v; });
+            var web = WebOf(first);
+            await WaitLoaded(web);
+            // Ce que les versions précédentes ont laissé dans le profil : un refus mémorisé des notifications pour ce site
+            await _host.Dispatcher.InvokeAsync(async () => await web.CoreWebView2.Profile.SetPermissionStateAsync(
+                Microsoft.Web.WebView2.Core.CoreWebView2PermissionKind.Notifications, origin, Microsoft.Web.WebView2.Core.CoreWebView2PermissionState.Deny)).Task.Unwrap();
+            _host.Run(() => window.Content = new System.Windows.Controls.Grid()); _host.Settle();
+            _host.Run(WebFramePool.Clear);
+
+            var second = _host.Run(() => { var v = new WebWidgetView { DataContext = Tile(site.Port, null) }; window.Content = v; return v; });
+            var fresh = WebOf(second);
+            await WaitLoaded(fresh);
+            Assert.Equal("default", (await Eval(fresh, "Notification.permission")).Trim((char)34));     // la page n'est plus « bloquée » : elle peut redemander
+        }
+        finally { _host.Run(() => { window.Content = null; window.Close(); WebFramePool.Clear(); }); }
+    }
+
     async Task<string> Until(WebView2 web, string js, string whileValue)
     {
         var end = DateTime.UtcNow.AddSeconds(10);
