@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Wpf.Ui.Controls;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>
 /// Description d'un menu contextuel, indépendante de WPF : les ViewModels décrivent le menu selon l'état courant,

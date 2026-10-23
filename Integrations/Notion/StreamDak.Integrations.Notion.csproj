@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Notion par son API web (jeton personnel). Sans dépendance externe. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>StreamDak.Integrations.Notion</AssemblyName>
+    <RootNamespace>StreamDak.Integrations.Notion</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\StreamDak.Core.csproj" />
+  </ItemGroup>
+</Project>

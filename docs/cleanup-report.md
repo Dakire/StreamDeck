@@ -35,7 +35,7 @@ successifs reconstruisaient les 32 touches à chaque fois. L'hypothèse n'a pas 
 
 ### Rendu hors écran
 
-`BenchmarkTests`, `TOUCHDECK_BENCH`, Release. Le rendu logiciel (`RenderTargetBitmap`) amplifie le coût des effets ; il
+`BenchmarkTests`, `STREAMDAK_BENCH`, Release. Le rendu logiciel (`RenderTargetBitmap`) amplifie le coût des effets ; il
 sert à comparer, pas à prédire les images par seconde réelles.
 
 | Mesure | Avant (début de session) | Après `eb6f1e2` (même période) |
@@ -140,15 +140,15 @@ que des mesures prises dans les mêmes conditions.
 
 ```powershell
 dotnet build -c Release                       # 0 avertissement, 0 erreur
-dotnet test tests/TouchDeck.Tests             # 183 tests au vert
-$env:TOUCHDECK_DATA_DIR = "$env:TEMP\touchdeck-essai"
+dotnet test tests/StreamDak.Tests             # 183 tests au vert
+$env:STREAMDAK_DATA_DIR = "$env:TEMP\streamdak-essai"
 dotnet run -c Release -- --simulate --edit    # deck et éditeur : modifier un titre, annuler, changer de thème
 ```
 
 Points à observer :
 - le deck et l'éditeur ont exactement le même aspect qu'avant ;
 - taper un titre dans l'éditeur met à jour la seule touche concernée, sans scintillement ;
-- le journal (`touchdeck.log`) ne contient aucune erreur au démarrage.
+- le journal (`streamdak.log`) ne contient aucune erreur au démarrage.
 
 ## Commits
 

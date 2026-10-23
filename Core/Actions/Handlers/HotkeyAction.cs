@@ -1,4 +1,4 @@
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Envoie une combinaison de touches (« ctrl+shift+m ») à l'application active.</summary>
 public sealed class HotkeyAction : SyncActionHandler

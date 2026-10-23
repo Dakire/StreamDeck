@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Issue de l'exécution d'un bouton.</summary>
 public enum ActionOutcome

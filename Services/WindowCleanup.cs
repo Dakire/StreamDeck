@@ -7,7 +7,7 @@ using System.Windows.Media;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// WPF-UI 4.3 : chaque <see cref="TitleBar"/> s'abonne à l'événement statique <c>ApplicationThemeManager.Changed</c> et ne s'en désabonne

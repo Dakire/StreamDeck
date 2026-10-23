@@ -7,7 +7,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations;
+namespace StreamDak.Integrations;
 
 /// <summary>
 /// Base des services web à jeton (gestionnaires de tâches) : un client HTTP, des requêtes JSON, et des erreurs traduites en messages

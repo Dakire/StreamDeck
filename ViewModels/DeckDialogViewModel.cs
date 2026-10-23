@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>
 /// Boîte de dialogue affichée dans la fenêtre du deck (saisie d'un nom, confirmation, information), à la place d'une fenêtre modale :

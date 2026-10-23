@@ -1,4 +1,4 @@
-# Style de TouchDeck. Vérifié à la compilation (EnforceCodeStyleInBuild, Directory.Build.props) :
+# Style de StreamDak. Vérifié à la compilation (EnforceCodeStyleInBuild, Directory.Build.props) :
 # une règle réglée sur « warning » bloque la compilation (TreatWarningsAsErrors).
 root = true
 

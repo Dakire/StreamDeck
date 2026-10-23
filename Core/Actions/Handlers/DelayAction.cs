@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Attend un nombre de millisecondes (100 par défaut si la valeur est invalide) ; annulable, sans délai maximal.</summary>
 public sealed class DelayAction : ActionHandler

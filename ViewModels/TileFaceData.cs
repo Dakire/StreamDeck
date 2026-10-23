@@ -4,7 +4,7 @@ using System.Linq;
 using System.Windows.Media;
 using Wpf.Ui.Controls;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>
 /// Variantes de touche, toutes dessinées par le même composant (<see cref="Controls.TileFace"/>) :

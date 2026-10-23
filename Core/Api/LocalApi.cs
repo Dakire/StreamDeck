@@ -5,10 +5,10 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using TouchDeck.Actions;
-using TouchDeck.Integrations;
+using StreamDak.Actions;
+using StreamDak.Integrations;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Ce que l'API locale demande à l'interface : naviguer et ouvrir des fenêtres (le thread d'interface reste du côté de l'application).</summary>
 public interface IApiShell
@@ -24,7 +24,7 @@ public interface IApiShell
 }
 
 /// <summary>
-/// API locale de TouchDeck : une requête JSON par ligne, une réponse JSON par ligne
+/// API locale de StreamDak : une requête JSON par ligne, une réponse JSON par ligne
 /// (<c>{"cmd":"ping"}</c> → <c>{"ok":true,...}</c>). Commandes : ping, status, values, profile, page, run, show, edit, settings.
 /// Le transport (canal nommé, réservé à l'utilisateur courant) est dans <see cref="LocalApiServer"/>.
 /// </summary>

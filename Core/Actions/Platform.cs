@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 // Ce que les actions demandent au système d'exploitation. Les implémentations Windows vivent dans Platform/Windows ;
 // une future version Linux fournirait les siennes sans toucher au moteur ni aux ViewModels.

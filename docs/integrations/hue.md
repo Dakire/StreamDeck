@@ -1,10 +1,10 @@
 # Philips Hue
 
-Connecteur `TouchDeck.Integrations.Hue`, par l'API locale CLIP v2 du pont (HTTPS, en-tête `hue-application-key`).
+Connecteur `StreamDak.Integrations.Hue`, par l'API locale CLIP v2 du pont (HTTPS, en-tête `hue-application-key`).
 
 ## Association
 
-1. Dans TouchDeck : **Paramètres › Intégrations › Philips Hue**, saisir l'adresse IP du pont.
+1. Dans StreamDak : **Paramètres › Intégrations › Philips Hue**, saisir l'adresse IP du pont.
 2. Appuyer sur le bouton du pont, puis cliquer sur **Associer au pont** dans les 30 secondes.
 3. La clé obtenue est chiffrée pour ton compte Windows (`secrets.dat`) ; elle n'apparaît ni dans `config.json` ni dans le journal.
 

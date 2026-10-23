@@ -4,7 +4,7 @@ using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Application WPF : branche la gestion des erreurs, construit le conteneur de services et ouvre le deck.</summary>
 // Application n'est pas IDisposable : le verrou d'instance, le serveur d'API et le conteneur sont libérés dans OnExit
@@ -33,6 +33,8 @@ public partial class App : Application
         TaskScheduler.UnobservedTaskException += (_, a) => { Log.Error("Tâche en échec non observée", a.Exception); a.SetObserved(); };
         // « --simulate » : les actions sont affichées au lieu d'être exécutées (essai de la grille sans risque)
         var options = AppOptions.FromArgs(e.Args);
+        // Avant l'instance unique (sa clé dépend du dossier) : reprend le dossier de l'ancien nom du produit (TouchDeck)
+        if (ConfigStore.MigrateLegacyDirectory()) Log.Info("Dossier de configuration repris de l'ancien nom du produit");
         if (!TakeSingleInstance(options)) { Shutdown(); return; }
         _services = AppHost.Build(options);   // configuration, thème et sauvegarde automatique avant la création des fenêtres
         base.OnStartup(e);
@@ -43,7 +45,7 @@ public partial class App : Application
         _api.Start();
         _tray = new TrayIcon(_services.GetRequiredService<IApiShell>());
         _watchdog = new UiWatchdog(Dispatcher);
-        // « TouchDeck.exe --edit » ouvre aussi l'éditeur au lancement
+        // « StreamDak.exe --edit » ouvre aussi l'éditeur au lancement
         if (options.OpenEditor)
         {
             var windows = _services.GetRequiredService<IAppWindows>();
@@ -69,7 +71,7 @@ public partial class App : Application
     /// </summary>
     bool TakeSingleInstance(AppOptions options)
     {
-        _instance = new System.Threading.Mutex(true, @"Local\TouchDeck." + LocalApiServer.InstanceKey(), out bool first);
+        _instance = new System.Threading.Mutex(true, @"Local\StreamDak." + LocalApiServer.InstanceKey(), out bool first);
         if (first) return true;
         try
         {

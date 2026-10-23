@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- OBS Studio par obs-websocket v5 (WebSocket local, intégré à OBS 28 et plus). Sans dépendance externe. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>StreamDak.Integrations.Obs</AssemblyName>
+    <RootNamespace>StreamDak.Integrations.Obs</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\StreamDak.Core.csproj" />
+  </ItemGroup>
+</Project>

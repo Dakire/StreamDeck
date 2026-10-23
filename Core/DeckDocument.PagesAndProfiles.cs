@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Document : opérations annulables sur les pages et les profils (ajout, copie, renommage, déplacement, suppression).</summary>
 public sealed partial class DeckDocument
@@ -67,6 +67,26 @@ public sealed partial class DeckDocument
             pg.Hidden = hidden;
             return OpResult.Success(page);
         });
+
+    /// <summary>
+    /// Fait de la page une page web plein cadre (<paramref name="url"/> : texte saisi, complété en https://), ou la remet en grille de boutons
+    /// (<paramref name="url"/> null). Les boutons de la page sont conservés dans les deux sens.
+    /// </summary>
+    public OpResult SetPageWeb(string profile, int page, string? url)
+    {
+        Uri? uri = null;
+        if (url != null && !WebAddress.TryParse(url, out uri)) return OpResult.Fail("Adresse non valide : saisis une adresse web (https://…)");
+        return Edit(uri == null ? "Page en grille de boutons" : "Page web", _ =>
+        {
+            var pg = FindPage(profile, page);
+            if (pg == null) return OpResult.Fail("Page introuvable");
+            string? kind = uri == null ? null : PageKinds.Web, address = uri?.AbsoluteUri;
+            if (pg.Kind == kind && pg.Url == address) return OpResult.Fail("Inchangé");
+            pg.Kind = kind;
+            pg.Url = address;
+            return OpResult.Success(page);
+        });
+    }
 
     /// <summary>Supprime une page ; la dernière page d'un profil est protégée.</summary>
     public OpResult DeletePage(string profile, int page) =>

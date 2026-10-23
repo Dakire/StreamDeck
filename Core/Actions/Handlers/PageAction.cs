@@ -1,4 +1,4 @@
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Affiche une autre page du profil courant (nom de page, « home » ou « back »).</summary>
 public sealed class PageAction : SyncActionHandler

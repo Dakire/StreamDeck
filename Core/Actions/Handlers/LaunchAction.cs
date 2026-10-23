@@ -1,4 +1,4 @@
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Lance un programme ou ouvre un dossier, avec des arguments facultatifs.</summary>
 public sealed class LaunchAction : BackgroundActionHandler

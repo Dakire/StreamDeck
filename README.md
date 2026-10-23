@@ -1,4 +1,4 @@
-# TouchDeck
+# StreamDak
 
 Tableau de bord de raccourcis façon Stream Deck pour Windows, pensé pour un écran tactile secondaire.
 Usage visé : perso, pro IT et gaming.
@@ -31,7 +31,7 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 | [Bilan de l'architecture](docs/phase2-report.md) | Trois projets, injection de dépendances, Serilog, gestionnaires d'action (phase 2) |
 | [Bilan des intégrations, plugins et API](docs/phase8-9-report.md) | Ce qui est fait, mesures, écarts avec la demande, décisions à prendre (phases 8 et 9) |
 | [Intégrations](docs/integrations/) | OBS, vMix, Elgato, Hue, Windows, Teams, X-Plane, Twitch, ClickUp, Notion, monday, raccourcis d'applications |
-| [Plugins](docs/plugins.md), [API locale](docs/local-api.md) | Ajouter une intégration sans modifier TouchDeck ; piloter le deck depuis un script |
+| [Plugins](docs/plugins.md), [API locale](docs/local-api.md) | Ajouter une intégration sans modifier StreamDak ; piloter le deck depuis un script |
 
 ## Fonctionnalités
 
@@ -47,7 +47,7 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 - Fenêtre qui ne prend pas le focus : les raccourcis arrivent à l'application active.
 - Plein écran sur l'écran secondaire ou mode fenêtre, sans masquer la barre des tâches (le deck occupe la zone de travail) ; le deck suit le branchement et le débranchement de l'écran, et se cale exactement même entre écrans de densités différentes.
 - Profil associé à une application : il s'affiche seul quand le programme est au premier plan.
-- **Édition intégrée**, sans aucune fenêtre séparée (menu ⚙ › *Modifier le deck*, *Modifier…* ou *Nouveau bouton…* dans le menu d'une case, ou `TouchDeck.exe --edit`) : un panneau d'**actions** apparaît à gauche et
+- **Édition intégrée**, sans aucune fenêtre séparée (menu ⚙ › *Modifier le deck*, *Modifier…* ou *Nouveau bouton…* dans le menu d'une case, ou `StreamDak.exe --edit`) : un panneau d'**actions** apparaît à gauche et
   les **propriétés** du bouton choisi à droite, la grille garde le même nombre de cases. Toucher une touche la sélectionne, toucher une action
   la pose dans la case choisie ; *Annuler* / *Rétablir* sont dans le dock, *Terminer* quitte le mode. La fenêtre n'est activable que pendant
   l'édition (saisie au clavier) ; en sortant elle ne prend de nouveau jamais le focus et le rend à l'application précédente.
@@ -72,7 +72,7 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 - Dock en édition : annuler / rétablir (100 niveaux), *Page* (renommer, dupliquer, masquer, déplacer, supprimer la page), *Quitter* (sort en annulant tout ce qui a été fait depuis l'ouverture, après confirmation) et *Terminer* (garde les modifications).
 - **Glisser une touche** (souris ou doigt) pour la déplacer : elle s'atténue, la case visée s'allume et une étiquette qui suit le pointeur dit ce que ferait le dépôt (déplacer, échanger, ranger dans le dossier).
   La pastille du profil ouvre ses options : changer de profil, format de la grille (3×2, 5×3, 6×3, 5×4, 8×4 ou automatique),
-  renommer, dupliquer, exporter / importer (`.touchdeck`), associer à une application, nouveau profil depuis un modèle, supprimer.
+  renommer, dupliquer, exporter / importer (`.streamdak`), associer à une application, nouveau profil depuis un modèle, supprimer.
 - Propriétés : aperçu, titre, étapes multiples (ajout, ordre, suppression), validation en direct ; position du titre, icône Fluent /
   emoji / texte, image importée et couleurs sont dans un bloc *Apparence* replié par défaut, avec réinitialisation de l'apparence.
   La saisie est un brouillon : l'aperçu suit chaque caractère, mais la configuration n'est écrite qu'à la validation, en une seule
@@ -82,6 +82,10 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 
 Toucher un bouton en mode édition ne l'exécute jamais.
 
+**Fenêtre (Windows 11)** : survoler le bouton plein écran de la barre du haut affiche les dispositions d'accrochage ; la fenêtre s'accroche en la glissant vers un
+bord ou le haut d'un écran (plein écran), ou avec Win + flèches, et se redimensionne à la souris. Au doigt : glisser la barre pour déplacer, double-toucher pour le
+plein écran, comme avant. Le deck ne prend jamais le focus.
+
 **Widgets** (catalogue › *Widgets*, ou clic droit › *Parcourir les actions*) : des cases qui affichent une information au lieu de lancer une action,
 sur plusieurs cases (de 1 × 1 à 5 × 3, réglable dans les propriétés ; les cases voisines doivent être vides).
 
@@ -89,10 +93,20 @@ sur plusieurs cases (de 1 × 1 à 5 × 3, réglable dans les propriétés ; les 
 - **Agenda** : les prochains événements de ton agenda Google (nombre et période réglables), mis à jour toutes les 5 minutes. Demande de connecter
   Google Workspace (Paramètres › Intégrations, voir `docs/integrations/google.md`) ; sans cela, la tuile dit quoi faire.
 - **Google Chat, Google Agenda (page web) et Gmail** : trois pages prêtes à l'emploi (catalogue › *Widgets*), à connecter une fois à ton compte dans le cadre.
+- **Processeur** et **Mémoire** : la charge du processeur (%) et la mémoire utilisée (Go sur le total) avec une jauge qui passe au rouge
+  à partir de 85 %, rafraîchies chaque seconde. Ils activent d'eux-mêmes le connecteur *Système Windows* (aucun compte, aucun réglage).
 - **Page web** : un site dans un cadre isolé (WebView2) : chat, tableau de bord, météo. Adresse `https://…` saisie dans les propriétés.
-  La page ne peut rien faire sur TouchDeck (pas de téléchargement, de fenêtre, de caméra ni de micro). Un menu ou une boîte de dialogue
-  masque temporairement la page ; le bouton *Saisie au clavier* de la tuile active le clavier pour taper dans la page, puis rend le focus.
-  Pour modifier ce widget, passe en mode édition (le toucher dans la page appartient à la page).
+  La page ne peut rien faire sur StreamDak (pas de téléchargement ni de fenêtre). Un menu ou une boîte de dialogue
+  masque temporairement la page ; la page n'est **pas rechargée** quand tu changes de page du deck (le cadre est gardé, 6 au plus) ; **zoom** avec − / + / « 100 % » dans la barre, au pincement
+du doigt ou à Ctrl + molette, mémorisé. **Notifications, micro et caméra** sont autorisés aux pages `https` du même site que l'adresse saisie (rappels de
+Google Agenda, Meet) ; tout autre droit est refusé, et Windows doit aussi autoriser micro et caméra aux applications de bureau.
+La saisie au clavier démarre toute seule quand un champ de texte de la page a le focus (et rend le focus en le quittant) ; le bouton *Saisie au clavier* de la tuile la force.
+  Pour modifier ce widget, passe en mode édition (le toucher dans la page appartient à la page). Le bouton *Ouvrir dans le navigateur* de la
+  barre du cadre ouvre l'adresse dans le navigateur par défaut ; si Google refuse la connexion dans un cadre intégré, la tuile le dit.
+
+**Page web en plein cadre** : une page entière peut afficher un site à la place de la grille de boutons. En mode édition, bouton *Page* du dock ›
+*Afficher une page web…* (« calendar.google.com » est complété en `https://…`), puis *Adresse de la page web…* pour la changer ou *Afficher une
+grille de boutons* pour revenir (les boutons de la page sont conservés). Les règles du cadre sont celles du widget Page web.
 
 **Intégrations** (Paramètres › Intégrations, chacune activée à la demande)
 
@@ -136,10 +150,10 @@ dotnet run -c Release
 dotnet run -c Release -- --simulate  # essai sans risque : les actions sont affichées, rien n'est envoyé au système
 dotnet run -c Release -- --edit      # démarre en mode édition
 dotnet build -c Release              # aucun avertissement toléré (analyseurs, style, documentation XML)
-dotnet test tests/TouchDeck.Tests    # tests automatisés (l'interface est rendue hors écran)
+dotnet test tests/StreamDak.Tests    # tests automatisés (l'interface est rendue hors écran)
 ```
 
-Pour essayer sans toucher à votre configuration : `$env:TOUCHDECK_DATA_DIR = "$env:TEMP\touchdeck-essai"`.
+Pour essayer sans toucher à votre configuration : `$env:STREAMDAK_DATA_DIR = "$env:TEMP\streamdak-essai"`.
 
 Pour produire l'exécutable :
 
@@ -151,7 +165,7 @@ La publication précompile le code (ReadyToRun) : démarrage environ 80 ms plus 
 
 ## Configuration
 
-Dossier : `%APPDATA%\TouchDeck` (ou le dossier de la variable d'environnement `TOUCHDECK_DATA_DIR`).
+Dossier : `%APPDATA%\StreamDak` (ou le dossier de la variable d'environnement `STREAMDAK_DATA_DIR`).
 
 | Élément | Rôle |
 |---|---|
@@ -159,7 +173,7 @@ Dossier : `%APPDATA%\TouchDeck` (ou le dossier de la variable d'environnement `T
 | `Icons\` | Images des boutons (PNG, nommées d'après leur contenu). |
 | `Backups\` | Sauvegardes automatiques (15 conservées). |
 | `config.v1.backup.json` | Copie intacte de l'ancien fichier, faite une seule fois lors du passage aux profils. |
-| `touchdeck.log` | Journal : démarrage (avec le temps de chaque étape), erreurs, actions en échec, changements d'écran. 1 Mo par fichier, 3 fichiers conservés (`touchdeck.log`, `touchdeck_001.log`…). |
+| `streamdak.log` | Journal : démarrage (avec le temps de chaque étape), erreurs, actions en échec, changements d'écran. 1 Mo par fichier, 3 fichiers conservés (`streamdak.log`, `streamdak_001.log`…). |
 
 L'éditeur enregistre à chaque modification validée (écriture atomique : un arrêt en cours d'écriture ne corrompt pas le fichier).
 Un fichier `config.json` invalide n'est jamais écrasé sans copie : il est conservé sous `config.invalide-<date>.json`.
@@ -233,7 +247,7 @@ Un bouton sans action dont le titre contient `{time}` ou `{date}` sert d'horloge
 - **Profil** : éditeur › menu du profil › *Exporter…* / *Importer…*.
 - **Configuration complète** : Paramètres › Sauvegardes.
 
-Le format `.touchdeck` est une archive zip (`profile.json` ou `config.json`, `icons/*.png`). L'import vérifie la taille,
+Le format `.streamdak` est une archive zip (`profile.json` ou `config.json`, `icons/*.png`). L'import vérifie la taille,
 le nombre d'éléments, les types d'actions et les noms d'images, ne lit jamais de chemin libre dans l'archive, demande
 confirmation (en signalant les actions qui lancent des programmes ou des scripts), fait une sauvegarde puis peut être annulé.
 
@@ -241,9 +255,9 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 
 | Dossier / fichier | Contenu |
 |---|---|
-| `Core/` (projet `TouchDeck.Core`, `net10.0`) | Logique sans WPF ni Windows : `Models`, `DeckDocument` (opérations, historique), `ConfigStore`, `ConfigNormalizer` (migration), `ActionTypes` (clés du format), `ActionCatalog`, `QuickCreate` (modèles, suggestions), `DroppedItem` (éléments déposés), `ActionValidator`, `HotkeySyntax`, `Displays`, `LabelTemplate`, `Countdowns`, `Log` (façade) |
+| `Core/` (projet `StreamDak.Core`, `net10.0`) | Logique sans WPF ni Windows : `Models`, `DeckDocument` (opérations, historique), `ConfigStore`, `ConfigNormalizer` (migration), `ActionTypes` (clés du format), `ActionCatalog`, `QuickCreate` (modèles, suggestions), `DroppedItem` (éléments déposés), `ActionValidator`, `HotkeySyntax`, `Displays`, `LabelTemplate`, `Countdowns`, `Log` (façade) |
 | `Core/Actions/` | Moteur d'actions (`ActionEngine`, `ActionRegistry`), un gestionnaire par type dans `Handlers/`, interfaces de plateforme, plateforme simulée |
-| `Platform/Windows/` (projet `TouchDeck.Platform.Windows`) | Implémentation Windows des interfaces de plateforme : `SendInput`, fenêtres Win32, Core Audio, registre. Seul `WindowsPlatform` est public |
+| `Platform/Windows/` (projet `StreamDak.Platform.Windows`) | Implémentation Windows des interfaces de plateforme : `SendInput`, fenêtres Win32, Core Audio, registre. Seul `WindowsPlatform` est public |
 | `Core/Integrations/`, `Core/Api/`, `Core/Plugins/` | Cadre d'intégrations (`IIntegration`, `IntegrationManager`, bases HTTP et REST), API locale, chargeur de plugins |
 | `Integrations/<Nom>/` | Un projet par connecteur : Obs, Vmix, ElgatoLight, Hue, WindowsSystem, XPlane, Teams, Twitch, ClickUp, Notion, Monday |
 | `samples/HelloPlugin` | Exemple de plugin |
@@ -254,7 +268,7 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 | `SettingsWindow.xaml(.cs)` | Paramètres (dialogues, focus, clavier) |
 | `Theme.cs`, `Core/MaterialColor.cs`, `IconCatalog.cs`, `App.xaml` | Palettes Material Design 3 générées depuis une couleur source (contrastes vérifiés), icônes, styles |
 | `docs/` | Architecture, configuration, développement, décisions (`adr/`), parité fonctionnelle, intégrations, bilans |
-| `tests/TouchDeck.Tests` | Tests xUnit : logique, migration, import, contrastes, navigation du deck, robustesse, composition (conteneur), architecture (frontières entre projets), rendu hors écran des fenêtres, mesures de performance (facultatives) |
+| `tests/StreamDak.Tests` | Tests xUnit : logique, migration, import, contrastes, navigation du deck, robustesse, composition (conteneur), architecture (frontières entre projets), rendu hors écran des fenêtres, mesures de performance (facultatives) |
 | `Directory.Build.props`, `.editorconfig` | Analyseurs, style vérifié à la compilation, avertissements bloquants, documentation XML obligatoire |
 
 ## Accessibilité
@@ -262,11 +276,11 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 Contraste des textes et des anneaux de focus vérifié par tests (WCAG 2.2 AA) en thèmes clair, sombre et AMOLED ; un test exige un nom accessible pour chaque contrôle interactif du deck, de l'éditeur, des paramètres et du panneau rapide ; focus clavier visible ;
 état jamais porté par la couleur seule (icône + texte pour les erreurs, coche sur les couleurs, bordure + anneau pour la sélection) ;
 noms accessibles et annonces polies (`LiveSetting`) pour les notifications et erreurs ; cibles de 48 px minimum ;
-animations coupées par le réglage TouchDeck ou celui de Windows.
+animations coupées par le réglage StreamDak ou celui de Windows.
 
 ## Limites connues
 
-- Pas de périphérique matériel : TouchDeck n'est pas un pilote de Stream Deck Elgato. Le « périphérique » est l'écran du deck.
+- Pas de périphérique matériel : StreamDak n'est pas un pilote de Stream Deck Elgato. Le « périphérique » est l'écran du deck.
 - Plugins : seulement du code local posé par l'utilisateur dans `plugins\` (jamais téléchargé), exécuté avec ses droits (voir `docs/plugins.md`).
 - Pas de traduction : l'interface est en français, il n'y a pas de sélecteur de langue.
 - Les profils par application se basent sur le nom du programme au premier plan, relevé toutes les 0,8 s.
@@ -286,19 +300,19 @@ animations coupées par le réglage TouchDeck ou celui de Windows.
 Le câble HDMI ne transporte que l'image. Associez le toucher au bon écran dans Paramètres Windows › Affichage ›
 « Étalonner l'écran pour la saisie tactile ».
 
-**TouchDeck dit que ma configuration est invalide.**
-Le fichier fautif est conservé sous `config.invalide-<date>.json` et TouchDeck démarre sur une configuration par défaut.
+**StreamDak dit que ma configuration est invalide.**
+Le fichier fautif est conservé sous `config.invalide-<date>.json` et StreamDak démarre sur une configuration par défaut.
 Corrigez le JSON, ou restaurez une sauvegarde depuis Paramètres › Sauvegardes.
 
 **Comment repartir de zéro ?**
-Quittez TouchDeck et renommez `%APPDATA%\TouchDeck\config.json`. Une configuration par défaut est créée au lancement
+Quittez StreamDak et renommez `%APPDATA%\StreamDak\config.json`. Une configuration par défaut est créée au lancement
 suivant.
 
 **Où trouver le journal ?**
-Dans `%APPDATA%\TouchDeck\touchdeck.log`. Le bouton Paramètres › « Ouvrir le dossier de configuration » y mène directement.
+Dans `%APPDATA%\StreamDak\streamdak.log`. Le bouton Paramètres › « Ouvrir le dossier de configuration » y mène directement.
 
 **Comment essayer sans risque ?**
-Lancez `TouchDeck.exe --simulate` : les actions s'affichent au lieu d'être exécutées. Ajoutez `TOUCHDECK_DATA_DIR` pour
+Lancez `StreamDak.exe --simulate` : les actions s'affichent au lieu d'être exécutées. Ajoutez `STREAMDAK_DATA_DIR` pour
 utiliser un dossier de configuration jetable.
 
 ## Sécurité

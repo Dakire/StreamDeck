@@ -1,9 +1,10 @@
 # Format de configuration
 
-TouchDeck enregistre tout dans un seul fichier JSON, `config.json`. Il est lisible et modifiable à la main : toute
+StreamDak enregistre tout dans un seul fichier JSON, `config.json`. Il est lisible et modifiable à la main : toute
 modification enregistrée est appliquée sans redémarrer (rechargement à chaud).
 
-- **Dossier** : `%APPDATA%\TouchDeck`, ou celui de la variable d'environnement `TOUCHDECK_DATA_DIR` (essais).
+- **Dossier** : `%APPDATA%\StreamDak`, ou celui de la variable d'environnement `STREAMDAK_DATA_DIR` (essais). Un ancien dossier
+  `%APPDATA%\TouchDeck` est déplacé vers le nouveau au premier lancement (ADR 0018) ; l'ancienne variable `TOUCHDECK_DATA_DIR` reste acceptée.
 - **Version du format** : `2` (`ConfigNormalizer.CurrentVersion`).
 - **Code** :
   - modèle : `Models.cs` ;
@@ -19,7 +20,7 @@ modification enregistrée est appliquée sans redémarrer (rechargement à chaud
 | `Backups\config-<date>-<n>.json` | Sauvegardes : au démarrage, avant un import ou une restauration, et à la demande (Paramètres). Une sauvegarde identique à la précédente n'est pas recréée. Les 15 dernières sont conservées. |
 | `config.v1.backup.json` | Copie intacte d'un fichier de l'ancien format, faite une seule fois avant la migration. |
 | `config.invalide-<date>.json` | Copie d'un `config.json` illisible au démarrage, conservée avant toute réécriture. |
-| `touchdeck.log` | Journal de diagnostic (Serilog) : démarrage, erreurs, actions en échec, changements d'écran. Au-delà de 1 Mo, un nouveau fichier est ouvert (`touchdeck_001.log`…) ; les 3 derniers sont conservés. |
+| `streamdak.log` | Journal de diagnostic (Serilog) : démarrage, erreurs, actions en échec, changements d'écran. Au-delà de 1 Mo, un nouveau fichier est ouvert (`streamdak_001.log`…) ; les 3 derniers sont conservés. |
 
 ## Structure
 
@@ -114,6 +115,9 @@ classDiagram
 | `Name` | `Page` | Nom unique dans le profil ; visé par les actions `page`. |
 | `Hidden` | `false` | Page absente des onglets du deck, mais accessible par une action `page`. |
 | `Buttons` | `[]` | Cases dans l'ordre de la grille, de gauche à droite puis de haut en bas. |
+| `Kind` | absent | `web` : la page affiche `Url` sur tout l'espace central, sans grille (les `Buttons` sont conservés, masqués). Absent ou inconnu : grille de boutons. |
+| `Url` | absent | Adresse `http` ou `https` d'une page `web`. Ignorée pour une grille. |
+| `Zoom` | absent (`100 %`) | Zoom d'une page `web`, en % (25 à 500). Absent à 100 %. |
 
 ### Bouton (`DeckButton`)
 
@@ -130,8 +134,8 @@ classDiagram
 | `ImagePath` | absent | Nom d'une image du dossier `Icons\` (hachage + `.png`). |
 | `ImageFit` | absent | `cover` (remplit la touche, défaut) ou `contain` (image entière). |
 | `IsFolder`, `Children` | absents | Dossier et son contenu, sur 8 niveaux au maximum. |
-| `Widget` | absent | `clock`, `agenda` ou `web` : le bouton est un widget (affichage, pas d'action). Identifiant inconnu : ignoré. |
-| `WidgetOptions` | absent | Réglages du widget : `seconds`, `hour12`, `date` (horloge), `count`, `days` (agenda), `url` (page web, http ou https). |
+| `Widget` | absent | `clock`, `agenda`, `web`, `cpu` ou `ram` : le bouton est un widget (affichage, pas d'action). Identifiant inconnu : ignoré. |
+| `WidgetOptions` | absent | Réglages du widget : `seconds`, `hour12`, `date` (horloge), `count`, `days` (agenda), `url` (page web, http ou https), `zoom` (page web, 25 à 500). |
 | `ColSpan`, `RowSpan` | absents (une case) | Largeur et hauteur d'un widget en cases (1 à 8). Les cases recouvertes doivent être vides. |
 
 Les clés marquées « absent » ne sont écrites que si elles ont une valeur (`JsonIgnore(WhenWritingDefault/Null)`) : le
@@ -158,7 +162,7 @@ flowchart TD
     G --> H
     H --> I[Sauvegarde dans Backups]
     H -- modification --> J[Sauvegarde automatique 300 ms<br/>fichier temporaire + File.Replace]
-    K[Modification externe de config.json] --> L{Écriture de TouchDeck ?<br/>hachage identique}
+    K[Modification externe de config.json] --> L{Écriture de StreamDak ?<br/>hachage identique}
     L -- oui --> M[Ignorée]
     L -- non --> N[Rechargement à chaud<br/>refusé sans perte si invalide]
     N --> H
@@ -167,7 +171,7 @@ flowchart TD
 - **Écriture atomique** : le JSON est écrit dans `config.json.tmp`, puis substitué par `File.Replace`. Un arrêt pendant
   l'écriture laisse l'ancien fichier intact.
 - **Nos propres écritures** sont reconnues par le hachage du contenu : le surveillant de fichier ne recharge pas ce que
-  TouchDeck vient d'écrire.
+  StreamDak vient d'écrire.
 - **Un fichier invalide n'est jamais écrasé** sans en garder une copie.
 
 ## Migrations

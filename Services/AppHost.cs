@@ -7,23 +7,23 @@ using System.Threading;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using TouchDeck.Actions;
-using TouchDeck.Integrations;
-using TouchDeck.Integrations.ClickUp;
-using TouchDeck.Integrations.ElgatoLight;
-using TouchDeck.Integrations.Google;
-using TouchDeck.Integrations.Hue;
-using TouchDeck.Integrations.Monday;
-using TouchDeck.Integrations.Notion;
-using TouchDeck.Integrations.Obs;
-using TouchDeck.Integrations.Twitch;
-using TouchDeck.Integrations.Vmix;
-using TouchDeck.Integrations.WindowsSystem;
-using TouchDeck.Integrations.XPlane;
-using TouchDeck.Integrations.Teams;
-using TouchDeck.Platform.Windows;
+using StreamDak.Actions;
+using StreamDak.Integrations;
+using StreamDak.Integrations.ClickUp;
+using StreamDak.Integrations.ElgatoLight;
+using StreamDak.Integrations.Google;
+using StreamDak.Integrations.Hue;
+using StreamDak.Integrations.Monday;
+using StreamDak.Integrations.Notion;
+using StreamDak.Integrations.Obs;
+using StreamDak.Integrations.Twitch;
+using StreamDak.Integrations.Vmix;
+using StreamDak.Integrations.WindowsSystem;
+using StreamDak.Integrations.XPlane;
+using StreamDak.Integrations.Teams;
+using StreamDak.Platform.Windows;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Branche la façade <see cref="Log"/> du Core sur Serilog.</summary>
 sealed class SerilogSink : ILogSink
@@ -53,7 +53,7 @@ sealed class SerilogSink : ILogSink
 public static class AppHost
 {
     /// <summary>Fichier du journal dans le dossier de configuration (1 Mo au maximum, 3 fichiers conservés).</summary>
-    public const string LogFileName = "touchdeck.log";
+    public const string LogFileName = "streamdak.log";
     const long LogMaxBytes = 1_000_000;
     const int LogFilesKept = 3;
 
@@ -87,7 +87,7 @@ public static class AppHost
         services.AddSingleton(_ =>
         {
             var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };   // le moteur gère le délai de chaque étape
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("TouchDeck/1.0");
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("StreamDak/1.0");
             return http;
         });
         // Un gestionnaire par type d'action ; les intégrations en ajoutent d'autres de la même façon
@@ -103,7 +103,7 @@ public static class AppHost
         services.AddSingleton<ISecretStore>(_ => new DpapiSecretStore(ConfigStore.Dir));
         services.AddSingleton(sp => new IntegrationManager(sp.GetServices<IIntegration>(), sp.GetRequiredService<DeckDocument>(), sp.GetRequiredService<ISecretStore>()));
 
-        // Identifiants déjà pris (types d'action de TouchDeck et intégrations livrées) : un plugin ne peut pas les reprendre
+        // Identifiants déjà pris (types d'action de StreamDak et intégrations livrées) : un plugin ne peut pas les reprendre
         var takenIds = new HashSet<string>(BuiltInActions.All.Select(h => h.Type), StringComparer.OrdinalIgnoreCase);
         AddIntegration<ObsIntegration>(services, takenIds);
         AddIntegration<VmixIntegration>(services, takenIds);
@@ -125,8 +125,8 @@ public static class AppHost
         services.AddSingleton<AppearanceService>();
         services.AddSingleton<IAppWindows, AppWindows>();
         // Éditeur intégré au deck (mode édition) : le deck le crée à l'entrée du mode et le libère à la sortie
-        services.AddSingleton<Func<TouchDeck.ViewModels.IEditorShell, TouchDeck.ViewModels.EditorViewModel>>(sp =>
-            shell => ActivatorUtilities.CreateInstance<TouchDeck.ViewModels.EditorViewModel>(sp, shell));
+        services.AddSingleton<Func<StreamDak.ViewModels.IEditorShell, StreamDak.ViewModels.EditorViewModel>>(sp =>
+            shell => ActivatorUtilities.CreateInstance<StreamDak.ViewModels.EditorViewModel>(sp, shell));
         services.AddSingleton<IApiShell, ApiShell>();
         services.AddSingleton<LocalApi>();
 

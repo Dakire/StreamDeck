@@ -1,6 +1,6 @@
 # Lampes Elgato (Key Light, Ring Light)
 
-Connecteur `TouchDeck.Integrations.ElgatoLight`, par l'API HTTP locale des lampes (port 9123, `/elgato/lights`). API non officielle.
+Connecteur `StreamDak.Integrations.ElgatoLight`, par l'API HTTP locale des lampes (port 9123, `/elgato/lights`). API non officielle.
 
 ## Prérequis
 

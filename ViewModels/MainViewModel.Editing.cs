@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 // Mode édition intégré au deck : un panneau d'actions à gauche et un panneau de propriétés à droite, dans la fenêtre du deck, à la place
 // de l'éditeur séparé. Le moteur est l'EditorViewModel (catalogue, sélection, brouillon, annuler / rétablir), sans sa fenêtre.

@@ -6,7 +6,7 @@
 ## Contexte
 
 Le fichier `config.json` est le seul état durable de l'utilisateur. Il est souvent modifié à la main et doit survivre aux
-mises à jour de TouchDeck. Le passage aux profils a imposé un changement de structure : `Pages` à la racine est devenu
+mises à jour de StreamDak. Le passage aux profils a imposé un changement de structure : `Pages` à la racine est devenu
 `Profiles[].Pages`.
 
 ## Décision

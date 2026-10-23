@@ -11,13 +11,13 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations.Google;
+namespace StreamDak.Integrations.Google;
 
 /// <summary>
 /// Google Workspace avec le projet Google Cloud de l'utilisateur : ajouter une ligne ou écrire une cellule dans Google Sheets,
 /// ajouter du texte à un document Google Docs, créer un événement Agenda en langage naturel. Connexion OAuth 2.0 « application de
 /// bureau » (navigateur, redirection locale 127.0.0.1, PKCE) ; seul le jeton de renouvellement est conservé, chiffré (DPAPI).
-/// TouchDeck n'embarque aucune application Google : l'écran « application non vérifiée » est normal pour un usage personnel.
+/// StreamDak n'embarque aucune application Google : l'écran « application non vérifiée » est normal pour un usage personnel.
 /// </summary>
 public sealed class GoogleIntegration : RestIntegrationBase, IPairableIntegration
 {
@@ -67,7 +67,7 @@ public sealed class GoogleIntegration : RestIntegrationBase, IPairableIntegratio
     /// <inheritdoc/>
     public string PairLabel => "Se connecter à Google";
     /// <inheritdoc/>
-    public string PairHelp => "Renseigne l'ID client et le secret, puis clique : ton navigateur s'ouvre pour autoriser TouchDeck (3 minutes).";
+    public string PairHelp => "Renseigne l'ID client et le secret, puis clique : ton navigateur s'ouvre pour autoriser StreamDak (3 minutes).";
     /// <inheritdoc/>
     public string PairedSecretField => "token";
 
@@ -254,7 +254,7 @@ public sealed class GoogleIntegration : RestIntegrationBase, IPairableIntegratio
             ["grant_type"] = "authorization_code", ["code_verifier"] = verifier,
         }, cancellation);
         return reply["refresh_token"]?.ToString()
-            ?? throw new InvalidOperationException("Google n'a pas renvoyé d'autorisation durable : révoque l'accès de TouchDeck sur myaccount.google.com/permissions puis recommence");
+            ?? throw new InvalidOperationException("Google n'a pas renvoyé d'autorisation durable : révoque l'accès de StreamDak sur myaccount.google.com/permissions puis recommence");
     }
 
     static HttpListener StartLoopback(out int port)
@@ -281,9 +281,9 @@ public sealed class GoogleIntegration : RestIntegrationBase, IPairableIntegratio
             string? code = query["code"], error = query["error"];
             bool valid = query["state"] == state && (code != null || error != null);
             var page = valid
-                ? (error == null ? "TouchDeck est connecté à Google. Tu peux fermer cet onglet." : "Connexion refusée. Tu peux fermer cet onglet.")
+                ? (error == null ? "StreamDak est connecté à Google. Tu peux fermer cet onglet." : "Connexion refusée. Tu peux fermer cet onglet.")
                 : "Requête ignorée.";
-            var bytes = Encoding.UTF8.GetBytes($"<!doctype html><meta charset=\"utf-8\"><title>TouchDeck</title><p style=\"font:16px Segoe UI\">{WebUtility.HtmlEncode(page)}</p>");
+            var bytes = Encoding.UTF8.GetBytes($"<!doctype html><meta charset=\"utf-8\"><title>StreamDak</title><p style=\"font:16px Segoe UI\">{WebUtility.HtmlEncode(page)}</p>");
             context.Response.ContentType = "text/html; charset=utf-8";
             context.Response.ContentLength64 = bytes.Length;
             await context.Response.OutputStream.WriteAsync(bytes, cancellation);

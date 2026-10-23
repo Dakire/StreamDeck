@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using TouchDeck.Actions;
+using StreamDak.Actions;
 
-namespace TouchDeck.Integrations;
+namespace StreamDak.Integrations;
 
 /// <summary>
 /// Type d'action d'une intégration : <c>Type</c> = identifiant de l'intégration, <c>Value</c> = commande, <c>Args</c> =

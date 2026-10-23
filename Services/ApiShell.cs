@@ -1,8 +1,8 @@
 using System;
 using System.Windows;
-using TouchDeck.Actions;
+using StreamDak.Actions;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Interface vue par l'API locale : chaque appel est ramené sur le thread d'interface, l'API répond depuis un autre thread.</summary>
 public sealed class ApiShell : IApiShell

@@ -5,10 +5,10 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
 using Microsoft.Extensions.DependencyInjection;
-using TouchDeck.Actions;
-using TouchDeck.ViewModels;
+using StreamDak.Actions;
+using StreamDak.ViewModels;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Fenêtre principale : uniquement ce qui relève de Win32 et du placement (sans focus, plein écran multi-écran,
@@ -25,6 +25,16 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     static readonly IntPtr HWND_TOPMOST = new(-1);
     static readonly IntPtr HWND_NOTOPMOST = new(-2);
     const uint SWP_NOACTIVATE = 0x0010;
+    // Barre de titre de Windows 11 : le bouton « plein écran » est déclaré à Windows comme bouton agrandir (HTMAXBUTTON), ce qui affiche les
+    // dispositions d'accrochage au survol ; la fenêtre est redimensionnable et accrochable (glisser vers un bord ou le haut de l'écran)
+    const int WM_NCHITTEST = 0x0084, WM_NCMOUSEMOVE = 0x00A0, WM_NCLBUTTONDOWN = 0x00A1, WM_NCLBUTTONUP = 0x00A2, WM_NCMOUSELEAVE = 0x02A2, WM_SYSCOMMAND = 0x0112;
+    const int HTCLIENT = 1, HTMAXBUTTON = 9;
+    const int SC_MAXIMIZE = 0xF030;
+    const int GWL_STYLE = -16, WS_THICKFRAME = 0x00040000, WS_MAXIMIZEBOX = 0x00010000;
+    /// <summary>Le doigt n'a pas de survol : après un appui tactile, la barre garde son fonctionnement tactile habituel pendant ce délai (ms).</summary>
+    const long TouchQuietMs = 800;
+    /// <summary>Largeur (DIP) des bords de la fenêtre plein écran où le redimensionnement est désactivé : le toucher y va aux touches.</summary>
+    const double EdgeDip = 8;
 
     [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr hWnd, int nIndex);
     [DllImport("user32.dll")] static extern int SetWindowLong(IntPtr hWnd, int nIndex, int value);
@@ -55,8 +65,17 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         // Écran branché ou débranché : le deck suit (ou revient sur l'écran principal si le sien disparaît)
         _displays.Changed += () => PlaceOnScreen(displayChanged: true);
         _vm.Navigated += AnimateGridIn;
+        // Accrochage, agrandissement par le système : l'état « plein écran » et l'icône suivent la taille réelle de la fenêtre
+        SizeChanged += (_, _) => SyncFullFlag();
+        LocationChanged += (_, _) => SyncFullFlag();
+        StateChanged += (_, _) => _vm.NotifyWindowState();
         _vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MainViewModel.Dialog)) FocusDialog(); };
-        Closed += (_, _) => { if (_isEditing) { _isEditing = false; _editing = false; } };   // une fenêtre fermée en pleine édition ne laisse pas le toucher détourné
+        Closed += (_, _) =>
+        {
+            if (_isEditing) { _isEditing = false; _editing = false; }
+            // Les cadres web rangés vivent plus longtemps que leurs vues : fermer le deck les libère (après le déchargement des vues)
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, Controls.WebFramePool.Clear);
+        };   // une fenêtre fermée en pleine édition ne laisse pas le toucher détourné
     }
 
     /// <summary>Boîte de dialogue ouverte : le champ de saisie (texte sélectionné) ou le bouton de validation reçoit le focus.</summary>
@@ -125,6 +144,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         // WPF n'active pas les boutons à partir du toucher (ADR 0013), les panneaux d'édition ne répondraient plus au doigt
         if (msg == WM_MOUSEACTIVATE && _editing) return IntPtr.Zero;
         if (msg == WM_MOUSEACTIVATE) { handled = true; return new IntPtr(MA_NOACTIVATE); }
+        if (_touchOwner != null && _touchOwner.HandleCaptionMessage(msg, wParam, lParam, out var captionResult)) { handled = true; return captionResult; }
         if (TouchTrace) TraceInput(msg, wParam);
         if (_touchOwner != null && IsTouchOrPenPointerMessage(msg, wParam, PointerTypeOf))
         {
@@ -134,6 +154,92 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
             handled = true;
         }
         return IntPtr.Zero;
+    }
+
+    // ---------- barre de titre de Windows 11 : disposition d'accrochage, accrochage par glissement ----------
+
+    long _lastTouchTick = long.MinValue / 2;
+    bool _maxHover;
+
+    /// <summary>true si un doigt vient de toucher la fenêtre : le survol (et donc la disposition d'accrochage) n'existe pas au toucher.</summary>
+    bool RecentTouch => Environment.TickCount64 - _lastTouchTick < TouchQuietMs;
+
+    /// <summary>
+    /// Messages de la barre de titre : le bouton plein écran est annoncé à Windows comme bouton agrandir (au survol de la souris, jamais au doigt), son clic est
+    /// traité ici ; l'agrandissement demandé par le système (disposition d'accrochage, Win + Haut) passe par le plein écran du deck ; en plein écran les bords
+    /// ne redimensionnent pas (le toucher y va aux touches).
+    /// </summary>
+    internal bool HandleCaptionMessage(int msg, IntPtr wParam, IntPtr lParam, out IntPtr result)
+    {
+        result = IntPtr.Zero;
+        switch (msg)
+        {
+            case WM_NCHITTEST:
+            {
+                long l = lParam.ToInt64();
+                int x = (short)(l & 0xFFFF), y = (short)((l >> 16) & 0xFFFF);
+                if (_full && OnWindowEdge(x, y)) { result = new IntPtr(HTCLIENT); return true; }
+                if (OnMaxButton(x, y)) { SetMaxHover(true); result = new IntPtr(HTMAXBUTTON); return true; }
+                SetMaxHover(false);
+                return false;
+            }
+            case WM_NCMOUSEMOVE:
+                if (wParam.ToInt64() != HTMAXBUTTON) SetMaxHover(false);
+                return false;
+            case WM_NCMOUSELEAVE:
+                SetMaxHover(false);
+                return false;
+            case WM_NCLBUTTONDOWN when wParam.ToInt64() == HTMAXBUTTON:
+                return true;   // le clic est traité au relâchement : sans cela Windows suivrait lui-même le bouton et agrandirait la fenêtre à sa façon
+            case WM_NCLBUTTONUP when wParam.ToInt64() == HTMAXBUTTON:
+                _vm.ToggleFullscreenCommand.Execute(null);
+                return true;
+            case WM_SYSCOMMAND when (wParam.ToInt64() & 0xFFF0) == SC_MAXIMIZE:
+                if (!_full) GoFullscreen(CurrentScreen());   // le plein écran du deck (zone de travail en pixels physiques), pas l'état « agrandie » de WPF
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>Le point (pixels physiques, écran) est sur le bouton plein écran, qui est visible et pas masqué par un menu ou un dialogue.</summary>
+    bool OnMaxButton(int x, int y)
+    {
+        if (RecentTouch || !MaxButton.IsVisible || _vm.HasDialog || _vm.MenuOpen) return false;
+        var origin = MaxButton.PointToScreen(new Point(0, 0));
+        var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(MaxButton);
+        return new Rect(origin.X, origin.Y, MaxButton.ActualWidth * dpi.DpiScaleX, MaxButton.ActualHeight * dpi.DpiScaleY).Contains(x, y);
+    }
+
+    /// <summary>Le point (pixels physiques, écran) est dans la bande de bord de la fenêtre.</summary>
+    bool OnWindowEdge(int x, int y)
+    {
+        if (!GetWindowRect(Hwnd, out var r)) return false;
+        int edge = (int)Math.Ceiling(EdgeDip * System.Windows.Media.VisualTreeHelper.GetDpi(this).DpiScaleX);
+        return x < r.Left + edge || x >= r.Right - edge || y >= r.Bottom - edge || y < r.Top + edge;
+    }
+
+    /// <summary>Survol du bouton plein écran : la souris est dans la zone non cliente, WPF ne le voit plus, on allume donc la couche de survol du bouton.</summary>
+    void SetMaxHover(bool hover)
+    {
+        if (_maxHover == hover) return;
+        _maxHover = hover;
+        if (MaxButton.Template?.FindName("Press", MaxButton) is not UIElement press) return;
+        if (hover) press.Opacity = 0.08; else press.ClearValue(OpacityProperty);
+    }
+
+    /// <summary>
+    /// L'état « plein écran » suit la taille réelle : la fenêtre qui occupe exactement la zone de travail de son écran est en plein écran, toute autre
+    /// taille (accrochage à une moitié, redimensionnement à la main) ne l'est plus.
+    /// </summary>
+    void SyncFullFlag()
+    {
+        if (Hwnd == IntPtr.Zero || WindowState != WindowState.Normal || !GetWindowRect(Hwnd, out var r)) return;
+        var wa = CurrentScreen().WorkArea;
+        bool full = Math.Abs(r.Left - wa.X) <= 2 && Math.Abs(r.Top - wa.Y) <= 2 && Math.Abs(r.Right - r.Left - wa.Width) <= 2 && Math.Abs(r.Bottom - r.Top - wa.Height) <= 2;
+        if (full == _full) return;
+        _full = full;
+        _vm?.NotifyWindowState();
     }
 
     /// <summary>Accès à HwndSource.InputFilterMessage (membre interne de WPF) ; null si la version de WPF ne l'expose plus.</summary>
@@ -161,8 +267,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         return pointerType(pointerId) is PT_TOUCH or PT_PEN;
     }
 
-    // Diagnostic : TOUCHDECK_TOUCHLOG=1 journalise les messages pointeur / souris et la position du curseur (touchdeck.log)
-    static readonly bool TouchTrace = Environment.GetEnvironmentVariable("TOUCHDECK_TOUCHLOG") == "1";
+    // Diagnostic : STREAMDAK_TOUCHLOG=1 journalise les messages pointeur / souris et la position du curseur (streamdak.log)
+    static readonly bool TouchTrace = Environment.GetEnvironmentVariable("STREAMDAK_TOUCHLOG") == "1";
 
     static void TraceInput(int msg, IntPtr wParam)
     {
@@ -197,6 +303,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
 
     void GoFullscreen(DisplayInfo s)
     {
+        if (WindowState == WindowState.Maximized) WindowState = WindowState.Normal;   // état « agrandie » de WPF : on repasse par la zone de travail exacte
         // Zone de travail (pixels physiques) : le deck occupe tout l'écran sauf la barre des tâches, qui reste visible et cliquable
         var b = s.WorkArea;
         SetWindowPos(Hwnd, ZOrder, b.X, b.Y, b.Width, b.Height, SWP_NOACTIVATE);
@@ -210,6 +317,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     /// <summary>Passe en fenêtre 1100×650 (DIP) ; avec cursorPx, la barre du haut est placée sous le doigt.</summary>
     void GoWindowed(DisplayInfo s, POINT? cursorPx = null)
     {
+        if (WindowState == WindowState.Maximized) WindowState = WindowState.Normal;
         double scale = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
         int w = (int)(1100 * scale), h = (int)(650 * scale);
         var wa = s.WorkArea;
@@ -231,6 +339,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     void OnDragBarDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ClickCount == 2) { ToggleFullscreen(); return; }
+        if (WindowState == WindowState.Maximized) WindowState = WindowState.Normal;
         if (_full)
         {
             // Position de l'appui (doigt ou souris) en pixels physiques : le curseur ne suit pas le toucher
@@ -238,12 +347,24 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
             GoWindowed(CurrentScreen(), new POINT { X = (int)at.X, Y = (int)at.Y });
         }
         try { DragMove(); } catch (InvalidOperationException) { }
+        FullscreenIfDroppedAtTop();
+    }
+
+    /// <summary>
+    /// Windows 11 agrandit une fenêtre lâchée en haut d'un écran. Si le déplacement natif ne l'a pas fait (fenêtre sans focus, déplacement au doigt), le deck
+    /// passe lui-même en plein écran sur l'écran où la souris est lâchée. Sans effet quand la souris n'a pas bougé (toucher).
+    /// </summary>
+    void FullscreenIfDroppedAtTop()
+    {
+        if (_full || WindowState != WindowState.Normal || RecentTouch || !GetCursorPos(out var c)) return;
+        var screen = _displays.All().FirstOrDefault(d => c.X >= d.Bounds.X && c.X < d.Bounds.X + d.Bounds.Width && c.Y >= d.Bounds.Y && c.Y < d.Bounds.Y + d.Bounds.Height);
+        if (screen != null && c.Y <= screen.Bounds.Y + 2) GoFullscreen(screen);
     }
 
     // ---------- IShell : ce que le ViewModel demande à la fenêtre ----------
 
     /// <inheritdoc/>
-    public bool IsFullscreen => _full;
+    public bool IsFullscreen => _full || WindowState == WindowState.Maximized;
     /// <inheritdoc/>
     public bool IsOnTop => _onTop;
 
@@ -259,7 +380,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     /// <inheritdoc/>
     public void ToggleFullscreen()
     {
-        if (_full) GoWindowed(CurrentScreen()); else GoFullscreen(CurrentScreen());
+        if (IsFullscreen) GoWindowed(CurrentScreen()); else GoFullscreen(CurrentScreen());
     }
 
     /// <inheritdoc/>

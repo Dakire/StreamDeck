@@ -3,7 +3,7 @@ using System.IO;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Icône de la zone de notification : retrouver le deck, l'éditeur et les paramètres quand la fenêtre est cachée ou sur un autre écran,
@@ -21,10 +21,10 @@ public sealed class TrayIcon : IDisposable
         _menu.Items.Add("Modifier le deck", null, (_, _) => shell.OpenEditor());
         _menu.Items.Add("Paramètres", null, (_, _) => shell.OpenSettings());
         _menu.Items.Add(new ToolStripSeparator());
-        _menu.Items.Add("Quitter TouchDeck", null, (_, _) => System.Windows.Application.Current.Shutdown());
+        _menu.Items.Add("Quitter StreamDak", null, (_, _) => System.Windows.Application.Current.Shutdown());
         _icon = new NotifyIcon
         {
-            Text = "TouchDeck",
+            Text = "StreamDak",
             Icon = LoadIcon(),
             ContextMenuStrip = _menu,
             Visible = true,

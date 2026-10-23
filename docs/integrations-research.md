@@ -1,6 +1,6 @@
 # Étude des intégrations
 
-Étude du 19 octobre 2026, avec l'état de réalisation du 20 octobre 2026 (section 0). Ce document recense, pour chaque logiciel cible, comment TouchDeck (WPF / .NET 9, Windows)
+Étude du 19 octobre 2026, avec l'état de réalisation du 20 octobre 2026 (section 0). Ce document recense, pour chaque logiciel cible, comment StreamDak (WPF / .NET 9, Windows)
 peut s'y connecter. Il a servi à choisir les intégrations à réaliser ; la section 0 dit lesquelles le sont.
 
 Règles de rédaction :
@@ -53,7 +53,7 @@ Légende : effort **S** (quelques jours), **M** (une à deux semaines), **L** (p
 | **Microsoft Teams** | API locale « appareils tiers » : WebSocket `localhost:8124`, avec appairage | Jeton et appairage pendant une réunion (fenêtre d'approbation dans Teams) | Windows ; prise en charge par le nouveau Teams **à vérifier** | `Teams.ThirdPartyAppApi`, `SvRooij.TeamsMonitor` (communautaires) | Micro, caméra, main levée, flou d'arrière-plan, réactions, quitter. **État de la réunion lisible** | Documentation officielle **à vérifier** ; comportement différent entre l'ancien et le nouveau client | M / forte |
 | **Zoom** | Raccourcis clavier : Alt+A (micro), Alt+V (caméra), Alt+Y (main levée). Option « global » dans les réglages de Zoom | Aucune | Windows | — | Envoi seulement, **aucun état** | Touches modifiables par l'utilisateur ; sources secondaires (page de support Zoom **à vérifier**) | **S / forte** |
 | **Voicemod** | Control API : WebSocket `ws://localhost:59129/v1/`, premier message `registerClient` | `clientKey` **fourni par Voicemod** sur demande (formulaire partenaire) | Windows | Aucune en .NET (clients TypeScript) | Choix de la voix, activer ou couper le changeur de voix, bruitages ; état de la voix | Obtenir une clé (délai, conditions) ; certaines fonctions sont payantes | M / moyenne |
-| **Adobe Creative Cloud** | (a) Raccourcis. (b) Plugins UXP (officiels dans Premiere Pro depuis la 25.6) ; CEP et ExtendScript en fin de vie | (b) Plugin installé côté Adobe, qui dialogue en local avec TouchDeck | Windows, macOS | — (plugin UXP en JavaScript) | (a) Outils, coupe, navigation dans la timeline, sans état. (b) Actions et états du projet | (b) Plugin JavaScript à développer et maintenir ; appels asynchrones ; API encore incomplète | (a) S / forte ; (b) L / moyenne |
+| **Adobe Creative Cloud** | (a) Raccourcis. (b) Plugins UXP (officiels dans Premiere Pro depuis la 25.6) ; CEP et ExtendScript en fin de vie | (b) Plugin installé côté Adobe, qui dialogue en local avec StreamDak | Windows, macOS | — (plugin UXP en JavaScript) | (a) Outils, coupe, navigation dans la timeline, sans état. (b) Actions et états du projet | (b) Plugin JavaScript à développer et maintenir ; appels asynchrones ; API encore incomplète | (a) S / forte ; (b) L / moyenne |
 | **DaVinci Resolve** | (a) Raccourcis. (b) Scripting externe Python ou Lua (`fusionscript.dll`) | Préférence « External scripting » : local ou réseau | Windows, macOS, Linux | Pas de .NET : passerelle Python | (b) Projets, timelines, rendu, changement de page | (b) Version **Studio** (payante) pour le scripting externe ; incompatibilités signalées avec Python 3.12 | (a) S / forte ; (b) L / moyenne |
 | **Blender** | (a) Raccourcis. (b) Add-on Python avec socket local : réseau sur un thread, file `queue.Queue` vidée par `bpy.app.timers` | Jeton local partagé (à concevoir) | Windows, macOS, Linux | Pas de .NET | (b) Opérateurs, modes, outils ; états (mode, objet actif) | `bpy` n'est pas thread-safe ; add-on à distribuer | (a) S / forte ; (b) M / moyenne |
 | **Microsoft 365** | (a) Raccourcis Outlook, Word, Excel. (b) Microsoft Graph | (b) MSAL.NET en client public avec le courtier WAM (aucune redirection) ; scopes délégués (`Mail.Send`, `Mail.ReadWrite`…) | Windows ; Graph : web | `Microsoft.Identity.Client` (+ Broker), `Microsoft.Graph` | (b) Messages non lus, prochaine réunion, présence Teams, envoi de modèles | Application Entra ID à enregistrer ; consentement administrateur possible en entreprise | (a) S / forte ; (b) M-L / moyenne |
@@ -122,7 +122,7 @@ la fois, chacune avec ses actions, ses états, ses tests et sa documentation.
 
 Deux exceptions, faute de solution technique :
 
-- **Ecamm Live** et **macOS** restent hors de portée tant que TouchDeck est en WPF. Elles seront rouvertes si une API
+- **Ecamm Live** et **macOS** restent hors de portée tant que StreamDak est en WPF. Elles seront rouvertes si une API
   réseau publique apparaît, ou si une interface Avalonia voit le jour (voir `ARCHITECTURE.md`).
 
 Certaines intégrations ont des prérequis à remplir **par l'utilisateur ou le mainteneur**. Sans eux, seule la variante
@@ -142,7 +142,7 @@ par raccourcis clavier sera livrée :
 - **Secrets** :
   - Stocker jetons et mots de passe avec DPAPI (`ProtectedData`, portée utilisateur) ou dans le Gestionnaire
     d'identification Windows.
-  - Ne jamais les écrire dans `config.json` ni dans `touchdeck.log`. Masquer toute valeur sensible avant journalisation.
+  - Ne jamais les écrire dans `config.json` ni dans `streamdak.log`. Masquer toute valeur sensible avant journalisation.
 - **OAuth** :
   - Flux PKCE avec redirection loopback sur un port choisi au hasard.
   - Aucun secret client embarqué : le binaire est un client public.
@@ -160,7 +160,7 @@ par raccourcis clavier sera livrée :
     être désactivé sans toucher au reste.
 - **Sécurité locale** :
   - Les ports locaux (OBS, vMix, Voicemod, X-Plane) sont accessibles à tout processus de la machine.
-  - TouchDeck ne doit pas exposer sa propre API sur le réseau par défaut.
+  - StreamDak ne doit pas exposer sa propre API sur le réseau par défaut.
   - Les actions `script` et `launch` gardent les droits de l'utilisateur.
 - **Robustesse** :
   - Délai maximal, annulation et reconnexion avec attente croissante.

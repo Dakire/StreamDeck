@@ -13,7 +13,7 @@ Le cahier des charges prévoyait Serilog, la dépendance a été validée.
 
 - **Façade dans le Core.** `Core/Log.cs` garde une API minimale (`Info`, `Warn`, `Error`) et délègue à un `ILogSink`. Le
   Core ne dépend d'aucune bibliothèque de journalisation. Sans destination, les messages sont ignorés.
-- **Serilog dans l'application.** `AppHost` crée un logger Serilog (fichier `touchdeck.log` du dossier de configuration,
+- **Serilog dans l'application.** `AppHost` crée un logger Serilog (fichier `streamdak.log` du dossier de configuration,
   1 Mo par fichier, 3 fichiers conservés) et branche la façade dessus ; `ILogger<T>` est disponible pour les services injectés
   (`Serilog.Extensions.Logging`).
 - **Tests.** Une destination en mémoire (`MemoryLogSink`) remplace la façade le temps d'un test.
@@ -22,6 +22,6 @@ Le cahier des charges prévoyait Serilog, la dépendance a été validée.
 ## Conséquences
 
 - Deux dépendances : `Serilog.Sinks.File` et `Serilog.Extensions.Logging`.
-- Le format de fichier change : `touchdeck_001.log` remplace `touchdeck.log.old` (documenté dans `configuration.md`).
+- Le format de fichier change : `streamdak_001.log` remplace `streamdak.log.old` (documenté dans `configuration.md`).
 - Les messages issus de `Log` et de `ILogger<T>` arrivent dans le même fichier (test `CompositionTests`).
 - Règle pour les intégrations : ne jamais journaliser un jeton ni un mot de passe, y compris dans une exception.

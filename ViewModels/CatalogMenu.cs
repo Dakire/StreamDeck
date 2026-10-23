@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Wpf.Ui.Controls;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>Description de menu partagée par l'éditeur et le deck : les actions du catalogue, une rubrique par catégorie.</summary>
 public static class CatalogMenu

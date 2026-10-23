@@ -1,17 +1,17 @@
 # OBS Studio
 
-Connecteur `TouchDeck.Integrations.Obs`, par obs-websocket v5 ([protocole](https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md)),
+Connecteur `StreamDak.Integrations.Obs`, par obs-websocket v5 ([protocole](https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md)),
 intégré à OBS Studio 28 et plus. Aucune dépendance externe : le client est écrit sur `ClientWebSocket`.
 
 ## Prérequis
 
 1. Dans OBS : **Outils › Réglages du serveur WebSocket › Activer le serveur WebSocket**.
 2. Noter le port (4455 par défaut) et, si l'authentification est activée, le mot de passe.
-3. Dans TouchDeck : **Paramètres › Intégrations › OBS Studio**, activer, renseigner l'adresse (`localhost` si OBS tourne sur ce PC),
+3. Dans StreamDak : **Paramètres › Intégrations › OBS Studio**, activer, renseigner l'adresse (`localhost` si OBS tourne sur ce PC),
    le port et le mot de passe, puis **Tester la connexion**.
 
 Le mot de passe est chiffré pour ton compte Windows (`secrets.dat`) : il n'est jamais écrit dans `config.json`, ni dans le journal.
-TouchDeck se reconnecte tout seul (2 s, 4 s… 60 s) quand OBS est fermé puis relancé.
+StreamDak se reconnecte tout seul (2 s, 4 s… 60 s) quand OBS est fermé puis relancé.
 
 ## Actions
 

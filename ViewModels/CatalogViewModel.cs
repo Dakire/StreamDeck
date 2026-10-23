@@ -8,7 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Wpf.Ui.Controls;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 public sealed partial class CatalogItemViewModel : ObservableObject
 {

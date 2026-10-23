@@ -116,7 +116,7 @@ variantes) ; ce n'est pas une mesure de l'application et je ne l'ai pas retenue.
   (`SetForegroundWindow`, **non vérifié sur le bureau réel**). ADR 0015, `AGENTS.md` mis à jour.
 - Une première tentative d'arrondir tous les boutons WPF-UI par un style implicite a cassé leur gabarit (visible sur les rendus) : retirée.
 - **Typographie MD3 non appliquée** : l'échelle actuelle est figée par `DesignSystemTests`.
-- `TouchDeck.exe` lancé depuis `bin\Release` n'a pas été arrêté (il était en cours) ; mes builds ont été faits dans `bin\work\`.
+- `StreamDak.exe` lancé depuis `bin\Release` n'a pas été arrêté (il était en cours) ; mes builds ont été faits dans `bin\work\`.
 
 ## Décisions qui vous attendent
 

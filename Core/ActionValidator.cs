@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using TouchDeck.Actions;
+using StreamDak.Actions;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Gravité d'un problème de configuration.</summary>
 public enum Severity
@@ -42,7 +42,7 @@ public static class ActionValidator
     /// <summary>Valeurs acceptées par l'action « media ».</summary>
     public static readonly string[] MediaKeys = { "playpause", "prev", "next", "stop", "mute", "voldown", "volup" };
     /// <summary>Commandes de l'action « audio » ; « volume » prend le niveau (0 à 100) dans Args.</summary>
-    public static readonly string[] AudioCommands = TouchDeck.AudioCommands.All.ToArray();
+    public static readonly string[] AudioCommands = StreamDak.AudioCommands.All.ToArray();
     /// <summary>Protocoles jamais ouverts par l'action « url » : ils permettent d'exécuter du code ou de lire des fichiers par détour.</summary>
     public static readonly string[] BlockedSchemes = { "javascript", "vbscript", "data", "file" };
 
@@ -112,7 +112,7 @@ public static class ActionValidator
                 break;
             case ActionTypes.Audio:
                 if (!AudioCommands.Contains(value.ToLowerInvariant())) Err("Choisis une commande audio dans la liste");
-                else if (value.Equals(TouchDeck.AudioCommands.Volume, StringComparison.OrdinalIgnoreCase)
+                else if (value.Equals(StreamDak.AudioCommands.Volume, StringComparison.OrdinalIgnoreCase)
                          && (!int.TryParse(a.Args, out var level) || level is < 0 or > 100))
                     Err("Indique un volume entre 0 et 100");
                 break;

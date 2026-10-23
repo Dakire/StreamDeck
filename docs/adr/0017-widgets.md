@@ -29,9 +29,9 @@ ou `calendar.error` dans ses valeurs d'état. Le widget s'abonne aux valeurs de 
 n'interrompt pas les autres commandes Google. `CalendarFeed` et `AgendaFormatter` (Core) sont purs et testés.
 
 **Page web.** Le cadre est un WebView2 (`Microsoft.Web.WebView2`), exception **explicitement acceptée** à la règle « pas de code distant » :
-la page s'affiche dans un navigateur isolé, elle n'est pas exécutée par TouchDeck. Garde-fous (`WebWidgetView`) :
+la page s'affiche dans un navigateur isolé, elle n'est pas exécutée par StreamDak. Garde-fous (`WebWidgetView`) :
 
-- profil de navigation propre à TouchDeck (`<dossier de configuration>\WebView2`), jamais celui d'Edge ;
+- profil de navigation propre à StreamDak (`<dossier de configuration>\WebView2`), jamais celui d'Edge ;
 - aucun objet hôte exposé, aucun message page → application, outils de développement et menus contextuels coupés ;
 - ni fenêtre, ni téléchargement, ni autorisation (caméra, micro, position, notifications) ;
 - navigation limitée à `http` et `https` ; adresse saisie par l'utilisateur seulement, validée (`WidgetTypes.IsWebAddress`) avant d'être écrite.

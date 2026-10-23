@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Un modèle de profil : des boutons prêts à l'emploi, construits à partir du catalogue d'actions.</summary>
 /// <param name="Id">Identifiant stable.</param>

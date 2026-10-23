@@ -1,18 +1,18 @@
 # Architecture
 
-TouchDeck est une application **WPF / .NET 10**, en MVVM avec CommunityToolkit.Mvvm et WPF-UI (lepoco, licence MIT). Elle est
+StreamDak est une application **WPF / .NET 10**, en MVVM avec CommunityToolkit.Mvvm et WPF-UI (lepoco, licence MIT). Elle est
 composée de **trois projets**, dont les frontières sont vérifiées par les tests (`ArchitectureTests`) :
 
 | Projet | Cible | Contenu | Connaît |
 |---|---|---|---|
-| `Core/` (`TouchDeck.Core`) | `net10.0` | Modèle, document annulable, configuration, moteur d'actions, interfaces de plateforme, journal (façade) | Rien d'autre : ni WPF, ni Windows, ni les autres projets |
-| `Platform/Windows/` (`TouchDeck.Platform.Windows`) | `net10.0-windows`, sans WPF | `SendInput`, fenêtres Win32, Core Audio (COM), registre. Seul `WindowsPlatform` (et `AutoStart`) est public | Core |
+| `Core/` (`StreamDak.Core`) | `net10.0` | Modèle, document annulable, configuration, moteur d'actions, interfaces de plateforme, journal (façade) | Rien d'autre : ni WPF, ni Windows, ni les autres projets |
+| `Platform/Windows/` (`StreamDak.Platform.Windows`) | `net10.0-windows`, sans WPF | `SendInput`, fenêtres Win32, Core Audio (COM), registre. Seul `WindowsPlatform` (et `AutoStart`) est public | Core |
 | `Integrations/<Nom>/` (un projet par connecteur) | `net10.0` (`net10.0-windows10.0.19041.0` pour le système Windows) | Un logiciel ou service piloté : commandes, valeurs d'état, connexion | Core |
-| racine (`TouchDeck`) | `net10.0-windows10.0.19041.0`, WPF | Fenêtres, ViewModels, services, composition (`AppHost`), API locale côté interface | Core, plateforme Windows et connecteurs |
+| racine (`StreamDak`) | `net10.0-windows10.0.19041.0`, WPF | Fenêtres, ViewModels, services, composition (`AppHost`), API locale côté interface | Core, plateforme Windows et connecteurs |
 
 ```mermaid
 flowchart TB
-    subgraph App["TouchDeck : application WPF"]
+    subgraph App["StreamDak : application WPF"]
         subgraph Vues["Vues"]
             MW["MainWindow (deck)<br/>Win32 : NOACTIVATE, placement"]
             SW[SettingsWindow]
@@ -31,14 +31,14 @@ flowchart TB
             OT["IconStore · ProfilePackage · TransferService<br/>Notifier · Motion"]
         end
     end
-    subgraph Core["TouchDeck.Core (net10.0)"]
+    subgraph Core["StreamDak.Core (net10.0)"]
         DD["DeckDocument<br/>modifications annulables, presse-papiers"]
         CS["ConfigStore · ConfigNormalizer<br/>format, migration, sauvegardes"]
         AE["ActionEngine · ActionRegistry · Handlers/<br/>un gestionnaire par type d'action"]
         PI["Interfaces de plateforme<br/>SimulatedPlatform"]
         UT["ActionTypes · ActionCatalog · ActionValidator<br/>HotkeySyntax · IconNames · Displays · Log"]
     end
-    subgraph Win["TouchDeck.Platform.Windows (net10.0-windows)"]
+    subgraph Win["StreamDak.Platform.Windows (net10.0-windows)"]
         WP["WindowsPlatform (public)"]
         NI["NativeInput (SendInput)"]
         WF["WindowFocus (fenêtres)"]
@@ -89,7 +89,7 @@ Une étape de bouton `{ Type = <id>, Value = <commande>, Args = <argument> }` es
 
 ```mermaid
 flowchart LR
-    subgraph Core["TouchDeck.Core"]
+    subgraph Core["StreamDak.Core"]
         IM["IntegrationManager<br/>boucle, reprise, secrets"]
         IA["IntegrationAction<br/>(type d'action = id)"]
         API["LocalApi · LocalApiServer<br/>canal nommé, utilisateur seul"]
@@ -124,7 +124,7 @@ locale sont décrits dans `docs/plugins.md` et `docs/local-api.md` (ADR 0012).
 | Rendu des touches | `ViewModels/TileFaceData.cs`, `Controls/TileFace` | Le modèle ne connaît pas le rendu ; la variante (standard, média, navigation, affichage, image) est déduite du contenu. |
 | Thème | `Theme.cs` | Palettes claire / sombre (contrastes testés), brushes `Deck*` publiées en `DynamicResource`, corps teinté des touches. |
 | Identifiants du format | `Core/ActionTypes.cs` | `ActionTypes`, `PageTargets`, `AudioCommands` : clés stables de `config.json`, figées par un test. |
-| Journal | `Core/Log.cs`, `Services/AppHost.cs` | Façade `Log` (Core) branchée sur Serilog ; `ILogger<T>` dans les services injectés. `touchdeck.log` (1 Mo, 3 fichiers) : démarrage, erreurs, échecs d'action, changements d'écran. |
+| Journal | `Core/Log.cs`, `Services/AppHost.cs` | Façade `Log` (Core) branchée sur Serilog ; `ILogger<T>` dans les services injectés. `streamdak.log` (1 Mo, 3 fichiers) : démarrage, erreurs, échecs d'action, changements d'écran. |
 | Notifications | `Services/Notifier.cs` | Toast de l'éditeur, message du deck (avec bouton *Annuler* ou *Modifier*). |
 | Création rapide | `Core/QuickCreate.cs`, `ViewModels/MainViewModel.TileMenu.cs`, `ViewModels/DeckDialogViewModel.cs` | Modèles, classement des suggestions, menu des cases, panneau de saisie. Une écriture = `DeckDocument.AddButton(s)` (ADR 0014). |
 | Glisser-déposer | `Core/DroppedItem.cs`, `Services/DropPayload.cs`, `MainWindow.Drop.cs`, `ViewModels/MainViewModel.Drop.cs` | Classe un chemin ou une adresse (Core, pur), lit l'objet OLE et l'icône (application), crée les boutons dans les cases libres. |

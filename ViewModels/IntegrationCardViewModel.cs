@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using TouchDeck.Integrations;
+using StreamDak.Integrations;
 using Wpf.Ui.Controls;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>Un réglage d'intégration à renseigner (adresse, port, mot de passe) ; enregistré quand le champ perd le focus.</summary>
 public sealed partial class IntegrationFieldViewModel : ObservableObject
@@ -88,7 +88,7 @@ public sealed partial class IntegrationCardViewModel : ObservableObject, IDispos
     /// <summary>Marche à suivre avant d'associer.</summary>
     public string PairHelp => (_integration as IPairableIntegration)?.PairHelp ?? "";
 
-    /// <summary>true si TouchDeck se connecte à cette intégration au démarrage et se reconnecte si besoin.</summary>
+    /// <summary>true si StreamDak se connecte à cette intégration au démarrage et se reconnecte si besoin.</summary>
     [ObservableProperty] bool _isEnabled;
     /// <summary>État de la connexion, en toutes lettres (jamais la couleur seule).</summary>
     [ObservableProperty] string _statusText = "";
@@ -139,7 +139,7 @@ public sealed partial class IntegrationCardViewModel : ObservableObject, IDispos
         };
     }
 
-    /// <summary>Associe TouchDeck à l'appareil et enregistre la clé obtenue comme secret.</summary>
+    /// <summary>Associe StreamDak à l'appareil et enregistre la clé obtenue comme secret.</summary>
     [RelayCommand]
     async Task PairAsync()
     {

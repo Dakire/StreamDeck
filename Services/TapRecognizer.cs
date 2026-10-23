@@ -1,6 +1,6 @@
 using System;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Reconnaît un appui bref d'un seul doigt (pixels physiques) : appui, éventuel mouvement, relâchement. Un doigt qui dépasse

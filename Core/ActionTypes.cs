@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Identifiants des types d'action, tels qu'ils sont écrits dans <c>config.json</c> (clé <c>Type</c>) et dans les
-/// fichiers <c>.touchdeck</c>. Ce sont des clés de format : ne jamais en renommer une sans migration (<see cref="ConfigNormalizer"/>).
+/// fichiers <c>.streamdak</c>. Ce sont des clés de format : ne jamais en renommer une sans migration (<see cref="ConfigNormalizer"/>).
 /// </summary>
 public static class ActionTypes
 {

@@ -1,8 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
-using TouchDeck.Actions;
+using StreamDak.Actions;
 
-namespace TouchDeck.Platform.Windows;
+namespace StreamDak.Platform.Windows;
 
 /// <summary>
 /// Volume et coupure des périphériques audio par défaut via Core Audio (IAudioEndpointVolume), sans dépendance externe.

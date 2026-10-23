@@ -8,9 +8,9 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using TouchDeck.ViewModels;
+using StreamDak.ViewModels;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Toucher du deck sans souris système. WPF n'active pas les boutons à partir du toucher : il attend la souris synthétique de Windows,
@@ -77,6 +77,7 @@ public partial class MainWindow
             _longPressWired = true;
             _longPressTimer.Tick += (_, _) => OnLongPressTick();
         }
+        _lastTouchTick = Environment.TickCount64;
         uint id = (uint)((long)wParam & 0xFFFF);
         if (!GetPointerInfo(id, out var info)) return;
         int x = info.ptPixelLocation.X, y = info.ptPixelLocation.Y;

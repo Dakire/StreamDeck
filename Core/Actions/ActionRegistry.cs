@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>
 /// Types d'action disponibles : un gestionnaire par identifiant (sans distinction de casse). Deux gestionnaires pour le
@@ -18,7 +18,7 @@ public sealed class ActionRegistry
         foreach (var handler in handlers) Register(handler);
     }
 
-    /// <summary>Registre des types fournis avec TouchDeck (<see cref="BuiltInActions.All"/>).</summary>
+    /// <summary>Registre des types fournis avec StreamDak (<see cref="BuiltInActions.All"/>).</summary>
     public static ActionRegistry CreateDefault() => new(BuiltInActions.All);
 
     /// <summary>Identifiants des types disponibles.</summary>

@@ -6,11 +6,11 @@ using System.Linq;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using TouchDeck.Actions;
-using TouchDeck.Integrations;
+using StreamDak.Actions;
+using StreamDak.Integrations;
 using Wpf.Ui.Controls;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>Contenu du panneau de propriétés selon la sélection.</summary>
 public enum PropertiesMode

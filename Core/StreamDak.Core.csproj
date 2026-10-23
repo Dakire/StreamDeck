@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Logique de StreamDak sans aucune dépendance à WPF ni à Win32 : modèle, document, configuration, moteur d'actions.
+       Une autre interface (Avalonia) ou une autre plateforme (Linux) peut s'y brancher sans y toucher. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>StreamDak.Core</AssemblyName>
+    <RootNamespace>StreamDak</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="StreamDak.Tests" />
+  </ItemGroup>
+</Project>

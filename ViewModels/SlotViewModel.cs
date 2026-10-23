@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>Une case de la grille de l'éditeur. L'objet reste le même quand le contenu change : sélection et focus sont conservés.</summary>
 public partial class SlotViewModel : ObservableObject

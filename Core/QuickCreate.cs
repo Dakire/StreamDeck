@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Modèle de bouton proposé en un clic dans le menu d'une case vide : une entrée du catalogue d'actions.</summary>
 public sealed record QuickTemplate(string Title, string CatalogId, string Icon);

@@ -1,4 +1,4 @@
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Exécute un fichier .ps1, .bat ou .cmd, ou une commande PowerShell, avec les droits de l'utilisateur.</summary>
 public sealed class ScriptAction : BackgroundActionHandler

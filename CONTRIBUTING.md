@@ -1,4 +1,4 @@
-# Contribuer à TouchDeck
+# Contribuer à StreamDak
 
 Ce guide complète [AGENTS.md](AGENTS.md), dont les règles s'imposent à toute contribution, humaine ou automatisée :
 - fenêtre sans focus ;
@@ -12,12 +12,12 @@ Il faut Windows 10 ou 11 et le SDK .NET 10 (voir [docs/DEVELOPMENT.md](docs/DEVE
 
 ```powershell
 dotnet build -c Release              # aucun avertissement toléré (TreatWarningsAsErrors)
-dotnet test tests/TouchDeck.Tests    # tous les tests, interface comprise (rendue hors écran)
+dotnet test tests/StreamDak.Tests    # tous les tests, interface comprise (rendue hors écran)
 dotnet run -c Release -- --simulate  # essai sans effet sur le système
 ```
 
-Pour vos essais, utilisez un dossier de configuration jetable : `$env:TOUCHDECK_DATA_DIR = "$env:TEMP\touchdeck-essai"`.
-Ne touchez pas à `%APPDATA%\TouchDeck`.
+Pour vos essais, utilisez un dossier de configuration jetable : `$env:STREAMDAK_DATA_DIR = "$env:TEMP\streamdak-essai"`.
+Ne touchez pas à `%APPDATA%\StreamDak`.
 
 ## Branches et commits
 
@@ -58,18 +58,18 @@ Ne touchez pas à `%APPDATA%\TouchDeck`.
 
 - **Logique.** Tout changement de logique (`Core/`, `Services/`, ViewModels) est livré avec un test.
 - **Comportement figé.** Avant de remanier du code, écrivez un test de caractérisation qui fige le comportement actuel.
-- **Interface.** Les tests d'interface passent par `WpfHost` (`tests/TouchDeck.Tests/UiHarness.cs`) : vraies fenêtres
+- **Interface.** Les tests d'interface passent par `WpfHost` (`tests/StreamDak.Tests/UiHarness.cs`) : vraies fenêtres
   rendues hors écran, plateforme simulée, configuration temporaire. Ne pilotez jamais le vrai bureau (captures, clics
   simulés).
-- **Captures.** `TOUCHDECK_SHOTS=<dossier>` garde les PNG rendus par les tests ; utile pour comparer un rendu avant et
+- **Captures.** `STREAMDAK_SHOTS=<dossier>` garde les PNG rendus par les tests ; utile pour comparer un rendu avant et
   après.
-- **Performances.** `TOUCHDECK_BENCH=<dossier>` lance la mesure de performance hors écran (`BenchmarkTests`) et ajoute
+- **Performances.** `STREAMDAK_BENCH=<dossier>` lance la mesure de performance hors écran (`BenchmarkTests`) et ajoute
   ses résultats à `bench.md`. N'optimisez pas sans mesure avant / après.
 
 ## Avant de proposer une modification
 
-1. `dotnet build -c Release` sans avertissement, `dotnet test tests/TouchDeck.Tests` au vert.
-2. Lancez l'application avec `TOUCHDECK_DATA_DIR` et exercez le chemin modifié.
+1. `dotnet build -c Release` sans avertissement, `dotnet test tests/StreamDak.Tests` au vert.
+2. Lancez l'application avec `STREAMDAK_DATA_DIR` et exercez le chemin modifié.
 3. Mettez à jour la documentation concernée : `README.md`, `docs/`, `CHANGELOG.md`. Si le choix est structurant,
    ajoutez une décision dans `docs/adr/`.
 4. Tout changement du format de `config.json` est validé avec le mainteneur avant d'être codé

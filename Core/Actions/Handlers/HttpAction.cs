@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Requête web (webhook) : GET sans corps, POST si un corps est indiqué (JSON s'il commence par { ou [).</summary>
 public sealed class HttpAction : ActionHandler

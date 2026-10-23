@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 // Glisser-déposer sur le deck : un fichier, un raccourci, un dossier ou une adresse déposé sur une case vide crée un bouton, sans dialogue.
 public partial class MainViewModel

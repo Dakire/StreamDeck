@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace TouchDeck.Platform.Windows;
+namespace StreamDak.Platform.Windows;
 
 /// <summary>Envoi de touches / texte au système via SendInput.</summary>
 internal static class NativeInput

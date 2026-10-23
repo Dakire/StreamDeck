@@ -8,7 +8,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations.ElgatoLight;
+namespace StreamDak.Integrations.ElgatoLight;
 
 /// <summary>
 /// Lampes Elgato (Key Light, Key Light Air, Ring Light) par leur API HTTP locale, sans authentification (<c>http://adresse:9123/elgato/lights</c>).

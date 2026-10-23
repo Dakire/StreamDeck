@@ -2,9 +2,9 @@ using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using TouchDeck.ViewModels;
+using StreamDak.ViewModels;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Glisser-déposer sur la grille du deck (fichier, raccourci, exécutable, dossier ou adresse web) : seule une case vide accepte le dépôt.
@@ -16,7 +16,7 @@ public partial class MainWindow
     IEditableTile? TileUnder(DragEventArgs e) =>
         TileAt(VisualTreeHelper.HitTest(DeckGrid, e.GetPosition(DeckGrid))?.VisualHit);
 
-    const string TileFormat = "TouchDeck.Tile";
+    const string TileFormat = "StreamDak.Tile";
     Point _dragStart;
     DeckTileViewModel? _dragSource;
 

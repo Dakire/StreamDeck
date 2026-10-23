@@ -4,9 +4,9 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using TouchDeck.Integrations;
+using StreamDak.Integrations;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>Ce que l'éditeur d'étape demande au panneau de propriétés qui le contient.</summary>
 public interface IStepOwner

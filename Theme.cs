@@ -2,7 +2,7 @@ using System;
 using System.Windows.Media;
 using Wpf.Ui.Appearance;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Jeu de couleurs (hexadécimal) d'un thème. Séparé des brushes pour pouvoir vérifier les contrastes dans les tests.</summary>
 public sealed record Palette(

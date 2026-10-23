@@ -4,9 +4,9 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using TouchDeck.Integrations;
+using StreamDak.Integrations;
 
-namespace TouchDeck.Platform.Windows;
+namespace StreamDak.Platform.Windows;
 
 /// <summary>
 /// Magasin de secrets chiffré par DPAPI pour l'utilisateur Windows courant (<c>secrets.dat</c> dans le dossier de configuration) :
@@ -15,6 +15,7 @@ namespace TouchDeck.Platform.Windows;
 /// </summary>
 public sealed class DpapiSecretStore : ISecretStore
 {
+    // Valeur historique (ancien nom du produit) : elle fait partie du chiffrement des secrets déjà enregistrés, ne pas la renommer
     static readonly byte[] Entropy = Encoding.UTF8.GetBytes("TouchDeck.secrets.v1");
     readonly string _path;
     readonly object _gate = new();

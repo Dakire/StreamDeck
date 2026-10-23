@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations.Notion;
+namespace StreamDak.Integrations.Notion;
 
 /// <summary>
 /// Notion par son API (https://developers.notion.com/reference) : ajouter une ligne à une base de données et changer le statut d'une page.

@@ -4,7 +4,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>
 /// Tuile d'un widget (hors mode édition) : elle affiche une information au lieu de lancer une action. Un toucher bref n'a pas d'effet ;
@@ -81,11 +81,20 @@ public sealed partial class WebWidgetViewModel : WidgetTileViewModel
     /// <summary>Adresse affichée, ou null si elle manque ou n'est pas une adresse http(s).</summary>
     public Uri? Source { get; init; }
 
+    /// <summary>
+    /// Identité du cadre : tant qu'elle ne change pas, la page chargée est gardée quand la tuile quitte l'écran (changement de page du deck) et retrouvée
+    /// telle quelle au retour, sans rechargement. Null : le cadre est libéré avec la tuile.
+    /// </summary>
+    public string? FrameKey { get; init; }
+
     /// <summary>Nom du site (en-tête de la tuile).</summary>
     public string Title => Source?.Host ?? "Page web";
 
     /// <summary>Message à la place de la page : adresse manquante, page injoignable, composant WebView2 absent. Vide quand la page s'affiche.</summary>
-    public string Status => _failure.Length > 0 ? _failure : Source == null ? "Renseigne l'adresse de la page dans les propriétés (mode édition)" : "";
+    public string Status => _failure.Length > 0 ? _failure : Source == null ? MissingAddressMessage : "";
+
+    /// <summary>Message quand l'adresse manque ou n'est pas valide (un widget et une page web ne se règlent pas au même endroit).</summary>
+    public string MissingAddressMessage { get; init; } = "Renseigne l'adresse de la page dans les propriétés (mode édition)";
 
     /// <summary>true si un message remplace la page.</summary>
     public bool HasStatus => Status.Length > 0;
@@ -99,8 +108,41 @@ public sealed partial class WebWidgetViewModel : WidgetTileViewModel
     /// <summary>true pendant la saisie au clavier : la fenêtre du deck est activable et le focus est dans la page.</summary>
     [ObservableProperty] bool _isTyping;
 
+    /// <summary>Zoom de la page en pourcentage (25 à 500) ; la vue l'applique au cadre, le deck l'enregistre.</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ZoomText))] int _zoomPercent = WebZoom.Normal;
+
+    /// <summary>Zoom affiché entre les boutons − et + (« 125 % »).</summary>
+    public string ZoomText => $"{ZoomPercent} %";
+
+    /// <summary>Appelé quand l'utilisateur change le zoom (boutons ou pincement) : le deck l'enregistre (renseigné par le deck).</summary>
+    public Action<int>? ZoomChanged { get; set; }
+
+    /// <summary>Change le zoom (borné) ; sans effet si c'est déjà celui-là.</summary>
+    public void SetZoom(int percent)
+    {
+        percent = WebZoom.Clamp(percent);
+        if (percent == ZoomPercent) return;
+        ZoomPercent = percent;
+        ZoomChanged?.Invoke(percent);
+    }
+
+    [RelayCommand]
+    void ZoomIn() => SetZoom(WebZoom.Next(ZoomPercent, 1));
+
+    [RelayCommand]
+    void ZoomOut() => SetZoom(WebZoom.Next(ZoomPercent, -1));
+
+    [RelayCommand]
+    void ZoomReset() => SetZoom(WebZoom.Normal);
+
     /// <summary>Demande de la vue : recharger la page (renseignée par la vue).</summary>
     public Action? ReloadRequested { get; set; }
+
+    /// <summary>Demande de la tuile : ouvrir l'adresse de la tuile dans le navigateur par défaut (renseignée par le deck).</summary>
+    public Action<Uri>? BrowserRequested { get; set; }
+
+    /// <summary>true quand la saisie au clavier a été lancée par la vue (un champ de texte de la page a le focus), pas par le bouton clavier.</summary>
+    public bool AutoTyping { get; set; }
 
     /// <summary>Demande de la tuile : commencer (true) ou finir (false) la saisie au clavier (renseignée par le deck).</summary>
     public Action<bool>? TypingRequested { get; set; }
@@ -135,5 +177,60 @@ public sealed partial class WebWidgetViewModel : WidgetTileViewModel
     }
 
     [RelayCommand]
-    void ToggleTyping() => TypingRequested?.Invoke(!IsTyping);
+    void ToggleTyping()
+    {
+        AutoTyping = false;   // le bouton clavier reprend la main : la saisie ne s'arrêtera plus toute seule
+        TypingRequested?.Invoke(!IsTyping);
+    }
+
+    /// <summary>Ouvre l'adresse configurée (jamais celle où la navigation a mené) dans le navigateur par défaut.</summary>
+    [RelayCommand]
+    void OpenInBrowser()
+    {
+        if (Source != null) BrowserRequested?.Invoke(Source);
+    }
+}
+
+/// <summary>
+/// Widget Processeur ou Mémoire : une valeur en grand, un détail et une jauge. Le deck le met à jour à chaque relevé de l'intégration
+/// « Système Windows » (toutes les secondes) ; tant qu'il n'y a pas de relevé, un message dit pourquoi.
+/// </summary>
+public sealed partial class SystemMeterWidgetViewModel : WidgetTileViewModel
+{
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasReading), nameof(HasStatus))] string _status = "";
+    [ObservableProperty] string _headline = "";
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDetail))] string _detail = "";
+    [ObservableProperty] double _percent;
+    [ObservableProperty] bool _isHigh;
+
+    /// <summary>true pour le widget Mémoire, false pour le widget Processeur.</summary>
+    public bool IsRam => Button.Widget == WidgetTypes.Ram;
+    /// <summary>Titre de la tuile (« Processeur » ou « Mémoire »).</summary>
+    public string Title => WidgetTypes.Find(Button.Widget)?.Name ?? "Système";
+    /// <summary>true quand une mesure est affichée (et pas un message).</summary>
+    public bool HasReading => Status.Length == 0;
+    /// <summary>true quand un message remplace la mesure.</summary>
+    public bool HasStatus => Status.Length > 0;
+    /// <summary>true si un détail est affiché sous la valeur.</summary>
+    public bool HasDetail => Detail.Length > 0;
+
+    /// <summary>Affiche une mesure.</summary>
+    public void Show(SystemReading reading)
+    {
+        Headline = reading.Headline;
+        Detail = reading.Detail;
+        Percent = reading.Percent;
+        IsHigh = reading.IsHigh;
+        Status = "";
+    }
+
+    /// <summary>Remplace la mesure par un message (intégration absente, en cours de connexion, en erreur).</summary>
+    public void ShowStatus(string message)
+    {
+        Status = message;
+        Headline = "";
+        Detail = "";
+        Percent = 0;
+        IsHigh = false;
+    }
 }

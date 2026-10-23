@@ -1,11 +1,11 @@
 # Matrice de parité fonctionnelle
 
 État au 19 octobre 2026. **Fait** = implémenté et couvert par un test automatisé (sauf mention).
-Les tests cités sont dans `tests/TouchDeck.Tests`.
+Les tests cités sont dans `tests/StreamDak.Tests`.
 
 ## P0 — Version opérationnelle
 
-| Fonction | Référence Stream Deck | TouchDeck | Écart / suite | Validation |
+| Fonction | Référence Stream Deck | StreamDak | Écart / suite | Validation |
 |---|---|---|---|---|
 | Grille configurable | Fixée par l'appareil | **Fait** : par profil (3×2 … 8×4), réglage global ou automatique selon l'écran ; touches aux proportions bornées, grille centrée | — | `MainDeckWindowRendersProfileTilesAndImages` (1080p, 16:9, portrait) |
 | Interface tactile | Matérielle | **Fait** : fenêtre sans focus (`WS_EX_NOACTIVATE`), cibles ≥ 48 px, appui instantané | Vérifier à la main avec un vrai écran tactile et le Bloc-notes | Manuel |
@@ -18,7 +18,7 @@ Les tests cités sont dans `tests/TouchDeck.Tests`.
 
 ## P1 — Utilisation avancée
 
-| Fonction | TouchDeck | Écart / suite | Validation |
+| Fonction | StreamDak | Écart / suite | Validation |
 |---|---|---|---|
 | Dossiers et pages | **Fait** : dossiers imbriqués (8 niveaux), pages masquées, sous-pages automatiques | — | `DeckDocumentTests` |
 | Macros / séquences | **Fait** : étapes ordonnées, pause, arrêt à la première erreur (étape signalée), délai maximal par étape, annulation | Répétitions et conditions : non | `ActionEngineTests` |
@@ -30,11 +30,11 @@ Les tests cités sont dans `tests/TouchDeck.Tests`.
 | Profil automatique par application | **Fait** (nom du programme au premier plan, relevé toutes les 0,8 s) | — | Manuel |
 | Raccourcis globaux (déclencher une touche depuis le clavier) | Non | `RegisterHotKey` derrière une interface `IHotkeyService` | — |
 | Démarrage automatique | **Fait** (clé Run de l'utilisateur) | — | Manuel |
-| Import / export | **Fait** : `.touchdeck` (profil ou configuration complète), contrôles de sécurité | Import de profils Elgato : non (format non documenté) | `PackageTests` |
+| Import / export | **Fait** : `.streamdak` (profil ou configuration complète), contrôles de sécurité | Import de profils Elgato : non (format non documenté) | `PackageTests` |
 
 ## P2 — Extensibilité
 
-| Fonction | TouchDeck | Approche envisagée |
+| Fonction | StreamDak | Approche envisagée |
 |---|---|---|
 | Plugins | Non | Étape 1 : actions « script » paramétrées, décrites par un manifeste JSON local (aucun code téléchargé). Étape 2 : processus séparés pilotés en JSON sur l'entrée/sortie standard, avec `IActionHandler` côté moteur. |
 | États multiples (bascule) | Non | Clé facultative `States` sur le bouton (changement de format à valider). |

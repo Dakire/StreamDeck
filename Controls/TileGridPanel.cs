@@ -2,7 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace TouchDeck.Controls;
+namespace StreamDak.Controls;
 
 /// <summary>
 /// Grille du deck : <see cref="Columns"/> × <see cref="Rows"/> cases de même taille, chaque tuile posée à son numéro de case
@@ -55,7 +55,7 @@ public sealed class TileGridPanel : Panel
         double cw = size.Width / cols, ch = size.Height / rows;
         int cell = Math.Max(0, GetCell(child));
         int col = Math.Min(cell % cols, cols - 1), row = cell / cols;
-        int cs = Math.Clamp(GetColSpan(child), 1, cols - col), rs = Math.Max(1, GetRowSpan(child));
+        int cs = Math.Clamp(GetColSpan(child), 1, cols - col), rs = Math.Clamp(GetRowSpan(child), 1, Math.Max(1, rows - row));
         return new Rect(col * cw, row * ch, cw * cs, ch * rs);
     }
 

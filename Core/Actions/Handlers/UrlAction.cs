@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Ouvre une adresse avec l'application associée, sauf les protocoles qui permettent d'exécuter du code ou de lire des fichiers.</summary>
 public sealed class UrlAction : BackgroundActionHandler

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Wpf.Ui.Controls;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>Éditeur : menus contextuels des cases, profils, pages et catalogue.</summary>
 public sealed partial class EditorViewModel
@@ -121,6 +121,10 @@ public sealed partial class EditorViewModel
         {
             new("Renommer", async () => await RenamePageAsync(page), SymbolRegular.Rename24),
             new("Dupliquer", () => DuplicatePage(page), SymbolRegular.CopyAdd24),
+            page.IsWeb
+                ? new("Adresse de la page web…", async () => await SetPageWebAsync(page), SymbolRegular.Globe24)
+                : new("Afficher une page web…", async () => await SetPageWebAsync(page), SymbolRegular.Globe24),
+            new("Afficher une grille de boutons", () => SetPageGrid(page), SymbolRegular.Grid24, Enabled: page.IsWeb),
             new(page.Hidden ? "Afficher dans les onglets" : "Masquer des onglets", () => TogglePageHidden(page), page.Hidden ? SymbolRegular.Eye24 : SymbolRegular.EyeOff24),
             MenuItemSpec.Separator,
             new("Déplacer à gauche", () => MovePage(page, -1), SymbolRegular.ArrowLeft24, Enabled: page.Index > 0),

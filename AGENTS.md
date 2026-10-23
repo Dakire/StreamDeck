@@ -4,18 +4,18 @@ Instructions pour les agents de code (Claude Code, Codex, Copilot, etc.). Lire a
 
 ## Projet
 
-TouchDeck : application WPF .NET 10 (`net10.0-windows`), tableau de bord de raccourcis pour écran tactile.
-Namespace racine `TouchDeck`, nullable activé, `ImplicitUsings` désactivé (écrire les `using`).
+StreamDak : application WPF .NET 10 (`net10.0-windows`), tableau de bord de raccourcis pour écran tactile.
+Namespace racine `StreamDak`, nullable activé, `ImplicitUsings` désactivé (écrire les `using`).
 
 ## Commandes
 
 ```powershell
 dotnet build -c Release                 # compilation
 dotnet run -c Release                   # lancement (--edit ouvre aussi l'éditeur)
-dotnet test tests/TouchDeck.Tests       # tests automatisés
+dotnet test tests/StreamDak.Tests       # tests automatisés
 ```
 
-Variable `TOUCHDECK_DATA_DIR` : utiliser un autre dossier de configuration pour les essais (ne pas toucher à `%APPDATA%\TouchDeck`).
+Variable `STREAMDAK_DATA_DIR` : utiliser un autre dossier de configuration pour les essais (ne pas toucher à `%APPDATA%\StreamDak`).
 Ajouter ou adapter un test pour tout changement de logique (`Core/`, `Services/`, ViewModels) ; les tests UI rendent les fenêtres hors écran.
 
 ## Règles à respecter
@@ -29,7 +29,8 @@ Ajouter ou adapter un test pour tout changement de logique (`Core/`, `Services/`
   ne jamais renommer ni supprimer une clé sans migration (`ConfigNormalizer`) ni test.
 - **Sécurité** : ne pas ajouter d'exécution de code issu d'une source distante. Les actions `script` et `launch`
   s'exécutent avec les droits de l'utilisateur. Seule exception acceptée : l'affichage d'une page web saisie par l'utilisateur dans le
-  cadre isolé du widget web (WebView2, ADR 0017), sans pont vers l'application.
+  cadre isolé du widget web ou de la page web plein cadre (WebView2, ADR 0017 et 0018), sans pont vers l'application. Caméra, micro et notifications y sont
+  autorisés aux seules pages https du même site que l'adresse saisie (ADR 0018) ; ne pas élargir.
 - **Win32** : les appels P/Invoke et COM restent dans le projet `Platform/Windows/` (`NativeInput.cs`, `WindowFocus.cs`, `NativeAudio.cs`,
   internes) et dans `MainWindow.xaml.cs` (placement de la fenêtre). Les actions et les ViewModels n'y accèdent qu'à travers les interfaces de
   `Core/Actions/Platform.cs` (implémentation : `Platform/Windows/WindowsPlatform.cs`) ; `Core/` ne référence ni WPF ni Win32 (`ArchitectureTests`).
@@ -55,6 +56,6 @@ Voir `CLAUDE.md` pour le détail.
 
 ## Avant de livrer
 
-1. `dotnet build -c Release` sans avertissement nouveau, `dotnet test tests/TouchDeck.Tests` au vert.
-2. Lancer l'application (avec `TOUCHDECK_DATA_DIR`) et exercer le chemin modifié (clic, édition, rechargement de config).
+1. `dotnet build -c Release` sans avertissement nouveau, `dotnet test tests/StreamDak.Tests` au vert.
+2. Lancer l'application (avec `STREAMDAK_DATA_DIR`) et exercer le chemin modifié (clic, édition, rechargement de config).
 3. Mettre à jour `README.md` si un comportement ou une clé de configuration change.

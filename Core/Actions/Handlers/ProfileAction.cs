@@ -1,4 +1,4 @@
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Affiche un autre profil sur le deck.</summary>
 public sealed class ProfileAction : SyncActionHandler

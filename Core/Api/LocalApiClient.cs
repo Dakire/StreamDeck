@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Client de l'API locale : envoie une requête et lit la réponse. Sert à la seconde instance de l'application et aux scripts.</summary>
 public static class LocalApiClient
@@ -27,7 +27,7 @@ public static class LocalApiClient
         }
         catch (OperationCanceledException) when (!cancellation.IsCancellationRequested)
         {
-            throw new TimeoutException("TouchDeck ne répond pas sur l'API locale");
+            throw new TimeoutException("StreamDak ne répond pas sur l'API locale");
         }
     }
 }

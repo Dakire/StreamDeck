@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Un événement d'agenda, tel que le widget l'affiche.</summary>
 /// <param name="Start">Début (heure locale pour un événement horaire, minuit local du premier jour pour une journée entière).</param>

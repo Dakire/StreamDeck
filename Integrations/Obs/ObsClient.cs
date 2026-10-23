@@ -8,7 +8,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations.Obs;
+namespace StreamDak.Integrations.Obs;
 
 /// <summary>Réponse d'une requête obs-websocket.</summary>
 /// <param name="Ok">true si OBS a exécuté la requête.</param>
@@ -175,7 +175,7 @@ public sealed class ObsClient : IAsyncDisposable
             if (_socket.State == WebSocketState.Open)
             {
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                await _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "TouchDeck", timeout.Token);
+                await _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "StreamDak", timeout.Token);
             }
         }
         catch (Exception ex) when (ex is WebSocketException or OperationCanceledException) { /* déjà fermée ou OBS ne répond plus */ }

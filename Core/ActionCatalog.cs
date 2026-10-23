@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Une entrée du catalogue : un bouton prêt à poser, avec ses actions pré-remplies.</summary>
 public sealed record CatalogAction(
@@ -57,7 +57,7 @@ public static class ActionCatalog
     static readonly List<string> ExtraCategories = new();
     static readonly Dictionary<string, CatalogAction> Extra = new();
 
-    /// <summary>Catégories dans l'ordre d'affichage du catalogue : celles de TouchDeck, puis une par intégration enregistrée.</summary>
+    /// <summary>Catégories dans l'ordre d'affichage du catalogue : celles de StreamDak, puis une par intégration enregistrée.</summary>
     public static IReadOnlyList<string> Categories { get { lock (Gate) return BuiltInCategories.Concat(ExtraCategories).ToList(); } }
 
     /// <summary>Icône Fluent de chaque catégorie (titre de section du catalogue).</summary>
@@ -78,7 +78,7 @@ public static class ActionCatalog
     static CatalogAction C(string id, string cat, string name, string desc, string icon, string color, DeckAction[] actions,
         string? note = null, string keywords = "") => new(id, cat, name, desc, icon, color, actions, note, false, keywords);
 
-    /// <summary>Toutes les actions prêtes à l'emploi, dans l'ordre d'affichage : celles de TouchDeck, puis celles des intégrations.</summary>
+    /// <summary>Toutes les actions prêtes à l'emploi, dans l'ordre d'affichage : celles de StreamDak, puis celles des intégrations.</summary>
     public static IReadOnlyList<CatalogAction> All { get { lock (Gate) return BuiltIn.Concat(Extra.Values).ToList(); } }
 
     /// <summary>

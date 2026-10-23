@@ -3,9 +3,9 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using TouchDeck.ViewModels;
+using StreamDak.ViewModels;
 
-namespace TouchDeck.Controls;
+namespace StreamDak.Controls;
 
 /// <summary>Dessine la face d'un bouton à partir d'un <see cref="TileFaceData"/>, avec des tailles proportionnelles à la case.</summary>
 public partial class TileFace : UserControl

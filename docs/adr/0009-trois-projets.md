@@ -11,8 +11,8 @@ dépendances cachées l'avaient d'ailleurs déjà violée (validation des raccou
 
 ## Décision
 
-- **`Core/`** (`TouchDeck.Core`, `net9.0`) : modèle, document, configuration, moteur d'actions, interfaces de plateforme.
-- **`Platform/Windows/`** (`TouchDeck.Platform.Windows`, `net9.0-windows`, sans WPF) : `SendInput`, fenêtres Win32, Core
+- **`Core/`** (`StreamDak.Core`, `net9.0`) : modèle, document, configuration, moteur d'actions, interfaces de plateforme.
+- **`Platform/Windows/`** (`StreamDak.Platform.Windows`, `net9.0-windows`, sans WPF) : `SendInput`, fenêtres Win32, Core
   Audio, registre. Seul `WindowsPlatform` (et `AutoStart`) est public, le reste est interne.
 - **Application WPF** à la racine : vues, ViewModels, services, composition.
 - **Dépendances levées** : syntaxe des raccourcis dans `HotkeySyntax` (la plateforme valide ensuite les caractères sur le

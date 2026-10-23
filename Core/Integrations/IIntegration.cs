@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations;
+namespace StreamDak.Integrations;
 
 /// <summary>État de la connexion d'une intégration avec le logiciel ou le service qu'elle pilote.</summary>
 public enum ConnectionState
@@ -53,7 +53,7 @@ public sealed record IntegrationCommand(string Name, string Label, string Descri
     string? StateKey = null, string Icon = "PlugConnected24", string Color = "#334155");
 
 /// <summary>
-/// Un logiciel ou un service que TouchDeck sait piloter. Une intégration expose ses <see cref="Commands"/> (actions), ses
+/// Un logiciel ou un service que StreamDak sait piloter. Une intégration expose ses <see cref="Commands"/> (actions), ses
 /// <see cref="Values"/> (états lisibles : titres dynamiques, voyants) et gère sa propre connexion. Une intégration qui échoue
 /// ne doit jamais bloquer l'interface ni les autres : elle lève une exception, le <see cref="IntegrationManager"/> la consigne
 /// et retente avec une attente croissante.

@@ -1,4 +1,4 @@
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>Ce que le ViewModel demande à la fenêtre : tout ce qui touche à Win32 et au placement.</summary>
 public interface IShell

@@ -5,7 +5,7 @@
 
 ## Contexte
 
-TouchDeck doit piloter des logiciels et services variés (OBS, vMix, Hue, Teams, simulateurs…), afficher leur état sur les
+StreamDak doit piloter des logiciels et services variés (OBS, vMix, Hue, Teams, simulateurs…), afficher leur état sur les
 touches, et ne jamais être bloqué ni déstabilisé par l'un d'eux. L'étude (`docs/integrations-research.md`) montre des
 protocoles très différents (WebSocket, HTTP, canal nommé, WinRT) et des secrets à protéger.
 

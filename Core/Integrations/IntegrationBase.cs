@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations;
+namespace StreamDak.Integrations;
 
 /// <summary>Base d'une intégration : état de connexion, valeurs d'état, notifications. Les classes dérivées implémentent la connexion et les commandes.</summary>
 public abstract class IntegrationBase : IIntegration

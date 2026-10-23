@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using TouchDeck.ViewModels;
+using StreamDak.ViewModels;
 using Wpf.Ui.Controls;
 
-namespace TouchDeck.Controls;
+namespace StreamDak.Controls;
 
 /// <summary>
 /// Transforme une description de menu (<see cref="MenuItemSpec"/>) en menu WPF-UI. WPF gère le reste de façon native :
