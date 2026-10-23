@@ -4,6 +4,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Corrigé (cadre web : autorisations)
+- **Google Agenda se croyait bloqué pour les notifications** : les versions précédentes refusaient tout et le profil du navigateur avait mémorisé ces refus
+  (sans barre d'adresse, aucun moyen de les lever). Les refus mémorisés des notifications, du micro et de la caméra sont remis à « demander » à l'ouverture
+  d'un cadre, et un refus n'est plus jamais mémorisé.
+
 ### Modifié (renommage : TouchDeck devient StreamDak)
 - Projets, assemblies, espaces de noms, textes, documentation, `streamdak.log`, extension `.streamdak`, variable `STREAMDAK_DATA_DIR`.
 - **Reprise des données existantes** : le dossier `%APPDATA%\TouchDeck` est déplacé vers `%APPDATA%\StreamDak` au premier lancement ; l'ancienne

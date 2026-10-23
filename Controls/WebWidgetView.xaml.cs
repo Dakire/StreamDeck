@@ -115,6 +115,7 @@ public partial class WebWidgetView : UserControl
         {
             await frame.Web.EnsureCoreWebView2Async(await GetEnvironment());
             Configure(frame);
+            await ResetStoredDenialsAsync(frame.Web.CoreWebView2);   // avant la navigation : la page doit voir « à demander », pas « bloqué »
             Log.Info($"Widget page web : WebView2 {frame.Web.CoreWebView2.Environment.BrowserVersionString} prêt, ouverture de {source.Host}");
             frame.Web.CoreWebView2.Navigate(source.AbsoluteUri);
         }
@@ -167,12 +168,37 @@ public partial class WebWidgetView : UserControl
         };
     }
 
+    /// <summary>
+    /// Les versions précédentes refusaient tout et le profil du navigateur a mémorisé ces refus : une page comme Google Agenda se croit bloquée par
+    /// l'utilisateur et ne redemande jamais (sans barre d'adresse, il n'y a aucun réglage de site pour lever le blocage). Les refus mémorisés des trois
+    /// droits autorisés sont remis à « demander » ; les autres réglages de site ne sont pas touchés.
+    /// </summary>
+    static async Task ResetStoredDenialsAsync(CoreWebView2 core)
+    {
+        try
+        {
+            foreach (var setting in await core.Profile.GetNonDefaultPermissionSettingsAsync())
+            {
+                if (setting.PermissionState != CoreWebView2PermissionState.Deny
+                    || setting.PermissionKind is not (CoreWebView2PermissionKind.Notifications or CoreWebView2PermissionKind.Microphone or CoreWebView2PermissionKind.Camera))
+                    continue;
+                await core.Profile.SetPermissionStateAsync(setting.PermissionKind, setting.PermissionOrigin, CoreWebView2PermissionState.Default);
+                Log.Info($"Widget page web : refus mémorisé de {setting.PermissionKind} pour {HostOf(setting.PermissionOrigin)} remis à « demander »");
+            }
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException or ArgumentException or NotSupportedException)
+        {
+            Log.Warn("Widget page web : réglages d'autorisations illisibles : " + ex.Message);
+        }
+    }
+
     /// <summary>Notifications, micro et caméra : accordés aux pages https du même site que l'adresse saisie (ADR 0018). Tout le reste est refusé.</summary>
     static void OnPermissionRequested(WebFrame frame, CoreWebView2PermissionRequestedEventArgs a)
     {
         bool device = a.PermissionKind is CoreWebView2PermissionKind.Notifications or CoreWebView2PermissionKind.Microphone or CoreWebView2PermissionKind.Camera;
         bool allowed = device && Uri.TryCreate(a.Uri, UriKind.Absolute, out var requester) && WebPermissions.MayUseDevices(requester, frame.Source);
         a.State = allowed ? CoreWebView2PermissionState.Allow : CoreWebView2PermissionState.Deny;
+        if (!allowed) a.SavesInProfile = false;   // un refus n'est jamais mémorisé : la page ne doit pas croire que l'utilisateur a bloqué ce droit
         Log.Info($"Widget page web : autorisation {a.PermissionKind} demandée par {HostOf(a.Uri)} : {(allowed ? "accordée" : "refusée")}");
     }
 
