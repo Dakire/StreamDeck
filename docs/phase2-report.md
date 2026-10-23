@@ -5,8 +5,8 @@ changement de comportement visible. Chaque étape est un commit compilé sans av
 
 ## En bref
 
-- **Trois projets** aux frontières vérifiées par le compilateur et par les tests : `TouchDeck.Core` (`net9.0`, sans WPF ni
-  Windows), `TouchDeck.Platform.Windows` (Win32 interne, sans WPF) et l'application WPF.
+- **Trois projets** aux frontières vérifiées par le compilateur et par les tests : `StreamDak.Core` (`net9.0`, sans WPF ni
+  Windows), `StreamDak.Platform.Windows` (Win32 interne, sans WPF) et l'application WPF.
 - **Injection de dépendances** : le localisateur statique `AppServices` est supprimé. `AppHost.Build` construit un
   conteneur ; ViewModels et fenêtres reçoivent leurs dépendances par constructeur ; les tests construisent le même
   conteneur en simulation.
@@ -21,10 +21,10 @@ changement de comportement visible. Chaque étape est un commit compilé sans av
 | Commit | Étape |
 |---|---|
 | `ee15c76` | Dossiers au-delà de 8 niveaux : le contenu est remonté dans le dernier dossier autorisé, plus aucun bouton perdu |
-| `11b2291` | Projet `TouchDeck.Core`. Trois dépendances cachées levées : `HotkeySyntax`, `IconNames`, fond par défaut |
+| `11b2291` | Projet `StreamDak.Core`. Trois dépendances cachées levées : `HotkeySyntax`, `IconNames`, fond par défaut |
 | `f8aacbb` | Conteneur d'injection, `ConfigPersistence`, `AppearanceService`, `IAppWindows`, `DisplayService` injecté, Serilog |
 | `e55edc7` | Une classe par type d'action, `ActionRegistry` |
-| `0a9e291` | Projet `TouchDeck.Platform.Windows` (types internes), `ArchitectureTests`, `AGENTS.md` et `CLAUDE.md` à jour |
+| `0a9e291` | Projet `StreamDak.Platform.Windows` (types internes), `ArchitectureTests`, `AGENTS.md` et `CLAUDE.md` à jour |
 | `cd53bc5` | Conteneur seul au lieu de l'hôte générique : construction 18 ms → 5 ms |
 
 Documentation : `docs/ARCHITECTURE.md` réécrit (trois projets, composition), ADR 0007 à 0010, `docs/DEVELOPMENT.md`,
@@ -87,7 +87,7 @@ profonds, `DisplayService` injecté.
 - **Vérification manuelle à faire** sur ton écran tactile : fenêtre sans focus (raccourci vers le Bloc-notes), plein écran
   multi-écran, débranchement. L'application a été lancée et fermée normalement en simulation (journal « Démarrage » puis
   « Arrêt »), mais pas pilotée.
-- **Format du journal.** `touchdeck_001.log` remplace `touchdeck.log.old`. Les anciens `.old` ne sont plus nettoyés.
+- **Format du journal.** `streamdak_001.log` remplace `streamdak.log.old`. Les anciens `.old` ne sont plus nettoyés.
 - **Dossiers remontés.** Un fichier édité à la main avec plus de 8 niveaux de dossiers charge désormais tous ses boutons,
   dans le dernier dossier autorisé, avec un avertissement ; l'organisation d'origine n'est pas reconstituée.
 
@@ -95,10 +95,10 @@ profonds, `DisplayService` injecté.
 
 ```powershell
 dotnet build -c Release                       # 0 avertissement, 0 erreur, 3 projets
-dotnet test tests/TouchDeck.Tests             # 232 tests au vert
-$env:TOUCHDECK_DATA_DIR = "$env:TEMP\touchdeck-essai"
+dotnet test tests/StreamDak.Tests             # 232 tests au vert
+$env:STREAMDAK_DATA_DIR = "$env:TEMP\streamdak-essai"
 dotnet run -c Release -- --simulate --edit    # deck et éditeur identiques à avant
-Get-Content "$env:TEMP\touchdeck-essai\touchdeck.log"
+Get-Content "$env:TEMP\streamdak-essai\streamdak.log"
 ```
 
 Dans le journal : une ligne `Démarrage`, une ligne `Services prêts en N ms (…)`, puis `Arrêt` à la fermeture.

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Titres dynamiques : « {time} », « {date} », « {time:HH:mm:ss} », « {date:dddd d MMMM} » (formats .NET), « {timer} »

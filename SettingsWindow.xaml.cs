@@ -3,10 +3,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
-using TouchDeck.Controls;
-using TouchDeck.ViewModels;
+using StreamDak.Controls;
+using StreamDak.ViewModels;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Fenêtre des paramètres : la logique vit dans <see cref="SettingsViewModel"/>, ici seulement les dialogues.</summary>
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001", Justification = "Le ViewModel est libéré à la fermeture de la fenêtre (Closed), fin de vie d'une Window WPF.")]

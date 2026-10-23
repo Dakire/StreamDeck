@@ -1,15 +1,15 @@
-<UserControl x:Class="TouchDeck.Controls.PropertiesPanel"
+<UserControl x:Class="StreamDak.Controls.PropertiesPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:b="clr-namespace:TouchDeck.Behaviors"
-             xmlns:vm="clr-namespace:TouchDeck.ViewModels"
-             xmlns:controls="clr-namespace:TouchDeck.Controls">
+             xmlns:b="clr-namespace:StreamDak.Behaviors"
+             xmlns:vm="clr-namespace:StreamDak.ViewModels"
+             xmlns:controls="clr-namespace:StreamDak.Controls">
   <!-- Panneau de propriétés du bouton sélectionné ; DataContext : EditorViewModel (éditeur, ou mode édition du deck) -->
   <UserControl.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="/TouchDeck;component/Themes/EditorShared.xaml"/>
+        <ResourceDictionary Source="/StreamDak;component/Themes/EditorShared.xaml"/>
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </UserControl.Resources>
@@ -113,7 +113,7 @@
                             PlaceholderText="https://…" AutomationProperties.Name="Adresse de la page web"/>
                 <TextBlock Text="{Binding WidgetUrlError}" Foreground="{DynamicResource DeckDanger}" FontSize="12" TextWrapping="Wrap" Margin="2,6,0,0"
                            AutomationProperties.LiveSetting="Assertive"/>
-                <TextBlock Text="La page s'affiche dans un cadre isolé : elle ne peut pas agir sur TouchDeck. Le clavier reste à l'application active." Style="{StaticResource EditorHint}"/>
+                <TextBlock Text="La page s'affiche dans un cadre isolé : elle ne peut pas agir sur StreamDak. Le clavier reste à l'application active." Style="{StaticResource EditorHint}"/>
               </StackPanel>
             </StackPanel>
           </Border>

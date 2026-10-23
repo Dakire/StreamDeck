@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using TouchDeck.Actions;
+using StreamDak.Actions;
 
-namespace TouchDeck.Platform.Windows;
+namespace StreamDak.Platform.Windows;
 
 /// <summary>Implémentation Windows des services de plateforme : SendInput, ShellExecute, fenêtres Win32, Core Audio.</summary>
 public sealed class WindowsPlatform : IKeyboardService, IAppLauncher, IWindowService, IAudioService

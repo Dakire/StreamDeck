@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Ouverture des paramètres et entrée dans l'édition : l'édition n'a plus de fenêtre, elle se fait dans le deck.</summary>
 public interface IAppWindows

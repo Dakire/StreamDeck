@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>
 /// Plateforme simulée : rien n'est envoyé au système, chaque opération est consignée. Sert aux tests et au mode

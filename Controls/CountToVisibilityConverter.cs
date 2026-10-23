@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace TouchDeck.Controls;
+namespace StreamDak.Controls;
 
 /// <summary>Visible si le nombre est supérieur à zéro, replié sinon (section sans élément masquée).</summary>
 public sealed class CountToVisibilityConverter : IValueConverter

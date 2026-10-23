@@ -1,6 +1,6 @@
 using System;
 
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Minuteur : démarre le compte à rebours du bouton, ou l'arrête s'il tourne déjà. Sans délai maximal.</summary>
 public sealed class TimerAction : SyncActionHandler

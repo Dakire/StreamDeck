@@ -1,4 +1,4 @@
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>Éditeur : glisser-déposer sur la grille (déplacer, échanger, copier, ranger dans un dossier, ajouter depuis le catalogue).</summary>
 public sealed partial class EditorViewModel
@@ -71,7 +71,7 @@ public sealed partial class EditorViewModel
     /// <summary>Dépôt sur un onglet de page : le bouton va à la première case libre de cette page.</summary>
     public bool CanDropOnPage(DragPayload payload, PageTabViewModel page) =>
         !payload.IsCatalog && payload.Source != null && _doc.Get(payload.Source, payload.SourceIndex) != null
-        && !(payload.Source.Equals(new Place(_profile, page.Index)));
+        && !page.IsWeb && !(payload.Source.Equals(new Place(_profile, page.Index)));
 
     /// <summary>Envoie l'élément glissé dans une autre page (première case libre).</summary>
     public void DropOnPage(DragPayload payload, PageTabViewModel page)

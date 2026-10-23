@@ -5,12 +5,12 @@
 ## Contexte
 
 Application WPF .NET 10 de type Stream Deck pour écran tactile (usage perso, IT, gaming).
-Le projet s'appelle `TouchDeck` (assembly et namespace), le dépôt `StreamDeck`.
+Le projet s'appelle `StreamDak` (assembly et namespace), le dépôt `StreamDeck`.
 
 ## Architecture actuelle
 
-- **Trois projets** : `Core/` (`TouchDeck.Core`, net10.0 : modèle, document, configuration, moteur d'actions, sans WPF ni Win32),
-  `Platform/Windows/` (`TouchDeck.Platform.Windows` : SendInput, Core Audio, fenêtres Win32, registre ; seul `WindowsPlatform` est public),
+- **Trois projets** : `Core/` (`StreamDak.Core`, net10.0 : modèle, document, configuration, moteur d'actions, sans WPF ni Win32),
+  `Platform/Windows/` (`StreamDak.Platform.Windows` : SendInput, Core Audio, fenêtres Win32, registre ; seul `WindowsPlatform` est public),
   et l'application WPF à la racine. Les frontières sont vérifiées par `ArchitectureTests`.
 - **MVVM** avec CommunityToolkit.Mvvm. Un seul `DeckDocument` (`Core/DeckDocument.cs`, sans WPF) porte la configuration, l'historique
   annuler/rétablir et le presse-papiers ; deck, éditeur et paramètres le reçoivent par injection de dépendances.
@@ -21,7 +21,7 @@ Le projet s'appelle `TouchDeck` (assembly et namespace), le dépôt `StreamDeck`
 - **Injection de dépendances** (conteneur `Microsoft.Extensions.DependencyInjection` seul, sans hôte générique, ADR 0007) : `AppHost.Build` est la racine de composition (les tests construisent le même
   conteneur en simulation). `ConfigPersistence` : sauvegarde automatique (300 ms, écriture atomique) et rechargement à chaud (ignore nos propres
   écritures) ; `AppearanceService` : thème / animations ; `IAppWindows` : éditeur et paramètres. Plus de localisateur statique.
-- **Journal** : façade `Log` (Core) branchée sur Serilog (`touchdeck.log`) ; `ILogger<T>` pour les services injectés.
+- **Journal** : façade `Log` (Core) branchée sur Serilog (`streamdak.log`) ; `ILogger<T>` pour les services injectés.
 - Deck : `MainWindow.xaml` + `MainViewModel` (profil, page, dossier, sous-page, menu) + `LayoutMetrics`. `MainWindow.xaml.cs` ne garde que
   Win32 et le placement (NOACTIVATE, plein écran multi-écran) et implémente `IShell`.
 - Édition : plus de fenêtre d'édition (ADR 0016). Le mode édition du deck (`MainWindow.Edit.cs`, `MainViewModel.Editing.cs`) affiche `CatalogPanel` à gauche et
@@ -37,8 +37,8 @@ Le projet s'appelle `TouchDeck` (assembly et namespace), le dépôt `StreamDeck`
   tests et `--simulate` : `SimulatedPlatform`). Détail : `docs/ARCHITECTURE.md`.
 - Deck : touches dessinées par `TileFace` selon `TileKind` (corps teinté, pastille, variantes) ; seule la tuile change pendant une exécution.
 - Écran du deck : `MonitorDevice` (identifiant) prioritaire sur `Monitor` (index), résolu par `DisplayResolver`.
-- Tests : `tests/TouchDeck.Tests` (xUnit). `UiHarness` démarre une vraie application WPF sur un thread STA et rend les fenêtres hors écran
-  (aucune fenêtre affichée, dossier de config temporaire) ; il capte aussi les erreurs de liaison de données. Définir `TOUCHDECK_SHOTS` pour garder les PNG.
+- Tests : `tests/StreamDak.Tests` (xUnit). `UiHarness` démarre une vraie application WPF sur un thread STA et rend les fenêtres hors écran
+  (aucune fenêtre affichée, dossier de config temporaire) ; il capte aussi les erreurs de liaison de données. Définir `STREAMDAK_SHOTS` pour garder les PNG.
 
 ## Chantier : modernisation Fluent / Windows 11
 
@@ -57,7 +57,7 @@ Contraintes spécifiques à ne pas casser pendant la migration :
 
 - `ui:FluentWindow` : vérifier que `WS_EX_NOACTIVATE` et le hook `WM_MOUSEACTIVATE` fonctionnent toujours
   (c'est le cœur du produit). Tester avec un raccourci envoyé vers le Bloc-notes.
-- Le plein écran multi-écran se fait par `SetWindowPos` en pixels physiques ; garder cette logique.
+- Le plein écran multi-écran se fait par `SetWindowPos` en pixels physiques ; garder cette logique (les agrandissements demandés par Windows 11, `SC_MAXIMIZE`, y passent : ADR 0018).
 - Le mode édition, les sous-pages et le rechargement à chaud doivent rester équivalents.
 - Mica exige Windows 11 : prévoir un fond uni en repli.
 

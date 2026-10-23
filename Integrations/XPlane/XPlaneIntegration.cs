@@ -7,7 +7,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations.XPlane;
+namespace StreamDak.Integrations.XPlane;
 
 /// <summary>
 /// X-Plane 12 (12.1.1 et plus) par son API web locale (<c>http://hôte:8086/api</c>, documentation :

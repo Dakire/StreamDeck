@@ -3,9 +3,9 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using TouchDeck.ViewModels;
+using StreamDak.ViewModels;
 
-namespace TouchDeck.Behaviors;
+namespace StreamDak.Behaviors;
 
 /// <summary>Sur un TextBox : une combinaison clavier (Ctrl/Alt/Win + touche, ou touche F) est écrite sous la forme « ctrl+shift+m ».</summary>
 public static class HotkeyCapture

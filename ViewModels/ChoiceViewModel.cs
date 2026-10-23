@@ -4,7 +4,7 @@ using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>Pastille de choix (type d'action, touche média, page, modèle…) ; IsSelected la met en évidence.</summary>
 public partial class ChoiceViewModel : ObservableObject

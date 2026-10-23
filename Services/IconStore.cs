@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Images de boutons : importées, redimensionnées (512 px max) et stockées en PNG sous un nom dérivé de leur contenu,

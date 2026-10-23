@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Wpf.Ui.Controls;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Icônes des boutons : noms Fluent (« Play24 »…) pour un rendu minimaliste. Les anciens emojis connus sont

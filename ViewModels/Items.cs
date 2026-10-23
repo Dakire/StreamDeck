@@ -1,7 +1,7 @@
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>Retour visuel d'un bouton du deck : en cours (après un court délai), réussi ou en erreur, puis retour au repos.</summary>
 public enum TileRunState

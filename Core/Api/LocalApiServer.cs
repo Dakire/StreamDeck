@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Serveur de l'API locale : un canal nommé réservé à l'utilisateur courant (<see cref="PipeOptions.CurrentUserOnly"/>), jamais
@@ -22,7 +22,7 @@ public sealed class LocalApiServer : IDisposable
     Task? _accept;
 
     /// <summary>Nom du canal : un par utilisateur Windows, pour que deux sessions ne se mélangent pas.</summary>
-    public static string DefaultPipeName => "TouchDeck.Api." + Environment.UserName + "." + InstanceKey();
+    public static string DefaultPipeName => "StreamDak.Api." + Environment.UserName + "." + InstanceKey();
 
     /// <summary>Clé courte du dossier de configuration : deux instances qui n'ont pas le même dossier (essais) ne se partagent ni canal ni verrou.</summary>
     public static string InstanceKey() =>

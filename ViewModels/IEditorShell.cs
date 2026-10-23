@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>Ce que l'éditeur demande à sa fenêtre : boîtes de dialogue, sélecteurs de fichiers et déplacement du focus.</summary>
 public interface IEditorShell : IConfirm

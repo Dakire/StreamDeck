@@ -5,7 +5,7 @@ using System.Windows;
 using Microsoft.Win32;
 using Forms = System.Windows.Forms;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Écrans Windows (System.Windows.Forms.Screen) ; les changements d'affichage arrivent sur le thread d'interface.</summary>
 public sealed class WindowsDisplayService : IDisplayService, IDisposable
@@ -35,7 +35,7 @@ public sealed class WindowsDisplayService : IDisplayService, IDisposable
 }
 
 /// <summary>
-/// Écrans disponibles et écran cible du deck. C'est le « périphérique » de TouchDeck : branchement et débranchement
+/// Écrans disponibles et écran cible du deck. C'est le « périphérique » de StreamDak : branchement et débranchement
 /// d'un écran tactile sont détectés. La source (<see cref="IDisplayService"/>) est injectée : Windows en production,
 /// des écrans simulés dans les tests.
 /// </summary>

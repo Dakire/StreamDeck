@@ -1,7 +1,7 @@
 using System.IO;
 using System.Text.RegularExpressions;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Noms des images de boutons dans le dossier Icons : un hachage de 32 caractères hexadécimaux et « .png ».

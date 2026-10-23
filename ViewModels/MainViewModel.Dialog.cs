@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 // Boîtes de dialogue du mode édition, affichées par-dessus le deck (pas de fenêtre modale séparée)
 public partial class MainViewModel

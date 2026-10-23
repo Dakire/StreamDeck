@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 // Réglages d'un widget (horloge, agenda, page web) et de sa taille en cases, dans le panneau de propriétés
 public sealed partial class PropertiesViewModel

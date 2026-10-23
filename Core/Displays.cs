@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Rectangle en pixels physiques (coordonnées du bureau virtuel).</summary>
 public readonly record struct PixelRect(int X, int Y, int Width, int Height);

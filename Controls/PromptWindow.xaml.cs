@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace TouchDeck.Controls;
+namespace StreamDak.Controls;
 
 /// <summary>Petite fenêtre modale : saisie d'un texte, confirmation ou information. Entrée valide, Échap annule.</summary>
 public partial class PromptWindow : Wpf.Ui.Controls.FluentWindow

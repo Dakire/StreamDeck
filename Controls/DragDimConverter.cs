@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace TouchDeck.Controls;
+namespace StreamDak.Controls;
 
 /// <summary>Opacité d'une touche : atténuée tant qu'on la glisse.</summary>
 public sealed class DragDimConverter : IValueConverter

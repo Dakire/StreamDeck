@@ -1,7 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Contenu de config.json (format <see cref="ConfigNormalizer.CurrentVersion"/>) : réglages globaux et profils.</summary>
 public class DeckConfig
@@ -29,7 +30,7 @@ public class DeckConfig
     public string Theme { get; set; } = "system";
     /// <summary>"fluent" : les emojis connus sont affichés avec l'icône Fluent équivalente ; "emoji" : tels quels.</summary>
     public string IconStyle { get; set; } = "fluent";
-    /// <summary>Lance TouchDeck à l'ouverture de session Windows (clé Run de l'utilisateur).</summary>
+    /// <summary>Lance StreamDak à l'ouverture de session Windows (clé Run de l'utilisateur).</summary>
     public bool StartWithWindows { get; set; }
     /// <summary>Supprime les animations (en plus du réglage Windows « Effets d'animation »).</summary>
     public bool ReduceMotion { get; set; }
@@ -56,7 +57,7 @@ public class DeckConfig
 /// <summary>Réglages non secrets d'une intégration.</summary>
 public class IntegrationConfig
 {
-    /// <summary>true : TouchDeck se connecte au démarrage et se reconnecte si la connexion se perd.</summary>
+    /// <summary>true : StreamDak se connecte au démarrage et se reconnecte si la connexion se perd.</summary>
     public bool Enabled { get; set; }
     /// <summary>Valeurs des champs de l'intégration (adresse, port…), par clé de champ.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -90,6 +91,31 @@ public class DeckPage
     public bool Hidden { get; set; }
     /// <summary>Cases dans l'ordre de la grille. Une case <see cref="DeckButton.Blank"/> est un emplacement vide.</summary>
     public List<DeckButton> Buttons { get; set; } = new();
+
+    /// <summary>Type de page : absent = grille de boutons ; <see cref="PageKinds.Web"/> = une page web qui remplit tout l'espace central.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Kind { get; set; }
+    /// <summary>Adresse (http ou https) affichée par une page <see cref="PageKinds.Web"/>. Les boutons de la page sont conservés, masqués.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Url { get; set; }
+
+    /// <summary>Zoom d'une page web en pourcentage (25 à 500) ; 0 (absent) = 100 %.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int Zoom { get; set; }
+
+    /// <summary>true pour une page web (<see cref="Kind"/> = <see cref="PageKinds.Web"/>).</summary>
+    [JsonIgnore]
+    public bool IsWeb => string.Equals(Kind, PageKinds.Web, StringComparison.OrdinalIgnoreCase);
+}
+
+/// <summary>Types de page (<see cref="DeckPage.Kind"/>).</summary>
+public static class PageKinds
+{
+    /// <summary>Page web en plein cadre (WebView2 isolé, comme le widget web : ADR 0017 et 0018).</summary>
+    public const string Web = "web";
+
+    /// <summary>Type connu (en minuscules) ou null pour une grille de boutons (absent ou inconnu).</summary>
+    public static string? Normalize(string? kind) => string.Equals(kind?.Trim(), Web, StringComparison.OrdinalIgnoreCase) ? Web : null;
 }
 
 /// <summary>Un bouton du deck : apparence, étapes, ou contenu s'il s'agit d'un dossier.</summary>

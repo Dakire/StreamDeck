@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
-using TouchDeck.ViewModels;
+using StreamDak.ViewModels;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Mode édition du deck : les panneaux d'actions et de propriétés s'affichent autour de la grille. Ils contiennent des champs de saisie,

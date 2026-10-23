@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>
-/// Les types d'action fournis avec TouchDeck, un gestionnaire par type (dossier <c>Handlers/</c>). L'identifiant de chaque
+/// Les types d'action fournis avec StreamDak, un gestionnaire par type (dossier <c>Handlers/</c>). L'identifiant de chaque
 /// type est la clé stable de <c>config.json</c> (<see cref="ActionTypes"/>). D'autres gestionnaires (intégrations) s'ajoutent
 /// au conteneur de services sans modifier cette liste.
 /// </summary>

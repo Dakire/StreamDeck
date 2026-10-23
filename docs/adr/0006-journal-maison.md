@@ -5,12 +5,12 @@
 
 ## Contexte
 
-TouchDeck consigne peu de choses : démarrage, erreurs, actions en échec, changements d'écran. Le cahier des charges
+StreamDak consigne peu de choses : démarrage, erreurs, actions en échec, changements d'écran. Le cahier des charges
 évoque Serilog ; le dépôt n'accepte une nouvelle dépendance NuGet que si elle est justifiée.
 
 ## Décision
 
-- **Journal maison.** `Core/Log.cs` reste le journal : un fichier `touchdeck.log` dans le dossier de configuration,
+- **Journal maison.** `Core/Log.cs` reste le journal : un fichier `streamdak.log` dans le dossier de configuration,
   1 Mo au maximum, l'ancien gardé en `.old`.
 - **Jamais d'exception.** Un journal en échec ne doit pas faire tomber le deck.
 - **Dans `Core`.** Il y est placé pour que la persistance (`ConfigStore`) puisse journaliser sans dépendre de

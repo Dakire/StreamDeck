@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>StreamDak</AssemblyName>
+    <RootNamespace>StreamDak</RootNamespace>
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+    <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+    <!-- Publication : dotnet publish -c Release -r win-x64 (sans auto-contenu) ; code précompilé, démarrage environ 80 ms plus court. Sans effet sur build et run. -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="tests\**" />
+    <Compile Remove="Core\**" />
+    <Compile Remove="Platform\Windows\**" />
+    <Compile Remove="Integrations\**" />
+    <Compile Remove="samples\**" />
+    <EmbeddedResource Remove="tests\**" />
+    <EmbeddedResource Remove="Core\**" />
+    <EmbeddedResource Remove="Platform\Windows\**" />
+    <EmbeddedResource Remove="Integrations\**" />
+    <EmbeddedResource Remove="samples\**" />
+    <None Remove="tests\**" />
+    <None Remove="Core\**" />
+    <None Remove="Platform\Windows\**" />
+    <None Remove="Integrations\**" />
+    <None Remove="samples\**" />
+    <Page Remove="tests\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Pile WM_POINTER de WPF : seule à recevoir le toucher par messages de fenêtre (voir MainWindow.WndProc et ADR 0013) -->
+    <RuntimeHostConfigurationOption Include="Switch.System.Windows.Input.Stylus.EnablePointerSupport" Value="true" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="StreamDak.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Core\StreamDak.Core.csproj" />
+    <ProjectReference Include="Platform\Windows\StreamDak.Platform.Windows.csproj" />
+    <ProjectReference Include="Integrations\Obs\StreamDak.Integrations.Obs.csproj" />
+    <ProjectReference Include="Integrations\Vmix\StreamDak.Integrations.Vmix.csproj" />
+    <ProjectReference Include="Integrations\ElgatoLight\StreamDak.Integrations.ElgatoLight.csproj" />
+    <ProjectReference Include="Integrations\Hue\StreamDak.Integrations.Hue.csproj" />
+    <ProjectReference Include="Integrations\WindowsSystem\StreamDak.Integrations.WindowsSystem.csproj" />
+    <ProjectReference Include="Integrations\XPlane\StreamDak.Integrations.XPlane.csproj" />
+    <ProjectReference Include="Integrations\Teams\StreamDak.Integrations.Teams.csproj" />
+    <ProjectReference Include="Integrations\ClickUp\StreamDak.Integrations.ClickUp.csproj" />
+    <ProjectReference Include="Integrations\Notion\StreamDak.Integrations.Notion.csproj" />
+    <ProjectReference Include="Integrations\Monday\StreamDak.Integrations.Monday.csproj" />
+    <ProjectReference Include="Integrations\Twitch\StreamDak.Integrations.Twitch.csproj" />
+    <ProjectReference Include="Integrations\Google\StreamDak.Integrations.Google.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3967.48" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+  </ItemGroup>
+</Project>

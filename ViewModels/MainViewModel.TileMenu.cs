@@ -4,7 +4,7 @@ using System.Linq;
 using CommunityToolkit.Mvvm.Input;
 using Wpf.Ui.Controls;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 // Menu d'une case du deck (clic droit, appui long) : décrit en MenuItemSpec comme ceux de l'éditeur, mais affiché dans la feuille
 // du deck. Un ContextMenu WPF est une fenêtre popup séparée : le toucher n'y serait plus traité par le deck (ADR 0013).

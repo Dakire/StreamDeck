@@ -1,4 +1,4 @@
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Applique l'apparence de la configuration (thème, style des icônes, animations) au démarrage puis à chaque changement

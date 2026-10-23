@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- X-Plane 12 par son API web locale (HTTP, port 8086). Sans dépendance externe. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>StreamDak.Integrations.XPlane</AssemblyName>
+    <RootNamespace>StreamDak.Integrations.XPlane</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\StreamDak.Core.csproj" />
+  </ItemGroup>
+</Project>

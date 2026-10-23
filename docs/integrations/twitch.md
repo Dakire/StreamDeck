@@ -1,6 +1,6 @@
 # Twitch
 
-Connecteur `TouchDeck.Integrations.Twitch`, par l'API Helix. TouchDeck n'embarque **aucune application Twitch** : tu crées la tienne,
+Connecteur `StreamDak.Integrations.Twitch`, par l'API Helix. StreamDak n'embarque **aucune application Twitch** : tu crées la tienne,
 ce qui évite toute dépendance à un secret partagé et à une procédure d'approbation.
 
 ## Préparation
@@ -8,7 +8,7 @@ ce qui évite toute dépendance à un secret partagé et à une procédure d'app
 1. Console développeur Twitch (dev.twitch.tv/console) › Enregistrer une application ; copie son **identifiant client** (public).
 2. Génère un **jeton utilisateur** pour ton compte avec les droits utiles :
    `clips:edit` (clip), `channel:manage:broadcast` (marqueur, titre), `channel:edit:commercial` (publicité), `user:write:chat` (chat).
-3. Dans TouchDeck : **Paramètres › Intégrations › Twitch**, renseigne l'identifiant client et le jeton, puis **Tester la connexion**.
+3. Dans StreamDak : **Paramètres › Intégrations › Twitch**, renseigne l'identifiant client et le jeton, puis **Tester la connexion**.
 
 Le jeton est chiffré (DPAPI) ; il n'est ni dans `config.json` ni dans le journal. Il expire : en cas de refus (« Twitch refuse le jeton »), génère-en un nouveau.
 

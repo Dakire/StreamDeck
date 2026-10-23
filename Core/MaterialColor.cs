@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Couleurs tonales à la manière de Material Design 3 : à partir d'une couleur source, des palettes tonales (teinte et chroma fixes,

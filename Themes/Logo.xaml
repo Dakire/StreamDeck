@@ -1,0 +1,31 @@
+<!-- Logo StreamDak : dessin vectoriel (même dessin que Assets/logo.svg). Source d'un Image ou d'un ui:ImageIcon. -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <LinearGradientBrush x:Key="StreamDakLogoTile" StartPoint="0,0" EndPoint="1,1">
+    <GradientStop Offset="0.0" Color="#3B6CF6"/>
+    <GradientStop Offset="0.55" Color="#6B4DF0"/>
+    <GradientStop Offset="1.0" Color="#9B4DEB"/>
+  </LinearGradientBrush>
+  <LinearGradientBrush x:Key="StreamDakLogoGloss" StartPoint="0,0" EndPoint="0,1">
+    <GradientStop Offset="0" Color="#33FFFFFF"/>
+    <GradientStop Offset="0.6" Color="#00FFFFFF"/>
+  </LinearGradientBrush>
+  <DrawingImage x:Key="StreamDakLogo">
+    <DrawingImage.Drawing>
+      <DrawingGroup>
+        <DrawingGroup.ClipGeometry><RectangleGeometry Rect="0,0,256,256"/></DrawingGroup.ClipGeometry>
+        <GeometryDrawing Brush="{StaticResource StreamDakLogoTile}"><GeometryDrawing.Geometry><RectangleGeometry Rect="8,8,240,240" RadiusX="56" RadiusY="56"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="{StaticResource StreamDakLogoGloss}"><GeometryDrawing.Geometry><RectangleGeometry Rect="8,8,240,240" RadiusX="56" RadiusY="56"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#42FFFFFF"><GeometryDrawing.Geometry><RectangleGeometry Rect="168,36,52,52" RadiusX="14" RadiusY="14"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#50FFFFFF"><GeometryDrawing.Geometry><RectangleGeometry Rect="102,36,52,52" RadiusX="14" RadiusY="14"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#64FFFFFF"><GeometryDrawing.Geometry><RectangleGeometry Rect="36,36,52,52" RadiusX="14" RadiusY="14"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#7AFFFFFF"><GeometryDrawing.Geometry><RectangleGeometry Rect="36,102,52,52" RadiusX="14" RadiusY="14"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#92FFFFFF"><GeometryDrawing.Geometry><RectangleGeometry Rect="102,102,52,52" RadiusX="14" RadiusY="14"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#ABFFFFFF"><GeometryDrawing.Geometry><RectangleGeometry Rect="168,102,52,52" RadiusX="14" RadiusY="14"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#C6FFFFFF"><GeometryDrawing.Geometry><RectangleGeometry Rect="168,168,52,52" RadiusX="14" RadiusY="14"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#E2FFFFFF"><GeometryDrawing.Geometry><RectangleGeometry Rect="102,168,52,52" RadiusX="14" RadiusY="14"/></GeometryDrawing.Geometry></GeometryDrawing>
+        <GeometryDrawing Brush="#FFFFFFFF"><GeometryDrawing.Geometry><RectangleGeometry Rect="36,168,52,52" RadiusX="14" RadiusY="14"/></GeometryDrawing.Geometry></GeometryDrawing>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+</ResourceDictionary>

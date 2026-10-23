@@ -8,7 +8,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations.Teams;
+namespace StreamDak.Integrations.Teams;
 
 /// <summary>
 /// Microsoft Teams (nouvelle version) par son API locale « application tierce » : WebSocket sur le port 8124, association par un
@@ -73,13 +73,13 @@ public sealed class TeamsIntegration : IntegrationBase, IPairableIntegration, ID
     static readonly string[] Reactions = { "applause", "laugh", "like", "love", "wow" };
 
     static Uri BuildUri(int port, string token) =>
-        new($"ws://127.0.0.1:{port}?token={Uri.EscapeDataString(token)}&protocol-version=2.0.0&manufacturer=TouchDeck&device=PC&app=TouchDeck&app-version=1.0");
+        new($"ws://127.0.0.1:{port}?token={Uri.EscapeDataString(token)}&protocol-version=2.0.0&manufacturer=StreamDak&device=PC&app=StreamDak&app-version=1.0");
 
     /// <inheritdoc/>
     protected override async Task ConnectCoreAsync(IntegrationSettings settings, CancellationToken cancellation)
     {
         var token = settings.Secret("token");
-        if (token.Length == 0) throw new InvalidOperationException("TouchDeck n'est pas encore associé à Teams : clique sur « Associer à Teams » dans les réglages");
+        if (token.Length == 0) throw new InvalidOperationException("StreamDak n'est pas encore associé à Teams : clique sur « Associer à Teams » dans les réglages");
         var socket = new ClientWebSocket();
         try { await socket.ConnectAsync(BuildUri(settings.GetInt("port", 8124), token), cancellation); }
         catch (WebSocketException ex)

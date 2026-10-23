@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>
 /// Met une fenêtre au premier plan. Si elle est absente et qu'un programme est indiqué dans <see cref="DeckAction.Args"/>,

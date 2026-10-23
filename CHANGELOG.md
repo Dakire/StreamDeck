@@ -4,6 +4,38 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Modifié (renommage : TouchDeck devient StreamDak)
+- Projets, assemblies, espaces de noms, textes, documentation, `streamdak.log`, extension `.streamdak`, variable `STREAMDAK_DATA_DIR`.
+- **Reprise des données existantes** : le dossier `%APPDATA%\TouchDeck` est déplacé vers `%APPDATA%\StreamDak` au premier lancement ; l'ancienne
+  variable `TOUCHDECK_DATA_DIR`, les fichiers `.touchdeck` et la valeur de démarrage automatique `TouchDeck` sont repris ; les secrets déjà
+  chiffrés restent lisibles (l'entropie DPAPI ne change pas).
+- Les plugins compilés contre `TouchDeck.Core` sont à recompiler contre `StreamDak.Core`.
+- Nouveau logo vectoriel (`Themes/Logo.xaml`, `Assets/logo.svg`) ; `logo.png` et `icon.ico` régénérés.
+
+### Ajouté (pages web, widgets système)
+- **Page web plein cadre** : une page peut afficher un site à la place de la grille (`DeckPage.Kind` = `web`, `Url`). Dock › *Page* › *Afficher une
+  page web…*. Les boutons de la page sont conservés. Clés facultatives de `config.json`, anciens fichiers inchangés (ADR 0018).
+- **Widgets Processeur et Mémoire** (catalogue › *Widgets*) : charge en %, Go utilisés sur le total, jauge d'alerte à 85 %, rafraîchis chaque seconde.
+  Ils activent le connecteur *Système Windows*, qui publie en plus `{sys.ram.used}` et `{sys.ram.total}`.
+- Barre du cadre web : bouton **Ouvrir dans le navigateur** ; si Google refuse la connexion dans un cadre intégré, la tuile l'explique et propose
+  le widget Agenda ou le navigateur. L'agent utilisateur n'est pas modifié (mesures et raisons dans l'ADR 0018).
+
+### Modifié (barre du haut : Windows 11)
+- Le bouton plein écran affiche les **dispositions d'accrochage de Windows 11** au survol de la souris ; la fenêtre est accrochable (glisser vers un bord, le haut
+  d'un écran, Win + flèches) et redimensionnable (taille minimale 640 × 420). Le plein écran du deck, l'absence de focus et le toucher sont inchangés ; en plein
+  écran les bords ne redimensionnent pas. Au doigt, la barre fonctionne comme avant (ADR 0018).
+
+### Ajouté (cadre web : autorisations, cadres conservés, zoom)
+- **Notifications, micro et caméra** accordés aux pages https du même site que l'adresse saisie (par exemple `meet.google.com` pour une page `calendar.google.com`) ; tout autre droit reste refusé (ADR 0018, qui remplace la règle de l'ADR 0017).
+- **La page ne se recharge plus quand on change de page du deck** : le cadre est rangé puis repris (6 cadres au plus, libérés à la fermeture). Les notifications continuent d'arriver page masquée.
+- **Zoom** : boutons − / % / + dans la barre du cadre, pincement et Ctrl + molette, mémorisé (`DeckPage.Zoom`, option `zoom` du widget web).
+
+### Corrigé
+- **Cadre web : saisie au clavier automatique.** Il fallait toucher le petit bouton clavier avant de taper dans une page (la fenêtre du deck ne prend jamais le clavier). Désormais la saisie démarre dès qu'un champ de texte de la page a le focus et s'arrête ~1,2 s après en être sorti. Le bouton clavier reste disponible et prend la main quand on l'utilise.
+- **Cadre web : un lien qui ouvre un nouvel onglet ne faisait rien** (par exemple *Sign in* sur la page d'accueil de Google Agenda). Il s'ouvre maintenant dans le cadre, sans jamais créer de fenêtre.
+- La mémoire du connecteur *Système Windows* venait d'un relevé du ramasse-miettes mis à jour rarement : elle est maintenant lue à chaque relevé.
+- Une emprise de widget ne peut plus dépasser le bas de la grille.
+
 ### Ajouté (édition : glissement, quitter, pages Google)
 - **Glissement visible** : la touche glissée s'atténue, la case visée s'allume (cadre et voile d'accent) et une étiquette suit le pointeur avec l'effet du dépôt (déplacer, échanger, ranger dans le dossier), à la souris comme au doigt.
 - **Bouton *Quitter*** dans le dock en édition : annule les modifications faites depuis l'ouverture du mode (confirmation s'il y en a ; annulable). *Terminer* les garde.
@@ -25,7 +57,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 ### Corrigé (toucher, blocages)
 - Un appui bref exécute désormais l'action **après** le message `WM_POINTERUP` (et non pendant) : une commande qui ouvre une boîte de dialogue ne fige plus le traitement du toucher.
 - Le doigt qui ouvre le mode édition par appui long n'est plus gardé « posé » : tous les appuis suivants étaient ignorés. Un doigt suivi qui ne touche plus l'écran n'empêche plus un nouvel appui.
-- **Chien de garde** (`UiWatchdog`) : une interface sans réponse pendant plus de 3 s est consignée dans `touchdeck.log` (« Interface sans réponse depuis … ms »).
+- **Chien de garde** (`UiWatchdog`) : une interface sans réponse pendant plus de 3 s est consignée dans `streamdak.log` (« Interface sans réponse depuis … ms »).
 
 ### Ajouté (édition intégrée et Material Design 3)
 - **Édition dans le deck** : le mode édition (menu ⚙ › *Modifier au toucher*, ou *Modifier…* sur un bouton) affiche un panneau d'**actions à gauche** et les **propriétés à droite** de la grille, sans autre fenêtre. Toucher une touche la sélectionne (liseré d'accent), toucher une action la pose dans la case choisie, *Annuler* / *Rétablir* sont dans le dock. L'éditeur complet reste disponible en fenêtre séparée.
@@ -52,7 +84,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 - Aucune clé de `config.json` ajoutée ni modifiée.
 
 ### Corrigé (tactile)
-- **Le toucher ne déplace plus le curseur** : le deck traite lui-même les appuis du doigt (boutons, menu, barre du haut déplaçable, double appui = plein écran) au lieu de laisser Windows les convertir en souris. La souris reste indépendante. Diagnostic : `TOUCHDECK_TOUCHLOG=1` (`docs/adr/0013-pile-pointeur-wpf.md`).
+- **Le toucher ne déplace plus le curseur** : le deck traite lui-même les appuis du doigt (boutons, menu, barre du haut déplaçable, double appui = plein écran) au lieu de laisser Windows les convertir en souris. La souris reste indépendante. Diagnostic : `STREAMDAK_TOUCHLOG=1` (`docs/adr/0013-pile-pointeur-wpf.md`).
 
 ### Ajouté (phase 8, Google Workspace)
 - **Google Workspace** avec ton projet Google Cloud (OAuth de bureau, PKCE, jeton chiffré) : ajouter une ligne ou écrire une cellule Sheets, ajouter du texte à un Docs, créer un événement Agenda (`docs/integrations/google.md`).
@@ -73,7 +105,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 ### Ajouté (phase 9, plugins et API locale)
 - **Plugins** : intégrations posées dans `plugins<Nom><Nom>.dll`, chargées dans leur propre contexte (`docs/plugins.md`, exemple `samples/HelloPlugin`, ADR 0011 et 0012).
 - **API locale** par canal nommé réservé à l’utilisateur (`ping`, `status`, `values`, `profile`, `page`, `run`, `show`, `edit`, `settings`) : `docs/local-api.md`.
-- **Instance unique** : relancer TouchDeck affiche le deck existant (ou l’éditeur avec `--edit`) au lieu d’ouvrir une seconde fenêtre.
+- **Instance unique** : relancer StreamDak affiche le deck existant (ou l’éditeur avec `--edit`) au lieu d’ouvrir une seconde fenêtre.
 
 ### Ajouté (phase 8, connecteurs HTTP)
 - **vMix**, **lampes Elgato** et **Philips Hue** (association par le bouton du pont, clé chiffrée DPAPI) ; socle commun
@@ -97,13 +129,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
   sur la nouvelle palette. L'accent texte `#B0A8FF` est conservé : `#7C6CFF` n'atteint que 3,9:1 sur les cartes.
 
 ### Architecture (phase 2)
-- **Trois projets.** `TouchDeck.Core` (`net9.0`, sans WPF ni Windows), `TouchDeck.Platform.Windows` (Win32 interne, sans
+- **Trois projets.** `StreamDak.Core` (`net9.0`, sans WPF ni Windows), `StreamDak.Platform.Windows` (Win32 interne, sans
   WPF) et l'application WPF. Les frontières sont vérifiées par `ArchitectureTests`.
 - **Injection de dépendances.** Le localisateur statique `AppServices` est supprimé. `AppHost.Build` construit le
   conteneur ; ViewModels et fenêtres reçoivent leurs dépendances par constructeur. Nouveaux services :
   `ConfigPersistence`, `AppearanceService`, `IAppWindows`, `DisplayService` injecté.
 - **Journal Serilog.** Façade `Log` du Core branchée sur Serilog ; `ILogger<T>` pour les services injectés. Le fichier
-  `touchdeck.log` change de rotation : 1 Mo par fichier, 3 fichiers (`touchdeck_001.log`…) au lieu de `.old`.
+  `streamdak.log` change de rotation : 1 Mo par fichier, 3 fichiers (`streamdak_001.log`…) au lieu de `.old`.
 - **Gestionnaires d'action.** Une classe par type (`Core/Actions/Handlers/`), enregistrés dans un `ActionRegistry` qui refuse
   les doublons : une intégration s'ajoute sans modifier le Core.
 - **Démarrage.** Environ 55 ms de plus qu'en fin de phase 1, mais moins que la version initiale (≈ 670 ms contre ≈ 700 ms).

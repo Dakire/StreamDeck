@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations.WindowsSystem;
+namespace StreamDak.Integrations.WindowsSystem;
 
 /// <summary>Média en cours de lecture (session SMTC de Windows).</summary>
 public sealed record MediaInfo(string Title, string Artist, string App, bool Playing);
@@ -16,6 +16,8 @@ public interface ISystemProbe : IDisposable
     double CpuPercent();
     /// <summary>Mémoire vive utilisée en pourcentage (0 à 100).</summary>
     double MemoryPercent();
+    /// <summary>Mémoire vive physique : octets utilisés et octets au total (0, 0 si la mesure est indisponible).</summary>
+    (long UsedBytes, long TotalBytes) Memory();
     /// <summary>Média en cours, ou null si aucune application média n'est active.</summary>
     Task<MediaInfo?> GetMediaAsync();
     /// <summary>Envoie une commande à la session média : « playpause », « next » ou « previous ». Retourne false si aucune session.</summary>
@@ -23,7 +25,8 @@ public interface ISystemProbe : IDisposable
 }
 
 /// <summary>
-/// Windows lui-même : charge du processeur (<c>{sys.cpu}</c>), mémoire (<c>{sys.ram}</c>) et média en cours de lecture
+/// Windows lui-même : charge du processeur (<c>{sys.cpu}</c>), mémoire (<c>{sys.ram}</c> en %, <c>{sys.ram.used}</c> et <c>{sys.ram.total}</c> en Go,
+/// lus aussi par les widgets Processeur et Mémoire du deck) et média en cours de lecture
 /// (<c>{sys.media.title}</c>, <c>{sys.media.artist}</c>, <c>{sys.media.playing}</c>), quelle que soit l'application (Spotify, navigateur,
 /// lecteur vidéo…) grâce aux contrôles de transport multimédia de Windows. Aucun compte ni réglage : l'intégration s'active d'un clic.
 /// </summary>
@@ -99,6 +102,9 @@ public sealed class WindowsSystemIntegration : IntegrationBase, IDisposable
             KeyValuePair.Create("cpu", Round(probe.CpuPercent())),
             KeyValuePair.Create("ram", Round(probe.MemoryPercent())),
         };
+        var (used, total) = probe.Memory();
+        values.Add(KeyValuePair.Create("ram.used", Gigabytes(used)));
+        values.Add(KeyValuePair.Create("ram.total", Gigabytes(total)));
         MediaInfo? media = null;
         try { media = await probe.GetMediaAsync(); }
         catch (Exception ex) when (ex is not OperationCanceledException) { Log.Warn($"Système Windows : média illisible : {ex.Message}"); }
@@ -108,6 +114,9 @@ public sealed class WindowsSystemIntegration : IntegrationBase, IDisposable
         values.Add(KeyValuePair.Create("media.playing", media?.Playing == true ? "true" : "false"));
         SetValues(values);
     }
+
+    /// <summary>Go avec une décimale et un point (« 12.4 »), quelle que soit la langue : les widgets la reformatent à l'affichage.</summary>
+    static string Gigabytes(long bytes) => (Math.Max(0, bytes) / 1073741824.0).ToString("0.0", CultureInfo.InvariantCulture);
 
     static string Round(double percent) => Math.Clamp((int)Math.Round(percent), 0, 100).ToString(CultureInfo.InvariantCulture);
 

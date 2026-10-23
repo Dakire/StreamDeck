@@ -1,6 +1,6 @@
 # X-Plane 12
 
-Connecteur `TouchDeck.Integrations.XPlane`, par l'API web locale d'X-Plane 12.1.1 et plus (REST, port 8086,
+Connecteur `StreamDak.Integrations.XPlane`, par l'API web locale d'X-Plane 12.1.1 et plus (REST, port 8086,
 [documentation](https://developer.x-plane.com/article/x-plane-web-api/)). Sans authentification : seul le PC local est visé par défaut.
 
 ## Prérequis

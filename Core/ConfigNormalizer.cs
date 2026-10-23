@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Résultat d'une normalisation : la configuration a-t-elle été migrée, et ce qui a été corrigé.</summary>
 public sealed record NormalizeResult(bool Migrated, IReadOnlyList<string> Warnings);
@@ -15,7 +15,7 @@ public static class ConfigNormalizer
 {
     /// <summary>Fond par défaut du deck : cette valeur affiche le fond nuancé du thème (voir <c>Theme</c>).</summary>
     public const string DefaultBackground = "#0E1015";
-    /// <summary>Version du format écrite par cette version de TouchDeck.</summary>
+    /// <summary>Version du format écrite par cette version de StreamDak.</summary>
     public const int CurrentVersion = 2;
     /// <summary>Profondeur maximale des dossiers imbriqués : au-delà, le contenu est remonté dans le dernier dossier autorisé (avec un avertissement).</summary>
     public const int MaxFolderDepth = 8;
@@ -114,6 +114,11 @@ public static class ConfigNormalizer
             if (string.IsNullOrWhiteSpace(page.Name)) page.Name = $"Page {n}";
             page.Name = Unique(page.Name.Trim(), names, warnings, "page");
             page.Buttons = NormalizeButtons(page.Buttons, 0, warnings);
+            if (page.Kind != null && PageKinds.Normalize(page.Kind) == null)
+                warnings.Add($"Type de page inconnu « {page.Kind} » sur « {page.Name} » : affichée comme une grille de boutons.");
+            page.Kind = PageKinds.Normalize(page.Kind);
+            page.Url = page.Kind == null || string.IsNullOrWhiteSpace(page.Url) ? null : page.Url.Trim();   // l'adresse n'a de sens que pour une page web
+            page.Zoom = page.Kind == null ? 0 : WebZoom.ForStorage(page.Zoom);
         }
     }
 

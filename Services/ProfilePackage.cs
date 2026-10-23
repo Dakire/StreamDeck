@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 
-namespace TouchDeck;
+namespace StreamDak;
 
-/// <summary>Contenu vérifié d'un fichier .touchdeck, prêt à être installé. Rien n'est écrit sur le disque avant <see cref="ProfilePackage.InstallIcons"/>.</summary>
+/// <summary>Contenu vérifié d'un fichier .streamdak, prêt à être installé. Rien n'est écrit sur le disque avant <see cref="ProfilePackage.InstallIcons"/>.</summary>
 public sealed record PackageContents(
     DeckProfile? Profile, DeckConfig? Config, int RiskyActions, IReadOnlyList<string> Warnings,
     IReadOnlyDictionary<string, byte[]> Icons);
@@ -20,11 +20,11 @@ public sealed record PackageContents(
 public static class ProfilePackage
 {
     /// <summary>Extension des archives de profil ou de configuration.</summary>
-    public const string Extension = ".touchdeck";
+    public const string Extension = ".streamdak";
     /// <summary>Filtre de la boîte de dialogue des profils.</summary>
-    public const string DialogFilter = "Profil ou configuration TouchDeck|*.touchdeck|Tous les fichiers|*.*";
+    public const string DialogFilter = "Profil ou configuration StreamDak|*.streamdak;*.touchdeck|Tous les fichiers|*.*";
     /// <summary>Filtre de la boîte de dialogue de configuration (archive ou JSON brut).</summary>
-    public const string ConfigDialogFilter = "Configuration TouchDeck|*.touchdeck;*.json|Tous les fichiers|*.*";
+    public const string ConfigDialogFilter = "Configuration StreamDak|*.streamdak;*.touchdeck;*.json|Tous les fichiers|*.*";
 
     /// <summary>Taille maximale du JSON d'une archive (protection contre les archives piégées).</summary>
     public const long MaxJsonBytes = 10 * 1024 * 1024;
@@ -41,12 +41,12 @@ public static class ProfilePackage
     /// <summary>Longueur maximale d'un texte importé (titre, valeur, arguments).</summary>
     public const int MaxStringLength = 8192;
 
-    /// <summary>Écrit un profil et ses images dans une archive .touchdeck.</summary>
+    /// <summary>Écrit un profil et ses images dans une archive .streamdak.</summary>
     public static void ExportProfile(DeckProfile profile, string path) =>
         Write(path, "profile", "profile.json", JsonSerializer.Serialize(profile, ConfigStore.Options),
             IconNames(new[] { profile }));
 
-    /// <summary>Écrit toute la configuration et ses images dans une archive .touchdeck.</summary>
+    /// <summary>Écrit toute la configuration et ses images dans une archive .streamdak.</summary>
     public static void ExportConfig(DeckConfig cfg, string path) =>
         Write(path, "config", "config.json", ConfigStore.Serialize(cfg), IconNames(cfg.Profiles));
 
@@ -60,7 +60,7 @@ public static class ProfilePackage
         using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write))
         using (var zip = new ZipArchive(fs, ZipArchiveMode.Create))
         {
-            Add(zip, "manifest.json", Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { format = "touchdeck", kind, version = 1 })));
+            Add(zip, "manifest.json", Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { format = "streamdak", kind, version = 1 })));
             Add(zip, jsonName, Encoding.UTF8.GetBytes(json));
             foreach (var name in icons)
             {
@@ -149,7 +149,7 @@ public static class ProfilePackage
             CheckIcons(cfg, icons, warnings);
             return new PackageContents(null, cfg, risky, warnings, icons);
         }
-        throw new InvalidDataException("Ce fichier ne contient ni profil ni configuration TouchDeck");
+        throw new InvalidDataException("Ce fichier ne contient ni profil ni configuration StreamDak");
     }
 
     /// <summary>Écrit les images du paquet dans le dossier Icons (après confirmation de l'utilisateur).</summary>
@@ -190,6 +190,7 @@ public static class ProfilePackage
             foreach (var page in p.Pages)
             {
                 Check(page.Name, "nom de page");
+                Check(page.Url ?? "", "adresse de page");
                 foreach (var b in DeckDocument.AllButtons(page.Buttons))
                 {
                     if (++buttons > MaxButtons) throw new InvalidDataException($"Trop de boutons (maximum {MaxButtons})");

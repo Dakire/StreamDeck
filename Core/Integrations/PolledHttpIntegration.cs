@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations;
+namespace StreamDak.Integrations;
 
 /// <summary>
 /// Base des intégrations qui parlent HTTP à un appareil ou un logiciel local : un client, un relevé périodique de l'état,

@@ -1,8 +1,8 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-                    xmlns:b="clr-namespace:TouchDeck.Behaviors"
-                    xmlns:vm="clr-namespace:TouchDeck.ViewModels">
+                    xmlns:b="clr-namespace:StreamDak.Behaviors"
+                    xmlns:vm="clr-namespace:StreamDak.ViewModels">
   <!-- Gabarits et styles du panneau de propriétés, partagés par l'éditeur et le deck (mode édition) -->
   <BooleanToVisibilityConverter x:Key="BoolVis"/>
 

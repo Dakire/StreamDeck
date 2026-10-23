@@ -1,6 +1,6 @@
 using System;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Nature d'un message à l'utilisateur (couleur, icône, annonce d'accessibilité).</summary>
 public enum NoticeKind

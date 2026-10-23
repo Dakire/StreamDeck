@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="StreamDak">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0.0" stop-color="#3B6CF6"/><stop offset="0.55" stop-color="#6B4DF0"/><stop offset="1.0" stop-color="#9B4DEB"/></linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.20"/><stop offset="0.6" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#tile)"/>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#gloss)"/>
+  <rect x="168" y="36" width="52" height="52" rx="14" fill="#fff" fill-opacity="0.26"/>
+  <rect x="102" y="36" width="52" height="52" rx="14" fill="#fff" fill-opacity="0.315"/>
+  <rect x="36" y="36" width="52" height="52" rx="14" fill="#fff" fill-opacity="0.391"/>
+  <rect x="36" y="102" width="52" height="52" rx="14" fill="#fff" fill-opacity="0.477"/>
+  <rect x="102" y="102" width="52" height="52" rx="14" fill="#fff" fill-opacity="0.571"/>
+  <rect x="168" y="102" width="52" height="52" rx="14" fill="#fff" fill-opacity="0.671"/>
+  <rect x="168" y="168" width="52" height="52" rx="14" fill="#fff" fill-opacity="0.776"/>
+  <rect x="102" y="168" width="52" height="52" rx="14" fill="#fff" fill-opacity="0.886"/>
+  <rect x="36" y="168" width="52" height="52" rx="14" fill="#fff" fill-opacity="1.0"/>
+</svg>

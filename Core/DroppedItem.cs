@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Transforme ce qu'on dépose sur une case vide du deck (fichier, raccourci .lnk, exécutable, dossier, adresse web) en bouton

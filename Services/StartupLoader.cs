@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using TouchDeck.Platform.Windows;
+using StreamDak.Platform.Windows;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Charge la configuration au démarrage sans jamais perdre le fichier de l'utilisateur.</summary>
 public static class StartupLoader

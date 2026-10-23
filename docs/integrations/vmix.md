@@ -1,11 +1,11 @@
 # vMix
 
-Connecteur `TouchDeck.Integrations.Vmix`, par l'API HTTP de vMix (`/api/`), sans dépendance externe.
+Connecteur `StreamDak.Integrations.Vmix`, par l'API HTTP de vMix (`/api/`), sans dépendance externe.
 
 ## Prérequis
 
 1. Dans vMix : **Paramètres › Web Controller**, activer le contrôleur Web (port 8088 par défaut).
-2. Dans TouchDeck : **Paramètres › Intégrations › vMix**, activer, renseigner l'adresse et le port, puis **Tester la connexion**.
+2. Dans StreamDak : **Paramètres › Intégrations › vMix**, activer, renseigner l'adresse et le port, puis **Tester la connexion**.
 
 L'état est relevé toutes les secondes (XML de `/api/`). Après 3 échecs de suite, la connexion est déclarée perdue et rétablie automatiquement.
 

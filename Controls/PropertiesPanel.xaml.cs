@@ -4,9 +4,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using TouchDeck.ViewModels;
+using StreamDak.ViewModels;
 
-namespace TouchDeck.Controls;
+namespace StreamDak.Controls;
 
 /// <summary>
 /// Panneau de propriétés d'un bouton (aperçu, titre, apparence, actions), partagé par l'éditeur et le mode édition du deck.

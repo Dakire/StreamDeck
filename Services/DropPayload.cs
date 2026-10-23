@@ -7,7 +7,7 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Ce qu'on dépose sur une case vide du deck (fichiers, raccourcis .lnk, exécutables, dossiers, adresses glissées d'un navigateur)

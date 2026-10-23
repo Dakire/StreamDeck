@@ -7,11 +7,11 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
-using TouchDeck.Integrations;
-using TouchDeck.Platform.Windows;
+using StreamDak.Integrations;
+using StreamDak.Platform.Windows;
 using CommunityToolkit.Mvvm.Input;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>Sauvegarde listée dans les paramètres.</summary>
 /// <param name="Path">Chemin du fichier.</param>
@@ -66,7 +66,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     /// <summary>Version de l'application (assembly).</summary>
     public string VersionText { get; } =
-        $"TouchDeck {Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?"} · .NET {Environment.Version.ToString(3)} · Windows {Environment.OSVersion.Version}";
+        $"StreamDak {Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?"} · .NET {Environment.Version.ToString(3)} · Windows {Environment.OSVersion.Version}";
     /// <summary>Dossier de configuration (affiché, ouvrable).</summary>
     public string ConfigDirectory => ConfigStore.Dir;
 
@@ -238,7 +238,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [RelayCommand]
     void ExportConfig()
     {
-        var path = _shell.PickSaveFile("Exporter la configuration", ProfilePackage.DialogFilter, $"TouchDeck-{DateTime.Now:yyyyMMdd}{ProfilePackage.Extension}");
+        var path = _shell.PickSaveFile("Exporter la configuration", ProfilePackage.DialogFilter, $"StreamDak-{DateTime.Now:yyyyMMdd}{ProfilePackage.Extension}");
         if (path != null) TransferService.ExportConfig(_doc.Config, path);
     }
 

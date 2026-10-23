@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations;
+namespace StreamDak.Integrations;
 
 /// <summary>
 /// Cycle de vie des intégrations : connecte celles qui sont activées dans la configuration, reconnecte avec une attente
@@ -139,7 +139,7 @@ public sealed class IntegrationManager : IDisposable
             }
             catch (Exception ex)
             {
-                // Logiciel fermé, mauvais mot de passe… : attendu, pas une erreur de TouchDeck ; consigné sans détail de pile
+                // Logiciel fermé, mauvais mot de passe… : attendu, pas une erreur de StreamDak ; consigné sans détail de pile
                 Log.Warn($"{integration.Name} : connexion impossible : {ex.Message}");
             }
 

@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations.ClickUp;
+namespace StreamDak.Integrations.ClickUp;
 
 /// <summary>
 /// ClickUp par son API v2 (https://developer.clickup.com/reference) : créer une tâche dans une liste, changer le statut d'une tâche,

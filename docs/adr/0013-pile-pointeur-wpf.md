@@ -1,7 +1,7 @@
 # 0013 — Toucher du deck sans souris système
 
 ## Contexte
-Un toucher sur l'écran du deck déplaçait le curseur de la souris. Journal de diagnostic (`TOUCHDECK_TOUCHLOG=1`) :
+Un toucher sur l'écran du deck déplaçait le curseur de la souris. Journal de diagnostic (`STREAMDAK_TOUCHLOG=1`) :
 - pile WISP (défaut de WPF) : la fenêtre ne reçoit aucun `WM_POINTER`, Windows envoie directement une souris synthétique
   (`WM_MOUSEMOVE` « depuis-tactile ») qui repositionne le curseur ;
 - pile pointeur de WPF : `WM_POINTER` reçu, puis `DefWindowProc` promeut le toucher en souris système (même effet) ;
@@ -9,7 +9,7 @@ Un toucher sur l'écran du deck déplaçait le curseur de la souris. Journal de 
 Impossible donc d'avoir à la fois des boutons actifs et un curseur immobile en laissant WPF faire.
 
 ## Décision
-- Activer `Switch.System.Windows.Input.Stylus.EnablePointerSupport` (`TouchDeck.csproj`) pour recevoir `WM_POINTER`.
+- Activer `Switch.System.Windows.Input.Stylus.EnablePointerSupport` (`StreamDak.csproj`) pour recevoir `WM_POINTER`.
 - Dans le hook de `MainWindow`, avaler les `WM_POINTER` de type doigt ou stylet (`handled = true`) : pas de promotion en souris.
 - Traiter l'appui dans la fenêtre (`MainWindow.Touch.cs`, `TapRecognizer`) : test de collision, activation du bouton par
   l'automatisation WPF (`IInvokeProvider`), commande d'un `MouseBinding` (fermeture du menu), barre du haut déplaçable, double appui.

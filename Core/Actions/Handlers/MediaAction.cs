@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Envoie une touche multimédia (lecture, volume…) ; la valeur doit être l'une de <see cref="ActionValidator.MediaKeys"/>.</summary>
 public sealed class MediaAction : SyncActionHandler

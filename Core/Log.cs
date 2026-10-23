@@ -1,6 +1,6 @@
 using System;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Gravité d'un message du journal.</summary>
 public enum LogSeverity

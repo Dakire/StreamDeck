@@ -14,7 +14,7 @@
 
 ```powershell
 dotnet build -c Release                       # doit rester sans avertissement
-dotnet test tests/TouchDeck.Tests             # tous les tests (logique + rendu hors écran)
+dotnet test tests/StreamDak.Tests             # tous les tests (logique + rendu hors écran)
 dotnet run -c Release -- --simulate           # deck sans effet sur le système
 dotnet run -c Release -- --edit               # ouvre aussi l'éditeur
 dotnet publish -c Release -r win-x64 --self-contained false
@@ -22,9 +22,9 @@ dotnet publish -c Release -r win-x64 --self-contained false
 
 | Variable / option | Effet |
 |---|---|
-| `TOUCHDECK_DATA_DIR` | Dossier de configuration à utiliser (essais) au lieu de `%APPDATA%\TouchDeck`. |
-| `TOUCHDECK_SHOTS` | Dossier où les tests UI gardent leurs captures PNG (deck sombre / clair, 1080p, portrait, éditeur…). Utile pour comparer un rendu avant / après au pixel près. |
-| `TOUCHDECK_BENCH` | Active `BenchmarkTests` (désactivé sinon) : création du deck, rendu d'une grille de 32 touches, reconstruction, mémoire, CPU au repos. Résultats ajoutés à `bench.md` dans ce dossier. À lancer en `-c Release`. |
+| `STREAMDAK_DATA_DIR` | Dossier de configuration à utiliser (essais) au lieu de `%APPDATA%\StreamDak`. |
+| `STREAMDAK_SHOTS` | Dossier où les tests UI gardent leurs captures PNG (deck sombre / clair, 1080p, portrait, éditeur…). Utile pour comparer un rendu avant / après au pixel près. |
+| `STREAMDAK_BENCH` | Active `BenchmarkTests` (désactivé sinon) : création du deck, rendu d'une grille de 32 touches, reconstruction, mémoire, CPU au repos. Résultats ajoutés à `bench.md` dans ce dossier. À lancer en `-c Release`. |
 | `--simulate` | Plateforme simulée : chaque action est affichée (« Simulation : hotkey ctrl+c ») au lieu d'être exécutée. Un badge « Simulation » s'affiche. |
 
 ## Tests
@@ -35,7 +35,7 @@ dotnet publish -c Release -r win-x64 --self-contained false
 - `DeckNavigationTests` : caractérisation du deck (onglets, pages masquées, `back` / `home`, dossiers, sous-pages, profils, profil par application, exécution), réconciliation de la grille, ressources de thème présentes dans les deux thèmes.
 - `PackageAndThemeTests` : import / export, contrastes WCAG (y compris titre sur corps teinté des touches).
 - `RobustnessTests` : saisies et fichiers invalides consignés sans exception ; valeurs figées des clés du format (`ActionTypes`).
-- `BenchmarkTests` : mesures de performance, seulement si `TOUCHDECK_BENCH` est défini.
+- `BenchmarkTests` : mesures de performance, seulement si `STREAMDAK_BENCH` est défini.
 
 Les collections de tests s'exécutent en série : `ConfigStore.Dir` est global au processus.
 

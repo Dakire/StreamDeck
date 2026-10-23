@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Lecture et écriture de config.json : migration, écriture atomique, sauvegardes automatiques.</summary>
 public static class ConfigStore
@@ -14,10 +14,43 @@ public static class ConfigStore
     /// <summary>Nombre de sauvegardes conservées ; les plus anciennes sont supprimées.</summary>
     public const int MaxBackups = 15;
 
-    /// <summary>Dossier de configuration : %APPDATA%\TouchDeck, ou le dossier de la variable TOUCHDECK_DATA_DIR (essais, installation portable).</summary>
-    public static string Dir { get; private set; } = Environment.GetEnvironmentVariable("TOUCHDECK_DATA_DIR") is { Length: > 0 } custom
-        ? Path.GetFullPath(custom)
-        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TouchDeck");
+    /// <summary>
+    /// Dossier de configuration : %APPDATA%\StreamDak, ou le dossier de la variable STREAMDAK_DATA_DIR (essais, installation portable).
+    /// L'ancienne variable TOUCHDECK_DATA_DIR reste acceptée. Aucun accès disque ici : voir <see cref="MigrateLegacyDirectory()"/>.
+    /// </summary>
+    public static string Dir { get; private set; } = DefaultDirectory(
+        Environment.GetEnvironmentVariable("STREAMDAK_DATA_DIR"),
+        Environment.GetEnvironmentVariable("TOUCHDECK_DATA_DIR"),
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+
+    /// <summary>Une variable d'environnement l'emporte (la nouvelle avant l'ancienne), sinon %APPDATA%\StreamDak.</summary>
+    internal static string DefaultDirectory(string? env, string? legacyEnv, string appData) =>
+        env is { Length: > 0 } ? Path.GetFullPath(env)
+        : legacyEnv is { Length: > 0 } ? Path.GetFullPath(legacyEnv)
+        : Path.Combine(appData, "StreamDak");
+
+    /// <summary>
+    /// À appeler une fois au démarrage, avant tout accès à la configuration : si le dossier par défaut %APPDATA%\StreamDak n'existe pas et que
+    /// l'ancien %APPDATA%\TouchDeck existe, ce dernier est déplacé (configuration, secrets, plugins et images suivent le renommage du produit).
+    /// Si le déplacement échoue (dossier tenu par une ancienne instance), l'ancien dossier reste utilisé. Sans effet quand le dossier est imposé
+    /// par une variable d'environnement. Retourne true si un déplacement a eu lieu.
+    /// </summary>
+    public static bool MigrateLegacyDirectory() => MigrateLegacyDirectory(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+
+    internal static bool MigrateLegacyDirectory(string appData)
+    {
+        var current = Path.Combine(appData, "StreamDak");
+        var legacy = Path.Combine(appData, "TouchDeck");
+        if (!string.Equals(Path.GetFullPath(Dir), Path.GetFullPath(current), StringComparison.OrdinalIgnoreCase)) return false;
+        if (Directory.Exists(current) || !Directory.Exists(legacy)) return false;
+        try { Directory.Move(legacy, current); return true; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Dir = legacy;
+            return false;
+        }
+    }
+
     /// <summary>Chemin de config.json.</summary>
     public static string FilePath => Path.Combine(Dir, "config.json");
     /// <summary>Dossier des images importées (noms de hachage, voir IconStore).</summary>
@@ -230,7 +263,7 @@ public static class ConfigStore
                             B("Folder24", "Explorateur", "#334155", ActionTypes.Hotkey, "win+e"),
                             B("Globe24", "Google", "#2563EB", ActionTypes.Url, "https://www.google.com"),
                             B("Keyboard24", "Texte", "#334155", ActionTypes.Text, "Bonjour !"),
-                            B("Flash24", "Script PS", "#7C3AED", ActionTypes.Script, "Get-Date | Out-File \"$env:TEMP\\touchdeck.txt\"; notepad \"$env:TEMP\\touchdeck.txt\""),
+                            B("Flash24", "Script PS", "#7C3AED", ActionTypes.Script, "Get-Date | Out-File \"$env:TEMP\\streamdak.txt\"; notepad \"$env:TEMP\\streamdak.txt\""),
                             B("Home24", "Retour", "#B45309", ActionTypes.Page, PageTargets.Home),
                         }
                     },

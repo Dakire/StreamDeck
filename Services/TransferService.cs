@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Demande de confirmation à l'utilisateur (fenêtre de l'éditeur ou des paramètres, faux dans les tests).</summary>
 public interface IConfirm

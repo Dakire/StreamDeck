@@ -2,12 +2,12 @@ using System;
 using System.Threading;
 using System.Windows.Threading;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Chien de garde de l'interface : une fois par seconde il demande au thread d'interface de répondre. Sans réponse après
 /// <see cref="Threshold"/>, il le consigne (avec la durée), puis consigne le retour à la normale. Un deck « figé » laisse ainsi une trace
-/// dans touchdeck.log au lieu de rien.
+/// dans streamdak.log au lieu de rien.
 /// </summary>
 internal sealed class UiWatchdog : IDisposable
 {

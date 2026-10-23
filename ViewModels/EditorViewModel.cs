@@ -5,11 +5,11 @@ using System.Linq;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using TouchDeck.Actions;
-using TouchDeck.Integrations;
+using StreamDak.Actions;
+using StreamDak.Integrations;
 using Wpf.Ui.Controls;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>Ce qu'on fait glisser : une case de la grille ou une entrée du catalogue.</summary>
 public sealed record DragPayload(Place? Source, int SourceIndex, string? CatalogId)
@@ -350,7 +350,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Pages.Clear();
         var pages = Profile.Pages;
         for (int i = 0; i < pages.Count; i++)
-            Pages.Add(new PageTabViewModel { Index = i, Name = pages[i].Name, Hidden = pages[i].Hidden, IsSelected = i == _page });
+            Pages.Add(new PageTabViewModel { Index = i, Name = pages[i].Name, Hidden = pages[i].Hidden, IsWeb = pages[i].IsWeb, Url = pages[i].Url, IsSelected = i == _page });
         _refreshingLists = true;
         SelectedPage = Pages.ElementAtOrDefault(_page);
         _refreshingLists = false;
@@ -701,6 +701,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     /// <summary>Ajoute une action du catalogue dans la case visée, sinon sélectionnée, sinon la première libre.</summary>
     public void AddCatalogAction(CatalogAction action, int? targetIndex = null)
     {
+        if (Profile.Pages[_page].IsWeb) { Notifier.Info("Cette page affiche une page web : remets-la en grille (Page › Afficher une grille de boutons) pour y ajouter des boutons"); return; }
         Properties.Flush();
         int target = targetIndex ?? (_selectedIndex >= 0 && _doc.Get(Place, _selectedIndex) == null ? _selectedIndex : FirstFree());
         bool replacing = _doc.Get(Place, target) != null;
@@ -754,6 +755,26 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         if (name == null) return;
         var r = _doc.RenamePage(_profile, page.Index, name);
         if (!r.Ok && r.Message != "Nom inchangé") Notifier.Error(r.Message ?? "Renommage impossible");
+    }
+
+    /// <summary>
+    /// Demande l'adresse d'une page web et la fait afficher en plein cadre à la place de la grille (les boutons de la page sont conservés).
+    /// Une saisie vide laisse la page telle quelle.
+    /// </summary>
+    public async System.Threading.Tasks.Task SetPageWebAsync(PageTabViewModel page)
+    {
+        var text = await _shell.PromptAsync("Page web", "Adresse de la page (https://…)", page.Url ?? "https://", "Afficher");
+        if (string.IsNullOrWhiteSpace(text)) return;
+        var r = _doc.SetPageWeb(_profile, page.Index, text);
+        if (r.Ok) Notifier.Success("La page affiche maintenant la page web", "Annuler", () => _doc.Undo());
+        else if (r.Message != "Inchangé") Notifier.Error(r.Message ?? "Adresse refusée");
+    }
+
+    /// <summary>Remet la page en grille de boutons (ses boutons réapparaissent).</summary>
+    public void SetPageGrid(PageTabViewModel page)
+    {
+        var r = _doc.SetPageWeb(_profile, page.Index, null);
+        if (r.Ok) Notifier.Success("Page remise en grille de boutons", "Annuler", () => _doc.Undo());
     }
 
     /// <summary>Duplique la page.</summary>
@@ -867,7 +888,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Notifier.Success(string.IsNullOrWhiteSpace(app) ? "Association retirée" : $"Profil associé à « {app.Trim()} »");
     }
 
-    /// <summary>Exporte le profil en .touchdeck.</summary>
+    /// <summary>Exporte le profil en .streamdak.</summary>
     public void ExportProfile(string name)
     {
         var p = _doc.FindProfile(name);

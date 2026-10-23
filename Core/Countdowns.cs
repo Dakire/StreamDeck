@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Comptes à rebours des boutons « minuteur ». État d'exécution uniquement : rien n'est enregistré dans la configuration,

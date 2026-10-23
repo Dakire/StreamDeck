@@ -1,8 +1,8 @@
 using System.Windows.Controls;
 using System.Windows.Input;
-using TouchDeck.ViewModels;
+using StreamDak.ViewModels;
 
-namespace TouchDeck.Controls;
+namespace StreamDak.Controls;
 
 /// <summary>
 /// Panneau d'actions du mode édition du deck : recherche et catalogue ; toucher une action la pose dans la case sélectionnée.

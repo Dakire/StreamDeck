@@ -6,11 +6,11 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations.Twitch;
+namespace StreamDak.Integrations.Twitch;
 
 /// <summary>
 /// Twitch par l'API Helix (https://dev.twitch.tv/docs/api/reference/) : créer un clip, poser un marqueur de stream, lancer une
-/// publicité, changer le titre, écrire dans le chat. TouchDeck n'embarque aucune application Twitch : l'utilisateur crée la sienne
+/// publicité, changer le titre, écrire dans le chat. StreamDak n'embarque aucune application Twitch : l'utilisateur crée la sienne
 /// (console développeur Twitch), en copie l'identifiant client, et génère un jeton utilisateur avec les droits voulus. Aucun
 /// secret de l'application n'est nécessaire ni stocké ; le jeton, lui, est chiffré (DPAPI).
 /// </summary>

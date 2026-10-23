@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>
 /// Dimensions de l'interface calculées à partir de la taille de la fenêtre (en DIP) ; recalculées à chaque redimensionnement.

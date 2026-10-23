@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
-/// Raccourcis prêts à l'emploi pour des applications sans API locale (réunions, création, bureautique, jeu) : TouchDeck ramène la
+/// Raccourcis prêts à l'emploi pour des applications sans API locale (réunions, création, bureautique, jeu) : StreamDak ramène la
 /// fenêtre de l'application au premier plan, attend 150 ms puis envoie son raccourci. Aucun état n'est lisible dans ce mode.
 /// Les raccourcis sont ceux par défaut de chaque application ; s'ils ont été changés, la combinaison se modifie dans l'éditeur.
 /// </summary>

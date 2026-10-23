@@ -22,5 +22,6 @@ effacée : elle passe au statut « Remplacée par … ».
 | [0015](0015-edition-integree-et-material-design-3.md) | Édition intégrée au deck et thème Material Design 3 | Acceptée |
 | [0016](0016-edition-sans-fenetre.md) | Plus de fenêtre d'édition, dialogues dans le deck, action du toucher hors du message | Acceptée |
 | [0017](0017-widgets.md) | Widgets : horloge, agenda Google, page web (WebView2 isolé) | Acceptée |
+| [0018](0018-pages-web-widgets-systeme-et-renommage.md) | Pages web plein cadre, widgets Processeur et Mémoire, renommage en StreamDak | Acceptée |
 
 Modèle d'une nouvelle décision : contexte, décision, conséquences, statut et date.

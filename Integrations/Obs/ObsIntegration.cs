@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations.Obs;
+namespace StreamDak.Integrations.Obs;
 
 /// <summary>
 /// OBS Studio : changer de scène, couper un micro, démarrer le direct ou l'enregistrement, afficher une source. États lus en

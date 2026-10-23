@@ -5,9 +5,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Security.Cryptography;
-using TouchDeck.Integrations;
+using StreamDak.Integrations;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Un plugin chargé : son nom, son fichier et les intégrations qu'il apporte.</summary>
 /// <param name="Name">Nom du dossier du plugin.</param>
@@ -18,10 +18,10 @@ public sealed record LoadedPlugin(string Name, string Path, string Sha256, IRead
 
 /// <summary>
 /// Chargement des plugins posés par l'utilisateur dans <c>plugins\&lt;nom&gt;\&lt;nom&gt;.dll</c> du dossier de configuration. Un plugin est une
-/// bibliothèque .NET 10 qui référence <c>TouchDeck.Core</c> et contient une ou plusieurs classes <see cref="IIntegration"/>.
-/// Chaque plugin vit dans son contexte de chargement (ses dépendances ne se mélangent pas à celles de TouchDeck ni des autres
-/// plugins) ; <c>TouchDeck.Core</c> est partagé. <b>Un plugin s'exécute avec les droits de l'utilisateur</b> : seul du code de
-/// confiance doit être posé dans ce dossier. TouchDeck ne télécharge jamais de plugin.
+/// bibliothèque .NET 10 qui référence <c>StreamDak.Core</c> et contient une ou plusieurs classes <see cref="IIntegration"/>.
+/// Chaque plugin vit dans son contexte de chargement (ses dépendances ne se mélangent pas à celles de StreamDak ni des autres
+/// plugins) ; <c>StreamDak.Core</c> est partagé. <b>Un plugin s'exécute avec les droits de l'utilisateur</b> : seul du code de
+/// confiance doit être posé dans ce dossier. StreamDak ne télécharge jamais de plugin.
 /// </summary>
 public static class PluginLoader
 {
@@ -39,7 +39,7 @@ public static class PluginLoader
 
         protected override Assembly? Load(AssemblyName name)
         {
-            // Le contrat (TouchDeck.Core) vient de l'application : ainsi un IIntegration du plugin est bien un IIntegration de TouchDeck
+            // Le contrat (StreamDak.Core) vient de l'application : ainsi un IIntegration du plugin est bien un IIntegration de StreamDak
             if (name.Name == typeof(IIntegration).Assembly.GetName().Name) return null;
             var path = _resolver.ResolveAssemblyToPath(name);
             return path == null ? null : LoadFromAssemblyPath(path);

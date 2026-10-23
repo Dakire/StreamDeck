@@ -1,4 +1,4 @@
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Saisit un texte dans l'application active.</summary>
 public sealed class TextAction : SyncActionHandler

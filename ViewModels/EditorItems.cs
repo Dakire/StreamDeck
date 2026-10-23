@@ -3,7 +3,7 @@ using System.Linq;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 public sealed partial class PageTabViewModel : ObservableObject
 {
@@ -13,6 +13,10 @@ public sealed partial class PageTabViewModel : ObservableObject
     public string Name { get; init; } = "";
     /// <summary>true si la page est masquée dans les onglets du deck.</summary>
     public bool Hidden { get; init; }
+    /// <summary>true pour une page web plein cadre (pas de grille de boutons).</summary>
+    public bool IsWeb { get; init; }
+    /// <summary>Adresse de la page web, ou null.</summary>
+    public string? Url { get; init; }
     [ObservableProperty] bool _isSelected;
     [ObservableProperty] bool _isDropTarget;
     /// <summary>Texte de l'onglet.</summary>

@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace TouchDeck.Platform.Windows;
+namespace StreamDak.Platform.Windows;
 
 /// <summary>Recherche et mise au premier plan d'une fenêtre d'une autre application.</summary>
 internal static class WindowFocus
@@ -35,7 +35,7 @@ internal static class WindowFocus
     /// <param name="Process">Nom du programme, sans .exe.</param>
     public record Win(IntPtr Handle, string Title, string Process);
 
-    /// <summary>Fenêtres de premier niveau visibles, de la plus haute à la plus basse dans l'ordre Z (hors TouchDeck).</summary>
+    /// <summary>Fenêtres de premier niveau visibles, de la plus haute à la plus basse dans l'ordre Z (hors StreamDak).</summary>
     public static List<Win> OpenWindows()
     {
         var list = new List<Win>();
@@ -61,7 +61,7 @@ internal static class WindowFocus
         return list;
     }
 
-    /// <summary>Nom du programme (sans .exe) de la fenêtre au premier plan, ou null (aucune, ou TouchDeck lui-même).</summary>
+    /// <summary>Nom du programme (sans .exe) de la fenêtre au premier plan, ou null (aucune, ou StreamDak lui-même).</summary>
     public static string? ForegroundProcessName()
     {
         try

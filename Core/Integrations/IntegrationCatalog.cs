@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TouchDeck.Integrations;
+namespace StreamDak.Integrations;
 
 /// <summary>Actions du catalogue d'une intégration : une entrée prête à poser par commande.</summary>
 public static class IntegrationCatalog

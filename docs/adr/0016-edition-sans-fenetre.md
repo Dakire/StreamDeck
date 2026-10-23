@@ -28,4 +28,4 @@ le relâchement du doigt, qui restait « suivi » et faisait ignorer tous les ap
 - Plus de fenêtre perdue derrière le deck ; l'édition au doigt reste dans la fenêtre activable pendant l'édition seulement.
 - Perte volontaire : le glisser-déposer de cases entre elles dans une grille d'édition séparée (le déplacement se fait par le menu
   de la case : à gauche, à droite, vers une page, vers un dossier).
-- Le chien de garde ne trouve pas la cause d'un blocage, il en laisse la trace (durée, instant) dans `touchdeck.log`.
+- Le chien de garde ne trouve pas la cause d'un blocage, il en laisse la trace (durée, instant) dans `streamdak.log`.

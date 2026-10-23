@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Micro et volume : coupe ou rétablit, ou règle le volume de sortie (niveau dans <see cref="DeckAction.Args"/>).</summary>
 public sealed class AudioAction : SyncActionHandler

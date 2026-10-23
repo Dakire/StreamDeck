@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations.Monday;
+namespace StreamDak.Integrations.Monday;
 
 /// <summary>
 /// monday.com par son API GraphQL (https://developer.monday.com/api-reference) : créer un élément dans un tableau et changer une

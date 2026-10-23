@@ -8,7 +8,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Integrations.Hue;
+namespace StreamDak.Integrations.Hue;
 
 /// <summary>
 /// Philips Hue par l'API CLIP v2 du pont (HTTPS local, en-tête <c>hue-application-key</c>) : allumer, éteindre, régler la
@@ -201,7 +201,7 @@ public sealed class HueIntegration : PolledHttpIntegration, IPairableIntegration
         {
             ServerCertificateCustomValidationCallback = (message, _, _, _) => string.Equals(message.RequestUri?.Host, host, StringComparison.OrdinalIgnoreCase),
         }) { Timeout = TimeSpan.FromSeconds(8) };
-        var body = new JsonObject { ["devicetype"] = "touchdeck#" + Environment.MachineName, ["generateclientkey"] = true };
+        var body = new JsonObject { ["devicetype"] = "streamdak#" + Environment.MachineName, ["generateclientkey"] = true };
         string text;
         try
         {

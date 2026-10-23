@@ -4,7 +4,7 @@ using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Enregistre le document 300 ms après la dernière modification et le recharge à chaud quand <c>config.json</c> change

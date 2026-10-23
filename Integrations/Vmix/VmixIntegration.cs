@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace TouchDeck.Integrations.Vmix;
+namespace StreamDak.Integrations.Vmix;
 
 /// <summary>
 /// vMix par son API web (<c>http://hôte:8088/api</c>, documentation : https://www.vmix.com/help29/DeveloperAPI.html) : couper,

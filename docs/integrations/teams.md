@@ -1,13 +1,13 @@
 # Microsoft Teams
 
-Connecteur `TouchDeck.Integrations.Teams`, par l'API locale « application tierce » de la nouvelle version de Teams
+Connecteur `StreamDak.Integrations.Teams`, par l'API locale « application tierce » de la nouvelle version de Teams
 (WebSocket `ws://127.0.0.1:8124`, protocole 2.0.0). Étiquetée **à vérifier** : Microsoft fait évoluer cette API ; le protocole
 est joué ici contre un faux serveur (`TeamsTests`), pas contre un vrai Teams.
 
 ## Association
 
 1. Dans Teams : **Paramètres › Confidentialité › Gérer l'API › Activer l'API**.
-2. Dans TouchDeck : **Paramètres › Intégrations › Microsoft Teams › Associer à Teams**, puis accepter la demande dans Teams (30 s).
+2. Dans StreamDak : **Paramètres › Intégrations › Microsoft Teams › Associer à Teams**, puis accepter la demande dans Teams (30 s).
 3. Le jeton reçu est chiffré pour ton compte Windows (`secrets.dat`) ; il n'est ni dans `config.json` ni dans le journal.
 
 ## Actions (pendant une réunion)

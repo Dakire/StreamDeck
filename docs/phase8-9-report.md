@@ -23,17 +23,17 @@ avertissement, avec ses tests. **354 tests au vert** (232 en fin de phase 2).
 | Éditeur › clic droit sur un profil | **Nouveau profil depuis un modèle** |
 | Titre d'un bouton | `{obs.scene:hors ligne}`, `CPU {sys.cpu} %`, `{sys.media.title}` ; voyant plein / vide sur les commandes à état |
 | Zone de notification | afficher le deck, éditeur, paramètres, quitter |
-| `touchdeck.log` | connexions, plugins chargés (empreinte SHA-256), canal de l'API locale |
+| `streamdak.log` | connexions, plugins chargés (empreinte SHA-256), canal de l'API locale |
 
 ## Comment tester
 
 ```powershell
-dotnet test tests/TouchDeck.Tests            # 354 tests, aucun vrai logiciel nécessaire
-$env:TOUCHDECK_DATA_DIR = "$env:TEMP\td-essai"; dotnet run -c Release -- --simulate   # essai sans risque
+dotnet test tests/StreamDak.Tests            # 354 tests, aucun vrai logiciel nécessaire
+$env:STREAMDAK_DATA_DIR = "$env:TEMP\td-essai"; dotnet run -c Release -- --simulate   # essai sans risque
 ```
 
 Plugin d'exemple : `dotnet build samples/HelloPlugin -c Release`, copier `HelloPlugin.dll` et `HelloPlugin.deps.json` dans
-`%TOUCHDECK_DATA_DIR%\plugins\HelloPlugin\`, relancer, puis envoyer à l'API locale
+`%STREAMDAK_DATA_DIR%\plugins\HelloPlugin\`, relancer, puis envoyer à l'API locale
 `{"cmd":"run","action":{"type":"hello","value":"greet","args":"Guillaume"}}` (voir `docs/local-api.md`).
 
 Vérifié sur l'application réelle (mode `--simulate`, dossier temporaire) : réponse de l'API locale (`ping`, `status`, `run`),

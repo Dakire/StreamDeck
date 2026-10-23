@@ -1,14 +1,14 @@
 using System.Windows;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
-/// Animations : désactivées si l'utilisateur les a coupées dans TouchDeck (ReduceMotion) ou dans Windows (Effets d'animation).
+/// Animations : désactivées si l'utilisateur les a coupées dans StreamDak (ReduceMotion) ou dans Windows (Effets d'animation).
 /// Les styles consomment la ressource « DeckTileStyle » ; le code d'animation consulte <see cref="Enabled"/>.
 /// </summary>
 public static class Motion
 {
-    /// <summary>false si les animations sont coupées (réglage TouchDeck ou Windows).</summary>
+    /// <summary>false si les animations sont coupées (réglage StreamDak ou Windows).</summary>
     public static bool Enabled { get; private set; } = true;
 
     /// <summary>Applique le réglage « Réduire les animations » en tenant compte de celui de Windows.</summary>

@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace TouchDeck.Actions;
+namespace StreamDak.Actions;
 
 /// <summary>Délais maximaux des étapes (une étape qui dépasse son délai est interrompue : le bouton affiche un échec).</summary>
 public static class ActionTimeouts

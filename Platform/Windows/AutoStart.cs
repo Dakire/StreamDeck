@@ -1,21 +1,23 @@
 using System;
 using Microsoft.Win32;
 
-namespace TouchDeck.Platform.Windows;
+namespace StreamDak.Platform.Windows;
 
 /// <summary>Lancement à l'ouverture de session Windows, via la clé Run de l'utilisateur (aucun droit administrateur).</summary>
 public static class AutoStart
 {
     const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    const string ValueName = "TouchDeck";
+    const string ValueName = "StreamDak";
+    /// <summary>Nom de la valeur avant le renommage du produit : lue et nettoyée pour ne pas laisser deux lancements.</summary>
+    const string LegacyValueName = "TouchDeck";
 
-    /// <summary>true si TouchDeck est inscrit dans la clé Run de l'utilisateur (le registre fait foi, pas config.json).</summary>
+    /// <summary>true si StreamDak est inscrit dans la clé Run de l'utilisateur (le registre fait foi, pas config.json).</summary>
     public static bool IsEnabled()
     {
         try
         {
             using var key = Registry.CurrentUser.OpenSubKey(RunKey);
-            return key?.GetValue(ValueName) is string s && s.Length > 0;
+            return key?.GetValue(ValueName) is string { Length: > 0 } || key?.GetValue(LegacyValueName) is string { Length: > 0 };
         }
         catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or System.IO.IOException)
         {
@@ -30,6 +32,7 @@ public static class AutoStart
         try
         {
             using var key = Registry.CurrentUser.CreateSubKey(RunKey);
+            key.DeleteValue(LegacyValueName, throwOnMissingValue: false);
             if (enabled)
             {
                 var exe = Environment.ProcessPath;

@@ -31,7 +31,7 @@ Aucun binaire Elgato n'a été décompilé ni analysé.
 | Glisser-déposer | Les actions se posent depuis une bibliothèque latérale vers la grille ; le panneau du bas règle l'action sélectionnée. | [obs] |
 | Marketplace | Plugins, icônes et profils distribués en ligne. | [doc] |
 
-## Ce que TouchDeck reprend, adapte ou écarte
+## Ce que StreamDak reprend, adapte ou écarte
 
 - **Repris** : profils, pages, dossiers imbriqués, profil automatique par application, multi-actions avec délais,
   titres positionnables, retour coche / alerte, catalogue d'actions avec recherche et glisser-déposer, export / import de profil.

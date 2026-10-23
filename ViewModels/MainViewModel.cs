@@ -9,11 +9,11 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using TouchDeck.Actions;
-using TouchDeck.Integrations;
+using StreamDak.Actions;
+using StreamDak.Integrations;
 using Wpf.Ui.Controls;
 
-namespace TouchDeck.ViewModels;
+namespace StreamDak.ViewModels;
 
 /// <summary>État du deck affiché en plein écran : profil, page, dossier, sous-page, mode édition tactile et menu.</summary>
 public partial class MainViewModel : ObservableObject, INavigator
@@ -79,7 +79,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     /// <summary>true si le message propose un bouton (« Annuler » après une création).</summary>
     public bool HasStatusAction => StatusActionText != null;
     /// <summary>Texte de la barre du haut : mode, profil et chemin des dossiers ouverts.</summary>
-    public string BrandText => (IsEdit ? "TouchDeck  ·  Mode édition" : "TouchDeck")
+    public string BrandText => (IsEdit ? "StreamDak  ·  Mode édition" : "StreamDak")
         + (ProfileCount > 1 ? "  ·  " + CurrentProfile.Name : "") + (PathText.Length > 0 ? "  ›  " + PathText : "");
 
     // ---------- barre du haut et dock ----------
@@ -338,7 +338,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         L = m;
 
         var view = BuildView();
-        int subs = SubPages(view.Count);
+        int subs = _folder.Count == 0 && CurrentPage.IsWeb ? 1 : SubPages(view.Count);   // une page web n'a ni sous-pages ni grille
         _sub = Math.Clamp(_sub, 0, subs - 1);
         HasSubs = subs > 1;
         SubText = $"{_sub + 1} / {subs}";
@@ -396,8 +396,59 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     readonly List<TileKey> _tileKeys = new();
 
+    /// <summary>Emprise d'une page web : « toute la grille » (la grille ramène l'emprise à ses colonnes et à ses lignes).</summary>
+    const int WholeGrid = 64;
+
+    /// <summary>
+    /// Page web : une seule tuile, le widget web, sur toute la grille (100 % de la largeur et de la hauteur de l'espace central).
+    /// Tant que la page et son adresse ne changent pas, la tuile (donc le cadre WebView2 et la page chargée) est gardée.
+    /// </summary>
+    void BuildWebPageTile(DeckPage page)
+    {
+        var key = new TileKey("webpage", CurrentPlace, -1, null, page.Name, false, IsEdit, Options: page.Url);
+        if (Tiles.Count != 1 || _tileKeys.Count != 1 || _tileKeys[0] != key)
+        {
+            Tiles.Clear();
+            _tileKeys.Clear();
+            Tiles.Add(CreateWebPageTile(page));
+            _tileKeys.Add(key);
+        }
+        if (_typing && !Tiles.OfType<WebWidgetViewModel>().Any(w => w.IsTyping)) StopTyping();
+        UpdateLiveTimer();
+        ApplySelection();
+    }
+
+    WebWidgetViewModel CreateWebPageTile(DeckPage page)
+    {
+        // Bouton de passage, jamais écrit dans le document : il donne au widget web sa couleur, son adresse et son titre
+        var button = new DeckButton { Label = page.Name, Widget = WidgetTypes.Web, Color = "#0E7490" };
+        button.SetOption(WidgetOptionKeys.Url, page.Url);
+        WidgetTypes.IsWebAddress(page.Url, out var uri);
+        var web = new WebWidgetViewModel
+        {
+            Button = button, Edit = new RelayCommand(OpenPageMenu), AccessibleName = $"Page web {page.Name}", Source = uri,
+            FrameKey = uri == null ? null : $"page|{CurrentProfile.Name}|{page.Name}|{uri.AbsoluteUri}",
+            Suspended = MenuOpen || HasDialog,
+            MissingAddressMessage = "Cette page web n'a pas d'adresse valide : mode édition › Page › Adresse de la page web",
+            Cell = 0, ColSpan = WholeGrid, RowSpan = WholeGrid,
+            ZoomPercent = page.Zoom == 0 ? WebZoom.Normal : WebZoom.Clamp(page.Zoom),
+        };
+        string profileName = CurrentProfile.Name;
+        int pageIndex = _page;
+        web.ZoomChanged = z => _doc.UpdateSettings(c =>
+        {
+            if (ConfigNormalizer.FindProfile(c, profileName) is { } p && pageIndex < p.Pages.Count && p.Pages[pageIndex].IsWeb)
+                p.Pages[pageIndex].Zoom = WebZoom.ForStorage(z);
+        }, "Zoom de la page web");
+        web.Face = TileFaceData.From(button);
+        web.TypingRequested = on => SetTyping(on ? web : null, on);
+        web.BrowserRequested = OpenInBrowser;
+        return web;
+    }
+
     void BuildTiles(List<ViewItem> view)
     {
+        if (_folder.Count == 0 && CurrentPage is { IsWeb: true } webPage) { BuildWebPageTile(webPage); return; }
         // Réconciliation tuile par tuile plutôt que Clear + Add : une modification de document (titre tapé dans l'éditeur,
         // réglage) ne régénère plus les 32 conteneurs de la grille, seulement les cases qui ont réellement changé.
         var place = CurrentPlace;
@@ -500,7 +551,8 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     /// <summary>Empreinte des réglages d'un widget : une tuile n'est gardée que si rien de ce qui la décrit n'a changé.</summary>
     static string WidgetSignature(DeckButton def) =>
-        def.Widget + "|" + def.Color + "|" + string.Join(";", (def.WidgetOptions ?? new()).OrderBy(o => o.Key, StringComparer.Ordinal).Select(o => o.Key + "=" + o.Value));
+        def.Widget + "|" + def.Color + "|" + string.Join(";", (def.WidgetOptions ?? new()).Where(o => o.Key != WidgetOptionKeys.Zoom)   // le zoom se règle sur la tuile : la garder
+            .OrderBy(o => o.Key, StringComparer.Ordinal).Select(o => o.Key + "=" + o.Value));
 
     /// <summary>Tuile d'affichage d'un widget (heure, agenda ou page web).</summary>
     WidgetTileViewModel CreateWidgetTile(DeckButton def, Place place, int index)
@@ -510,21 +562,45 @@ public partial class MainViewModel : ObservableObject, INavigator
         WidgetTileViewModel tile = def.Widget switch
         {
             WidgetTypes.Agenda => new AgendaWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
-            WidgetTypes.Web => CreateWebWidget(def, edit, name),
+            WidgetTypes.Web => CreateWebWidget(def, edit, name, place, index),
+            WidgetTypes.Cpu or WidgetTypes.Ram => new SystemMeterWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
             _ => new ClockWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
         };
         tile.Face = TileFaceData.From(def);
         if (tile is ClockWidgetViewModel clock) clock.Update(DateTime.Now);
         else if (tile is AgendaWidgetViewModel agenda) RefreshAgenda(agenda);
+        else if (tile is SystemMeterWidgetViewModel meter) RefreshSystem(meter);
         return tile;
     }
 
-    WebWidgetViewModel CreateWebWidget(DeckButton def, System.Windows.Input.ICommand edit, string name)
+    WebWidgetViewModel CreateWebWidget(DeckButton def, System.Windows.Input.ICommand edit, string name, Place place, int index)
     {
         WidgetTypes.IsWebAddress(def.Option(WidgetOptionKeys.Url), out var uri);   // adresse absente ou refusée : uri reste null, la tuile le dit
-        var web = new WebWidgetViewModel { Button = def, Edit = edit, AccessibleName = name, Source = uri, Suspended = MenuOpen || HasDialog };
+        var web = new WebWidgetViewModel
+        {
+            Button = def, Edit = edit, AccessibleName = name, Source = uri, Suspended = MenuOpen || HasDialog,
+            FrameKey = uri == null ? null : $"widget|{place.Profile}|{place.Page}|{string.Join('.', place.Path)}|{index}|{uri.AbsoluteUri}",
+            ZoomPercent = def.OptionInt(WidgetOptionKeys.Zoom, WebZoom.Normal, WebZoom.Min, WebZoom.Max),
+        };
+        web.ZoomChanged = z => _doc.UpdateSettings(c =>
+        {
+            int stored = WebZoom.ForStorage(z);
+            if (_doc.Get(place, index) is { } button) button.SetOption(WidgetOptionKeys.Zoom, stored > 0 ? stored.ToString(System.Globalization.CultureInfo.InvariantCulture) : null);
+        }, "Zoom du widget web");
         web.TypingRequested = on => SetTyping(on ? web : null, on);
+        web.BrowserRequested = OpenInBrowser;
         return web;
+    }
+
+    /// <summary>Ouvre une adresse web dans le navigateur par défaut (issue de secours d'un site qui refuse le cadre intégré).</summary>
+    void OpenInBrowser(Uri uri)
+    {
+        try { _engine.Context.Platform.Launcher.Open(uri.AbsoluteUri, null); }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or System.IO.IOException)
+        {
+            Log.Warn("Ouverture dans le navigateur impossible : " + ex.Message);
+            SetStatus("Impossible d'ouvrir le navigateur");
+        }
     }
 
     // ---------- widget web : saisie au clavier et masquage sous les feuilles ----------
@@ -575,6 +651,46 @@ public partial class MainViewModel : ObservableObject, INavigator
     }
 
     const string GoogleId = "google";
+
+    bool _systemEnableRequested;
+
+    /// <summary>
+    /// Contenu d'un widget Processeur ou Mémoire : le dernier relevé de l'intégration « Système Windows ». Cette intégration n'a ni compte ni
+    /// réglage : si elle est éteinte, le premier widget affiché l'active (une fois, sans toucher aux boutons).
+    /// </summary>
+    void RefreshSystem(SystemMeterWidgetViewModel meter)
+    {
+        var sys = _integrations.Find(SystemMeter.IntegrationId);
+        if (sys == null) { meter.ShowStatus("Le connecteur Système Windows est indisponible"); return; }
+        if (!_integrations.IsEnabled(SystemMeter.IntegrationId))
+        {
+            meter.ShowStatus("Activation du connecteur Système Windows…");
+            EnableSystemIntegration();
+            return;
+        }
+        if (sys.State != ConnectionState.Connected)
+        {
+            meter.ShowStatus(sys.State == ConnectionState.Error && sys.Error != null ? sys.Error : "Première mesure en cours…");
+            return;
+        }
+        string? Value(string key) => _integrations.GetValue($"{SystemMeter.IntegrationId}.{key}");
+        var reading = meter.IsRam ? SystemMeter.Ram(Value("ram.used"), Value("ram.total")) : SystemMeter.Cpu(Value("cpu"));
+        if (reading == null) meter.ShowStatus("Première mesure en cours…");
+        else meter.Show(reading);
+    }
+
+    /// <summary>Active l'intégration « Système Windows » (réglage, hors historique) ; hors de la reconstruction de la grille en cours.</summary>
+    void EnableSystemIntegration()
+    {
+        if (_systemEnableRequested) return;
+        _systemEnableRequested = true;
+        _ui.BeginInvoke(DispatcherPriority.Background, () =>
+        {
+            if (!_integrations.IsEnabled(SystemMeter.IntegrationId))
+                _doc.UpdateSettings(c => (c.Integrations ??= new())[SystemMeter.IntegrationId] = new IntegrationConfig { Enabled = true }, "Système Windows");
+            _systemEnableRequested = false;
+        });
+    }
 
     // ---------- exécution et retour visuel ----------
 
@@ -632,6 +748,7 @@ public partial class MainViewModel : ObservableObject, INavigator
                 if (t.Button is { IsFolder: false } b && (LabelTemplate.ValueKeys(b.Label).Count > 0 || b.Actions.Any(a => _integrations.Find(a.Type) != null)))
                     UpdateFace(t);
             foreach (var agenda in Tiles.OfType<AgendaWidgetViewModel>()) RefreshAgenda(agenda);
+            foreach (var meter in Tiles.OfType<SystemMeterWidgetViewModel>()) RefreshSystem(meter);
         });
     }
 
@@ -736,7 +853,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         Add(SymbolRegular.Pin24, "Toujours au premier plan", () => _doc.UpdateSettings(c => c.AlwaysOnTop = !c.AlwaysOnTop, "Premier plan"), trailing: _shell.IsOnTop ? "✓" : null);
         Add(SymbolRegular.ArrowSync24, "Recharger la configuration", _persistence.ReloadFromDisk);
         MenuEntries.Add(new MenuSeparatorViewModel());
-        Add(SymbolRegular.Power24, "Quitter TouchDeck", () => Application.Current.Shutdown(), danger: true);
+        Add(SymbolRegular.Power24, "Quitter StreamDak", () => Application.Current.Shutdown(), danger: true);
     }
 
     void CycleTheme()

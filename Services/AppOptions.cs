@@ -1,4 +1,4 @@
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>Options de la ligne de commande.</summary>
 /// <param name="Simulate">true : aucune touche envoyée, aucun programme lancé, les actions sont affichées (essais sans risque).</param>

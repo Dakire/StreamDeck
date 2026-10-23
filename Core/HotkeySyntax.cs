@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TouchDeck;
+namespace StreamDak;
 
 /// <summary>
 /// Syntaxe des raccourcis (« ctrl+shift+m », « win+d », « f13 », « playpause ») : noms de touches reconnus et validation
