@@ -14,6 +14,9 @@ public sealed class WindowsPlatform : IKeyboardService, IAppLauncher, IWindowSer
         return new PlatformServices(p, p, p, p);
     }
 
+    /// <summary>Vérificateur de signature Authenticode (mise à jour : l'installateur téléchargé).</summary>
+    public static ISignatureVerifier CreateSignatureVerifier() => new AuthenticodeVerifier();
+
     /// <inheritdoc/>
     public void SendHotkey(string combo) => NativeInput.Hotkey(combo);
     /// <inheritdoc/>

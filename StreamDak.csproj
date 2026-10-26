@@ -43,6 +43,10 @@
     <Resource Include="Assets\icon.ico" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Dépôt GitHub des mises à jour : un fichier à côté de l'exécutable, modifiable par update.json (rien n'est écrit en dur dans le code) -->
+    <Content Include="update.defaults.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="Core\StreamDak.Core.csproj" />
     <ProjectReference Include="Platform\Windows\StreamDak.Platform.Windows.csproj" />
     <ProjectReference Include="Integrations\Obs\StreamDak.Integrations.Obs.csproj" />

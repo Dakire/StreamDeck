@@ -659,9 +659,14 @@
             </Button>
           </StackPanel>
           <Border Width="1" Margin="4,10,8,10" Background="{DynamicResource DeckLine}"/>
-          <Button Style="{StaticResource DockButton}" Command="{Binding OpenMenuCommand}" AutomationProperties.Name="Menu" ToolTip="Menu" Padding="0" Margin="0"
+          <Button Style="{StaticResource DockButton}" Command="{Binding OpenMenuCommand}" AutomationProperties.Name="{Binding MenuTooltip}" ToolTip="{Binding MenuTooltip}" Padding="0" Margin="0"
                   Width="{Binding L.BarH}">
-            <ui:SymbolIcon Symbol="Settings24" FontSize="{Binding L.GearFont}"/>
+            <Grid>
+              <ui:SymbolIcon Symbol="Settings24" FontSize="{Binding L.GearFont}"/>
+              <!-- Mise à jour disponible : un point d'accent discret, jamais une fenêtre -->
+              <Ellipse Width="9" Height="9" Fill="{DynamicResource DeckAccent}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-3,-5,0" IsHitTestVisible="False"
+                       Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolVis}}"/>
+            </Grid>
           </Button>
         </StackPanel>
       </Grid>

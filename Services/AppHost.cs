@@ -156,6 +156,8 @@ public static class AppHost
         // Badges de notifications : services connus + ceux de notifications.json, suivis dans des pages WebView2 cachées (seulement si le connecteur est activé)
         services.AddSingleton(_ => NotificationProviders.Load(ConfigStore.Dir));
         services.AddSingleton<INotificationWatcher>(sp => new WebNotificationWatcher(sp.GetRequiredService<DeckDocument>(), sp.GetRequiredService<NotificationProviders>()));
+        // Mises à jour par les releases GitHub (réglages dans update.json, dépôt par défaut dans update.defaults.json : rien n'est écrit en dur)
+        services.AddSingleton(_ => CreateUpdateService(options));
         services.AddSingleton<IApiShell, ApiShell>();
         services.AddSingleton<LocalApi>();
 
@@ -212,6 +214,28 @@ public static class AppHost
                 services.AddSingleton<IActionHandler>(sp => new IntegrationAction((IIntegration)sp.GetRequiredService(type)));
             }
         }
+    }
+
+    /// <summary>Service de mises à jour : API GitHub (redirections HTTPS permises), téléchargement sans redirection automatique (chacune est contrôlée), signature Authenticode de Windows.</summary>
+    static UpdateService CreateUpdateService(AppOptions options)
+    {
+        var current = UpdateEnvironment.CurrentVersion();
+        // Hors installation, avec un dossier de configuration imposé (essais, tests) : le dossier de travail reste dans ce dossier et ne touche pas au vrai profil local
+        var work = Environment.GetEnvironmentVariable("STREAMDAK_DATA_DIR") is { Length: > 0 }
+            ? Path.Combine(ConfigStore.Dir, "updates")
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "StreamDak", "updates");
+        var environment = new UpdateEnvironment(ConfigStore.Dir, AppContext.BaseDirectory, work, current, Environment.ProcessPath ?? "", Environment.ProcessId);
+        var api = new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = true, MaxAutomaticRedirections = 3 }) { Timeout = Timeout.InfiniteTimeSpan };
+        var download = new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
+        IUpdateApplier applier = options.Simulate ? new SimulatedApplier() : new UpdateApplier();
+        return new UpdateService(environment, new UpdateChecker(api, current), new UpdateDownloader(download, current), WindowsPlatform.CreateSignatureVerifier(), applier,
+            () => Application.Current?.Dispatcher.BeginInvoke(() => Application.Current.Shutdown()));
+    }
+
+    /// <summary>Mode « --simulate » : l'installation est annoncée, jamais lancée.</summary>
+    sealed class SimulatedApplier : IUpdateApplier
+    {
+        public void Launch(UpdatePlan plan) => Log.Info($"Simulation : installation de {Path.GetFileName(plan.Installer)} non lancée");
     }
 
     static PlatformServices CreatePlatform(AppOptions options)

@@ -1,0 +1,33 @@
+# Compilation et tests à chaque poussée et demande de fusion.
+name: ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Compilation (avertissements = erreurs)
+        run: dotnet build -c Release --nologo
+      - name: Tests
+        run: dotnet test tests/StreamDak.Tests -c Release --nologo
+      - name: Vulnérabilités des dépendances
+        shell: pwsh
+        run: |
+          $out = dotnet list StreamDak.csproj package --vulnerable --include-transitive 2>&1 | Out-String
+          Write-Host $out
+          if ($out -match 'has the following vulnerable packages') { throw 'Dépendance vulnérable' }

@@ -1,0 +1,85 @@
+# Publie une release quand on pousse un tag vX.Y.Z (ou vX.Y.Z-beta.1 : pré-version) :
+# tests, installateurs (self-contained et framework-dependent), sommes SHA-256, release GitHub avec ses fichiers.
+name: release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+
+      - name: Version du tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          $version = $tag.TrimStart('v')
+          if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') { throw "Tag non conforme à SemVer : $tag" }
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "prerelease=$($version.Contains('-').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+      # Tests, publication des deux variantes, installateurs, artifacts/installer/checksums.txt (SHA-256)
+      - name: Construire (tests, installateurs, sommes SHA-256)
+        shell: pwsh
+        run: ./build.ps1 -Version '${{ steps.version.outputs.version }}'
+
+      - name: Contrôler les sommes
+        shell: pwsh
+        run: |
+          Push-Location artifacts/installer
+          $lines = Get-Content checksums.txt
+          if ($lines.Count -lt 2) { throw 'checksums.txt incomplet' }
+          foreach ($line in $lines) {
+            $hash, $name = $line -split '\s+', 2
+            $actual = (Get-FileHash $name -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne $hash) { throw "Somme différente pour $name" }
+            Write-Host "OK $name $hash"
+          }
+          Pop-Location
+
+      - name: Notes de version (CHANGELOG)
+        id: notes
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $text = Get-Content CHANGELOG.md -Raw
+          $pattern = '(?ms)^## \[?' + [regex]::Escape($version) + '\]?[^\r\n]*\r?\n(.*?)(?=^## |\z)'
+          $m = [regex]::Match($text, $pattern)
+          $body = if ($m.Success -and $m.Groups[1].Value.Trim()) { $m.Groups[1].Value.Trim() } else { "Version $version. Voir CHANGELOG.md." }
+          Set-Content -Path release-notes.md -Value $body -Encoding utf8
+
+      - name: Publier la release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ghArgs = @('release', 'create', '${{ steps.version.outputs.tag }}', '--title', 'StreamDak ${{ steps.version.outputs.version }}', '--notes-file', 'release-notes.md', '--verify-tag')
+          if ('${{ steps.version.outputs.prerelease }}' -eq 'true') { $ghArgs += '--prerelease' }
+          $ghArgs += (Get-ChildItem artifacts/installer -File | ForEach-Object FullName)
+          gh @ghArgs

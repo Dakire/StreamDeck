@@ -45,6 +45,7 @@ public partial class App : Application
         _api.Start();
         _tray = new TrayIcon(_services.GetRequiredService<IApiShell>());
         _watchdog = new UiWatchdog(Dispatcher);
+        if (!options.Simulate) _services.GetRequiredService<UpdateService>().StartBackgroundCheck();   // une fois par jour au plus, 20 s après le démarrage, désactivable
         // « StreamDak.exe --edit » ouvre aussi l'éditeur au lancement
         if (options.OpenEditor)
         {

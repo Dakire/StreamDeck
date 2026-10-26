@@ -34,6 +34,13 @@ public partial class MainViewModel : ObservableObject, INavigator
     readonly IntegrationManager _integrations;
     readonly WidgetRegistry _widgets;
     readonly NotificationProviders _notifications;
+    readonly UpdateService _updates;
+
+    /// <summary>true si une version plus récente existe : un point d'accent discret sur le bouton de menu.</summary>
+    public bool UpdateAvailable => _updates.HasUpdate;
+
+    /// <summary>Info-bulle du bouton de menu (« Menu » ou « Menu · version 1.4.0 disponible »).</summary>
+    public string MenuTooltip => _updates.HasUpdate ? $"Menu · version {_updates.NewVersionText} disponible" : "Menu";
     readonly HashSet<DataWidgetViewModel> _dataWidgets = new();
     readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
     bool _integrationRefreshPending;
@@ -109,8 +116,17 @@ public partial class MainViewModel : ObservableObject, INavigator
     /// <summary>Deck sur le document partagé ; <paramref name="shell"/> fournit le placement Win32.</summary>
     public MainViewModel(IShell shell, DeckDocument doc, ActionEngine engine, AppOptions options, StartupResult startup,
         GridState grid, IAppWindows windows, ConfigPersistence persistence, IntegrationManager integrations,
-        Func<IEditorShell, EditorViewModel> editorFactory, WidgetRegistry widgets, NotificationProviders notifications)
+        Func<IEditorShell, EditorViewModel> editorFactory, WidgetRegistry widgets, NotificationProviders notifications, UpdateService updates)
     {
+        _updates = updates;
+        updates.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(UpdateService.HasUpdate) or nameof(UpdateService.NewVersionText))
+            {
+                OnPropertyChanged(nameof(UpdateAvailable));
+                OnPropertyChanged(nameof(MenuTooltip));
+            }
+        };
         _notifications = notifications;
         _editorFactory = editorFactory;
         _widgets = widgets;
@@ -904,6 +920,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         Add(SymbolRegular.Edit24, IsEdit ? "Terminer la modification" : "Modifier le deck", () => IsEdit = !IsEdit);
         if (ProfileCount > 1)
             Add(SymbolRegular.PersonSwap24, "Changer de profil", () => { _profileMenu = true; BuildMenu(); }, trailing: CurrentProfile.Name, keepOpen: true);
+        if (_updates.HasUpdate) Add(SymbolRegular.ArrowDownload24, $"Version {_updates.NewVersionText} disponible", _windows.OpenSettings);
         Add(SymbolRegular.Settings24, "Paramètres", _windows.OpenSettings);
         Add(SymbolRegular.DarkTheme24, "Thème", CycleTheme, trailing: _doc.Config.Theme.ToLowerInvariant() switch { "dark" => "Sombre", "amoled" => "AMOLED", "light" => "Clair", _ => "Auto" });
         Add(SymbolRegular.Desktop24, "Changer d'écran", _shell.NextScreen);

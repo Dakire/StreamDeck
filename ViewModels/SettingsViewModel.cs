@@ -53,6 +53,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] bool _deviceConnected;
     [ObservableProperty] bool _systemReducesMotion;
 
+    /// <summary>Mises à jour par les releases GitHub : version, recherche, notes, installation.</summary>
+    public UpdateService Updates { get; }
+
     /// <summary>Une carte par intégration (OBS, vMix…).</summary>
     public ObservableCollection<IntegrationCardViewModel> Integrations { get; } = new();
     /// <summary>Choix du thème : système, sombre, clair.</summary>
@@ -92,8 +95,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     /// <summary>Paramètres sur le document partagé ; suit ses modifications et les changements d'écran.</summary>
     public SettingsViewModel(ISettingsShell shell, DeckDocument doc, DisplayService displays, ConfigPersistence persistence,
-        IntegrationManager integrations, ISecretStore secrets)
+        IntegrationManager integrations, ISecretStore secrets, UpdateService updates)
     {
+        Updates = updates;
         foreach (var integration in integrations.Integrations) Integrations.Add(new IntegrationCardViewModel(integration, integrations, doc, secrets));
         _shell = shell;
         _doc = doc;

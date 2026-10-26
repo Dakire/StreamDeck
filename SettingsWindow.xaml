@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:vm="clr-namespace:StreamDak.ViewModels"
+        xmlns:controls="clr-namespace:StreamDak.Controls"
         Title="Paramètres — StreamDak" Width="820" Height="860" MinWidth="560" MinHeight="520"
         ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica" WindowCornerPreference="Round"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="True"
@@ -139,6 +140,79 @@
           <StackPanel>
             <TextBlock Text="Démarrage" Style="{StaticResource SectionTitle}"/>
             <ui:ToggleSwitch Content="Lancer StreamDak à l'ouverture de session Windows" IsChecked="{Binding StartWithWindows, Mode=TwoWay}"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Mises à jour -->
+        <Border Style="{StaticResource SettingsCard}">
+          <StackPanel DataContext="{Binding Updates}">
+            <TextBlock Text="Mises à jour" Style="{StaticResource SectionTitle}"/>
+            <TextBlock Style="{StaticResource EditorHint}" Margin="0,0,0,8" TextWrapping="Wrap">
+              <Run Text="Version installée : "/><Run Text="{Binding CurrentVersionText, Mode=OneWay}" FontWeight="SemiBold"/>
+              <Run Text="{Binding RepositoryText, Mode=OneWay, StringFormat=' · releases de {0} sur GitHub'}"/>
+            </TextBlock>
+            <ui:Button Content="Rechercher des mises à jour" Icon="{ui:SymbolIcon ArrowSync24}" Command="{Binding CheckNowCommand}" MinHeight="48" HorizontalAlignment="Left"
+                       AutomationProperties.Name="Rechercher des mises à jour"/>
+            <TextBlock Text="{Binding StatusText}" Margin="0,10,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+            <TextBlock Text="{Binding ErrorText}" Foreground="{DynamicResource DeckDanger}" Margin="0,6,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Assertive">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                  <Setter Property="Visibility" Value="Visible"/>
+                  <Style.Triggers><DataTrigger Binding="{Binding ErrorText}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
+
+            <!-- Version disponible : notes, puis Installer maintenant / Plus tard / Ignorer cette version -->
+            <Border BorderBrush="{DynamicResource DeckLine}" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,12,0,0" Visibility="{Binding ShowDetails, Converter={StaticResource BoolVis}}">
+              <StackPanel>
+                <TextBlock FontWeight="SemiBold" FontSize="16" TextWrapping="Wrap">
+                  <Run Text="Version "/><Run Text="{Binding NewVersionText, Mode=OneWay}"/><Run Text=" disponible"/>
+                </TextBlock>
+                <TextBlock Style="{StaticResource EditorHint}" TextWrapping="Wrap">
+                  <Run Text="Tu as la "/><Run Text="{Binding CurrentVersionText, Mode=OneWay}"/><Run Text="."/>
+                </TextBlock>
+                <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto" Margin="0,8,0,8" Focusable="False">
+                  <controls:MarkdownView Blocks="{Binding Notes}"/>
+                </ScrollViewer>
+                <StackPanel Visibility="{Binding IsInstalling, Converter={StaticResource BoolVis}}">
+                  <ProgressBar Minimum="0" Maximum="1" Height="8" Value="{Binding Progress, Mode=OneWay, TargetNullValue=0}">
+                    <ProgressBar.Style>
+                      <Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
+                        <Style.Triggers><DataTrigger Binding="{Binding Progress}" Value="{x:Null}"><Setter Property="IsIndeterminate" Value="True"/></DataTrigger></Style.Triggers>
+                      </Style>
+                    </ProgressBar.Style>
+                  </ProgressBar>
+                  <TextBlock Text="{Binding ProgressText}" Margin="0,6,0,8" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+                  <ui:Button Content="Annuler" Icon="{ui:SymbolIcon Dismiss24}" Command="{Binding CancelDownloadCommand}" MinHeight="48" AutomationProperties.Name="Annuler le téléchargement"/>
+                </StackPanel>
+                <WrapPanel>
+                  <WrapPanel.Style>
+                    <Style TargetType="WrapPanel">
+                      <Setter Property="Visibility" Value="Visible"/>
+                      <Style.Triggers><DataTrigger Binding="{Binding IsInstalling}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
+                    </Style>
+                  </WrapPanel.Style>
+                  <ui:Button Content="Installer maintenant" Appearance="Primary" Icon="{ui:SymbolIcon ArrowDownload24}" Command="{Binding InstallNowCommand}" MinHeight="48" Margin="0,0,8,8"
+                             Visibility="{Binding CanInstall, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Installer maintenant"/>
+                  <ui:Button Content="Voir la release" Icon="{ui:SymbolIcon Open24}" Command="{Binding OpenReleasePageCommand}" MinHeight="48" Margin="0,0,8,8" AutomationProperties.Name="Voir la release sur GitHub">
+                    <ui:Button.Style>
+                      <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers><DataTrigger Binding="{Binding CanInstall}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+                      </Style>
+                    </ui:Button.Style>
+                  </ui:Button>
+                  <ui:Button Content="Plus tard" Command="{Binding PostponeUpdateCommand}" MinHeight="48" Margin="0,0,8,8" AutomationProperties.Name="Plus tard"/>
+                  <ui:Button Content="Ignorer cette version" Command="{Binding IgnoreUpdateCommand}" MinHeight="48" Margin="0,0,8,8" AutomationProperties.Name="Ignorer cette version"/>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+
+            <ui:ToggleSwitch Content="Vérifier au démarrage (une fois par jour au plus, en arrière-plan)" IsChecked="{Binding AutoCheck, Mode=TwoWay}" Margin="0,8,0,0" MinHeight="48"/>
+            <ui:ToggleSwitch Content="Canal bêta : proposer aussi les pré-versions" IsChecked="{Binding Beta, Mode=TwoWay}" MinHeight="48"/>
+            <TextBlock Style="{StaticResource EditorHint}" TextWrapping="Wrap"
+                       Text="Rien ne s'installe sans ton accord. Le téléchargement n'a lieu que depuis les releases GitHub du dépôt configuré (update.json), en HTTPS, et l'installateur n'est lancé que si sa somme SHA-256 correspond à celle publiée. Tes profils ne sont jamais touchés."/>
           </StackPanel>
         </Border>
 
