@@ -214,12 +214,29 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
                 var raw = await core.ExecuteScriptAsync(script);
                 if (!session.Closed && TryNumber(raw, out var scripted)) count = scripted;
             }
+            LogReading(session, page, core.DocumentTitle, count);
             Report(session, count);
         }
         catch (Exception ex) when (ex is COMException or InvalidOperationException or ObjectDisposedException or JsonException)
         {
             Log.Warn($"Notifications : lecture de {session.Provider.Name} impossible ({ex.Message})");
         }
+    }
+
+    /// <summary>Dernière lecture journalisée par service : on ne consigne que les changements.</summary>
+    readonly Dictionary<string, string> _logged = new();
+
+    /// <summary>
+    /// Journalise ce que la page affiche (hôte, titre « masqué », résultat) pour comprendre un badge absent : les lettres du titre sont remplacées par « · » (noms, adresses,
+    /// contenu de messages ne sont jamais écrits), les chiffres et la ponctuation restent, ce qui montre le format du compteur.
+    /// </summary>
+    void LogReading(Session session, Uri? page, string? title, int? count)
+    {
+        var masked = new string((title ?? "").Select(c => char.IsLetter(c) ? '·' : c).ToArray());
+        var line = $"{page?.Host ?? "?"} · titre « {(masked.Length > 60 ? masked[..60] + "…" : masked)} » · compteur {(count?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "inconnu")}";
+        if (_logged.TryGetValue(session.Provider.Id, out var before) && before == line) return;
+        _logged[session.Provider.Id] = line;
+        Log.Info($"Notifications : {session.Provider.Name} : {line}");
     }
 
     /// <summary>Nombre d'un résultat de script (JSON : « 7 », « null »).</summary>
