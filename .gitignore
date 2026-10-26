@@ -4,3 +4,5 @@ obj/
 *.user
 *.suo
 *_wpftmp.csproj
+artifacts/
+*.pfx
