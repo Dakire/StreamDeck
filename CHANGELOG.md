@@ -4,6 +4,33 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Ajouté (1.0.0, premières publications)
+- **Installateur Windows** (Inno Setup) : `build.ps1` produit `StreamDak-<version>-self-contained-Setup.exe`, `…-framework-dependent-Setup.exe` et `checksums.txt` ; dossier au choix,
+  raccourcis, lancement avec Windows, mise à jour sur place sans toucher à `%AppData%`, désinstallation propre, WebView2 vérifié ; script de signature `installer/sign.ps1`. `docs/INSTALLATION.md`.
+- **Mises à jour par les releases GitHub** : bouton *Rechercher des mises à jour*, notes Markdown, *Installer maintenant / Plus tard / Ignorer*, canal bêta, vérification automatique
+  quotidienne désactivable, point discret sur le menu du deck. Téléchargement HTTPS limité au dépôt configuré (`update.json`), reprise après coupure, SHA-256 de `checksums.txt` et signature
+  Authenticode vérifiés, installation silencieuse avec sauvegarde et restauration. Workflow GitHub Actions sur tag `vX.Y.Z`. ADR 0021.
+- **Widgets de données extensibles** (`IWidget`) : disque, réseau, ping, état des services (HTTP / port TCP), météo, prochain événement, compteur JSON ; tailles 1 × 1, 2 × 1, 2 × 2,
+  intervalle réglable, arrêt hors page visible et deck masqué ; réglages générés dans le panneau de propriétés. ADR 0019.
+- **Badges de notifications** (Gmail, Google Chat, Discord, Teams, Slack, services de `notifications.json`) sur les boutons « site web » : pages WebView2 cachées, lecture sur événement,
+  session partagée, aucun identifiant enregistré. ADR 0020.
+- `SECURITY.md` (audit), `.github/workflows/ci.yml` (compilation, tests, dépendances vulnérables), version unique dans `Directory.Build.props`, SDK épinglé (`global.json`).
+
+### Sécurité
+- **Scripts** : plus aucune ligne de commande assemblée (`ScriptCommand`, `ArgumentList`) ; les métacaractères de `cmd.exe` sont refusés pour `.bat` et `.cmd` ; politique PowerShell `RemoteSigned`
+  (au lieu de `Bypass`) : **un script téléchargé et non signé est maintenant bloqué**.
+- **Journal** : masquage des jetons, mots de passe et en-têtes `Authorization` (`LogRedactor`).
+- **Secrets** : un secret retrouvé en clair dans `config.json` est déplacé dans le magasin chiffré et supprimé du fichier.
+- Analyseurs de sécurité .NET en erreur (`AnalysisModeSecurity=All`).
+
+### Performances
+- Deck réduit ou masqué : minuteries arrêtées, connecteur « Système Windows » relevé toutes les 30 s au lieu d'1 s, pages de notifications mises en veille ; reprise après veille. CPU au repos,
+  widget Processeur, deck réduit : **1 766 ms → 250 ms par 30 s (−86 %)**.
+
+### Corrigé (interface)
+- Pastille « Simulation » illisible en thème clair (contraste ≥ 4,5 vérifié par test) ; le mot « Modifier » d'une touche étroite recouvrait le badge d'étapes.
+- Test de rendu des jauges qui dépendait de l'ordre d'exécution.
+
 ### Corrigé (dock et page web)
 - **Un lien reçu dans Google Chat (Google Docs…) s'ouvrait dans le cadre, sans moyen d'en sortir** : un lien « nouvel onglet » vers un autre site
   s'ouvre maintenant dans le navigateur par défaut ; seuls les liens du même site et les pages de connexion (Google, Microsoft) restent dans le cadre.

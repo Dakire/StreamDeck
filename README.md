@@ -15,10 +15,28 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 
 *Captures rendues hors écran par le harnais de tests, en mode simulation (d'où le badge « Simulation »).*
 
+## Installer
+
+Télécharge `StreamDak-<version>-self-contained-Setup.exe` (runtime .NET inclus) ou `…-framework-dependent-Setup.exe` (léger) dans les
+[Releases](https://github.com/Dakire/StreamDeck/releases). Dossier au choix, raccourcis Bureau et menu Démarrer, lancement avec Windows en option, mise à jour sur place,
+désinstallation propre ; **tes profils restent dans `%AppData%\StreamDak`**, jamais dans le dossier d'installation. Détails, choix d'Inno Setup, signature : [Installation](docs/INSTALLATION.md).
+Paramètres › **Mises à jour** : *Rechercher des mises à jour*, notes de version, *Installer maintenant* / *Plus tard* / *Ignorer cette version*, canal bêta, vérification
+automatique (une fois par jour, désactivable). Rien ne s'installe sans ton accord ; le fichier téléchargé est vérifié (SHA-256 de `checksums.txt`, signature) avant d'être lancé.
+
+## Widgets de données et badges
+
+- **Widgets** (catalogue › Widgets) : horloge et date, processeur, mémoire, **disque**, **réseau**, **ping / latence** vers des hôtes, **état de services** (page web ou port TCP),
+  **météo** (Open-Meteo, sans compte), **prochain événement** (Google Agenda), **compteur** lu dans une réponse JSON (tickets…). Tailles 1 × 1, 2 × 1, 2 × 2, intervalle réglable ;
+  ils ne relèvent rien quand leur page n'est pas affichée ni quand le deck est masqué. Ajouter un widget : [ADR 0019](docs/adr/0019-widgets-de-donnees.md).
+- **Badges de notifications** : un badge rouge (« 99+ ») sur les boutons « site web » de Gmail, Google Chat, Discord, Teams, Slack ou d'un service décrit dans `notifications.json`.
+  Paramètres › Intégrations › Notifications ; session partagée avec les pages web du deck, aucun mot de passe enregistré : [Notifications](docs/integrations/notifications.md).
+
 ## Documentation
 
 | Document | Contenu |
 |---|---|
+| [Installation](docs/INSTALLATION.md), [Publier une version](docs/RELEASING.md) | Installateurs, signature de code, mises à jour GitHub, workflow de release |
+| [Sécurité](SECURITY.md) | Audit, secrets, lancement de scripts, import, réseau, dépendances, reste à traiter |
 | [Architecture](docs/ARCHITECTURE.md) | Couches, exécution d'un bouton, mise à jour de la grille, choix de WPF (diagrammes) |
 | [Format de configuration](docs/configuration.md) | `config.json` en détail, cycle de vie, migrations, exemple |
 | [Développement](docs/DEVELOPMENT.md) | Prérequis, commandes, tests, vérifications manuelles, jetons de design |
@@ -156,10 +174,11 @@ dotnet test tests/StreamDak.Tests    # tests automatisés (l'interface est rendu
 
 Pour essayer sans toucher à votre configuration : `$env:STREAMDAK_DATA_DIR = "$env:TEMP\streamdak-essai"`.
 
-Pour produire l'exécutable :
+Pour produire les installateurs (Inno Setup 6 requis) :
 
 ```powershell
-dotnet publish -c Release -r win-x64 --self-contained false
+./build.ps1                      # tests, puis artifacts/installer : deux Setup.exe et checksums.txt
+./build.ps1 -SkipTests -Flavor self-contained
 ```
 
 La publication précompile le code (ReadyToRun) : démarrage environ 80 ms plus court (mesuré : 705 à 650 ms). `dotnet run` n'en profite pas.
@@ -318,4 +337,6 @@ utiliser un dossier de configuration jetable.
 
 ## Sécurité
 
-Les actions `script` et `launch` exécutent du code avec vos droits. N'importez que des fichiers de confiance.
+Les actions `script` et `launch` exécutent du code avec vos droits. N'importez que des fichiers de confiance : l'import liste ces actions et demande confirmation.
+Les arguments d'un script ne sont jamais assemblés en ligne de commande, les secrets sont chiffrés (DPAPI) et masqués dans le journal, aucune télémétrie.
+L'audit complet, ses résultats et ce qui reste à traiter sont dans [SECURITY.md](SECURITY.md).

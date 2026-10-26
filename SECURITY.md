@@ -1,6 +1,6 @@
 # Sécurité
 
-Audit du 26 octobre 2026 (branche `main`, 662 tests au départ). Ce document décrit le modèle de menace, les résultats de l'audit,
+Audit du 26 octobre 2026 (branche `main`, 662 tests au départ, 1 002 à l'arrivée). Ce document décrit le modèle de menace, les résultats de l'audit,
 ce qui a été corrigé et ce qui reste à surveiller. Pour signaler une faille : ouvrir une alerte de sécurité privée sur le dépôt GitHub
 (Security › Report a vulnerability), pas une issue publique.
 
@@ -74,6 +74,10 @@ Aucune télémétrie, aucun suivi d'usage, aucun appel de mise à jour automatiq
 `ApplicationInsights` : aucune occurrence). Les seuls appels sortants sont ceux que l'utilisateur configure :
 
 - actions `http` du deck ;
+- **mises à jour** : `api.github.com` (releases du dépôt configuré, sans jeton), puis `github.com` et son CDN `*.githubusercontent.com` pour l'installateur (redirections contrôlées une à une) ;
+  désactivable dans Paramètres › Mises à jour ;
+- widgets de données : hôtes saisis (ping, états), adresse saisie (compteur) et `geocoding-api.open-meteo.com` / `api.open-meteo.com` (météo : le nom de la ville seulement, HTTPS) ;
+- **badges de notifications** : pages WebView2 cachées vers les services dont un bouton porte l'adresse (jamais sans le connecteur activé) ;
 - intégrations : OBS, vMix, Elgato, Hue (réseau local), Teams, ClickUp, Notion, Monday, Twitch, Google (OAuth « application de bureau » avec le
   projet Google Cloud de l'utilisateur) ;
 - pages web affichées dans WebView2 (adresses saisies par l'utilisateur).
@@ -90,6 +94,24 @@ Aucun autre `ServerCertificateCustomValidationCallback`.
 | Téléchargement puis exécution | aucun |
 | API locale | canal nommé `PipeOptions.CurrentUserOnly` (aucun port TCP), JSON par ligne, commandes limitées (voir `docs/local-api.md`) |
 | WebView2 | profil isolé, aucun objet hôte, aucun message page → application ; micro, caméra et notifications seulement pour les pages https du même site que l'adresse saisie (ADR 0018) |
+
+### Mises à jour (ADR 0021)
+
+Seules les adresses de fichiers de la release du dépôt configuré sont suivies (HTTPS, hôte `github.com`, chemin `/{owner}/{repo}/releases/download/{tag}/{fichier}`) ; les redirections
+ne mènent qu'à `github.com` ou `*.githubusercontent.com`. `checksums.txt` est obligatoire, la somme SHA-256 est recalculée sur le fichier entier (un fichier différent est supprimé),
+la signature Authenticode est vérifiée par Windows (`WinVerifyTrust`) : signature invalide = refus, application signée = même éditeur exigé. Aucun jeton GitHub stocké. L'installation ne part
+que d'un clic de l'utilisateur ; elle passe par un script PowerShell fixe (jamais téléchargé) avec sauvegarde et restauration. **Non signé aujourd'hui** : l'intégrité repose alors sur
+`checksums.txt`, publié par la même release que l'installateur : il protège d'une corruption ou d'un miroir, **pas d'un compte GitHub compromis** (seule la signature de code le ferait).
+
+### Pages web cachées (badges)
+
+Mêmes garde-fous que les cadres visibles (ADR 0017, 0018) : profil WebView2 de StreamDak, aucun objet hôte, permissions refusées, téléchargements et nouvelles fenêtres bloqués, son coupé.
+Le script de lecture n'existe que pour les services à sélecteur CSS : lecture seule, sélecteur passé comme chaîne JSON. Une expression régulière saisie est interrompue après 100 ms.
+
+### Chaîne de publication
+
+`.github/workflows/release.yml` utilise `actions/checkout`, `actions/setup-dotnet` (étiquettes de version `@v4`) et Inno Setup (Chocolatey). **À durcir** : épingler les actions
+par empreinte de commit et activer Dependabot pour elles.
 
 ### Dépendances
 
@@ -116,6 +138,7 @@ CA2xxx, CA3xxx, CA5xxx en erreur, `TreatWarningsAsErrors`), style appliqué à l
 1. **Signature de code** : l'exécutable et l'installateur ne sont pas signés (SmartScreen avertira). Le script de signature est prêt, il faut un certificat.
 2. **Historique git** : retirer les binaires `bin/Release/net9.0-windows/` des deux anciens commits demande une réécriture d'historique.
 3. **Plugins** : pas de liste d'autorisation par empreinte ; l'empreinte SHA-256 n'est que consignée.
-4. **Mises à jour de paquets** : Microsoft.Extensions.DependencyInjection 10.0.14 et WebView2 1.0.4314.35 existent ; à passer après essai sur machine tactile.
-5. **Non vérifié ici** : le comportement de DPAPI sur un profil itinérant ou après changement de mot de passe Windows (le secret devient illisible
+4. **Épinglage des actions GitHub** par empreinte (voir ci-dessus).
+5. **Mises à jour de paquets** : Microsoft.Extensions.DependencyInjection 10.0.14 et WebView2 1.0.4314.35 existent ; à passer après essai sur machine tactile.
+6. **Non vérifié ici** : le comportement de DPAPI sur un profil itinérant ou après changement de mot de passe Windows (le secret devient illisible
    et est ignoré avec un avertissement, sans valeur journalisée : il faut le ressaisir).
