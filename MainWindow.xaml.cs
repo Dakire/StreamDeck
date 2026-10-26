@@ -68,7 +68,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         // Accrochage, agrandissement par le système : l'état « plein écran » et l'icône suivent la taille réelle de la fenêtre
         SizeChanged += (_, _) => SyncFullFlag();
         LocationChanged += (_, _) => SyncFullFlag();
-        StateChanged += (_, _) => _vm.NotifyWindowState();
+        StateChanged += (_, _) => { _vm.NotifyWindowState(); _vm.SetActive(IsVisible && WindowState != WindowState.Minimized); };
+        IsVisibleChanged += (_, _) => _vm.SetActive(IsVisible && WindowState != WindowState.Minimized);
         _vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MainViewModel.Dialog)) FocusDialog(); };
         Closed += (_, _) =>
         {

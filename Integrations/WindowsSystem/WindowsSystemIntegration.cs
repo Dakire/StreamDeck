@@ -30,12 +30,17 @@ public interface ISystemProbe : IDisposable
 /// (<c>{sys.media.title}</c>, <c>{sys.media.artist}</c>, <c>{sys.media.playing}</c>), quelle que soit l'application (Spotify, navigateur,
 /// lecteur vidéo…) grâce aux contrôles de transport multimédia de Windows. Aucun compte ni réglage : l'intégration s'active d'un clic.
 /// </summary>
-public sealed class WindowsSystemIntegration : IntegrationBase, IDisposable
+public sealed class WindowsSystemIntegration : IntegrationBase, IBackgroundAware, IDisposable
 {
     /// <summary>Identifiant et type d'action.</summary>
     public const string IntegrationId = "sys";
     /// <summary>Intervalle entre deux relevés.</summary>
     public static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
+    /// <summary>Intervalle entre deux relevés quand le deck est masqué : personne ne voit les valeurs, seules les actions média en ont besoin (elles relèvent elles-mêmes).</summary>
+    public static readonly TimeSpan BackgroundInterval = TimeSpan.FromSeconds(30);
+
+    volatile bool _background;
+    CancellationTokenSource? _sleep;
 
     readonly Func<ISystemProbe> _createProbe;
     ISystemProbe? _probe;
@@ -81,18 +86,37 @@ public sealed class WindowsSystemIntegration : IntegrationBase, IDisposable
         _ = Task.Run(() => LoopAsync(probe, token), CancellationToken.None);
     }
 
+    /// <inheritdoc/>
+    public void SetBackground(bool background)
+    {
+        _background = background;
+        if (background) return;
+        // Retour du deck : le relevé en attente est réveillé tout de suite, la valeur affichée n'a pas 30 s de retard
+        try { Interlocked.Exchange(ref _sleep, null)?.Cancel(); }
+        catch (ObjectDisposedException) { /* la pause venait de se terminer */ }
+    }
+
     async Task LoopAsync(ISystemProbe probe, CancellationToken stop)
     {
         try
         {
             while (!stop.IsCancellationRequested)
             {
-                await Task.Delay(PollInterval, stop);
+                await PauseAsync(stop);
                 try { await SampleAsync(probe); }
                 catch (Exception ex) when (ex is not OperationCanceledException) { Log.Warn($"Système Windows : relevé en erreur : {ex.Message}"); }
             }
         }
         catch (OperationCanceledException) { /* arrêt demandé */ }
+    }
+
+    async Task PauseAsync(CancellationToken stop)
+    {
+        using var sleep = CancellationTokenSource.CreateLinkedTokenSource(stop);
+        _sleep = sleep;
+        try { await Task.Delay(_background ? BackgroundInterval : PollInterval, sleep.Token); }
+        catch (OperationCanceledException) when (!stop.IsCancellationRequested) { /* réveillé par le retour du deck */ }
+        finally { Interlocked.CompareExchange(ref _sleep, null, sleep); }
     }
 
     async Task SampleAsync(ISystemProbe probe)

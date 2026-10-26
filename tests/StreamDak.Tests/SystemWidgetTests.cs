@@ -194,6 +194,8 @@ public class DeckSystemWidgetTests
                     vm.Resize(1600, 900);
                 });
                 _host.Settle();
+                // Le connecteur démarre avec le deck : sans attendre son premier relevé, un message de statut remplacerait les jauges
+                Assert.True(WaitFor(() => ((MainViewModel)win.DataContext).Tiles.OfType<SystemMeterWidgetViewModel>().All(m => m.HasReading)), "aucun relevé");
                 _host.Run(() =>
                 {
                     var vm = (MainViewModel)win.DataContext;

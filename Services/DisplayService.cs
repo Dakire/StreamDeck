@@ -16,7 +16,19 @@ public sealed class WindowsDisplayService : IDisplayService, IDisposable
     public event Action? Changed;
 
     /// <summary>S'abonne aux changements d'affichage de Windows.</summary>
-    public WindowsDisplayService() => SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+    public WindowsDisplayService()
+    {
+        SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+        SystemEvents.PowerModeChanged += OnPowerModeChanged;
+    }
+
+    /// <summary>Reprise après veille : les écrans mettent quelques secondes à revenir, puis le deck se replace comme après un changement d'affichage.</summary>
+    void OnPowerModeChanged(object? sender, PowerModeChangedEventArgs e)
+    {
+        if (e.Mode != PowerModes.Resume) return;
+        Log.Info("Reprise après veille : placement du deck revérifié");
+        _ = System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(3)).ContinueWith(_ => OnDisplaySettingsChanged(this, EventArgs.Empty), System.Threading.Tasks.TaskScheduler.Default);
+    }
 
     void OnDisplaySettingsChanged(object? sender, EventArgs e)
     {
@@ -31,7 +43,11 @@ public sealed class WindowsDisplayService : IDisplayService, IDisposable
     static PixelRect Rect(System.Drawing.Rectangle r) => new(r.X, r.Y, r.Width, r.Height);
 
     /// <summary>Se désabonne des changements d'affichage.</summary>
-    public void Dispose() => SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
+    public void Dispose()
+    {
+        SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
+        SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+    }
 }
 
 /// <summary>

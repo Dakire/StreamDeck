@@ -758,7 +758,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     /// <summary>L'horloge ne tourne que si une tuile visible l'utilise (ou qu'un minuteur est en cours).</summary>
     void UpdateLiveTimer()
     {
-        bool needed = _engine.Context.Countdowns.Any || Tiles.OfType<DeckTileViewModel>().Any(IsLive) || Tiles.OfType<ClockWidgetViewModel>().Any() || Tiles.OfType<AgendaWidgetViewModel>().Any();
+        bool needed = _active && (_engine.Context.Countdowns.Any || Tiles.OfType<DeckTileViewModel>().Any(IsLive) || Tiles.OfType<ClockWidgetViewModel>().Any() || Tiles.OfType<AgendaWidgetViewModel>().Any());
         if (needed && !_liveTimer.IsEnabled) _liveTimer.Start();
         else if (!needed) _liveTimer.Stop();
     }
@@ -873,6 +873,36 @@ public partial class MainViewModel : ObservableObject, INavigator
     [RelayCommand] void ToggleFullscreen() { _shell.ToggleFullscreen(); IsFullscreen = _shell.IsFullscreen; }
     [RelayCommand] void CloseApp() => Application.Current.Shutdown();
     [RelayCommand] void ParentFolder() => FolderUp();
+
+    bool _active = true;
+
+    /// <summary>true si les minuteries du deck tournent (fenêtre visible) ; faux : réduit dans la barre des tâches ou masqué.</summary>
+    internal bool IsActive => _active;
+
+    /// <summary>true tant que la minuterie des horloges et minuteurs est en marche (tests).</summary>
+    internal bool LiveTimerRunning => _liveTimer.IsEnabled;
+
+    /// <summary>
+    /// Fenêtre réduite ou masquée : plus aucune minuterie ne tourne (horloges, minuteurs, suivi de l'application au premier plan),
+    /// donc plus de réveil du processeur pour un deck que personne ne voit. Au retour, tout est remis à jour d'un coup.
+    /// </summary>
+    public void SetActive(bool active)
+    {
+        if (_active == active) return;
+        _active = active;
+        _integrations.SetBackground(!active);
+        if (active)
+        {
+            _appTimer.Start();
+            RefreshLive();            // l'heure, les minuteurs et l'agenda ont avancé pendant l'absence
+            PollForeground();
+        }
+        else
+        {
+            _appTimer.Stop();
+            _liveTimer.Stop();
+        }
+    }
 
     /// <summary>La fenêtre signale un changement de placement (plein écran / fenêtre) pour mettre à jour l'icône.</summary>
     public void NotifyWindowState() => IsFullscreen = _shell.IsFullscreen;

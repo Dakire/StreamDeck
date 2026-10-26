@@ -125,3 +125,13 @@ public interface ISecretStore
     /// <summary>Enregistre un secret ; une valeur vide le supprime.</summary>
     void Set(string key, string? value);
 }
+
+/// <summary>
+/// Intégration qui sait ralentir quand personne ne regarde le deck (fenêtre réduite ou masquée) : un relevé toutes les secondes
+/// pour un affichage invisible réveille le processeur pour rien. Le gestionnaire le signale à chaque changement.
+/// </summary>
+public interface IBackgroundAware
+{
+    /// <summary>true : le deck n'est pas visible, espacer ou suspendre les relevés ; false : reprendre tout de suite au rythme normal.</summary>
+    void SetBackground(bool background);
+}

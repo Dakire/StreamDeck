@@ -60,6 +60,13 @@ public sealed class IntegrationManager : IDisposable
     /// <summary>Des valeurs d'état ont changé : clés qualifiées « id.clé » (n'importe quel thread).</summary>
     public event Action<IReadOnlyCollection<string>>? ValuesChanged;
 
+    /// <summary>Le deck est visible (false) ou masqué (true) : les intégrations qui le savent ralentissent leurs relevés (<see cref="IBackgroundAware"/>).</summary>
+    public void SetBackground(bool background)
+    {
+        foreach (var integration in _integrations.Values)
+            if (integration is IBackgroundAware aware) aware.SetBackground(background);
+    }
+
     /// <summary>Intégration d'identifiant donné, ou null.</summary>
     public IIntegration? Find(string? id) => id != null && _integrations.TryGetValue(id, out var i) ? i : null;
 
