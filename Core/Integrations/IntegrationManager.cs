@@ -69,8 +69,43 @@ public sealed class IntegrationManager : IDisposable
     /// <summary>Commence à suivre la configuration : connecte les intégrations activées, puis applique chaque changement de réglages.</summary>
     public void Start()
     {
+        MigratePlaintextSecrets();
         _doc.Changed += OnDocumentChanged;
         ApplyAll();
+    }
+
+    /// <summary>
+    /// Un secret écrit en clair dans <c>config.json</c> (ancienne version, fichier édité à la main, profil importé) passe dans le magasin chiffré
+    /// puis disparaît du fichier. Une valeur déjà présente dans le magasin n'est jamais écrasée. Retourne le nombre de secrets déplacés.
+    /// </summary>
+    public int MigratePlaintextSecrets()
+    {
+        var moved = new List<(string Integration, string Field)>();
+        foreach (var integration in _integrations.Values)
+        {
+            var values = _doc.Config.Integrations?.GetValueOrDefault(integration.Id)?.Values;
+            if (values == null) continue;
+            foreach (var field in integration.Fields.Where(f => f.Kind == SettingKind.Secret))
+            {
+                var key = values.Keys.FirstOrDefault(k => string.Equals(k, field.Key, StringComparison.OrdinalIgnoreCase));
+                if (key == null) continue;
+                if (!string.IsNullOrEmpty(values[key]) && string.IsNullOrEmpty(_secrets.Get(SecretKey(integration.Id, field.Key))))
+                    _secrets.Set(SecretKey(integration.Id, field.Key), values[key]);
+                moved.Add((integration.Id, key));
+            }
+        }
+        if (moved.Count == 0) return 0;
+        _doc.UpdateSettings(c =>
+        {
+            foreach (var (id, key) in moved)
+            {
+                var values = c.Integrations?.GetValueOrDefault(id)?.Values;
+                values?.Remove(key);
+                if (values is { Count: 0 }) c.Integrations![id].Values = null;
+            }
+        }, "Secrets déplacés");
+        Log.Info($"{moved.Count} secret(s) trouvé(s) en clair dans la configuration : déplacés dans le magasin chiffré");   // jamais leur valeur
+        return moved.Count;
     }
 
     void OnDocumentChanged(DocumentChange change)

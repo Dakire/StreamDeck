@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using StreamDak.Actions;
 
 namespace StreamDak.Platform.Windows;
@@ -31,27 +30,10 @@ public sealed class WindowsPlatform : IKeyboardService, IAppLauncher, IWindowSer
     /// <inheritdoc/>
     public void RunScript(string scriptOrCommand, string? arguments)
     {
-        string value = scriptOrCommand, args = arguments ?? "";
-        var ext = Path.GetExtension(value).ToLowerInvariant();
-        var psi = new ProcessStartInfo { CreateNoWindow = true, UseShellExecute = false };
-        if (ext == ".ps1")
-        {
-            psi.FileName = "powershell.exe";
-            psi.Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{value}\" {args}";
-        }
-        else if (ext is ".bat" or ".cmd")
-        {
-            psi.FileName = "cmd.exe";
-            psi.Arguments = $"/c \"\"{value}\" {args}\"";
-        }
-        else
-        {
-            // Commande PowerShell en ligne
-            psi.FileName = "powershell.exe";
-            psi.ArgumentList.Add("-NoProfile");
-            psi.ArgumentList.Add("-Command");
-            psi.ArgumentList.Add(value);
-        }
+        // Arguments transmis un à un (ArgumentList) : aucune ligne de commande n'est assemblée à la main
+        var launch = ScriptCommand.Build(scriptOrCommand, arguments);
+        var psi = new ProcessStartInfo(launch.FileName) { CreateNoWindow = true, UseShellExecute = false };
+        foreach (var argument in launch.Arguments) psi.ArgumentList.Add(argument);
         using var _ = Process.Start(psi);
     }
 

@@ -25,6 +25,21 @@ using StreamDak.Platform.Windows;
 
 namespace StreamDak;
 
+/// <summary>Formate chaque ligne du journal puis masque ce qui ressemble à un secret (<see cref="LogRedactor"/>) : message et exception.</summary>
+sealed class RedactingFormatter : Serilog.Formatting.ITextFormatter
+{
+    readonly Serilog.Formatting.Display.MessageTemplateTextFormatter _inner;
+
+    public RedactingFormatter(string outputTemplate) { _inner = new(outputTemplate, System.Globalization.CultureInfo.InvariantCulture); }
+
+    public void Format(Serilog.Events.LogEvent logEvent, TextWriter output)
+    {
+        using var buffer = new StringWriter(System.Globalization.CultureInfo.InvariantCulture);
+        _inner.Format(logEvent, buffer);
+        output.Write(LogRedactor.Redact(buffer.ToString()));
+    }
+}
+
 /// <summary>Branche la façade <see cref="Log"/> du Core sur Serilog.</summary>
 sealed class SerilogSink : ILogSink
 {
@@ -68,9 +83,9 @@ public static class AppHost
         var clock = System.Diagnostics.Stopwatch.StartNew();
         var serilog = new LoggerConfiguration()
             .MinimumLevel.Information()
-            .WriteTo.File(Path.Combine(ConfigStore.Dir, LogFileName), fileSizeLimitBytes: LogMaxBytes, rollOnFileSizeLimit: true,
-                retainedFileCountLimit: LogFilesKept, shared: true, formatProvider: System.Globalization.CultureInfo.InvariantCulture,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3} {Message:lj}{NewLine}{Exception}")
+            .WriteTo.File(new RedactingFormatter("{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3} {Message:lj}{NewLine}{Exception}"),
+                Path.Combine(ConfigStore.Dir, LogFileName), fileSizeLimitBytes: LogMaxBytes, rollOnFileSizeLimit: true,
+                retainedFileCountLimit: LogFilesKept, shared: true)
             .CreateLogger();
         Log.Sink = new SerilogSink(serilog);
         long tLog = clock.ElapsedMilliseconds;
