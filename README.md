@@ -162,26 +162,49 @@ Ces raccourcis ne s'appliquent jamais pendant la saisie dans un champ de texte.
 - Runtime Desktop .NET 10 pour exécuter
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) pour compiler, runtime Desktop pour exécuter
 
-## Démarrage rapide
+## Compiler, lancer, tester
+
+Prérequis : Windows 10 ou 11, le [SDK .NET 10](https://dotnet.microsoft.com/download/dotnet/10.0) (version épinglée par `global.json`) et Git. Rien d'autre pour compiler ;
+le runtime WebView2 (inclus dans Windows 11) est nécessaire pour les pages web et les badges.
 
 ```powershell
-dotnet run -c Release
+git clone git@github.com:Dakire/StreamDeck.git
+cd StreamDeck
+dotnet build -c Release              # compilation : aucun avertissement toléré (analyseurs, sécurité, style, documentation XML)
+dotnet run -c Release                # lance le deck
 dotnet run -c Release -- --simulate  # essai sans risque : les actions sont affichées, rien n'est envoyé au système
 dotnet run -c Release -- --edit      # démarre en mode édition
-dotnet build -c Release              # aucun avertissement toléré (analyseurs, style, documentation XML)
-dotnet test tests/StreamDak.Tests    # tests automatisés (l'interface est rendue hors écran)
+dotnet test tests/StreamDak.Tests    # tests automatisés (≈ 1 000, 10 minutes ; l'interface est rendue hors écran, aucune fenêtre ne s'affiche)
 ```
 
-Pour essayer sans toucher à votre configuration : `$env:STREAMDAK_DATA_DIR = "$env:TEMP\streamdak-essai"`.
+Pour essayer sans toucher à ta configuration : `$env:STREAMDAK_DATA_DIR = "$env:TEMP\streamdak-essai"`.
+Fermer l'application avant de recompiler (ses fichiers sont verrouillés tant qu'elle tourne). Une seule série de tests à la fois, par exemple
+`dotnet test tests/StreamDak.Tests --filter "FullyQualifiedName~Notification"`. `STREAMDAK_SHOTS=<dossier>` garde les captures PNG rendues par les tests d'interface.
 
-Pour produire les installateurs (Inno Setup 6 requis) :
+## Générer les installateurs
+
+Prérequis supplémentaire : [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`). Tout passe par `build.ps1`, à la racine :
 
 ```powershell
-./build.ps1                      # tests, puis artifacts/installer : deux Setup.exe et checksums.txt
-./build.ps1 -SkipTests -Flavor self-contained
+./build.ps1                                       # tests, puis les deux installateurs + checksums.txt dans artifacts/installer
+./build.ps1 -SkipTests                            # sans relancer les tests
+./build.ps1 -Flavor self-contained                # une seule variante (self-contained ou framework-dependent)
+./build.ps1 -Version 1.4.0                        # version imposée (sinon <Version> de Directory.Build.props)
+./build.ps1 -Sign                                 # avec signature de code (certificat par variables d'environnement, voir installer/sign.ps1)
+./build.ps1 -Iscc "D:\Outils\Inno Setup 6\ISCC.exe" # si Inno Setup n'est pas à un emplacement habituel
+./build.ps1 -NoWebView2Redist                     # hors ligne : n'embarque pas le programme d'installation WebView2
 ```
 
-La publication précompile le code (ReadyToRun) : démarrage environ 80 ms plus court (mesuré : 705 à 650 ms). `dotnet run` n'en profite pas.
+Résultat dans `artifacts/installer` (ignoré par git) :
+
+| Fichier | Contenu |
+|---|---|
+| `StreamDak-<version>-self-contained-Setup.exe` | runtime .NET embarqué (≈ 65 Mo) : variante par défaut |
+| `StreamDak-<version>-framework-dependent-Setup.exe` | léger (≈ 11 Mo), demande le runtime « .NET Desktop 10 » |
+| `checksums.txt` | sommes SHA-256 de ces fichiers (exigées par la mise à jour automatique) |
+
+Publication seule, sans installateur : `dotnet publish StreamDak.csproj -c Release -r win-x64 --self-contained false -o artifacts/publish`.
+Publier une version sur GitHub (tag `vX.Y.Z`, le workflow construit et publie) : [Publier une version](docs/RELEASING.md). Détails des installateurs : [Installation](docs/INSTALLATION.md).
 
 ## Configuration
 
