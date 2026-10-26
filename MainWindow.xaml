@@ -17,6 +17,7 @@
   <ui:FluentWindow.Resources>
     <BooleanToVisibilityConverter x:Key="BoolVis"/>
     <controls:DragDimConverter x:Key="DragDim"/>
+    <controls:MinWidthToVisibilityConverter x:Key="MinWidthVis"/>
 
     <!-- ===== Dock du bas : une seule surface pour les pages, les sous-pages et le menu ===== -->
 
@@ -125,7 +126,9 @@
             <StackPanel Orientation="Horizontal">
               <ui:SymbolIcon Symbol="Edit24" Foreground="{DynamicResource DeckOnAccent}" Margin="0,0,6,0"
                              FontSize="{Binding DataContext.L.EditSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+              <!-- Sur une touche étroite, le mot disparaît (le crayon reste) : il chevauchait le badge d'étapes -->
               <TextBlock Text="Modifier" Foreground="{DynamicResource DeckOnAccent}" VerticalAlignment="Center" FontWeight="SemiBold"
+                         Visibility="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Button}, Converter={StaticResource MinWidthVis}, ConverterParameter=150}"
                          FontSize="{Binding DataContext.L.EditSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
             </StackPanel>
           </Border>

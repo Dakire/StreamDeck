@@ -83,5 +83,14 @@ public class DesignSystemTests
             Assert.True(Theme.Contrast(p.Danger, bg) >= 4.5, $"{theme} : Danger sur {bg}");     // « Supprimer », messages d'erreur du panneau
         }
         Assert.True(Theme.Contrast(p.OnAccent, p.Accent) >= 4.5, $"{theme} : texte sur le bouton d'accent (« Annuler », « Créer »)");
+        Assert.True(Theme.Contrast(Theme.SimulationColor(theme != "light"), p.TopBar) >= 4.5, $"{theme} : pastille « Simulation » sur la barre du haut");
     }
+
+    [Theory]
+    [InlineData(112.0, System.Windows.Visibility.Collapsed)]
+    [InlineData(149.9, System.Windows.Visibility.Collapsed)]
+    [InlineData(150.0, System.Windows.Visibility.Visible)]
+    [InlineData(210.0, System.Windows.Visibility.Visible)]
+    public void TheEditChipDropsItsWordOnNarrowTilesSoItNeverCoversTheStepBadge(double width, System.Windows.Visibility expected) =>
+        Assert.Equal(expected, new StreamDak.Controls.MinWidthToVisibilityConverter().Convert(width, typeof(System.Windows.Visibility), "150", System.Globalization.CultureInfo.InvariantCulture));
 }

@@ -153,7 +153,7 @@ public static class Theme
         r["DeckTileSheen"] = Vertical(OnTile.SheenTop, OnTile.SheenBottom, 0.35);
         r["DeckImageScrim"] = Vertical("#00000000", OnTile.ImageScrim, 1);
         // Pastille « Simulation » de la barre du haut, éditeur (case de dépôt) et nuancier
-        r["DeckSimulation"] = B(OnTile.WarningMark);
+        r["DeckSimulation"] = B(SimulationColor(Dark));
         r["DeckDropFill"] = B("#2600FF99");
         r["DeckSwatchRing"] = B("#80808080");
     }
@@ -184,6 +184,9 @@ public static class Theme
         /// <summary>Bas du dégradé qui rend le titre lisible sur une image.</summary>
         public const string ImageScrim = "#C0000000";
     }
+
+    /// <summary>Couleur de la pastille « Simulation » : posée sur la barre du haut (pas sur une touche), donc ambre clair en sombre et brun foncé en clair pour rester lisible.</summary>
+    public static string SimulationColor(bool dark) => dark ? OnTile.WarningMark : "#FF92400E";
 
     /// <summary>Dégradé vertical figé : <paramref name="top"/> en haut, <paramref name="bottom"/> à la hauteur relative <paramref name="end"/>.</summary>
     static LinearGradientBrush Vertical(string top, string bottom, double end)
