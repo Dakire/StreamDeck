@@ -13,7 +13,15 @@ namespace StreamDak;
 /// <param name="Color">Couleur du bouton créé.</param>
 /// <param name="Cols">Largeur par défaut, en cases.</param>
 /// <param name="Rows">Hauteur par défaut, en cases.</param>
-public sealed record WidgetInfo(string Id, string Name, string Description, string Icon, string Color, int Cols, int Rows);
+/// <param name="Sizes">Tailles proposées dans les propriétés (widget de données) ; null : toutes les tailles courantes.</param>
+/// <param name="Options">Réglages texte du widget, affichés dans les propriétés (widget de données).</param>
+/// <param name="RefreshSeconds">Intervalle de rafraîchissement par défaut d'un widget de données, en secondes ; 0 : ce n'est pas un widget de données.</param>
+public sealed record WidgetInfo(string Id, string Name, string Description, string Icon, string Color, int Cols, int Rows,
+    IReadOnlyList<WidgetSize>? Sizes = null, IReadOnlyList<WidgetOption>? Options = null, int RefreshSeconds = 0)
+{
+    /// <summary>true pour un widget de données (<see cref="IWidget"/>), relevé à intervalle régulier.</summary>
+    public bool IsData => RefreshSeconds > 0;
+}
 
 /// <summary>Widgets proposés : heure, agenda Google, page web, charge du processeur et mémoire. Un widget est un <see cref="DeckButton"/> dont <see cref="DeckButton.Widget"/> est renseigné.</summary>
 public static class WidgetTypes
@@ -40,6 +48,9 @@ public static class WidgetTypes
         new(Web, "Page web", "Affiche un site dans le deck : chat, tableau de bord, météo…", "Globe24", "#0E7490", 3, 2),
         new(Cpu, "Processeur", "Charge du processeur en temps réel (%), rafraîchie chaque seconde.", "DeveloperBoard24", "#0F766E", 2, 1),
         new(Ram, "Mémoire", "Mémoire vive utilisée (Go sur le total), rafraîchie chaque seconde.", "Memory16", "#6D28D9", 2, 1),
+        // Widgets de données (IWidget) : relevés à intervalle régulier, seulement tant que leur page est affichée
+        DiskWidget.Description, NetworkWidget.Description, PingWidget.Description, ServiceStatusWidget.Description,
+        WeatherWidget.Description, NextEventWidget.Description, CounterWidget.Description,
     };
 
     /// <summary>Le widget d'identifiant donné, ou null s'il est inconnu.</summary>
@@ -190,6 +201,8 @@ public static class WidgetOptionKeys
     public const string Url = "url";
     /// <summary>Page web : zoom en pourcentage (25 à 500), absent = 100 %.</summary>
     public const string Zoom = "zoom";
+    /// <summary>Widget de données : intervalle de rafraîchissement en secondes (1 à 3600) ; absent = celui du widget.</summary>
+    public const string Interval = "interval";
 
     /// <summary>Valeur d'un réglage, ou <paramref name="fallback"/> s'il est absent ou vide.</summary>
     public static string Option(this DeckButton b, string key, string fallback = "") =>

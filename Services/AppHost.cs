@@ -142,6 +142,15 @@ public static class AppHost
         // Éditeur intégré au deck (mode édition) : le deck le crée à l'entrée du mode et le libère à la sortie
         services.AddSingleton<Func<StreamDak.ViewModels.IEditorShell, StreamDak.ViewModels.EditorViewModel>>(sp =>
             shell => ActivatorUtilities.CreateInstance<StreamDak.ViewModels.EditorViewModel>(sp, shell));
+        // Widgets de données (IWidget) : un par ligne ; leur description est dans WidgetTypes.All (un test vérifie la correspondance)
+        services.AddSingleton<IWidget, DiskWidget>();
+        services.AddSingleton<IWidget, NetworkWidget>();
+        services.AddSingleton<IWidget, PingWidget>();
+        services.AddSingleton<IWidget, ServiceStatusWidget>();
+        services.AddSingleton<IWidget, WeatherWidget>();
+        services.AddSingleton<IWidget, NextEventWidget>();
+        services.AddSingleton<IWidget, CounterWidget>();
+        services.AddSingleton(sp => new WidgetRegistry(sp.GetServices<IWidget>()));
         services.AddSingleton<IApiShell, ApiShell>();
         services.AddSingleton<LocalApi>();
 

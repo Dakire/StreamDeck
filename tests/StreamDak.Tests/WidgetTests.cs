@@ -115,7 +115,7 @@ public class WidgetCoreTests
     public void TheCatalogOffersTheWidgetsWithTheirDefaultSize()
     {
         var entries = ActionCatalog.All.Where(a => a.Category == ActionCatalog.Widgets).ToList();
-        Assert.Equal(new[] { "widget.clock", "widget.agenda", "widget.web", "widget.cpu", "widget.ram", "widget.gchat", "widget.gcalendar", "widget.gmail" }, entries.Select(e => e.Id));
+        Assert.Equal(new[] { "widget.clock", "widget.agenda", "widget.web", "widget.cpu", "widget.ram", "widget.disk", "widget.network", "widget.ping", "widget.status", "widget.weather", "widget.nextevent", "widget.counter", "widget.gchat", "widget.gcalendar", "widget.gmail" }, entries.Select(e => e.Id));
         var clock = ActionCatalog.Find("widget.clock")!.CreateButton();
         Assert.Equal(WidgetTypes.Clock, clock.Widget);
         Assert.Empty(clock.Actions);

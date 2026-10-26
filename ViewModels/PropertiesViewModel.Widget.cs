@@ -9,7 +9,8 @@ namespace StreamDak.ViewModels;
 // Réglages d'un widget (horloge, agenda, page web) et de sa taille en cases, dans le panneau de propriétés
 public sealed partial class PropertiesViewModel
 {
-    static readonly (int Cols, int Rows)[] Sizes = { (1, 1), (2, 1), (3, 1), (4, 1), (2, 2), (3, 2), (4, 2), (3, 3), (4, 3), (5, 3) };
+    static readonly (int Cols, int Rows)[] DefaultSizes = { (1, 1), (2, 1), (3, 1), (4, 1), (2, 2), (3, 2), (4, 2), (3, 3), (4, 3), (5, 3) };
+    (int Cols, int Rows)[] _sizes = DefaultSizes;
     static readonly int[] AgendaCounts = { 3, 4, 6, 8 };
     static readonly int[] AgendaDayChoices = { 1, 3, 7, 14 };
 
@@ -17,6 +18,8 @@ public sealed partial class PropertiesViewModel
 
     /// <summary>Tailles proposées (largeur × hauteur en cases).</summary>
     public ObservableCollection<ChoiceViewModel> SizeChoices { get; } = new();
+    /// <summary>Réglages du widget de données sélectionné (hôtes, ville, adresse…), plus l'intervalle de rafraîchissement.</summary>
+    public ObservableCollection<WidgetFieldViewModel> WidgetFields { get; } = new();
     /// <summary>Nombre d'événements affichés par l'agenda.</summary>
     public ObservableCollection<ChoiceViewModel> AgendaCountChoices { get; } = new();
     /// <summary>Nombre de jours à venir affichés par l'agenda.</summary>
@@ -41,13 +44,53 @@ public sealed partial class PropertiesViewModel
     /// <summary>true pour le widget page web.</summary>
     public bool IsWebWidget => _widgetId == WidgetTypes.Web;
 
-    void InitWidgetChoices()
+    /// <summary>true pour un widget de données (<see cref="IWidget"/>) : réglages génériques et tailles limitées.</summary>
+    public bool IsDataWidget => WidgetTypes.Find(_widgetId)?.IsData == true;
+
+    /// <summary>Pastilles de taille : celles que le widget accepte (1 × 1, 2 × 1, 2 × 2 pour un widget de données), toutes les courantes sinon.</summary>
+    void RebuildSizeChoices(WidgetInfo? info)
     {
-        foreach (var (cols, rows) in Sizes)
+        var wanted = info?.Sizes is { Count: > 0 } own ? own.Select(s => (s.Cols, s.Rows)).ToArray() : DefaultSizes;
+        if (wanted.SequenceEqual(_sizes) && SizeChoices.Count == wanted.Length) return;
+        _sizes = wanted;
+        SizeChoices.Clear();
+        foreach (var (cols, rows) in _sizes)
         {
             var (c, r) = (cols, rows);
             SizeChoices.Add(new ChoiceViewModel($"{c} × {r}", () => SetSize(c, r)));
         }
+    }
+
+    /// <summary>Champs de réglage d'un widget de données, remplis avec les valeurs du bouton.</summary>
+    void RebuildWidgetFields(WidgetInfo? info, DeckButton? b)
+    {
+        WidgetFields.Clear();
+        if (info is not { IsData: true } || b == null) return;
+        foreach (var option in info.Options ?? Array.Empty<WidgetOption>())
+            WidgetFields.Add(new WidgetFieldViewModel(option.Key, option.Label, option.Placeholder, option.Hint, b.Option(option.Key), OnFieldChanged));
+        WidgetFields.Add(new WidgetFieldViewModel(WidgetOptionKeys.Interval, "Rafraîchissement (secondes)", info.RefreshSeconds.ToString(CultureInfo.InvariantCulture),
+            "Entre 1 et 3600. Les relevés s'arrêtent quand la page n'est plus affichée ou que le deck est masqué.", b.Option(WidgetOptionKeys.Interval), OnFieldChanged));
+    }
+
+    /// <summary>Un champ de réglage change : brouillon (l'aperçu et l'enregistrement suivent le panneau) ; un intervalle hors limites est refusé avec un message.</summary>
+    void OnFieldChanged(WidgetFieldViewModel field)
+    {
+        if (_loading) return;
+        string text = field.Text.Trim();
+        if (field.Key == WidgetOptionKeys.Interval && text.Length > 0
+            && !(int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var seconds) && seconds is >= 1 and <= 3600))
+        {
+            field.Error = "Un nombre de secondes entre 1 et 3600";
+            DropDraft("opt:" + field.Key);
+            return;
+        }
+        field.Error = "";
+        Draft("opt:" + field.Key, field.Label, b => b.SetOption(field.Key, text));
+    }
+
+    void InitWidgetChoices()
+    {
+        RebuildSizeChoices(null);
         foreach (var n in AgendaCounts)
         {
             int count = n;
@@ -75,6 +118,9 @@ public sealed partial class PropertiesViewModel
             WidgetUrl = b.Option(WidgetOptionKeys.Url);
             WidgetUrlError = "";
         }
+        RebuildSizeChoices(info);
+        RebuildWidgetFields(info, b);
+        OnPropertyChanged(nameof(IsDataWidget));
         OnPropertyChanged(nameof(IsWidget));
         OnPropertyChanged(nameof(IsPlainButton));
         OnPropertyChanged(nameof(IsClockWidget));
@@ -86,7 +132,7 @@ public sealed partial class PropertiesViewModel
     void RefreshWidgetSelection(DeckButton? b)
     {
         var (cols, rows) = b?.Span() ?? (1, 1);
-        for (int i = 0; i < Sizes.Length; i++) SizeChoices[i].IsSelected = Sizes[i] == (cols, rows);
+        for (int i = 0; i < _sizes.Length && i < SizeChoices.Count; i++) SizeChoices[i].IsSelected = _sizes[i] == (cols, rows);
         int count = b?.OptionInt(WidgetOptionKeys.Count, 4, 1, 20) ?? 4, days = b?.OptionInt(WidgetOptionKeys.Days, 7, 1, 60) ?? 7;
         for (int i = 0; i < AgendaCounts.Length; i++) AgendaCountChoices[i].IsSelected = AgendaCounts[i] == count;
         for (int i = 0; i < AgendaDayChoices.Length; i++) AgendaDaysChoices[i].IsSelected = AgendaDayChoices[i] == days;
@@ -123,4 +169,31 @@ public sealed partial class PropertiesViewModel
         WidgetUrlError = "";
         Draft("url", "Adresse de la page", b => b.SetOption(WidgetOptionKeys.Url, value));
     }
+}
+
+/// <summary>Un champ de réglage d'un widget de données dans le panneau de propriétés.</summary>
+public sealed partial class WidgetFieldViewModel : ObservableObject
+{
+    readonly Action<WidgetFieldViewModel> _changed;
+    [ObservableProperty] string _text;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasError))] string _error = "";
+
+    /// <summary>Champ pour le réglage <paramref name="key"/> ; <paramref name="changed"/> est appelé à chaque saisie.</summary>
+    public WidgetFieldViewModel(string key, string label, string placeholder, string hint, string text, Action<WidgetFieldViewModel> changed)
+    {
+        Key = key; Label = label; Placeholder = placeholder; Hint = hint; _text = text; _changed = changed;
+    }
+
+    /// <summary>Clé du réglage dans <see cref="DeckButton.WidgetOptions"/>.</summary>
+    public string Key { get; }
+    /// <summary>Libellé du champ.</summary>
+    public string Label { get; }
+    /// <summary>Exemple ou valeur par défaut grisé.</summary>
+    public string Placeholder { get; }
+    /// <summary>Explication sous le champ.</summary>
+    public string Hint { get; }
+    /// <summary>true si la saisie est refusée.</summary>
+    public bool HasError => Error.Length > 0;
+
+    partial void OnTextChanged(string value) => _changed(this);
 }

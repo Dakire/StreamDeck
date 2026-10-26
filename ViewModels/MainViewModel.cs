@@ -32,6 +32,8 @@ public partial class MainViewModel : ObservableObject, INavigator
     readonly IAppWindows _windows;
     readonly ConfigPersistence _persistence;
     readonly IntegrationManager _integrations;
+    readonly WidgetRegistry _widgets;
+    readonly HashSet<DataWidgetViewModel> _dataWidgets = new();
     readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
     bool _integrationRefreshPending;
     static readonly TimeSpan StatusDelay = TimeSpan.FromSeconds(5);
@@ -106,9 +108,11 @@ public partial class MainViewModel : ObservableObject, INavigator
     /// <summary>Deck sur le document partagé ; <paramref name="shell"/> fournit le placement Win32.</summary>
     public MainViewModel(IShell shell, DeckDocument doc, ActionEngine engine, AppOptions options, StartupResult startup,
         GridState grid, IAppWindows windows, ConfigPersistence persistence, IntegrationManager integrations,
-        Func<IEditorShell, EditorViewModel> editorFactory)
+        Func<IEditorShell, EditorViewModel> editorFactory, WidgetRegistry widgets)
     {
         _editorFactory = editorFactory;
+        _widgets = widgets;
+        Tiles.CollectionChanged += (_, _) => ReleaseDataWidgets();
         _integrations = integrations;
         _shell = shell;
         _doc = doc;
@@ -561,6 +565,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         string name = WidgetTypes.Find(def.Widget)?.Name ?? "Widget";
         WidgetTileViewModel tile = def.Widget switch
         {
+            _ when _widgets.Find(def.Widget) is { } data => CreateDataWidget(data, def, edit, name),
             WidgetTypes.Agenda => new AgendaWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
             WidgetTypes.Web => CreateWebWidget(def, edit, name, place, index),
             WidgetTypes.Cpu or WidgetTypes.Ram => new SystemMeterWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
@@ -571,6 +576,40 @@ public partial class MainViewModel : ObservableObject, INavigator
         else if (tile is AgendaWidgetViewModel agenda) RefreshAgenda(agenda);
         else if (tile is SystemMeterWidgetViewModel meter) RefreshSystem(meter);
         return tile;
+    }
+
+    /// <summary>Tuile d'un widget de données : ses relevés démarrent ici, et s'arrêtent quand la tuile quitte la grille (<see cref="ReleaseDataWidgets"/>).</summary>
+    DataWidgetViewModel CreateDataWidget(IWidget widget, DeckButton def, System.Windows.Input.ICommand edit, string name)
+    {
+        var options = new Dictionary<string, string>(def.WidgetOptions ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
+        var context = new WidgetContext { Options = options, Http = _engine.Context.Http, GetValue = _integrations.GetValue };
+        var tile = new DataWidgetViewModel(widget, context, WidgetRegistry.IntervalFor(widget.Info, options), a => _ui.BeginInvoke(a))
+        {
+            Button = def, Edit = edit, AccessibleName = name,
+        };
+        _dataWidgets.Add(tile);
+        tile.SetPaused(!_active);
+        tile.Start();
+        return tile;
+    }
+
+    /// <summary>Fenêtre fermée : tous les relevés de widgets s'arrêtent.</summary>
+    public void StopWidgets()
+    {
+        foreach (var data in _dataWidgets) data.Dispose();
+        _dataWidgets.Clear();
+    }
+
+    /// <summary>Arrête les relevés des widgets de données dont la tuile n'est plus dans la grille (page changée, widget supprimé, thème changé).</summary>
+    void ReleaseDataWidgets()
+    {
+        if (_dataWidgets.Count == 0) return;
+        var shown = Tiles.OfType<DataWidgetViewModel>().ToHashSet();
+        foreach (var gone in _dataWidgets.Where(w => !shown.Contains(w)).ToList())
+        {
+            gone.Dispose();
+            _dataWidgets.Remove(gone);
+        }
     }
 
     WebWidgetViewModel CreateWebWidget(DeckButton def, System.Windows.Input.ICommand edit, string name, Place place, int index)
@@ -891,6 +930,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         if (_active == active) return;
         _active = active;
         _integrations.SetBackground(!active);
+        foreach (var data in _dataWidgets) data.SetPaused(!active);
         if (active)
         {
             _appTimer.Start();

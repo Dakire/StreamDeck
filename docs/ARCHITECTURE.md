@@ -185,6 +185,23 @@ Un widget est un `DeckButton` avec `Widget` (horloge, agenda, web) et une empris
 `WebWidgetViewModel`) ; en édition c'est une touche sélectionnable. L'agenda vient des valeurs de l'intégration Google (`CalendarFeed`,
 `AgendaFormatter` dans Core) ; la page web est un `WebWidgetView` (WebView2 isolé) masqué sous les menus et boîtes de dialogue.
 
+### Widgets de données (`IWidget`, ADR 0019)
+
+`Core/Widgets/` : `IWidget` (description `WidgetInfo` + `ReadAsync`), `WidgetRegistry` (retrouve un widget par identifiant, calcule l'intervalle
+de rafraîchissement), `WidgetFormat` (mise en forme, lecture de réglages, GET JSON borné) et les sept widgets (`DiskWidget`, `NetworkWidget`,
+`PingWidget`, `ServiceStatusWidget`, `WeatherWidget`, `NextEventWidget`, `CounterWidget`). Côté application, `DataWidgetViewModel` porte la
+boucle de relevé d'une tuile et `MainViewModel` la crée avec la page, la suspend quand le deck est masqué et la libère quand la page change.
+
+```mermaid
+flowchart LR
+    DI["AppHost : IWidget (DI)"] --> REG[WidgetRegistry]
+    REG --> MVM["MainViewModel.CreateDataWidget"]
+    MVM --> TILE["DataWidgetViewModel<br/>boucle de relevé, pause, libération"]
+    TILE -- "ReadAsync" --> W["IWidget<br/>(Ping, Météo, Disque…)"]
+    TILE --> UI["DataTemplate commun<br/>valeur · détail · jauge"]
+    MVM -. "page changée · deck masqué" .-> TILE
+```
+
 ## Création rapide d'un bouton
 
 ```mermaid

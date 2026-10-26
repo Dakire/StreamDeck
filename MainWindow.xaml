@@ -254,6 +254,60 @@
       </Border>
     </DataTemplate>
 
+    <!-- Widgets de données (ping, météo, disque, services…) : valeur en grand colorée selon la gravité, détail, jauge facultative -->
+    <DataTemplate DataType="{x:Type vm:DataWidgetViewModel}">
+      <Border Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1" AutomationProperties.Name="{Binding AccessibleName}"
+              Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+              CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}" ClipToBounds="True">
+        <Grid Margin="16,12">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+          </Grid.RowDefinitions>
+          <StackPanel Orientation="Horizontal">
+            <ui:SymbolIcon Symbol="{Binding Symbol}" Foreground="{DynamicResource DeckAccentText}" Margin="0,0,8,0" VerticalAlignment="Center"
+                           FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{Binding Face.LabelBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                       FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+          </StackPanel>
+          <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="0,4"
+                   Visibility="{Binding HasReading, Converter={StaticResource BoolVis}}">
+            <TextBlock Text="{Binding Headline}" FontSize="48" FontWeight="SemiBold" FontFamily="Segoe UI Variable Display, Segoe UI" AutomationProperties.LiveSetting="Off">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                  <Setter Property="Foreground" Value="{Binding Face.LabelBrush}"/>
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsGood}" Value="True"><Setter Property="Foreground" Value="{DynamicResource DeckSuccess}"/></DataTrigger>
+                    <DataTrigger Binding="{Binding IsWarning}" Value="True"><Setter Property="Foreground" Value="{DynamicResource DeckWarning}"/></DataTrigger>
+                    <DataTrigger Binding="{Binding IsDanger}" Value="True"><Setter Property="Foreground" Value="{DynamicResource DeckDanger}"/></DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
+          </Viewbox>
+          <TextBlock Grid.Row="1" Text="{Binding Status}" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource DeckDim}"
+                     FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                     Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}"/>
+          <TextBlock Grid.Row="2" Text="{Binding Detail}" FontSize="14" Foreground="{DynamicResource DeckTextSoft}" TextTrimming="CharacterEllipsis" MaxHeight="150"
+                     Visibility="{Binding HasDetail, Converter={StaticResource BoolVis}}"/>
+          <ProgressBar Grid.Row="3" Minimum="0" Maximum="100" Value="{Binding Percent, Mode=OneWay, TargetNullValue=0}" Height="10" Margin="0,8,0,0" VerticalAlignment="Bottom"
+                       Visibility="{Binding HasPercent, Converter={StaticResource BoolVis}}" AutomationProperties.Name="{Binding Title}">
+            <ProgressBar.Style>
+              <Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
+                <Setter Property="Foreground" Value="{DynamicResource DeckAccent}"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding IsWarning}" Value="True"><Setter Property="Foreground" Value="{DynamicResource DeckWarning}"/></DataTrigger>
+                  <DataTrigger Binding="{Binding IsDanger}" Value="True"><Setter Property="Foreground" Value="{DynamicResource DeckDanger}"/></DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </ProgressBar.Style>
+          </ProgressBar>
+        </Grid>
+      </Border>
+    </DataTemplate>
+
     <!-- Agenda : prochains événements, ou ce qu'il manque pour en afficher -->
     <DataTemplate DataType="{x:Type vm:AgendaWidgetViewModel}">
       <Border Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1" AutomationProperties.Name="{Binding AccessibleName}"

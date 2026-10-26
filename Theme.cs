@@ -154,6 +154,7 @@ public static class Theme
         r["DeckImageScrim"] = Vertical("#00000000", OnTile.ImageScrim, 1);
         // Pastille « Simulation » de la barre du haut, éditeur (case de dépôt) et nuancier
         r["DeckSimulation"] = B(SimulationColor(Dark));
+        r["DeckWarning"] = B(SimulationColor(Dark));   // widgets de données : valeur « à surveiller »
         r["DeckDropFill"] = B("#2600FF99");
         r["DeckSwatchRing"] = B("#80808080");
     }

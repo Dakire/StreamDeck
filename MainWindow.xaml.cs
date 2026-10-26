@@ -73,6 +73,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         _vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MainViewModel.Dialog)) FocusDialog(); };
         Closed += (_, _) =>
         {
+            _vm.StopWidgets();
             if (_isEditing) { _isEditing = false; _editing = false; }
             // Les cadres web rangés vivent plus longtemps que leurs vues : fermer le deck les libère (après le déchargement des vues)
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, Controls.WebFramePool.Clear);

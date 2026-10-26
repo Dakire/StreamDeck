@@ -107,6 +107,22 @@
                 <TextBlock Text="Lit l'agenda principal de ton compte Google : connecte-le dans Paramètres › Intégrations › Google Workspace." Style="{StaticResource EditorHint}"/>
               </StackPanel>
 
+              <!-- Widgets de données : un champ par réglage déclaré par le widget, plus l'intervalle de rafraîchissement -->
+              <ItemsControl ItemsSource="{Binding WidgetFields}" Focusable="False" Visibility="{Binding IsDataWidget, Converter={StaticResource BoolVis}}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel>
+                      <TextBlock Text="{Binding Label}" Style="{StaticResource EditorCaption}"/>
+                      <ui:TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"
+                                  PlaceholderText="{Binding Placeholder}" AutomationProperties.Name="{Binding Label}"/>
+                      <TextBlock Text="{Binding Error}" Foreground="{DynamicResource DeckDanger}" FontSize="12" TextWrapping="Wrap" Margin="2,6,0,0"
+                                 Visibility="{Binding HasError, Converter={StaticResource BoolVis}}" AutomationProperties.LiveSetting="Assertive"/>
+                      <TextBlock Text="{Binding Hint}" Style="{StaticResource EditorHint}"/>
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
               <StackPanel Visibility="{Binding IsWebWidget, Converter={StaticResource BoolVis}}">
                 <TextBlock Text="Adresse de la page" Style="{StaticResource EditorCaption}"/>
                 <ui:TextBox Text="{Binding WidgetUrl, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"
