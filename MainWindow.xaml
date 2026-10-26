@@ -600,7 +600,16 @@
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type vm:TabViewModel}">
-                  <Button Style="{StaticResource DockTab}" Command="{Binding Command}" Content="{Binding Text}" AutomationProperties.Name="{Binding Text, StringFormat='Page {0}'}"/>
+                  <Button Style="{StaticResource DockTab}" Command="{Binding Command}" AutomationProperties.Name="{Binding AutomationName}">
+                    <StackPanel Orientation="Horizontal">
+                      <TextBlock Text="{Binding Text}" VerticalAlignment="Center"/>
+                      <!-- Badge rouge de notifications d'une page web (Google Chat, Gmail…) -->
+                      <Border Background="{DynamicResource DeckTileNotify}" CornerRadius="11" MinWidth="22" Height="22" Margin="10,0,0,0" Padding="6,0" VerticalAlignment="Center"
+                              Visibility="{Binding HasBadge, Converter={StaticResource BoolVis}}">
+                        <TextBlock Text="{Binding Badge}" Foreground="White" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                      </Border>
+                    </StackPanel>
+                  </Button>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>

@@ -107,6 +107,9 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     /// <summary>La vue a changé de page, de sous-page ou de dossier (+1 vers l'avant, -1 vers l'arrière) : la fenêtre anime l'entrée de la grille.</summary>
     public event Action<int>? Navigated;
+
+    /// <summary>true si la page affichée (ou celle qu'on s'apprête à afficher) est une page web plein cadre : son cadre WebView2 ne doit pas être animé.</summary>
+    public bool ShowsWebPage => CurrentPage.IsWeb || CurrentPage.Buttons.Any(b => b.Widget == WidgetTypes.Web);
     int _shownPage = -1, _shownSub, _shownDepth;
     string _shownProfile = "";
     /// <summary>Configuration courante (placement de la fenêtre).</summary>
@@ -785,6 +788,14 @@ public partial class MainViewModel : ObservableObject, INavigator
         def.IsFolder ? null : def.Actions.Where(a => string.Equals(a.Type, ActionTypes.Url, StringComparison.OrdinalIgnoreCase))
             .Select(a => _notifications.ForUrl(a.Value)).FirstOrDefault(p => p != null);
 
+    /// <summary>Texte du badge rouge d'une adresse suivie (page web du deck), ou null.</summary>
+    string? NotificationCountFor(string? url)
+    {
+        if (_notifications.ForUrl(url) is not { } provider || !_integrations.IsEnabled(NotifyId)) return null;
+        return int.TryParse(_integrations.GetValue($"{NotifyId}.{provider.Id}"), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n)
+            ? NotificationBadge.Text(n) : null;
+    }
+
     /// <summary>Texte du badge rouge d'un bouton « site web » (« 3 », « 99+ »), ou null : connecteur éteint, service inconnu, rien de non lu.</summary>
     string? NotificationCount(DeckButton def)
     {
@@ -823,6 +834,7 @@ public partial class MainViewModel : ObservableObject, INavigator
                     UpdateFace(t);
             foreach (var agenda in Tiles.OfType<AgendaWidgetViewModel>()) RefreshAgenda(agenda);
             foreach (var meter in Tiles.OfType<SystemMeterWidgetViewModel>()) RefreshSystem(meter);
+            if (CurrentProfile.Pages.Any(p => p.IsWeb)) BuildTabs();   // badges des pages web
         });
     }
 
@@ -886,7 +898,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             int target = i;
             Tabs.Add(new TabViewModel
             {
-                Text = p.Hidden ? p.Name + " (masquée)" : p.Name, IsActive = i == _page,
+                Text = p.Hidden ? p.Name + " (masquée)" : p.Name, IsActive = i == _page, Badge = p.IsWeb ? NotificationCountFor(p.Url) : null,
                 Command = new RelayCommand(() => GoTo(target)),
             });
         }

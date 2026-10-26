@@ -120,6 +120,12 @@ public sealed class TabViewModel
     public bool IsActive { get; init; }
     /// <summary>Affiche cette page.</summary>
     public required ICommand Command { get; init; }
+    /// <summary>Texte du badge rouge de notifications (« 3 », « 99+ ») d'une page web de Gmail, Google Chat, Discord…, ou null.</summary>
+    public string? Badge { get; init; }
+    /// <summary>true si un badge est affiché.</summary>
+    public bool HasBadge => Badge != null;
+    /// <summary>Nom accessible de l'onglet.</summary>
+    public string AutomationName => Badge == null ? $"Page {Text}" : $"Page {Text}, {Badge} notification(s)";
 }
 
 /// <summary>Entrée du menu du deck.</summary>

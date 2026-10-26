@@ -348,6 +348,32 @@ public class DeckNotificationBadgeTests
         }
     }
 
+    [Fact]
+    public async Task AWebPageTabShowsTheBadgeAndNavigationToItNeverAnimatesTheFrame()
+    {
+        var cfg = ConfigStore.DefaultConfig();
+        cfg.Profiles[0].Pages.Add(new DeckPage { Name = "Google Chat", Kind = "web", Url = "https://chat.google.com/" });
+        cfg.Integrations = new() { ["notify"] = new IntegrationConfig { Enabled = true } };
+        _host.Reset(cfg);
+        var watcher = new RaisingWatcher();
+        var integration = new NotificationIntegration(watcher);
+        var manager = new IntegrationManager(new IIntegration[] { integration }, _host.Document, new MemorySecrets());
+        await integration.ConnectAsync(new IntegrationSettings(), CancellationToken.None);
+        var vm = _host.Run(() => { var v = _host.Create<MainViewModel>(new FakeDeckShell(), new FakeAppWindows(), manager); v.Resize(1600, 900); return v; });
+        _host.Settle();
+        string? Badge(string name) => _host.Run(() => vm.Tabs.First(t => t.Text == name).Badge);
+
+        Assert.Null(Badge("Google Chat"));
+        watcher.Raise("gchat", 7);
+        await WaitFor(() => Badge("Google Chat") == "7");
+        Assert.Null(Badge(vm.Tabs[0].Text));                                        // les autres onglets n'ont rien
+        Assert.Contains("7 notification", _host.Run(() => vm.Tabs.First(t => t.Text == "Google Chat").AutomationName));
+
+        Assert.False(_host.Run(() => vm.ShowsWebPage));                             // page de boutons : le glissement est permis
+        _host.Run(() => ((StreamDak.Actions.INavigator)vm).GoToPage("Google Chat"));
+        Assert.True(_host.Run(() => vm.ShowsWebPage));                              // page web : jamais d'animation du cadre
+    }
+
     async Task WaitFor(Func<bool> condition, int seconds = 8)
     {
         var limit = DateTime.UtcNow.AddSeconds(seconds);

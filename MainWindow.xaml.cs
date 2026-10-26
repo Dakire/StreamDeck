@@ -93,7 +93,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     {
         if (!Motion.Enabled) return;
         // Un cadre web est une fenêtre Win32 : il ne suit pas le glissement de la grille et resterait décalé à la fin de l'animation
-        if (_vm.Tiles.OfType<ViewModels.WebWidgetViewModel>().Any()) return;
+        // (Navigated est levé avant la reconstruction de la grille : les tuiles sont celles de la page quittée, la page visée se lit dans le ViewModel)
+        if (_vm.ShowsWebPage || _vm.Tiles.OfType<ViewModels.WebWidgetViewModel>().Any()) { GridShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, null); DeckGrid.BeginAnimation(OpacityProperty, null); return; }
         var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
         var duration = TimeSpan.FromMilliseconds(180);
         GridShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,
