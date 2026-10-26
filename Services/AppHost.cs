@@ -14,6 +14,7 @@ using StreamDak.Integrations.ElgatoLight;
 using StreamDak.Integrations.Google;
 using StreamDak.Integrations.Hue;
 using StreamDak.Integrations.Monday;
+using StreamDak.Integrations.Notifications;
 using StreamDak.Integrations.Notion;
 using StreamDak.Integrations.Obs;
 using StreamDak.Integrations.Twitch;
@@ -132,6 +133,7 @@ public static class AppHost
         AddIntegration<MondayIntegration>(services, takenIds);
         AddIntegration<TwitchIntegration>(services, takenIds);
         AddIntegration<GoogleIntegration>(services, takenIds);
+        AddIntegration<NotificationIntegration>(services, takenIds);
         AddPlugins(services, takenIds);
 
         services.AddSingleton<IDisplayService, WindowsDisplayService>();
@@ -151,6 +153,9 @@ public static class AppHost
         services.AddSingleton<IWidget, NextEventWidget>();
         services.AddSingleton<IWidget, CounterWidget>();
         services.AddSingleton(sp => new WidgetRegistry(sp.GetServices<IWidget>()));
+        // Badges de notifications : services connus + ceux de notifications.json, suivis dans des pages WebView2 cachées (seulement si le connecteur est activé)
+        services.AddSingleton(_ => NotificationProviders.Load(ConfigStore.Dir));
+        services.AddSingleton<INotificationWatcher>(sp => new WebNotificationWatcher(sp.GetRequiredService<DeckDocument>(), sp.GetRequiredService<NotificationProviders>()));
         services.AddSingleton<IApiShell, ApiShell>();
         services.AddSingleton<LocalApi>();
 

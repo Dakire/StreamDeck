@@ -33,6 +33,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     readonly ConfigPersistence _persistence;
     readonly IntegrationManager _integrations;
     readonly WidgetRegistry _widgets;
+    readonly NotificationProviders _notifications;
     readonly HashSet<DataWidgetViewModel> _dataWidgets = new();
     readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
     bool _integrationRefreshPending;
@@ -108,8 +109,9 @@ public partial class MainViewModel : ObservableObject, INavigator
     /// <summary>Deck sur le document partagé ; <paramref name="shell"/> fournit le placement Win32.</summary>
     public MainViewModel(IShell shell, DeckDocument doc, ActionEngine engine, AppOptions options, StartupResult startup,
         GridState grid, IAppWindows windows, ConfigPersistence persistence, IntegrationManager integrations,
-        Func<IEditorShell, EditorViewModel> editorFactory, WidgetRegistry widgets)
+        Func<IEditorShell, EditorViewModel> editorFactory, WidgetRegistry widgets, NotificationProviders notifications)
     {
+        _notifications = notifications;
         _editorFactory = editorFactory;
         _widgets = widgets;
         Tiles.CollectionChanged += (_, _) => ReleaseDataWidgets();
@@ -760,6 +762,21 @@ public partial class MainViewModel : ObservableObject, INavigator
         if (tile.RunState == state) tile.RunState = TileRunState.Idle;
     }
 
+    const string NotifyId = "notify";
+
+    /// <summary>Service de notifications dont une étape « url » du bouton porte l'adresse, ou null.</summary>
+    INotificationProvider? NotificationSource(DeckButton def) =>
+        def.IsFolder ? null : def.Actions.Where(a => string.Equals(a.Type, ActionTypes.Url, StringComparison.OrdinalIgnoreCase))
+            .Select(a => _notifications.ForUrl(a.Value)).FirstOrDefault(p => p != null);
+
+    /// <summary>Texte du badge rouge d'un bouton « site web » (« 3 », « 99+ »), ou null : connecteur éteint, service inconnu, rien de non lu.</summary>
+    string? NotificationCount(DeckButton def)
+    {
+        if (NotificationSource(def) is not { } provider || !_integrations.IsEnabled(NotifyId)) return null;
+        return int.TryParse(_integrations.GetValue($"{NotifyId}.{provider.Id}"), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n)
+            ? NotificationBadge.Text(n) : null;
+    }
+
     void UpdateFace(DeckTileViewModel tile)
     {
         var def = tile.Button;
@@ -767,9 +784,11 @@ public partial class MainViewModel : ObservableObject, INavigator
         var countdowns = _engine.Context.Countdowns;
         var left = countdowns.Remaining(def);
         var state = def.IsFolder ? null : def.Actions.Select(_integrations.StateOf).FirstOrDefault(s => s != null);
-        tile.Face = TileFaceData.From(def, left is { } t ? Countdowns.Format(t) : null, countdowns.Progress(def), _integrations.GetValue, state);
+        var badge = NotificationCount(def);
+        tile.Face = TileFaceData.From(def, left is { } t ? Countdowns.Format(t) : null, countdowns.Progress(def), _integrations.GetValue, state, badge);
         tile.AccessibleName = def.IsFolder ? $"Dossier {tile.Face.Label}"
             : state is { } on ? $"{tile.Face.Label}, {(on ? "actif" : "inactif")}" : tile.Face.Label;
+        if (badge != null) tile.AccessibleName += $", {badge} notification(s)";
     }
 
     /// <summary>Les intégrations notifient depuis leurs threads : on regroupe les changements et on redessine sur le thread d'interface.</summary>
@@ -784,7 +803,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         {
             lock (_ui) _integrationRefreshPending = false;
             foreach (var t in Tiles.OfType<DeckTileViewModel>())
-                if (t.Button is { IsFolder: false } b && (LabelTemplate.ValueKeys(b.Label).Count > 0 || b.Actions.Any(a => _integrations.Find(a.Type) != null)))
+                if (t.Button is { IsFolder: false } b && (LabelTemplate.ValueKeys(b.Label).Count > 0 || b.Actions.Any(a => _integrations.Find(a.Type) != null) || NotificationSource(b) != null))
                     UpdateFace(t);
             foreach (var agenda in Tiles.OfType<AgendaWidgetViewModel>()) RefreshAgenda(agenda);
             foreach (var meter in Tiles.OfType<SystemMeterWidgetViewModel>()) RefreshSystem(meter);

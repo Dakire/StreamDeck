@@ -24,5 +24,6 @@ effacée : elle passe au statut « Remplacée par … ».
 | [0017](0017-widgets.md) | Widgets : horloge, agenda Google, page web (WebView2 isolé) | Acceptée |
 | [0018](0018-pages-web-widgets-systeme-et-renommage.md) | Pages web plein cadre, widgets Processeur et Mémoire, renommage en StreamDak | Acceptée |
 | [0019](0019-widgets-de-donnees.md) | Widgets de données extensibles (`IWidget`) : disque, réseau, ping, services, météo, prochain événement, compteur | Acceptée |
+| [0020](0020-badges-de-notifications.md) | Badges de notifications (Gmail, Google Chat, Discord, Teams, Slack, services configurables) | Acceptée |
 
 Modèle d'une nouvelle décision : contexte, décision, conséquences, statut et date.

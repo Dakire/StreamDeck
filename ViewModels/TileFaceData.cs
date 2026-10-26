@@ -62,6 +62,8 @@ public sealed class TileFaceData
     public TileKind Kind { get; init; }
     /// <summary>Nombre d'étapes (badge affiché à partir de 2).</summary>
     public int Steps { get; init; }
+    /// <summary>Texte du badge rouge de notifications (« 3 », « 99+ »), ou null.</summary>
+    public string? Badge { get; init; }
     /// <summary>Touche sans action : affichée atténuée.</summary>
     public bool IsDisabled { get; init; }
     /// <summary>Voyant d'une commande d'intégration : vrai (actif, rond plein), faux (inactif, rond vide), null (aucun voyant).</summary>
@@ -102,7 +104,8 @@ public sealed class TileFaceData
     /// <param name="progress">Part écoulée de ce minuteur (0 à 1).</param>
     /// <param name="values">Valeur d'état d'une intégration d'après sa clé (« obs.scene »), pour les titres dynamiques.</param>
     /// <param name="state">Voyant d'une commande d'intégration (actif, inactif), ou null s'il n'y en a pas.</param>
-    public static TileFaceData From(DeckButton b, string? timer = null, double? progress = null, Func<string, string?>? values = null, bool? state = null)
+    /// <param name="badge">Texte du badge rouge de notifications (« 3 », « 99+ »), ou null.</param>
+    public static TileFaceData From(DeckButton b, string? timer = null, double? progress = null, Func<string, string?>? values = null, bool? state = null, string? badge = null)
     {
         if (b.Blank) return Empty;
         bool hasSymbol = IconCatalog.TryResolve(b.Icon, out var symbol);
@@ -144,7 +147,7 @@ public sealed class TileFaceData
             Background = body, Border = border, Plate = plate, ImageBrush = image, IsFolder = b.IsFolder,
             Kind = kind, Steps = b.IsFolder ? 0 : b.Actions.Count,
             IsDisabled = !b.IsFolder && b.Actions.Count == 0 && kind != TileKind.Display,
-            Progress = progress,
+            Progress = progress, Badge = badge,
             Caption = timer != null ? b.Label.Replace("{timer}", "", StringComparison.OrdinalIgnoreCase).Trim() : "",
         };
     }

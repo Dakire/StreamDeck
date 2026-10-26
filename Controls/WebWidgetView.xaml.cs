@@ -92,7 +92,7 @@ public partial class WebWidgetView : UserControl
     }
 
     /// <summary>Profil de navigation propre à StreamDak, créé une fois : le dossier de configuration (ou STREAMDAK_DATA_DIR) contient WebView2.</summary>
-    static Task<CoreWebView2Environment> GetEnvironment() =>
+    internal static Task<CoreWebView2Environment> GetEnvironment() =>
         _environment ??= CoreWebView2Environment.CreateAsync(null, Path.Combine(ConfigStore.Dir, "WebView2"));
 
     void OnLoaded(object sender, RoutedEventArgs e)

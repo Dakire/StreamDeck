@@ -148,6 +148,7 @@ public static class Theme
         r["DeckTileErrorLine"] = B(OnTile.ErrorLine);
         r["DeckTileWarningMark"] = B(OnTile.WarningMark);
         r["DeckTileBadge"] = B(OnTile.Badge);
+        r["DeckTileNotify"] = B(OnTile.Notify);
         r["DeckTileTrack"] = B(OnTile.Track);
         r["DeckTileLine"] = B(OnTile.Line);
         r["DeckTileSheen"] = Vertical(OnTile.SheenTop, OnTile.SheenBottom, 0.35);
@@ -174,6 +175,8 @@ public static class Theme
         public const string ErrorLine = "#FFFF8A97";
         /// <summary>Icône d'alerte (échec, mode simulation).</summary>
         public const string WarningMark = "#FFFCD34D";
+        /// <summary>Badge rouge de notifications, texte blanc (contraste 5,2 : 1).</summary>
+        public const string Notify = "#FFD92D20";
         /// <summary>Fond des badges (dossier, nombre d'étapes).</summary>
         public const string Badge = "#66000000";
         /// <summary>Rail de la barre de progression du minuteur.</summary>

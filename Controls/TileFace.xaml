@@ -50,6 +50,11 @@
       </StackPanel>
     </Border>
 
+    <!-- Badge rouge de notifications (nombre de non lus, « 99+ » au-delà), au coin haut droit -->
+    <Border x:Name="NotifyBadge" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Top" Background="{DynamicResource DeckTileNotify}">
+      <TextBlock x:Name="NotifyText" Foreground="White" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+    </Border>
+
     <!-- Voyant d'une commande d'intégration : rond plein = actif, rond vide = inactif (jamais la couleur seule) -->
     <Ellipse x:Name="StateLed" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Top" StrokeThickness="2"/>
 

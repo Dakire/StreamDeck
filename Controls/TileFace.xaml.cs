@@ -89,11 +89,24 @@ public partial class TileFace : UserControl
         FolderBadge.Margin = new Thickness(0, 0, pad, pad);
         FolderGlyph.FontSize = badge * 0.7;
 
+        // Badge de notifications : rond rouge au coin haut droit, plus large pour « 99+ » ; le badge d'étapes lui laisse la place
+        bool notify = f.Badge != null;
+        NotifyBadge.Visibility = notify ? Visibility.Visible : Visibility.Collapsed;
+        double notifyHeight = Math.Max(badge * 1.15, 18);
+        NotifyBadge.Height = notifyHeight;
+        NotifyBadge.MinWidth = notifyHeight;
+        NotifyBadge.CornerRadius = new CornerRadius(notifyHeight / 2);
+        NotifyBadge.Padding = new Thickness(notifyHeight * 0.25, 0, notifyHeight * 0.25, 0);
+        NotifyBadge.Margin = new Thickness(0, pad * 0.6, pad * 0.6, 0);
+        NotifyText.FontSize = notifyHeight * 0.55;
+        NotifyText.Text = f.Badge ?? "";
+        NotifyBadge.SetValue(System.Windows.Automation.AutomationProperties.NameProperty, notify ? f.Badge + " notifications" : string.Empty);
+
         StepBadge.Visibility = f.Steps > 1 ? Visibility.Visible : Visibility.Collapsed;
         StepBadge.Height = badge;
         StepBadge.CornerRadius = badgeRadius;
         StepBadge.Padding = new Thickness(badge * 0.3, 0, badge * 0.35, 0);
-        StepBadge.Margin = new Thickness(0, pad, pad, 0);
+        StepBadge.Margin = new Thickness(0, pad, notify ? pad * 1.6 + notifyHeight * (f.Badge!.Length > 2 ? 1.6 : 1.0) : pad, 0);
         StepGlyph.FontSize = badge * 0.6;
         StepText.FontSize = badge * 0.55;
         StepText.Text = f.Steps.ToString(CultureInfo.CurrentCulture);
