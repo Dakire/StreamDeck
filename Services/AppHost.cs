@@ -140,6 +140,7 @@ public static class AppHost
         services.AddSingleton<DisplayService>();
         services.AddSingleton<ConfigPersistence>();
         services.AddSingleton<AppearanceService>();
+        services.AddSingleton<TaskbarBadgeService>();   // pastille de la barre des tâches (total de non lus), attachée par MainWindow
         services.AddSingleton<IAppWindows, AppWindows>();
         // Éditeur intégré au deck (mode édition) : le deck le crée à l'entrée du mode et le libère à la sortie
         services.AddSingleton<Func<StreamDak.ViewModels.IEditorShell, StreamDak.ViewModels.EditorViewModel>>(sp =>

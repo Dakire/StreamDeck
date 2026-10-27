@@ -59,6 +59,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         _vm = ActivatorUtilities.CreateInstance<MainViewModel>(services, this);   // la fenêtre est le « shell » du ViewModel
         DataContext = _vm;
         InitializeComponent();
+        services.GetService<TaskbarBadgeService>()?.Attach(this, _vm);   // pastille de la barre des tâches : total de non lus
         _onTop = _vm.Config.AlwaysOnTop;
         Topmost = _onTop;
         Root.SizeChanged += (_, _) => _vm.Resize(Root.ActualWidth, Root.ActualHeight);
