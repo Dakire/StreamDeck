@@ -129,6 +129,8 @@ public sealed partial class EditorViewModel
             new("Afficher une grille de boutons", () => SetPageGrid(page), SymbolRegular.Grid24, Enabled: page.IsWeb),
             new(page.Hidden ? "Afficher dans les onglets" : "Masquer des onglets", () => TogglePageHidden(page), page.Hidden ? SymbolRegular.Eye24 : SymbolRegular.EyeOff24),
             // Notifications : seulement pour une page web (interrupteurs cochés quand ils sont actifs)
+            new("Interaction avec la page", Icon: SymbolRegular.CursorClick24, Enabled: page.IsWeb, Children: WebInputModes.All
+                .Select(m => new MenuItemSpec(m.Label, () => SetPageWebInput(page, m.Mode), Checked: page.WebInput == m.Mode)).ToList()),
             new("Afficher le badge", () => TogglePageBadge(page), SymbolRegular.Alert24, Enabled: page.IsWeb, Checked: page.IsWeb && page.BadgeEnabled),
             new("Exclure du total", () => TogglePageBadgeExcluded(page), SymbolRegular.AlertOff24, Enabled: page.IsWeb && page.BadgeEnabled, Checked: page.IsWeb && page.BadgeExcludeFromTotal),
             MenuItemSpec.Separator,

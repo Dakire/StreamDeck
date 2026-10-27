@@ -19,6 +19,11 @@ namespace StreamDak.Controls;
 /// http et https. Caméra, micro et notifications ne sont accordés qu'aux pages https du même site que l'adresse saisie (ADR 0018) ; tout autre
 /// droit (position…) est refusé. La page ne peut rien faire sur StreamDak : elle s'affiche, c'est tout (ADR 0017).
 /// Le cadre est rangé (<see cref="WebFramePool"/>) quand la tuile quitte l'écran et repris au retour : la page n'est pas rechargée.
+/// <para>
+/// Interaction (<see cref="WebInputModes"/>) : hors interaction, le cadre est <b>désactivé</b> (<c>IsEnabled</c> faux, donc <c>EnableWindow</c> sur sa fenêtre
+/// Win32) : Windows ne lui envoie plus ni souris ni doigt, qui vont à la fenêtre du deck, et la page ne peut plus prendre le focus. Un bouton transparent posé
+/// au-dessus (mode tactile) ouvre l'interaction au premier toucher ; elle se termine seule après <see cref="WebInputModes.IdleExit"/> sans geste dans la page.
+/// </para>
 /// </summary>
 public partial class WebWidgetView : UserControl
 {
@@ -28,12 +33,19 @@ public partial class WebWidgetView : UserControl
     static readonly TimeSpan FieldPoll = TimeSpan.FromMilliseconds(400);
     const int FieldIdleTicks = 3;
 
-    /// <summary>true si l'élément qui a le focus dans la page (iframes de même origine comprises) accepte du texte.</summary>
+    /// <summary>
+    /// Relevé en lecture seule : [champ de texte qui a le focus (iframes de même origine comprises), millisecondes depuis le dernier geste dans la page].
+    /// </summary>
     const string FocusedFieldScript =
-        "(function(){var e=document.activeElement;for(var i=0;i<4&&e&&e.tagName==='IFRAME';i++){try{e=e.contentDocument.activeElement}catch(x){return false}}" +
+        "(function(){var f=(function(){var e=document.activeElement;for(var i=0;i<4&&e&&e.tagName==='IFRAME';i++){try{e=e.contentDocument.activeElement}catch(x){return false}}" +
         "if(!e)return false;var t=e.tagName;if(t==='TEXTAREA')return !e.readOnly;" +
         "if(t==='INPUT'){var k=(e.type||'text').toLowerCase();return !e.readOnly&&['button','submit','reset','checkbox','radio','range','color','file','image','hidden'].indexOf(k)<0}" +
-        "return !!e.isContentEditable})()";
+        "return !!e.isContentEditable})();return [f,Date.now()-(window.__streamdakLastInput||0)]})()";
+
+    /// <summary>Note l'heure du dernier geste dans la page (souris, doigt, molette, clavier), pour terminer l'interaction après un moment sans geste.</summary>
+    const string InputTrackerScript =
+        "(function(){var m=function(){window.__streamdakLastInput=Date.now()};['pointerdown','pointermove','wheel','keydown','touchstart']" +
+        ".forEach(function(n){addEventListener(n,m,{capture:true,passive:true})});m()})()";
 
     WebWidgetViewModel? _vm;
     WebFrame? _frame;
@@ -42,6 +54,7 @@ public partial class WebWidgetView : UserControl
     bool _polling;
     int _idleTicks;
     int _readyTicks;              // relevés écoulés depuis que le cadre est prêt : le zoom enregistré a eu le temps d'être appliqué
+    long _lastGesture;            // dernier geste connu dans la page (horloge système, ms) : fin de l'interaction après un moment sans geste
 
     /// <summary>Vue d'un widget page web ; le cadre est repris ou créé quand la vue est chargée.</summary>
     public WebWidgetView()
@@ -49,7 +62,7 @@ public partial class WebWidgetView : UserControl
         InitializeComponent();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
-        _fieldTimer.Tick += async (_, _) => { SyncZoom(); await PollFocusedFieldAsync(); };
+        _fieldTimer.Tick += async (_, _) => { ApplyInput(); SyncZoom(); await PollFocusedFieldAsync(); };
         DataContextChanged += OnDataContextChanged;
     }
 
@@ -79,8 +92,22 @@ public partial class WebWidgetView : UserControl
     {
         // La saisie au clavier commence : le focus passe à la page (la fenêtre vient de devenir activable)
         if (e.PropertyName == nameof(WebWidgetViewModel.ZoomPercent) && Web != null && _vm != null) Web.ZoomFactor = _vm.ZoomPercent / 100.0;
+        if (e.PropertyName == nameof(WebWidgetViewModel.IsInteracting))
+        {
+            ApplyInput();
+            if (_vm is { IsInteracting: true }) _lastGesture = Environment.TickCount64;
+        }
         if (e.PropertyName == nameof(WebWidgetViewModel.IsTyping) && _vm is { IsTyping: true })
             Dispatcher.BeginInvoke(DispatcherPriority.Input, () => { if (Web?.CoreWebView2 != null) Web.Focus(); });
+    }
+
+    /// <summary>
+    /// Fenêtre Win32 du cadre activée seulement pendant l'interaction. Appelé à chaque changement et à chaque relevé : si WebView2 recrée sa fenêtre, elle
+    /// est remise dans le bon état en moins d'une demi-seconde.
+    /// </summary>
+    void ApplyInput()
+    {
+        if (Web is { } web && _vm != null) StreamDak.Platform.Windows.WindowsPlatform.SetHostedWindowInput(web.Handle, _vm.IsInteracting);
     }
 
     /// <summary>Retour : page précédente du cadre, sinon l'adresse saisie (on n'est jamais bloqué sur une page sans issue).</summary>
@@ -113,18 +140,23 @@ public partial class WebWidgetView : UserControl
         _frame = frame;
         frame.Vm = vm;
         frame.Web.SetBinding(VisibilityProperty, new Binding(nameof(WebWidgetViewModel.ShowPage)) { Source = vm, Converter = new BooleanToVisibilityConverter() });
+        frame.Web.SetBinding(IsEnabledProperty, new Binding(nameof(WebWidgetViewModel.IsInteracting)) { Source = vm });   // désactivé : ne capte plus rien
+        _lastGesture = Environment.TickCount64;
         WebHost.Children.Add(frame.Web);
         frame.Web.ZoomFactor = vm.ZoomPercent / 100.0;
         frame.Web.ZoomFactorChanged += OnZoomFactorChanged;
         _readyTicks = fresh ? 0 : FieldIdleTicks;
         _fieldTimer.Start();
+        _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, ApplyInput);   // la fenêtre du cadre existe une fois la mise en page faite
         if (!fresh) return;   // page déjà chargée : rien d'autre à faire
 
         try
         {
             await frame.Web.EnsureCoreWebView2Async(await GetEnvironment());
             Configure(frame);
+            ApplyInput();
             await ResetStoredDenialsAsync(frame.Web.CoreWebView2);   // avant la navigation : la page doit voir « à demander », pas « bloqué »
+            await frame.Web.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(InputTrackerScript);
             Log.Info($"Widget page web : WebView2 {frame.Web.CoreWebView2.Environment.BrowserVersionString} prêt, ouverture de {source.Host}");
             frame.Web.CoreWebView2.Navigate(source.AbsoluteUri);
         }
@@ -244,11 +276,19 @@ public partial class WebWidgetView : UserControl
     /// </summary>
     async Task PollFocusedFieldAsync()
     {
-        if (_polling || _vm is not { ShowPage: true } vm || Web?.CoreWebView2 is not { } core) return;
+        // Page au repos (passive) : rien à relever, et surtout pas de saisie automatique qui volerait le focus de l'application active
+        if (_polling || _vm is not { ShowPage: true, IsInteracting: true } vm || Web?.CoreWebView2 is not { } core) return;
         _polling = true;
         try
         {
-            bool inField = await core.ExecuteScriptAsync(FocusedFieldScript) == "true";
+            var (inField, idleMs) = ParsePoll(await core.ExecuteScriptAsync(FocusedFieldScript));
+            if (idleMs is { } idle && idle < Environment.TickCount64 - _lastGesture) _lastGesture = Environment.TickCount64 - idle;
+            if (!vm.IsAlwaysInteractive && !vm.IsTyping && Environment.TickCount64 - _lastGesture > WebInputModes.IdleExit.TotalMilliseconds)
+            {
+                Log.Info("Widget page web : interaction terminée (30 s sans geste)");
+                vm.EndInteraction();
+                return;
+            }
             if (inField)
             {
                 _idleTicks = 0;
@@ -263,6 +303,21 @@ public partial class WebWidgetView : UserControl
         }
         catch (Exception ex) when (ex is InvalidOperationException or COMException or ObjectDisposedException) { /* page en cours de navigation ou cadre fermé */ }
         finally { _polling = false; }
+    }
+
+    /// <summary>Lit la réponse du relevé « [true,1234] » ; un relevé illisible compte comme « pas de champ, geste inconnu ».</summary>
+    internal static (bool InField, long? IdleMs) ParsePoll(string json)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.ValueKind != System.Text.Json.JsonValueKind.Array || root.GetArrayLength() < 2) return (false, null);
+            bool field = root[0].ValueKind == System.Text.Json.JsonValueKind.True;
+            long? idle = root[1].TryGetInt64(out var ms) && ms >= 0 ? ms : root[1].TryGetDouble(out var d) && d >= 0 ? (long)d : null;
+            return (field, idle);
+        }
+        catch (System.Text.Json.JsonException) { return (false, null); }
     }
 
     void OnUnloaded(object sender, RoutedEventArgs e)
@@ -280,6 +335,7 @@ public partial class WebWidgetView : UserControl
         frame.Web.ZoomFactorChanged -= OnZoomFactorChanged;
         WebHost.Children.Remove(frame.Web);
         BindingOperations.ClearBinding(frame.Web, VisibilityProperty);
+        BindingOperations.ClearBinding(frame.Web, IsEnabledProperty);
         frame.Vm = null;
         _frame = null;
         if (_key != null) WebFramePool.Park(_key, frame);

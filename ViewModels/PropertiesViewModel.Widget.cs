@@ -24,6 +24,10 @@ public sealed partial class PropertiesViewModel
     public ObservableCollection<ChoiceViewModel> AgendaCountChoices { get; } = new();
     /// <summary>Nombre de jours à venir affichés par l'agenda.</summary>
     public ObservableCollection<ChoiceViewModel> AgendaDaysChoices { get; } = new();
+    /// <summary>Interaction de la page web avec la souris et le doigt : passive, toucher pour interagir, interactive.</summary>
+    public ObservableCollection<ChoiceViewModel> WebInputChoices { get; } = new();
+    /// <summary>Explication du mode d'interaction choisi.</summary>
+    [ObservableProperty] string _webInputHint = "";
 
     [ObservableProperty] bool _clockSeconds;
     [ObservableProperty] bool _clockDate = true;
@@ -91,6 +95,11 @@ public sealed partial class PropertiesViewModel
     void InitWidgetChoices()
     {
         RebuildSizeChoices(null);
+        foreach (var (mode, label, _) in WebInputModes.All)
+        {
+            var m = mode;
+            WebInputChoices.Add(new ChoiceViewModel(label, () => ApplyNow(b => b.SetOption(WidgetOptionKeys.Input, WebInputModes.ForStorage(m)), "Interaction avec la page")));
+        }
         foreach (var n in AgendaCounts)
         {
             int count = n;
@@ -137,6 +146,9 @@ public sealed partial class PropertiesViewModel
         int count = b?.OptionInt(WidgetOptionKeys.Count, 4, 1, 20) ?? 4, days = b?.OptionInt(WidgetOptionKeys.Days, 7, 1, 60) ?? 7;
         for (int i = 0; i < AgendaCounts.Length; i++) AgendaCountChoices[i].IsSelected = AgendaCounts[i] == count;
         for (int i = 0; i < AgendaDayChoices.Length; i++) AgendaDaysChoices[i].IsSelected = AgendaDayChoices[i] == days;
+        var input = WebInputModes.Normalize(b?.Option(WidgetOptionKeys.Input));
+        for (int i = 0; i < WebInputModes.All.Count; i++) WebInputChoices[i].IsSelected = WebInputModes.All[i].Mode == input;
+        WebInputHint = WebInputModes.All.First(m => m.Mode == input).Hint;
         RefreshLevelSelection(b);
     }
 

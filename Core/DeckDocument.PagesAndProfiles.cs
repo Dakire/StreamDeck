@@ -99,6 +99,18 @@ public sealed partial class DeckDocument
             return OpResult.Success(page);
         });
 
+    /// <summary>Règle l'interaction d'une page web avec la souris et le doigt (<see cref="WebInputModes"/>, annulable).</summary>
+    public OpResult SetPageWebInput(string profile, int page, string mode) =>
+        Edit("Interaction avec la page", _ =>
+        {
+            var pg = FindPage(profile, page);
+            if (pg == null) return OpResult.Fail("Page introuvable");
+            var stored = WebInputModes.ForStorage(mode);
+            if (pg.WebInput == stored) return OpResult.Fail("Inchangé");
+            pg.WebInput = stored;
+            return OpResult.Success(page);
+        });
+
     /// <summary>Exclut ou inclut le nombre d'une page web dans le total des notifications (annulable).</summary>
     public OpResult SetPageBadgeExcluded(string profile, int page, bool excluded) =>
         Edit(excluded ? "Exclure du total" : "Inclure dans le total", _ =>

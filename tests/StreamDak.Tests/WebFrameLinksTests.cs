@@ -47,7 +47,7 @@ public class WebFrameLinksTests
         });
 
         WidgetTypes.IsWebAddress($"http://localhost:{port}/", out var uri);
-        var vm = new WebWidgetViewModel { Button = new DeckButton { Widget = WidgetTypes.Web }, Source = uri };
+        var vm = new WebWidgetViewModel { Button = new DeckButton { Widget = WidgetTypes.Web }, Source = uri, InputMode = WebInputModes.Interactive };   // comportement d'avant : la page reçoit tout
         var requests = new System.Collections.Concurrent.ConcurrentQueue<bool>();
         vm.TypingRequested = on => { requests.Enqueue(on); vm.IsTyping = on; };   // le deck, simulé
         var window = _host.Run(() => new System.Windows.Window { Left = -30000, Top = -30000, Width = 800, Height = 600, ShowInTaskbar = false, ShowActivated = false });
@@ -117,7 +117,7 @@ public class WebFrameLinksTests
         });
 
         WidgetTypes.IsWebAddress($"http://localhost:{port}/", out var uri);
-        var vm = new WebWidgetViewModel { Button = new DeckButton { Widget = WidgetTypes.Web }, Source = uri };
+        var vm = new WebWidgetViewModel { Button = new DeckButton { Widget = WidgetTypes.Web }, Source = uri, InputMode = WebInputModes.Interactive };   // comportement d'avant : la page reçoit tout
         var opened = new System.Collections.Concurrent.ConcurrentQueue<Uri>();
         vm.BrowserRequested = opened.Enqueue;                                            // le deck, simulé : rien n'est réellement lancé
         var window = _host.Run(() => new System.Windows.Window { Left = -30000, Top = -30000, Width = 800, Height = 600, ShowInTaskbar = false, ShowActivated = false });
@@ -188,7 +188,7 @@ public class WebFrameLinksTests
 
         var button = new DeckButton { Widget = WidgetTypes.Web };
         WidgetTypes.IsWebAddress($"http://localhost:{port}/", out var uri);
-        var vm = new WebWidgetViewModel { Button = button, Source = uri };
+        var vm = new WebWidgetViewModel { Button = button, Source = uri, InputMode = WebInputModes.Interactive };
         var window = _host.Run(() => new System.Windows.Window { Left = -30000, Top = -30000, Width = 800, Height = 600, ShowInTaskbar = false, ShowActivated = false });
         try
         {

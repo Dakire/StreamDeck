@@ -100,10 +100,64 @@ public sealed partial class WebWidgetViewModel : WidgetTileViewModel
     public bool HasStatus => Status.Length > 0;
 
     /// <summary>true tant qu'un menu ou une boîte de dialogue est ouvert : le cadre est une fenêtre Win32 qui masquerait leur contenu.</summary>
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowPage))] bool _suspended;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowPage), nameof(ShowTouchShield), nameof(ShowPassiveShield))] bool _suspended;
 
     /// <summary>true quand le cadre de la page est affiché.</summary>
     public bool ShowPage => !HasStatus && !Suspended;
+
+    string _inputMode = WebInputModes.Default;
+
+    /// <summary>
+    /// Interaction avec la souris et le doigt (<see cref="WebInputModes"/>). Hors du mode interactif, le cadre est désactivé : il ne capte plus rien et ce qui le
+    /// touche revient au deck (appui long, clic droit).
+    /// </summary>
+    public string InputMode
+    {
+        get => _inputMode;
+        init
+        {
+            _inputMode = WebInputModes.Normalize(value);
+            IsInteracting = _inputMode == WebInputModes.Interactive;
+        }
+    }
+
+    /// <summary>true si la page reçoit la souris, le doigt et le clavier (le cadre est activé).</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowTouchShield), nameof(ShowPassiveShield), nameof(InteractHint), nameof(HasInteractHint))] bool _isInteracting;
+
+    /// <summary>true en mode interactif permanent : pas de bouton « Interagir », rien ne se termine seul.</summary>
+    public bool IsAlwaysInteractive => InputMode == WebInputModes.Interactive;
+    /// <summary>true si le bouton « Interagir » / « Terminer » est proposé.</summary>
+    public bool CanToggleInteraction => !IsAlwaysInteractive;
+    /// <summary>Mode tactile, page au repos : un toucher sur la page l'ouvre à l'interaction.</summary>
+    public bool ShowTouchShield => ShowPage && !IsInteracting && InputMode == WebInputModes.Touch;
+    /// <summary>Mode passif, page au repos : la page ne réagit à rien (appui long et clic droit vont au deck).</summary>
+    public bool ShowPassiveShield => ShowPage && !IsInteracting && InputMode == WebInputModes.Passive;
+    /// <summary>Ce qu'il faut faire pour se servir de la page, affiché dans la bande du cadre ; vide pendant l'interaction.</summary>
+    public string InteractHint => IsInteracting ? "" : InputMode == WebInputModes.Touch ? "Toucher la page pour interagir" : "Affichage seul";
+    /// <summary>true si l'indication est affichée.</summary>
+    public bool HasInteractHint => InteractHint.Length > 0;
+
+    /// <summary>La page reçoit la souris et le doigt (toucher en mode tactile, bouton « Interagir »).</summary>
+    [RelayCommand]
+    void Interact()
+    {
+        if (!IsInteracting) IsInteracting = true;
+    }
+
+    /// <summary>Fin de l'interaction (bouton « Terminer » ou délai sans geste) : la saisie au clavier s'arrête, la page redevient passive. Sans effet en mode interactif.</summary>
+    [RelayCommand]
+    public void EndInteraction()
+    {
+        if (IsAlwaysInteractive || !IsInteracting) return;
+        IsInteracting = false;
+        if (IsTyping) { AutoTyping = false; TypingRequested?.Invoke(false); }
+    }
+
+    [RelayCommand]
+    void ToggleInteraction()
+    {
+        if (IsInteracting) EndInteraction(); else Interact();
+    }
 
     /// <summary>true pendant la saisie au clavier : la fenêtre du deck est activable et le focus est dans la page.</summary>
     [ObservableProperty] bool _isTyping;
@@ -177,6 +231,8 @@ public sealed partial class WebWidgetViewModel : WidgetTileViewModel
         OnPropertyChanged(nameof(Status));
         OnPropertyChanged(nameof(HasStatus));
         OnPropertyChanged(nameof(ShowPage));
+        OnPropertyChanged(nameof(ShowTouchShield));
+        OnPropertyChanged(nameof(ShowPassiveShield));
     }
 
     [RelayCommand]
@@ -190,6 +246,7 @@ public sealed partial class WebWidgetViewModel : WidgetTileViewModel
     void ToggleTyping()
     {
         AutoTyping = false;   // le bouton clavier reprend la main : la saisie ne s'arrêtera plus toute seule
+        if (!IsTyping) Interact();   // taper dans la page suppose qu'elle reçoit le clavier
         TypingRequested?.Invoke(!IsTyping);
     }
 

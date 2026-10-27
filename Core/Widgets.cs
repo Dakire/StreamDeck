@@ -73,6 +73,45 @@ public static class WidgetTypes
     }
 }
 
+/// <summary>
+/// Comportement d'un cadre web face à la souris et au doigt (réglage <c>input</c> du widget page web, <see cref="DeckPage.WebInput"/> d'une page web). Le cadre
+/// WebView2 est une fenêtre Win32 enfant qui capte tout ce qui le touche : en mode passif ou tactile, il est désactivé (il ne reçoit plus rien) et ce qui le
+/// touche revient au deck (appui long, clic droit, menu de la case).
+/// </summary>
+public static class WebInputModes
+{
+    /// <summary>La page s'affiche sans jamais capter la souris ni le doigt ; le bouton « Interagir » du cadre l'ouvre à la main.</summary>
+    public const string Passive = "passive";
+    /// <summary>La page s'affiche sans rien capter ; un toucher (ou un clic) sur la page l'ouvre à l'interaction, qui se termine seule après un moment sans geste.</summary>
+    public const string Touch = "touch";
+    /// <summary>La page reçoit toujours la souris et le doigt (comportement d'avant).</summary>
+    public const string Interactive = "interactive";
+    /// <summary>Mode d'un cadre sans réglage.</summary>
+    public const string Default = Touch;
+
+    /// <summary>Fin automatique de l'interaction (modes passif et tactile) après ce délai sans geste dans la page.</summary>
+    public static readonly TimeSpan IdleExit = TimeSpan.FromSeconds(30);
+
+    /// <summary>Modes dans l'ordre de l'éditeur : (clé, libellé, explication).</summary>
+    public static readonly IReadOnlyList<(string Mode, string Label, string Hint)> All = new[]
+    {
+        (Passive, "Passive", "Affichage seul : la page ne capte ni la souris ni le doigt. Bouton « Interagir » du cadre pour s'en servir."),
+        (Touch, "Toucher pour interagir", "Affichage seul ; un toucher ou un clic sur la page l'ouvre à l'interaction, qui se termine seule après 30 s sans geste."),
+        (Interactive, "Interactive", "La page reçoit toujours la souris et le doigt : liens, défilement, saisie."),
+    };
+
+    /// <summary>Mode connu, ou <see cref="Default"/> pour une valeur absente ou inconnue.</summary>
+    public static string Normalize(string? mode) => mode?.Trim().ToLowerInvariant() switch
+    {
+        Passive => Passive,
+        Interactive => Interactive,
+        _ => Default,
+    };
+
+    /// <summary>Valeur écrite : null pour le mode par défaut (rien dans config.json).</summary>
+    public static string? ForStorage(string? mode) => Normalize(mode) is var m && m == Default ? null : m;
+}
+
 /// <summary>Adresse saisie pour une page web : on complète « calendar.google.com » en « https://calendar.google.com ».</summary>
 public static class WebAddress
 {
@@ -207,6 +246,8 @@ public static class WidgetOptionKeys
     public const string Url = "url";
     /// <summary>Page web : zoom en pourcentage (25 à 500), absent = 100 %.</summary>
     public const string Zoom = "zoom";
+    /// <summary>Page web : interaction avec la souris et le doigt (<see cref="WebInputModes"/>), absent = toucher pour interagir.</summary>
+    public const string Input = "input";
     /// <summary>Widget de données : intervalle de rafraîchissement en secondes (1 à 3600) ; absent = celui du widget.</summary>
     public const string Interval = "interval";
 

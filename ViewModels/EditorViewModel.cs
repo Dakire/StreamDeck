@@ -350,7 +350,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Pages.Clear();
         var pages = Profile.Pages;
         for (int i = 0; i < pages.Count; i++)
-            Pages.Add(new PageTabViewModel { Index = i, Name = pages[i].Name, Hidden = pages[i].Hidden, IsWeb = pages[i].IsWeb, Url = pages[i].Url, BadgeEnabled = pages[i].BadgeEnabled, BadgeExcludeFromTotal = pages[i].BadgeExcludeFromTotal, IsSelected = i == _page });
+            Pages.Add(new PageTabViewModel { Index = i, Name = pages[i].Name, Hidden = pages[i].Hidden, IsWeb = pages[i].IsWeb, Url = pages[i].Url, BadgeEnabled = pages[i].BadgeEnabled, BadgeExcludeFromTotal = pages[i].BadgeExcludeFromTotal, WebInput = WebInputModes.Normalize(pages[i].WebInput), IsSelected = i == _page });
         _refreshingLists = true;
         SelectedPage = Pages.ElementAtOrDefault(_page);
         _refreshingLists = false;
@@ -796,6 +796,13 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     {
         var r = _doc.SetPageBadgeEnabled(_profile, page.Index, !page.BadgeEnabled);
         if (r.Ok) Notifier.Success(page.BadgeEnabled ? "Badge de la page masqué" : "Badge de la page affiché", "Annuler", () => _doc.Undo());
+    }
+
+    /// <summary>Règle l'interaction de la page web avec la souris et le doigt (annulable).</summary>
+    public void SetPageWebInput(PageTabViewModel page, string mode)
+    {
+        var r = _doc.SetPageWebInput(_profile, page.Index, mode);
+        if (r.Ok) Notifier.Success("Interaction : " + WebInputModes.All.First(m => m.Mode == WebInputModes.Normalize(mode)).Label, "Annuler", () => _doc.Undo());
     }
 
     /// <summary>Exclut la page web du total de non lus (pastille de la barre des tâches) ou l'y remet (annulable).</summary>

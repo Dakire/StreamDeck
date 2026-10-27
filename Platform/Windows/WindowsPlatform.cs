@@ -17,6 +17,9 @@ public sealed class WindowsPlatform : IKeyboardService, IAppLauncher, IWindowSer
     /// <summary>Vérificateur de signature Authenticode (mise à jour : l'installateur téléchargé).</summary>
     public static ISignatureVerifier CreateSignatureVerifier() => new AuthenticodeVerifier();
 
+    /// <summary>Active ou désactive une fenêtre Win32 hébergée (cadre web) : désactivée, elle ne capte plus la souris, le doigt ni le clavier.</summary>
+    public static void SetHostedWindowInput(System.IntPtr window, bool enabled) => WindowFocus.SetInputEnabled(window, enabled);
+
     /// <inheritdoc/>
     public void SendHotkey(string combo) => NativeInput.Hotkey(combo);
     /// <inheritdoc/>

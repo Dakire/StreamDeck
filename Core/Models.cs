@@ -103,6 +103,10 @@ public class DeckPage
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int Zoom { get; set; }
 
+    /// <summary>Interaction d'une page web avec la souris et le doigt (<see cref="WebInputModes"/>) ; absent = toucher pour interagir.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? WebInput { get; set; }
+
     /// <summary>
     /// Valeur écrite de <see cref="BadgeEnabled"/> : absente (null) quand le badge est affiché, comme le défaut ; seul « false » est écrit. Un défaut vrai ne peut pas
     /// s'omettre avec <c>WhenWritingDefault</c> (le défaut du type est faux), d'où ce champ à trois états, sous la clé <c>BadgeEnabled</c> du fichier.

@@ -6,6 +6,8 @@
   <!--
     Widget page web : une bande de commandes (48 px, tactile) et la page dans un cadre WebView2 isolé. Le cadre est une fenêtre Win32 enfant :
     rien de WPF ne peut le recouvrir, donc MainViewModel le masque quand un menu ou une boîte de dialogue est ouvert (Suspended).
+    Hors interaction (modes passif et tactile), le cadre est désactivé : la souris et le doigt arrivent aux éléments WPF posés au-dessus (invisibles, car le
+    cadre est dessiné par-dessus), le bouton transparent du mode tactile ou la surface inerte du mode passif.
   -->
   <Border Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1" AutomationProperties.Name="{Binding AccessibleName}"
           Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
@@ -31,8 +33,19 @@
                 AutomationProperties.Name="Retour" ToolTip="Retour : page précédente, ou page de départ du cadre">
           <ui:SymbolIcon Symbol="ArrowLeft24" Foreground="{DynamicResource DeckAccentText}"/>
         </Button>
-        <TextBlock Grid.Column="1" Text="{Binding Title}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" FontWeight="SemiBold"
-                   Foreground="{Binding Face.LabelBrush}"/>
+        <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal">
+          <ToggleButton IsChecked="{Binding IsInteracting, Mode=OneWay}" Command="{Binding ToggleInteractionCommand}" Width="48" Height="48" Padding="0" Margin="0,0,6,0"
+                        Background="Transparent" BorderThickness="0" Visibility="{Binding CanToggleInteraction, Converter={StaticResource BoolVis}}"
+                        AutomationProperties.Name="Interagir avec la page, ou terminer"
+                        ToolTip="Interagir avec la page (liens, défilement) ; toucher de nouveau pour revenir à l'affichage seul">
+            <ui:SymbolIcon Symbol="CursorClick24"/>
+          </ToggleButton>
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" Foreground="{Binding Face.LabelBrush}"/>
+            <TextBlock Text="{Binding InteractHint}" FontSize="11" Foreground="{DynamicResource DeckTextSoft}" TextTrimming="CharacterEllipsis"
+                       Visibility="{Binding HasInteractHint, Converter={StaticResource BoolVis}}" AutomationProperties.LiveSetting="Polite"/>
+          </StackPanel>
+        </StackPanel>
         <Button Grid.Column="2" Command="{Binding ZoomOutCommand}" Width="48" Height="48" Padding="0" Background="Transparent" BorderThickness="0"
                 AutomationProperties.Name="Dézoomer" ToolTip="Dézoomer">
           <ui:SymbolIcon Symbol="ZoomOut24"/>
@@ -62,6 +75,15 @@
 
       <Grid Grid.Row="1" Margin="2,0,2,2">
         <Grid x:Name="WebHost"/>   <!-- le WebView2 y est posé par la vue (WebFramePool : il passe d'une vue à l'autre sans recharger) -->
+        <!-- Mode tactile au repos : un toucher ou un clic sur la page l'ouvre à l'interaction (l'appui long et le clic droit restent ceux de la case) -->
+        <Button Command="{Binding InteractCommand}" Focusable="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                Visibility="{Binding ShowTouchShield, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Toucher pour interagir avec la page">
+          <Button.Template>
+            <ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate>
+          </Button.Template>
+        </Button>
+        <!-- Mode passif au repos : surface inerte, la page ne réagit à rien -->
+        <Border Background="Transparent" Visibility="{Binding ShowPassiveShield, Converter={StaticResource BoolVis}}"/>
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16"
                     Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}">
           <ui:SymbolIcon Symbol="Warning24" Foreground="{DynamicResource DeckDim}" HorizontalAlignment="Center" FontSize="32"/>

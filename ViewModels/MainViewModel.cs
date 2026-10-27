@@ -462,6 +462,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             MissingAddressMessage = "Cette page web n'a pas d'adresse valide : mode édition › Page › Adresse de la page web",
             Cell = 0, ColSpan = WholeGrid, RowSpan = WholeGrid,
             ZoomPercent = page.Zoom == 0 ? WebZoom.Normal : WebZoom.Clamp(page.Zoom),
+            InputMode = IsEdit ? WebInputModes.Passive : WebInputModes.Normalize(page.WebInput),   // en édition, le cadre ne capte jamais la souris
         };
         string profileName = CurrentProfile.Name;
         int pageIndex = _page;
@@ -673,6 +674,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             Button = def, Edit = edit, AccessibleName = name, Source = uri, Suspended = MenuOpen || HasDialog,
             FrameKey = uri == null ? null : $"widget|{place.Profile}|{place.Page}|{string.Join('.', place.Path)}|{index}|{uri.AbsoluteUri}",
             ZoomPercent = def.OptionInt(WidgetOptionKeys.Zoom, WebZoom.Normal, WebZoom.Min, WebZoom.Max),
+            InputMode = IsEdit ? WebInputModes.Passive : WebInputModes.Normalize(def.Option(WidgetOptionKeys.Input)),
         };
         web.ZoomChanged = z => _doc.UpdateSettings(c =>
         {

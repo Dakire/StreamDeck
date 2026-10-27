@@ -21,6 +21,8 @@ public sealed partial class PageTabViewModel : ObservableObject
     public bool BadgeEnabled { get; init; } = true;
     /// <summary>true si la page est exclue du total de non lus (pastille de la barre des tâches).</summary>
     public bool BadgeExcludeFromTotal { get; init; }
+    /// <summary>Interaction de la page web avec la souris et le doigt (<see cref="WebInputModes"/>).</summary>
+    public string WebInput { get; init; } = WebInputModes.Default;
     [ObservableProperty] bool _isSelected;
     [ObservableProperty] bool _isDropTarget;
     /// <summary>Texte de l'onglet.</summary>

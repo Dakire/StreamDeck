@@ -148,6 +148,9 @@
                 <TextBlock Text="{Binding WidgetUrlError}" Foreground="{DynamicResource DeckDanger}" FontSize="12" TextWrapping="Wrap" Margin="2,6,0,0"
                            AutomationProperties.LiveSetting="Assertive"/>
                 <TextBlock Text="La page s'affiche dans un cadre isolé : elle ne peut pas agir sur StreamDak. Le clavier reste à l'application active." Style="{StaticResource EditorHint}"/>
+                <TextBlock Text="Interaction avec la souris et le doigt" Style="{StaticResource EditorCaption}"/>
+                <ItemsControl ItemsSource="{Binding WebInputChoices}" Style="{StaticResource ChipWrap}"/>
+                <TextBlock Text="{Binding WebInputHint}" Style="{StaticResource EditorHint}"/>
               </StackPanel>
             </StackPanel>
           </Border>
