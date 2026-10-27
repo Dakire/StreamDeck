@@ -405,7 +405,7 @@
 
     <!-- Entrées du menu -->
     <DataTemplate DataType="{x:Type vm:MenuEntryViewModel}">
-      <Button Style="{StaticResource MenuRow}" Command="{Binding Command}" AutomationProperties.Name="{Binding Text}">
+      <Button Style="{StaticResource MenuRow}" Command="{Binding Command}" AutomationProperties.Name="{Binding AutomationName}">
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="{Binding DataContext.L.MenuIconW, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>

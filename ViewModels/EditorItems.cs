@@ -17,6 +17,10 @@ public sealed partial class PageTabViewModel : ObservableObject
     public bool IsWeb { get; init; }
     /// <summary>Adresse de la page web, ou null.</summary>
     public string? Url { get; init; }
+    /// <summary>true si le badge de notifications de la page web est affiché dans l'onglet.</summary>
+    public bool BadgeEnabled { get; init; } = true;
+    /// <summary>true si la page est exclue du total de non lus (pastille de la barre des tâches).</summary>
+    public bool BadgeExcludeFromTotal { get; init; }
     [ObservableProperty] bool _isSelected;
     [ObservableProperty] bool _isDropTarget;
     /// <summary>Texte de l'onglet.</summary>

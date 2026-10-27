@@ -350,7 +350,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         Pages.Clear();
         var pages = Profile.Pages;
         for (int i = 0; i < pages.Count; i++)
-            Pages.Add(new PageTabViewModel { Index = i, Name = pages[i].Name, Hidden = pages[i].Hidden, IsWeb = pages[i].IsWeb, Url = pages[i].Url, IsSelected = i == _page });
+            Pages.Add(new PageTabViewModel { Index = i, Name = pages[i].Name, Hidden = pages[i].Hidden, IsWeb = pages[i].IsWeb, Url = pages[i].Url, BadgeEnabled = pages[i].BadgeEnabled, BadgeExcludeFromTotal = pages[i].BadgeExcludeFromTotal, IsSelected = i == _page });
         _refreshingLists = true;
         SelectedPage = Pages.ElementAtOrDefault(_page);
         _refreshingLists = false;
@@ -789,6 +789,20 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
     {
         var r = _doc.SetPageHidden(_profile, page.Index, !page.Hidden);
         if (r.Ok) Notifier.Info(page.Hidden ? "Page affichée dans les onglets du deck" : "Page masquée : accessible par une action « Page »");
+    }
+
+    /// <summary>Affiche ou masque le badge de notifications de la page web (annulable).</summary>
+    public void TogglePageBadge(PageTabViewModel page)
+    {
+        var r = _doc.SetPageBadgeEnabled(_profile, page.Index, !page.BadgeEnabled);
+        if (r.Ok) Notifier.Success(page.BadgeEnabled ? "Badge de la page masqué" : "Badge de la page affiché", "Annuler", () => _doc.Undo());
+    }
+
+    /// <summary>Exclut la page web du total de non lus (pastille de la barre des tâches) ou l'y remet (annulable).</summary>
+    public void TogglePageBadgeExcluded(PageTabViewModel page)
+    {
+        var r = _doc.SetPageBadgeExcluded(_profile, page.Index, !page.BadgeExcludeFromTotal);
+        if (r.Ok) Notifier.Success(page.BadgeExcludeFromTotal ? "Page reprise dans le total" : "Page exclue du total", "Annuler", () => _doc.Undo());
     }
 
     /// <summary>Déplace la page de <paramref name="delta"/> rangs.</summary>

@@ -128,6 +128,9 @@ public sealed partial class EditorViewModel
                 : new("Afficher une page web…", async () => await SetPageWebAsync(page), SymbolRegular.Globe24),
             new("Afficher une grille de boutons", () => SetPageGrid(page), SymbolRegular.Grid24, Enabled: page.IsWeb),
             new(page.Hidden ? "Afficher dans les onglets" : "Masquer des onglets", () => TogglePageHidden(page), page.Hidden ? SymbolRegular.Eye24 : SymbolRegular.EyeOff24),
+            // Notifications : seulement pour une page web (interrupteurs cochés quand ils sont actifs)
+            new("Afficher le badge", () => TogglePageBadge(page), SymbolRegular.Alert24, Enabled: page.IsWeb, Checked: page.IsWeb && page.BadgeEnabled),
+            new("Exclure du total", () => TogglePageBadgeExcluded(page), SymbolRegular.AlertOff24, Enabled: page.IsWeb && page.BadgeEnabled, Checked: page.IsWeb && page.BadgeExcludeFromTotal),
             MenuItemSpec.Separator,
             new("Déplacer à gauche", () => MovePage(page, -1), SymbolRegular.ArrowLeft24, Enabled: page.Index > 0),
             new("Déplacer à droite", () => MovePage(page, 1), SymbolRegular.ArrowRight24, Enabled: page.Index < count - 1),

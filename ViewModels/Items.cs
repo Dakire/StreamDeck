@@ -141,6 +141,8 @@ public sealed class MenuEntryViewModel
     public string Text { get; init; } = "";
     /// <summary>Texte à droite (état courant, coche), ou null.</summary>
     public string? Trailing { get; init; }
+    /// <summary>Nom accessible : le texte, suivi de « , activé » quand la coche est affichée (interrupteur).</summary>
+    public string AutomationName => Trailing == "✓" ? Text + ", activé" : Text;
     /// <summary>true pour une action destructrice (affichée en rouge).</summary>
     public bool IsDanger { get; init; }
     /// <summary>Action de l'entrée.</summary>

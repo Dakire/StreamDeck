@@ -269,3 +269,61 @@ public class TaskbarBadgeServiceTests
         public void Raise(string id, int? count) => CountChanged?.Invoke(id, count);
     }
 }
+
+/// <summary>Réglages de badge d'une page web dans le menu de la page (mode édition) : interrupteurs annulables, état lisible.</summary>
+[Collection("ui")]
+public class PageBadgeMenuTests
+{
+    readonly WpfHost _host;
+    public PageBadgeMenuTests(WpfHost host) { _host = host; }
+
+    static MenuItemSpec Item(IReadOnlyList<MenuItemSpec> menu, string header) => menu.First(i => i.Header == header);
+
+    [Fact]
+    public void TheBadgeSwitchesAreOfferedForAWebPageOnlyAndWriteTheDocumentWithUndo()
+    {
+        var cfg = ConfigStore.DefaultConfig();
+        cfg.Profiles[0].Pages.Add(new DeckPage { Name = "Google Chat", Kind = "web", Url = "https://chat.google.com/" });
+        _host.Reset(cfg);
+        var vm = _host.Run(() => _host.Create<EditorViewModel>(new FakeShell()));
+        var web = _host.Run(() => vm.Pages.First(p => p.Name == "Google Chat"));
+        var grid = _host.Run(() => vm.Pages[0]);
+        var doc = _host.Document;
+        DeckPage Page() => doc.Config.Profiles[0].Pages.First(p => p.Name == "Google Chat");
+
+        _host.Run(() =>
+        {
+            var menu = vm.BuildPageMenu(web);
+            Assert.True(Item(menu, "Afficher le badge").Checked);
+            Assert.True(Item(menu, "Afficher le badge").Enabled);
+            Assert.False(Item(menu, "Exclure du total").Checked);
+            var gridMenu = vm.BuildPageMenu(grid);                                   // page de boutons : rien à régler
+            Assert.False(Item(gridMenu, "Afficher le badge").Enabled);
+            Assert.False(Item(gridMenu, "Exclure du total").Enabled);
+        });
+
+        _host.Run(() => Item(vm.BuildPageMenu(web), "Exclure du total").Execute!());
+        Assert.True(Page().BadgeExcludeFromTotal);
+        var web2 = _host.Run(() => vm.Pages.First(p => p.Name == "Google Chat"));
+        _host.Run(() => Assert.True(Item(vm.BuildPageMenu(web2), "Exclure du total").Checked));       // la liste est reconstruite : état à jour
+
+        _host.Run(() => Item(vm.BuildPageMenu(web2), "Afficher le badge").Execute!());
+        Assert.False(Page().BadgeEnabled);
+        var web3 = _host.Run(() => vm.Pages.First(p => p.Name == "Google Chat"));
+        _host.Run(() => Assert.False(Item(vm.BuildPageMenu(web3), "Exclure du total").Enabled));        // sans badge, l'exclusion n'a plus de sens
+
+        _host.Run(() => doc.Undo());
+        Assert.True(Page().BadgeEnabled);
+        _host.Run(() => doc.Undo());
+        Assert.False(Page().BadgeExcludeFromTotal);
+    }
+
+    [Fact]
+    public void ACheckedMenuRowAnnouncesItsState()
+    {
+        var on = new MenuEntryViewModel { Text = "Afficher le badge", Trailing = "✓", Command = new CommunityToolkit.Mvvm.Input.RelayCommand(() => { }) };
+        var off = new MenuEntryViewModel { Text = "Exclure du total", Command = on.Command };
+        Assert.Equal("Afficher le badge, activé", on.AutomationName);
+        Assert.Equal("Exclure du total", off.AutomationName);
+    }
+}
