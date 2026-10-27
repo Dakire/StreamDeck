@@ -788,20 +788,29 @@ public partial class MainViewModel : ObservableObject, INavigator
         def.IsFolder ? null : def.Actions.Where(a => string.Equals(a.Type, ActionTypes.Url, StringComparison.OrdinalIgnoreCase))
             .Select(a => _notifications.ForUrl(a.Value)).FirstOrDefault(p => p != null);
 
-    /// <summary>Texte du badge rouge d'une adresse suivie (page web du deck), ou null.</summary>
-    string? NotificationCountFor(string? url)
+    /// <summary>
+    /// Texte du badge rouge d'une adresse suivie (page web du deck), ou null : connecteur éteint, service inconnu, rien de non lu, ou badge masqué pour la page
+    /// (<paramref name="enabled"/> : <see cref="DeckPage.BadgeEnabled"/>).
+    /// </summary>
+    string? NotificationCountFor(string? url, bool enabled = true)
     {
-        if (_notifications.ForUrl(url) is not { } provider || !_integrations.IsEnabled(NotifyId)) return null;
-        return int.TryParse(_integrations.GetValue($"{NotifyId}.{provider.Id}"), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n)
-            ? NotificationBadge.Text(n) : null;
+        if (!enabled || _notifications.ForUrl(url) is not { } provider || !_integrations.IsEnabled(NotifyId)) return null;
+        return BadgeText(provider);
+    }
+
+    /// <summary>Nombre publié par le connecteur pour ce service, ou le point d'activité à défaut de nombre ; null si rien à afficher.</summary>
+    string? BadgeText(INotificationProvider provider)
+    {
+        int? n = int.TryParse(_integrations.GetValue($"{NotifyId}.{provider.Id}"), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var count) ? count : null;
+        bool activity = _integrations.GetValue($"{NotifyId}.{StreamDak.Integrations.Notifications.NotificationIntegration.ActivityKey(provider.Id)}") == "1";
+        return NotificationBadge.Text(n, activity);
     }
 
     /// <summary>Texte du badge rouge d'un bouton « site web » (« 3 », « 99+ »), ou null : connecteur éteint, service inconnu, rien de non lu.</summary>
     string? NotificationCount(DeckButton def)
     {
         if (NotificationSource(def) is not { } provider || !_integrations.IsEnabled(NotifyId)) return null;
-        return int.TryParse(_integrations.GetValue($"{NotifyId}.{provider.Id}"), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n)
-            ? NotificationBadge.Text(n) : null;
+        return BadgeText(provider);
     }
 
     void UpdateFace(DeckTileViewModel tile)
@@ -815,7 +824,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         tile.Face = TileFaceData.From(def, left is { } t ? Countdowns.Format(t) : null, countdowns.Progress(def), _integrations.GetValue, state, badge);
         tile.AccessibleName = def.IsFolder ? $"Dossier {tile.Face.Label}"
             : state is { } on ? $"{tile.Face.Label}, {(on ? "actif" : "inactif")}" : tile.Face.Label;
-        if (badge != null) tile.AccessibleName += $", {badge} notification(s)";
+        if (badge != null) tile.AccessibleName += $", {NotificationBadge.Describe(badge)}";
     }
 
     /// <summary>Les intégrations notifient depuis leurs threads : on regroupe les changements et on redessine sur le thread d'interface.</summary>
@@ -898,7 +907,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             int target = i;
             Tabs.Add(new TabViewModel
             {
-                Text = p.Hidden ? p.Name + " (masquée)" : p.Name, IsActive = i == _page, Badge = p.IsWeb ? NotificationCountFor(p.Url) : null,
+                Text = p.Hidden ? p.Name + " (masquée)" : p.Name, IsActive = i == _page, Badge = p.IsWeb ? NotificationCountFor(p.Url, p.BadgeEnabled) : null,
                 Command = new RelayCommand(() => GoTo(target)),
             });
         }

@@ -125,7 +125,7 @@ public sealed class TabViewModel
     /// <summary>true si un badge est affiché.</summary>
     public bool HasBadge => Badge != null;
     /// <summary>Nom accessible de l'onglet.</summary>
-    public string AutomationName => Badge == null ? $"Page {Text}" : $"Page {Text}, {Badge} notification(s)";
+    public string AutomationName => Badge == null ? $"Page {Text}" : $"Page {Text}, {NotificationBadge.Describe(Badge)}";
 }
 
 /// <summary>Entrée du menu du deck.</summary>

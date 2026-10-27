@@ -374,6 +374,9 @@ public static class NotificationBadge
     /// <summary>Pastille d'activité : un point, sans chiffre.</summary>
     public const string ActivityText = "•";
 
+    /// <summary>Nom accessible d'un badge : « 3 notification(s) » ou « activité » pour le point.</summary>
+    public static string Describe(string badge) => badge == ActivityText ? "activité" : badge + " notification(s)";
+
     /// <summary>Le nombre s'il y en a un à afficher, sinon le point d'activité, sinon null.</summary>
     public static string? Text(int? count, bool activity) => Text(count) ?? (activity ? ActivityText : null);
 

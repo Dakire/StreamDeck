@@ -88,6 +88,28 @@ public sealed partial class DeckDocument
         });
     }
 
+    /// <summary>Affiche ou masque le badge de notifications d'une page web (annulable).</summary>
+    public OpResult SetPageBadgeEnabled(string profile, int page, bool enabled) =>
+        Edit(enabled ? "Afficher le badge" : "Masquer le badge", _ =>
+        {
+            var pg = FindPage(profile, page);
+            if (pg == null) return OpResult.Fail("Page introuvable");
+            if (pg.BadgeEnabled == enabled) return OpResult.Fail("Inchangé");
+            pg.BadgeEnabled = enabled;
+            return OpResult.Success(page);
+        });
+
+    /// <summary>Exclut ou inclut le nombre d'une page web dans le total des notifications (annulable).</summary>
+    public OpResult SetPageBadgeExcluded(string profile, int page, bool excluded) =>
+        Edit(excluded ? "Exclure du total" : "Inclure dans le total", _ =>
+        {
+            var pg = FindPage(profile, page);
+            if (pg == null) return OpResult.Fail("Page introuvable");
+            if (pg.BadgeExcludeFromTotal == excluded) return OpResult.Fail("Inchangé");
+            pg.BadgeExcludeFromTotal = excluded;
+            return OpResult.Success(page);
+        });
+
     /// <summary>Supprime une page ; la dernière page d'un profil est protégée.</summary>
     public OpResult DeletePage(string profile, int page) =>
         Edit("Supprimer la page", _ =>

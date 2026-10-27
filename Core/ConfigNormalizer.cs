@@ -119,6 +119,7 @@ public static class ConfigNormalizer
             page.Kind = PageKinds.Normalize(page.Kind);
             page.Url = page.Kind == null || string.IsNullOrWhiteSpace(page.Url) ? null : page.Url.Trim();   // l'adresse n'a de sens que pour une page web
             page.Zoom = page.Kind == null ? 0 : WebZoom.ForStorage(page.Zoom);
+            page.BadgeEnabledStored = page.BadgeEnabledStored == false ? false : null;   // « true » est le défaut : on ne l'écrit pas
         }
     }
 

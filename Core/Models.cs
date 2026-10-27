@@ -103,6 +103,25 @@ public class DeckPage
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int Zoom { get; set; }
 
+    /// <summary>
+    /// Valeur écrite de <see cref="BadgeEnabled"/> : absente (null) quand le badge est affiché, comme le défaut ; seul « false » est écrit. Un défaut vrai ne peut pas
+    /// s'omettre avec <c>WhenWritingDefault</c> (le défaut du type est faux), d'où ce champ à trois états, sous la clé <c>BadgeEnabled</c> du fichier.
+    /// </summary>
+    [JsonPropertyName("BadgeEnabled")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? BadgeEnabledStored { get; set; }
+
+    /// <summary>
+    /// Le badge de notifications de cette page web est affiché (défaut : oui). Sans effet sur une page de boutons. Pour modifier avec annulation :
+    /// <see cref="DeckDocument.SetPageBadgeEnabled"/>.
+    /// </summary>
+    [JsonIgnore]
+    public bool BadgeEnabled { get => BadgeEnabledStored ?? true; set => BadgeEnabledStored = value ? null : false; }
+
+    /// <summary>true : le nombre de cette page n'entre pas dans le total des notifications (défaut : non).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool BadgeExcludeFromTotal { get; set; }
+
     /// <summary>true pour une page web (<see cref="Kind"/> = <see cref="PageKinds.Web"/>).</summary>
     [JsonIgnore]
     public bool IsWeb => string.Equals(Kind, PageKinds.Web, StringComparison.OrdinalIgnoreCase);
