@@ -87,14 +87,14 @@ public class DeckMenuTests
     }
 
     [Fact]
-    public void AButtonMenuOffersEditDuplicateCopyCutAndDelete()
+    public void AButtonMenuOffersEditRenameIconDuplicateCopyCutMoveReplaceAndDelete()
     {
         var (vm, _) = NewDeck();
         _host.Run(() =>
         {
             OpenMenuOf(vm, "Trois");
             Assert.Equal("Trois", Header(vm));
-            Assert.Equal(new[] { "Modifier…", "Dupliquer", "Copier", "Couper", "Supprimer" }, Texts(vm));
+            Assert.Equal(new[] { "Modifier l'action…", "Renommer…", "Changer l'icône…", "Dupliquer", "Copier", "Couper", "Déplacer…", "Remplacer par", "Supprimer" }, Texts(vm));
             Assert.True(vm.MenuEntries.OfType<MenuEntryViewModel>().First(e => e.Text == "Supprimer").IsDanger);
         });
     }

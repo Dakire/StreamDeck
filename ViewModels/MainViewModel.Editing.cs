@@ -72,13 +72,19 @@ public partial class MainViewModel
     /// Entre en mode édition sur cette case : le panneau de propriétés s'ouvre à droite, le titre (bouton) ou la recherche d'actions
     /// (case vide) reçoit le clavier. <paramref name="addCatalogId"/> : action du catalogue posée aussitôt dans la case vide (« Annuler » la retire).
     /// </summary>
-    public void StartEditing(Place place, int index, string? addCatalogId = null)
+    public void StartEditing(Place place, int index, string? addCatalogId = null, TileEditFocus focus = TileEditFocus.Title)
     {
         if (!IsEdit) IsEdit = true;
         if (Editor is not { } editor) return;
         editor.GoTo(place, index);
         if (addCatalogId != null) editor.AddCatalogActionById(addCatalogId, index);
-        if (_doc.Get(place, index) != null) _shell.EditorShell.FocusTitle(); else if (addCatalogId == null) _shell.EditorShell.FocusCatalogSearch();
+        if (_doc.Get(place, index) == null) { if (addCatalogId == null) _shell.EditorShell.FocusCatalogSearch(); return; }
+        switch (focus)
+        {
+            case TileEditFocus.Title: _shell.EditorShell.FocusTitle(); break;
+            case TileEditFocus.Icon: _shell.EditorShell.FocusIcon(); break;
+            case TileEditFocus.Properties: _shell.EditorShell.FocusProperties(); break;
+        }
     }
 
     /// <summary>
@@ -191,4 +197,17 @@ public partial class MainViewModel
             else if (tile is AddTileViewModel add) add.IsSelected = on;
         }
     }
+}
+
+/// <summary>Champ qui reçoit le clavier quand le menu d'une case ouvre l'édition : titre, icône, réglages de l'action, ou aucun (déplacement).</summary>
+public enum TileEditFocus
+{
+    /// <summary>Titre du bouton, texte sélectionné.</summary>
+    Title,
+    /// <summary>Choix de l'icône.</summary>
+    Icon,
+    /// <summary>Premier réglage de l'action ou du widget.</summary>
+    Properties,
+    /// <summary>Rien : la touche est seulement sélectionnée.</summary>
+    None,
 }

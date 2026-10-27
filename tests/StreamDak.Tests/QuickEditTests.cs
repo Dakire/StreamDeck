@@ -141,7 +141,7 @@ public class QuickEditTests
             copy.Edit!.Execute(null);
             Assert.True(vm.MenuOpen);
             Assert.Empty(windows.Opened);                                      // le geste ouvre un menu, pas l'éditeur
-            Pick(vm, "Modifier…");
+            Pick(vm, "Renommer…");
             Assert.Empty(windows.Opened);                                      // aucune autre fenêtre : le deck passe en mode édition
             Assert.True(vm.IsEdit);
             Assert.Equal(0, vm.Editor!.SelectedIndex);
@@ -168,7 +168,7 @@ public class QuickEditTests
             vm.Tabs[1].Command.Execute(null);                                   // page B
             var home = vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Accueil");
             home.Edit!.Execute(null);
-            Pick(vm, "Modifier…");
+            Pick(vm, "Renommer…");
             Assert.True(vm.IsEdit);
             Assert.Equal((new Place("P", 1), 0), (vm.Editor!.Place, vm.Editor.SelectedIndex));   // le panneau de droite montre ce bouton
             vm.EndEditCommand.Execute(null);
@@ -191,7 +191,7 @@ public class QuickEditTests
             Assert.Null(back.Edit);
             var inside = vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Dedans");
             inside.Edit!.Execute(null);
-            Pick(vm, "Modifier…");
+            Pick(vm, "Renommer…");
             Assert.Equal((new Place("P", 0, new[] { 1 }), 0), (vm.Editor!.Place, vm.Editor.SelectedIndex));
             vm.EndEditCommand.Execute(null);
         });

@@ -100,7 +100,7 @@ public sealed partial class WebWidgetViewModel : WidgetTileViewModel
     public bool HasStatus => Status.Length > 0;
 
     /// <summary>true tant qu'un menu ou une boîte de dialogue est ouvert : le cadre est une fenêtre Win32 qui masquerait leur contenu.</summary>
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowPage), nameof(ShowTouchShield), nameof(ShowPassiveShield))] bool _suspended;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowPage), nameof(ShowTouchShield), nameof(ShowPassiveShield), nameof(InteractHint), nameof(HasInteractHint))] bool _suspended;
 
     /// <summary>true quand le cadre de la page est affiché.</summary>
     public bool ShowPage => !HasStatus && !Suspended;
@@ -133,7 +133,7 @@ public sealed partial class WebWidgetViewModel : WidgetTileViewModel
     /// <summary>Mode passif, page au repos : la page ne réagit à rien (appui long et clic droit vont au deck).</summary>
     public bool ShowPassiveShield => ShowPage && !IsInteracting && InputMode == WebInputModes.Passive;
     /// <summary>Ce qu'il faut faire pour se servir de la page, affiché dans la bande du cadre ; vide pendant l'interaction.</summary>
-    public string InteractHint => IsInteracting ? "" : InputMode == WebInputModes.Touch ? "Toucher la page pour interagir" : "Affichage seul";
+    public string InteractHint => IsInteracting || !ShowPage ? "" : InputMode == WebInputModes.Touch ? "Toucher la page pour interagir" : "Affichage seul";
     /// <summary>true si l'indication est affichée.</summary>
     public bool HasInteractHint => InteractHint.Length > 0;
 
@@ -233,6 +233,8 @@ public sealed partial class WebWidgetViewModel : WidgetTileViewModel
         OnPropertyChanged(nameof(ShowPage));
         OnPropertyChanged(nameof(ShowTouchShield));
         OnPropertyChanged(nameof(ShowPassiveShield));
+        OnPropertyChanged(nameof(InteractHint));
+        OnPropertyChanged(nameof(HasInteractHint));
     }
 
     [RelayCommand]

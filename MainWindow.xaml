@@ -779,6 +779,13 @@
                     AutomationProperties.Name="Rétablir la modification annulée" ToolTip="{Binding Editor.RedoTooltip}">
               <ui:SymbolIcon Symbol="ArrowRedo24"/>
             </Button>
+            <Button Style="{StaticResource DockButton}" Command="{Binding OpenSelectedTileMenuCommand}" AutomationProperties.Name="Options de la case sélectionnée"
+                    ToolTip="Menu de la case sélectionnée (comme le clic droit ou l'appui long) : modifier, déplacer, dupliquer, supprimer…">
+              <StackPanel Orientation="Horizontal">
+                <ui:SymbolIcon Symbol="MoreVertical24" Margin="0,0,8,0"/>
+                <TextBlock Text="Case" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
             <Button Style="{StaticResource DockButton}" Command="{Binding OpenPageMenuCommand}" AutomationProperties.Name="Options de la page"
                     ToolTip="Renommer, dupliquer, déplacer ou supprimer cette page">
               <StackPanel Orientation="Horizontal">

@@ -49,15 +49,20 @@ public partial class MainViewModel
     /// </summary>
     void OpenTileMenu(Place place, int index)
     {
+        var started = System.Diagnostics.Stopwatch.StartNew();
         var button = _doc.Get(place, index);
         var title = button == null ? "Case vide" : button.Label.Length > 0 ? button.Label : "Bouton";
-        var items = BuildTileMenu(place, index);
+        IReadOnlyList<MenuItemSpec>? items = null;
         if (IsEdit && Editor is { } editor)
         {
-            editor.GoTo(place, index);
+            // Même grille : une simple sélection (la saisie en cours est validée), rien n'est reconstruit ; c'était un rechargement complet de l'éditeur
+            // (cases, pages, écrans, propriétés) à chaque clic droit, 150 à 230 ms mesurés. Autre grille : l'éditeur s'y place.
+            if (!editor.Place.Equals(place)) editor.GoTo(place, index);
+            else if (editor.SelectedIndex != index) editor.SelectIndex(index);
             if (editor.Slots.FirstOrDefault(s => s.Index == index && !s.IsBack) is { } slot) items = editor.BuildSlotMenu(slot);
         }
-        OpenSpecMenu(title, items);
+        OpenSpecMenu(title, items ?? BuildTileMenu(place, index));
+        if (started.ElapsedMilliseconds > 50) Log.Info($"Menu de la case « {title} » ouvert en {started.ElapsedMilliseconds} ms");
     }
 
     /// <summary>Affiche une description de menu dans la feuille du deck.</summary>
@@ -68,6 +73,16 @@ public partial class MainViewModel
         _specTrail.Add(new SpecLevel(title, items));
         RenderSpecMenu();
         MenuOpen = true;
+    }
+
+    /// <summary>
+    /// Menu de la case sélectionnée en mode édition (bouton « Case » du dock) : le même que le clic droit ou l'appui long, accessible d'un simple toucher.
+    /// </summary>
+    [RelayCommand]
+    void OpenSelectedTileMenu()
+    {
+        if (Editor is not { SelectedIndex: >= 0 } editor) { Notifier.Info("Touche d'abord une case de la grille"); return; }
+        OpenTileMenu(editor.Place, editor.SelectedIndex);
     }
 
     /// <summary>Options de la page affichée (renommer, dupliquer, masquer, déplacer, supprimer), en mode édition.</summary>
@@ -121,15 +136,51 @@ public partial class MainViewModel
         return items;
     }
 
-    List<MenuItemSpec> BuildButtonMenu(Place place, int index, DeckButton button) => new()
+    /// <summary>
+    /// Menu d'un bouton, selon ce qu'il est : un dossier s'ouvre, un widget se règle, un bouton se modifie ou se remplace par une autre action.
+    /// Les entrées d'édition ouvrent le mode édition sur la case, le bon champ prêt à la saisie.
+    /// </summary>
+    List<MenuItemSpec> BuildButtonMenu(Place place, int index, DeckButton button)
     {
-        new("Modifier…", () => StartEditing(place, index), SymbolRegular.Edit24),
-        new("Dupliquer", () => DuplicateHere(place, index), SymbolRegular.CopyAdd24),
-        new("Copier", () => CopyHere(place, index), SymbolRegular.Copy24),
-        new("Couper", () => CutHere(place, index), SymbolRegular.Cut24),
-        MenuItemSpec.Separator,
-        new(button.IsFolder ? "Supprimer le dossier" : "Supprimer", () => DeleteHere(place, index, button.IsFolder), SymbolRegular.Delete24, Danger: true),
-    };
+        var widget = WidgetTypes.Find(button.Widget);
+        var items = new List<MenuItemSpec>();
+        if (button.IsFolder) items.Add(new("Ouvrir le dossier", () => { if (place.Equals(CurrentPlace)) EnterFolder(index); }, SymbolRegular.FolderOpen24));
+        items.Add(new(widget != null ? $"Régler le widget « {widget.Name} »…" : button.IsFolder ? "Propriétés du dossier…" : "Modifier l'action…",
+            () => StartEditing(place, index, focus: TileEditFocus.Properties), SymbolRegular.Edit24));
+        items.Add(new("Renommer…", () => StartEditing(place, index), SymbolRegular.Rename24));
+        if (widget == null) items.Add(new("Changer l'icône…", () => StartEditing(place, index, focus: TileEditFocus.Icon), SymbolRegular.Image24));
+        items.Add(MenuItemSpec.Separator);
+        items.Add(new("Dupliquer", () => DuplicateHere(place, index), SymbolRegular.CopyAdd24));
+        items.Add(new("Copier", () => CopyHere(place, index), SymbolRegular.Copy24));
+        items.Add(new("Couper", () => CutHere(place, index), SymbolRegular.Cut24));
+        items.Add(new("Déplacer…", () =>
+        {
+            StartEditing(place, index, focus: TileEditFocus.None);
+            Notifier.Info("Glisse la touche vers une autre case (ou Alt + flèches)");
+        }, SymbolRegular.ArrowMove24));
+        if (!button.IsFolder)
+            items.Add(new("Remplacer par", Icon: SymbolRegular.ArrowSwap24, Children: CatalogMenu.Categories(a => ReplaceFromCatalog(a, place, index))));
+        items.Add(MenuItemSpec.Separator);
+        items.Add(new(button.IsFolder ? "Supprimer le dossier" : widget != null ? "Supprimer le widget" : "Supprimer", () => DeleteHere(place, index, button.IsFolder),
+            SymbolRegular.Delete24, Danger: true));
+        return items;
+    }
+
+    /// <summary>Remplace le bouton par une action du catalogue, en une modification annulable ; si l'action demande un réglage, l'édition s'ouvre dessus.</summary>
+    void ReplaceFromCatalog(CatalogAction action, Place place, int index)
+    {
+        var button = action.CreateButton();
+        var result = _doc.PutButton(place, index, button, $"Remplacer par « {action.Name} »");
+        if (!result.Ok) { Notifier.Error(result.Message ?? "Remplacement impossible"); return; }
+        _doc.AddRecent(action.Id);
+        if (QuickCreate.NeedsSetup(button, _doc.Config, _doc.FindProfile(place.Profile)))
+        {
+            StartEditing(place, index, focus: TileEditFocus.Properties);
+            Notifier.Info($"« {action.Name} » : complète ses réglages à droite");
+            return;
+        }
+        Notifier.Success($"Remplacé par « {action.Name} »", "Annuler", () => _doc.Undo());
+    }
 
     // ---------- création et opérations : une écriture, un pas d'annulation, « Annuler » touchable ----------
 

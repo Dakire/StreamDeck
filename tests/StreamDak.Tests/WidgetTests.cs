@@ -253,7 +253,8 @@ public class DeckWidgetTests
             Assert.NotNull(clock.Edit);
             clock.Edit!.Execute(null);
             Assert.True(vm.MenuOpen);
-            Assert.Contains("Modifier…", vm.MenuEntries.OfType<MenuEntryViewModel>().Select(e => e.Text));
+            Assert.Contains("Régler le widget « Horloge »…", vm.MenuEntries.OfType<MenuEntryViewModel>().Select(e => e.Text));
+            Assert.DoesNotContain("Changer l'icône…", vm.MenuEntries.OfType<MenuEntryViewModel>().Select(e => e.Text));   // un widget n'a pas d'icône de bouton
         });
     }
 
@@ -383,8 +384,11 @@ public class DeckWidgetTests
                 Assert.Equal(2, views.Count);
                 foreach (var view in views)
                 {
-                    var buttons = WpfHost.Descendants<System.Windows.Controls.Primitives.ButtonBase>(view).ToList();
-                    Assert.Equal(7, buttons.Count);                            // retour, dézoomer, zoom, zoomer, recharger, ouvrir dans le navigateur, saisie au clavier
+                    var all = WpfHost.Descendants<System.Windows.Controls.Primitives.ButtonBase>(view).ToList();
+                    var shield = all.Where(b => System.Windows.Automation.AutomationProperties.GetName(b) == "Toucher pour interagir avec la page").ToList();
+                    Assert.Single(shield);                                     // surface transparente du mode « toucher pour interagir », sur la page
+                    var buttons = all.Except(shield).ToList();
+                    Assert.Equal(8, buttons.Count);                            // retour, interagir, dézoomer, zoom, zoomer, recharger, ouvrir dans le navigateur, saisie au clavier
                     Assert.All(buttons, b => Assert.True(b.ActualHeight >= 48 && b.ActualWidth >= 48, $"{b.ActualWidth}×{b.ActualHeight} px"));
                 }
             });
