@@ -124,6 +124,10 @@ public sealed class TabViewModel
     public string? Badge { get; init; }
     /// <summary>true si un badge est affiché.</summary>
     public bool HasBadge => Badge != null;
+    /// <summary>Valeur de l'InfoBadge : le nombre (« 3 », « 99+ »), ou null pour un simple point d'activité.</summary>
+    public string? BadgeValue => Badge == NotificationBadge.ActivityText ? null : Badge;
+    /// <summary>Nom accessible du badge seul (« 3 notifications non lues »), ou vide.</summary>
+    public string BadgeAutomationName => Badge == null ? "" : NotificationBadge.Describe(Badge);
     /// <summary>Nom accessible de l'onglet.</summary>
     public string AutomationName => Badge == null ? $"Page {Text}" : $"Page {Text}, {NotificationBadge.Describe(Badge)}";
 }

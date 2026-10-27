@@ -603,11 +603,10 @@
                   <Button Style="{StaticResource DockTab}" Command="{Binding Command}" AutomationProperties.Name="{Binding AutomationName}">
                     <StackPanel Orientation="Horizontal">
                       <TextBlock Text="{Binding Text}" VerticalAlignment="Center"/>
-                      <!-- Badge rouge de notifications d'une page web (Google Chat, Gmail…) -->
-                      <Border Background="{DynamicResource DeckTileNotify}" CornerRadius="11" MinWidth="22" Height="22" Margin="10,0,0,0" Padding="6,0" VerticalAlignment="Center"
-                              Visibility="{Binding HasBadge, Converter={StaticResource BoolVis}}">
-                        <TextBlock Text="{Binding Badge}" Foreground="White" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                      </Border>
+                      <!-- Badge de notifications d'une page web (Google Chat, Gmail…) : InfoBadge de WPF-UI, rouge critique du thème, point sans nombre pour une simple activité -->
+                      <ui:InfoBadge Severity="Critical" Value="{Binding BadgeValue}" Margin="10,0,0,0" VerticalAlignment="Center"
+                                    Visibility="{Binding HasBadge, Converter={StaticResource BoolVis}}"
+                                    AutomationProperties.Name="{Binding BadgeAutomationName}"/>
                     </StackPanel>
                   </Button>
                 </DataTemplate>

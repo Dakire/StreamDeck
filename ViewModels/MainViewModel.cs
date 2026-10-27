@@ -74,6 +74,8 @@ public partial class MainViewModel : ObservableObject, INavigator
     [ObservableProperty] LayoutMetrics l = LayoutMetrics.Initial;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(BrandText))] bool isEdit;
     [ObservableProperty] bool menuOpen;
+    /// <summary>Total des notifications non lues de toutes les pages web de tous les profils (pages exclues ou sans badge ignorées, « 99+ » à l'affichage).</summary>
+    [ObservableProperty] int totalUnread;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasStatus))] string? status;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasStatusAction))] string? statusActionText;
     [ObservableProperty] bool statusIsError = true;
@@ -156,6 +158,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         _engine.Context.Countdowns.Finished += OnCountdownFinished;
         _integrations.ValuesChanged += _ => QueueIntegrationRefresh();
         _integrations.StateChanged += _ => QueueIntegrationRefresh();
+        UpdateTotalUnread();
         if (startup.Message != null) SetStatus(startup.Message, error: false);
     }
 
@@ -212,6 +215,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         }
         ApplyBackground();
         OnPropertyChanged(nameof(BrandText));
+        UpdateTotalUnread();   // une page web ajoutée, retirée, masquée ou réglée, dans n'importe quel profil
         Rebuild(navigation: !change.InPlace);   // un bouton modifié sur place ne change ni les pages ni les onglets
     }
 
@@ -798,6 +802,29 @@ public partial class MainViewModel : ObservableObject, INavigator
         return BadgeText(provider);
     }
 
+    /// <summary>
+    /// Recalcule <see cref="TotalUnread"/> sur toutes les pages web de tous les profils. Un service suivi par plusieurs pages n'est compté qu'une fois
+    /// (même compteur), par la première page non exclue ; une simple activité (point) ne compte pas. À appeler depuis le thread d'interface.
+    /// </summary>
+    void UpdateTotalUnread()
+    {
+        var counted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var items = new List<(int? Count, bool Excluded)>();
+        bool notify = _integrations.IsEnabled(NotifyId);
+        foreach (var profile in _doc.Config.Profiles)
+            foreach (var page in profile.Pages)
+            {
+                if (!page.IsWeb) continue;
+                var provider = notify ? _notifications.ForUrl(page.Url) : null;
+                bool excluded = page.BadgeExcludeFromTotal || !page.BadgeEnabled || provider == null;
+                int? count = null;
+                if (provider != null && int.TryParse(_integrations.GetValue($"{NotifyId}.{provider.Id}"), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n)) count = n;
+                if (!excluded && count is > 0 && !counted.Add(provider!.Id)) excluded = true;   // déjà compté pour ce service
+                items.Add((count, excluded));
+            }
+        TotalUnread = NotificationBadge.Total(items);
+    }
+
     /// <summary>Nombre publié par le connecteur pour ce service, ou le point d'activité à défaut de nombre ; null si rien à afficher.</summary>
     string? BadgeText(INotificationProvider provider)
     {
@@ -844,6 +871,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             foreach (var agenda in Tiles.OfType<AgendaWidgetViewModel>()) RefreshAgenda(agenda);
             foreach (var meter in Tiles.OfType<SystemMeterWidgetViewModel>()) RefreshSystem(meter);
             if (CurrentProfile.Pages.Any(p => p.IsWeb)) BuildTabs();   // badges des pages web
+            UpdateTotalUnread();
         });
     }
 

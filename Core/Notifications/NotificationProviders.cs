@@ -374,8 +374,16 @@ public static class NotificationBadge
     /// <summary>Pastille d'activité : un point, sans chiffre.</summary>
     public const string ActivityText = "•";
 
-    /// <summary>Nom accessible d'un badge : « 3 notification(s) » ou « activité » pour le point.</summary>
-    public static string Describe(string badge) => badge == ActivityText ? "activité" : badge + " notification(s)";
+    /// <summary>
+    /// Nom accessible d'un badge, avec le pluriel français : « 1 notification non lue », « 3 notifications non lues »,
+    /// « plus de 99 notifications non lues » pour « 99+ », « activité » pour le point.
+    /// </summary>
+    public static string Describe(string badge)
+    {
+        if (badge == ActivityText) return "activité";
+        if (badge.EndsWith('+')) return $"plus de {badge.TrimEnd('+')} notifications non lues";
+        return badge == "1" ? "1 notification non lue" : badge + " notifications non lues";
+    }
 
     /// <summary>Le nombre s'il y en a un à afficher, sinon le point d'activité, sinon null.</summary>
     public static string? Text(int? count, bool activity) => Text(count) ?? (activity ? ActivityText : null);
