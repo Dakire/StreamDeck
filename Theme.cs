@@ -10,7 +10,7 @@ public sealed record Palette(
     string Dim, string Text, string TextSoft, string Placeholder, string Accent, string AccentText, string Danger, string Scrim,
     string Input, string EditorBg, string Focus, string Success, string StatusBg, string StatusLine, string StatusText,
     string OnAccent, string AccentContainer, string OnAccentContainer, string SecondaryContainer, string OnSecondaryContainer,
-    string TileTop, string TileBottom);
+    string TileTop, string TileBottom, string Badge, string OnBadge);
 
 /// <summary>Palette claire / sombre de l'application ; sombre par défaut pour les nouvelles configurations, « système » suit Windows.</summary>
 public static class Theme
@@ -42,7 +42,9 @@ public static class Theme
         StatusBg: m.ErrorContainer, StatusLine: Mix(m.ErrorContainer, m.Error, 0.5), StatusText: m.OnErrorContainer,
         OnAccent: m.OnPrimary, AccentContainer: m.PrimaryContainer, OnAccentContainer: m.OnPrimaryContainer,
         SecondaryContainer: m.SecondaryContainer, OnSecondaryContainer: m.OnSecondaryContainer,
-        TileTop: dark ? m.SurfaceContainerHighest : m.SurfaceContainerLowest, TileBottom: dark ? m.SurfaceContainerHigh : m.SurfaceContainerLow);
+        TileTop: dark ? m.SurfaceContainerHighest : m.SurfaceContainerLowest, TileBottom: dark ? m.SurfaceContainerHigh : m.SurfaceContainerLow,
+        // Pastille de notifications : un rouge franc dans les deux thèmes (l'erreur Material est rose en sombre) avec du blanc dessus, contraste testé
+        Badge: dark ? "#D13438" : "#B42318", OnBadge: "#FFFFFF");
 
     /// <summary>Fond des touches avant teinte (haut, bas) : un cran au-dessus des surfaces pour détacher la grille du fond.</summary>
     static (string Top, string Bottom) TileBase => (Current.TileTop, Current.TileBottom);
@@ -128,6 +130,10 @@ public static class Theme
         r["DeckAccent"] = B(p.Accent);
         r["DeckAccentText"] = B(p.AccentText);
         r["DeckDanger"] = B(p.Danger);
+        r["DeckBadge"] = B(p.Badge);
+        r["InfoBadgeCriticalSeverityBackgroundBrush"] = B(p.Badge);   // l'InfoBadge de WPF-UI (onglets) : rouge franc, chiffre blanc, dans les deux thèmes
+        r["InfoBadgeValueForeground"] = B(p.OnBadge);
+        r["DeckOnBadge"] = B(p.OnBadge);
         r["DeckScrim"] = B(p.Scrim);
         r["DeckInput"] = B(p.Input);
         r["DeckFocus"] = B(p.Focus);

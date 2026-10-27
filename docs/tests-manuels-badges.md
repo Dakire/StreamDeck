@@ -20,7 +20,7 @@ Préparation : Paramètres › Intégrations › Notifications activé ; une pag
 | 11 | Écran à forte densité | Écran à 150 % ou 200 % | Pastille nette (icône 24 ou 32 px), chiffres lisibles, « 99+ » entier |
 | 12 | Réglages par page | Mode édition › Options de la page › *Afficher le badge* décoché | Le badge de l'onglet disparaît, le total baisse ; *Annuler* le rétablit |
 | 13 | Exclure du total | *Exclure du total* coché | Le badge de l'onglet reste, la pastille de la barre des tâches ne compte plus la page |
-| 14 | Activité sans nombre | Service en mode `auto` dont seule l'icône change | Un simple point sur l'onglet, ni nombre ni pastille dans la barre des tâches |
+| 14 | Activité sans nombre | Service avec `"favicon": true` (section `badges`) dont seule l'icône change ; sans ce réglage : aucun badge | Un simple point sur l'onglet, ni nombre ni pastille dans la barre des tâches |
 | 15 | Lecteur d'écran | Narrateur sur un onglet avec badge | « Page …, 3 notifications non lues » ; coche des entrées du menu annoncée « activé » |
 | 16 | Accessibilité tactile | Menu de la page au doigt | Entrées *Afficher le badge* et *Exclure du total* de 48 px de haut au moins |
 

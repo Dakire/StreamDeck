@@ -36,6 +36,8 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         public int? TitleCount { get; set; }
         public int? SelectorCount { get; set; }
         public bool Activity { get; set; }
+        public bool FaviconChanged { get; set; }
+        public int Candidates { get; set; } = -1;
         public bool ObserverInstalled { get; set; }
         public FaviconActivity Favicon { get; } = new();
         public Action? Detach { get; set; }
@@ -261,20 +263,27 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         if (session.Closed) return;
         try
         {
-            if (!NotificationMessage.TryRead(session.Provider, a.Source, a.WebMessageAsJson, out var count)) return;
+            if (!NotificationMessage.TryRead(session.Provider, a.Source, a.WebMessageAsJson, out var count, out var candidates)) return;
             session.SelectorCount = count;
+            session.Candidates = candidates;
+            LogSelector(session, count, candidates);
             Recompute(session);
         }
         catch (Exception ex) when (ex is COMException or InvalidOperationException or ObjectDisposedException or ArgumentException) { /* message illisible : ignoré */ }
     }
 
-    /// <summary>Le favicon change : signal d'activité (point sans chiffre) quand aucun nombre n'est lisible.</summary>
+    /// <summary>
+    /// Le favicon change. Il n'affiche un point d'activité que si l'utilisateur l'a demandé (<see cref="INotificationProvider.ShowFaviconActivity"/>, faux par défaut :
+    /// la première icône vue n'est pas toujours « sans notification »). Sinon il ne sert qu'au journal, pour comprendre un nombre non lu.
+    /// </summary>
     void OnFaviconChanged(Session session, CoreWebView2 core)
     {
-        if (session.Closed || session.Provider.Mode != BadgeMode.Auto) return;
+        if (session.Closed || session.Provider.Mode is BadgeMode.Off or BadgeMode.Title) return;
         try
         {
-            session.Activity = session.Favicon.Observe(core.FaviconUri);
+            session.FaviconChanged = session.Favicon.Observe(core.FaviconUri);
+            session.Activity = session.Provider.Mode == BadgeMode.Auto && session.Provider.ShowFaviconActivity && session.FaviconChanged;
+            WarnIfSilent(session);
             Recompute(session);
         }
         catch (Exception ex) when (ex is COMException or InvalidOperationException or ObjectDisposedException) { /* page libérée */ }
@@ -337,6 +346,34 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         if (_logged.TryGetValue(session.Provider.Id, out var before) && before == line) return;
         _logged[session.Provider.Id] = line;
         Log.Info($"Notifications : {session.Provider.Name} : {line}");
+    }
+
+    /// <summary>
+    /// Diagnostic du sélecteur ou des libellés : mode, candidats trouvés, nombre retenu. Jamais de texte de la page. Une ligne seulement quand la lecture change.
+    /// </summary>
+    void LogSelector(Session session, int count, int candidates)
+    {
+        var how = session.Provider is NotificationProvider { Selector: null, UnreadLabels: true } ? "libellés non lus" : "sélecteur";
+        var line = $"{how} · candidats {(candidates < 0 ? "?" : candidates.ToString(System.Globalization.CultureInfo.InvariantCulture))} · retenu {count}";
+        if (_loggedSelector.TryGetValue(session.Provider.Id, out var before) && before == line) { WarnIfSilent(session); return; }
+        _loggedSelector[session.Provider.Id] = line;
+        Log.Info($"Notifications : {session.Provider.Name} : mode {session.Provider.Mode} · {line}");
+        WarnIfSilent(session);
+    }
+
+    readonly Dictionary<string, string> _loggedSelector = new();
+    readonly HashSet<string> _warnedSilent = new();
+
+    /// <summary>
+    /// Message clair, une fois par service, quand l'icône de l'onglet a changé alors que le sélecteur ou les libellés ne trouvent rien : le réglage
+    /// (<c>selector</c>, <c>labelPattern</c> de <c>notifications.json</c>) ne correspond pas à la page.
+    /// </summary>
+    void WarnIfSilent(Session session)
+    {
+        if (!session.FaviconChanged || session.SelectorCount is not 0 || session.Candidates != 0 || !session.ObserverInstalled) return;
+        if (!_warnedSilent.Add(session.Provider.Id)) return;
+        Log.Warn($"Notifications : {session.Provider.Name} : l'icône de l'onglet signale une activité mais aucun élément de la page ne porte un nombre de non lus (0 candidat). " +
+                 "Ajuste « selector » / « attribute » ou « labelPattern » dans la section « badges » de notifications.json.");
     }
 
     /// <summary>Nombre d'un résultat de script (JSON : « 7 », « null »).</summary>

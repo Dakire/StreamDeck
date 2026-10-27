@@ -603,10 +603,14 @@
                   <Button Style="{StaticResource DockTab}" Command="{Binding Command}" AutomationProperties.Name="{Binding AutomationName}">
                     <StackPanel Orientation="Horizontal">
                       <TextBlock Text="{Binding Text}" VerticalAlignment="Center"/>
-                      <!-- Badge de notifications d'une page web (Google Chat, Gmail…) : InfoBadge de WPF-UI, rouge critique du thème, point sans nombre pour une simple activité -->
+                      <!-- Badge de notifications d'une page web (Google Chat, Gmail…) : InfoBadge de WPF-UI (rouge franc du thème, chiffre blanc) ; une activité sans nombre
+                           (réglage « favicon » seulement) est un vrai point rond, pas un InfoBadge vide (qui donne un ovale) -->
                       <ui:InfoBadge Severity="Critical" Value="{Binding BadgeValue}" Margin="10,0,0,0" VerticalAlignment="Center"
-                                    Visibility="{Binding HasBadge, Converter={StaticResource BoolVis}}"
+                                    Visibility="{Binding HasCountBadge, Converter={StaticResource BoolVis}}"
                                     AutomationProperties.Name="{Binding BadgeAutomationName}"/>
+                      <Ellipse Width="10" Height="10" Margin="10,0,0,0" VerticalAlignment="Center" Fill="{DynamicResource DeckBadge}"
+                               Visibility="{Binding IsBadgeDot, Converter={StaticResource BoolVis}}"
+                               AutomationProperties.Name="{Binding BadgeAutomationName}"/>
                     </StackPanel>
                   </Button>
                 </DataTemplate>

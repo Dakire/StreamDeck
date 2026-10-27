@@ -38,6 +38,11 @@ public interface INotificationProvider
     /// <c>postMessage</c> (anti-rebond 500 ms). Null si le mode ou l'absence de sélecteur ne le demande pas.
     /// </summary>
     string? ObserverScript => null;
+    /// <summary>
+    /// true : un changement d'icône (favicon) sans nombre affiche un point d'activité. Faux par défaut : l'heuristique donnait de faux positifs (ADR 0022, réglage
+    /// <c>favicon</c> de <c>notifications.json</c>).
+    /// </summary>
+    bool ShowFaviconActivity => false;
 }
 
 /// <summary>D'où vient le nombre affiché sur le badge d'un service (réglage <c>badgeMode</c> de <c>notifications.json</c>).</summary>
@@ -106,7 +111,11 @@ public sealed class NotificationProvider : INotificationProvider
     /// <param name="selector">Sélecteur CSS des pastilles de la page (leur nombre, ou la somme des nombres qu'elles contiennent), ou null.</param>
     /// <param name="attribute">Attribut qui porte le nombre (sinon le texte de l'élément).</param>
     /// <param name="mode">Source du compteur ; le sélecteur n'est lu qu'en <see cref="BadgeMode.Auto"/> et <see cref="BadgeMode.Selector"/>.</param>
-    public NotificationProvider(string id, string name, string startUrl, IEnumerable<string> hosts, string? titlePattern, string? selector = null, string? attribute = null, BadgeMode mode = BadgeMode.Auto)
+    /// <param name="showFavicon">true : un changement d'icône sans nombre affiche un point d'activité (faux par défaut).</param>
+    /// <param name="unreadLabels">true : sans sélecteur, le nombre se lit dans les libellés d'accessibilité « 3 non lus » / « 2 unread » de la page.</param>
+    /// <param name="labelPattern">Expression régulière des libellés (le premier groupe qui capture est le nombre) ; null : <see cref="DefaultLabelPattern"/>.</param>
+    public NotificationProvider(string id, string name, string startUrl, IEnumerable<string> hosts, string? titlePattern, string? selector = null, string? attribute = null, BadgeMode mode = BadgeMode.Auto,
+        bool showFavicon = false, bool unreadLabels = false, string? labelPattern = null)
     {
         Id = id;
         Name = name;
@@ -118,11 +127,25 @@ public sealed class NotificationProvider : INotificationProvider
         _title = titlePattern == null ? null : new Regex(titlePattern, RegexOptions.CultureInvariant, RegexTimeout);
         Selector = string.IsNullOrWhiteSpace(selector) ? null : selector.Trim();
         Attribute = string.IsNullOrWhiteSpace(attribute) ? null : attribute.Trim();
-        if (Selector != null && Mode is BadgeMode.Auto or BadgeMode.Selector)
+        ShowFaviconActivity = showFavicon;
+        UnreadLabels = unreadLabels;
+        LabelPattern = string.IsNullOrWhiteSpace(labelPattern) ? null : labelPattern.Trim();
+        if (LabelPattern != null) ValidateLabelPattern(LabelPattern);
+        if (Mode is BadgeMode.Auto or BadgeMode.Selector)
         {
-            CountScript = BuildScript(Selector, Attribute);
-            ObserverScript = BuildObserverScript(Selector, Attribute);
-            ScriptInterval = DefaultScriptInterval;
+            if (Selector != null)
+            {
+                CountScript = BuildScript(Selector, Attribute);
+                ObserverScript = BuildObserverScript(Selector, Attribute);
+                ScriptInterval = DefaultScriptInterval;
+            }
+            else if (UnreadLabels)
+            {
+                // Le sélecteur configuré l'emporte ; sinon on lit les libellés d'accessibilité. La relecture à la minute ne sert que si l'observateur ne s'installe pas.
+                CountScript = BuildLabelScript(LabelPattern ?? DefaultLabelPattern);
+                ObserverScript = BuildLabelObserverScript(LabelPattern ?? DefaultLabelPattern);
+                ScriptInterval = DefaultScriptInterval;
+            }
         }
     }
 
@@ -144,10 +167,36 @@ public sealed class NotificationProvider : INotificationProvider
     public string? Selector { get; }
     /// <summary>Attribut qui porte le nombre, ou null (texte de l'élément).</summary>
     public string? Attribute { get; }
+    /// <inheritdoc/>
+    public bool ShowFaviconActivity { get; }
+    /// <summary>true : le nombre se lit dans les libellés d'accessibilité de la page quand aucun sélecteur n'est configuré.</summary>
+    public bool UnreadLabels { get; }
+    /// <summary>Expression régulière des libellés fixée par l'utilisateur, ou null (<see cref="DefaultLabelPattern"/>).</summary>
+    public string? LabelPattern { get; }
 
     /// <summary>Copie du service avec d'autres réglages de badge (mode, sélecteur, attribut) ; adresses et motif de titre sont conservés.</summary>
-    public NotificationProvider With(BadgeMode mode, string? selector, string? attribute) =>
-        new(Id, Name, StartUrl.AbsoluteUri, _hosts, _titlePattern, selector, attribute, mode);
+    public NotificationProvider With(BadgeMode mode, string? selector, string? attribute, bool? favicon = null, string? labelPattern = null) =>
+        new(Id, Name, StartUrl.AbsoluteUri, _hosts, _titlePattern, selector, attribute, mode, favicon ?? ShowFaviconActivity, UnreadLabels, labelPattern ?? LabelPattern);
+
+    /// <summary>Longueur maximale d'un libellé examiné : au-delà, ce n'est pas un compteur (et jamais un texte de message).</summary>
+    public const int MaxLabelLength = 120;
+
+    /// <summary>
+    /// Libellés d'accessibilité d'un compteur, en français et en anglais : « 3 messages non lus », « 2 unread », « Non lus : 4 », « Unread (5) ». Le nombre est
+    /// dans le premier groupe qui capture. Insensible à la casse.
+    /// </summary>
+    public const string DefaultLabelPattern =
+        @"(?<![\d-])(\d{1,6})\s+(?:[^\d\s]+\s+){0,3}?(?:non\s+lu(?:e)?s?|unread)(?![a-z])|(?:non\s+lu(?:e)?s?|unread)\s*[:(]?\s*(\d{1,6})(?!\d)";
+
+    /// <summary>Vérifie qu'une expression de libellés compile, a un groupe de capture et reste courte ; <see cref="FormatException"/> sinon.</summary>
+    public static void ValidateLabelPattern(string pattern)
+    {
+        if (pattern.Length > 200) throw new FormatException("labelPattern : 200 caractères au plus");
+        Regex regex;
+        try { regex = new Regex(pattern, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, RegexTimeout); }
+        catch (ArgumentException ex) { throw new FormatException("labelPattern : expression invalide (" + ex.Message + ")"); }
+        if (regex.GetGroupNumbers().Length < 2) throw new FormatException("labelPattern : au moins un groupe de capture (le nombre) est nécessaire");
+    }
 
     /// <inheritdoc/>
     public bool Matches(Uri url) => url.Scheme is "http" or "https" && OnHost(url);
@@ -181,6 +230,31 @@ public sealed class NotificationProvider : INotificationProvider
     public static string BuildScript(string selector, string? attribute) =>
         "(function(){try{var s=" + JsonSerializer.Serialize(selector) + ",a=" + (attribute == null ? "null" : JsonSerializer.Serialize(attribute)) + ";" +
         "var e=document.querySelectorAll(s),t=0;for(var i=0;i<e.length&&i<500;i++){var x=a?e[i].getAttribute(a):e[i].textContent;var m=(x||'').match(/\\d+/);t+=m?parseInt(m[0],10):1}return t}catch(x){return null}})()";
+
+    // Lecture des libellés (aria-label, title) : corps commun du script de relecture et de l'observateur. Les classes CSS de Google sont obfusquées et changent ;
+    // un libellé d'accessibilité « 3 messages non lus » est ce qui reste stable. Les libellés de plus de 120 caractères sont ignorés (jamais un texte de message),
+    // un élément qui en contient un autre portant aussi un libellé de compteur n'est compté que par ce dernier (pas de double compte parent/enfant).
+    static string LabelReader(string pattern) =>
+        "var re=new RegExp(" + JsonSerializer.Serialize(pattern) + ",'i');" +
+        "function num(x){if(!x||x.length>" + MaxLabelLength + ")return 0;var m=re.exec(x);if(!m)return 0;for(var i=1;i<m.length;i++)if(m[i]){var n=parseInt(m[i],10);return n>0&&n<=" + NotificationTitle.MaxCount + "?n:0}return 0}" +
+        "function read(){var e=document.querySelectorAll('[aria-label],[title]'),h=[],v=[];for(var i=0;i<e.length&&i<5000&&h.length<200;i++){var n=num(e[i].getAttribute('aria-label'))||num(e[i].getAttribute('title'));if(n){h.push(e[i]);v.push(n)}}" +
+        "var s=0,k=0;for(var j=0;j<h.length;j++){var inner=false;for(var q=0;q<h.length;q++)if(q!==j&&h[j].contains(h[q])){inner=true;break}if(!inner){s+=v[j];k++}}" +
+        "return{count:Math.min(s," + NotificationTitle.MaxCount + "),found:h.length,kept:k}}";
+
+    /// <summary>Script de relecture en lecture seule des libellés : rend le nombre, ou null si l'expression est invalide.</summary>
+    public static string BuildLabelScript(string pattern) =>
+        "(function(){try{" + LabelReader(pattern) + "return read().count}catch(x){return null}})()";
+
+    /// <summary>
+    /// Observateur des libellés d'accessibilité (même principe que <see cref="BuildObserverScript"/>) : anti-rebond 500 ms, message
+    /// <c>{"type":"streamdak.badge","count":N,"candidates":M}</c> envoyé quand le nombre ou le nombre de candidats change. Aucun texte de la page n'est envoyé.
+    /// </summary>
+    public static string BuildLabelObserverScript(string pattern) =>
+        "(function(){if(window.__streamdakBadge)return;window.__streamdakBadge=1;try{" + LabelReader(pattern) + "var last=-1,lastC=-1,t=null;" +
+        "function send(){try{var r=read();if((r.count!==last||r.found!==lastC)&&window.chrome&&window.chrome.webview){last=r.count;lastC=r.found;window.chrome.webview.postMessage({type:'" + MessageType + "',count:r.count,candidates:r.found})}}catch(x){}}" +
+        "function later(){if(t)return;t=setTimeout(function(){t=null;send()},500)}" +
+        "function start(){new MutationObserver(later).observe(document.documentElement,{childList:true,subtree:true,characterData:true,attributes:true});later()}" +
+        "if(document.documentElement)start();else document.addEventListener('DOMContentLoaded',start)}catch(x){}})()";
 
     /// <summary>Type du message envoyé par <see cref="BuildObserverScript"/>.</summary>
     public const string MessageType = "streamdak.badge";
@@ -217,7 +291,7 @@ public sealed partial class NotificationProviders
     public static IReadOnlyList<INotificationProvider> BuiltIn { get; } = new INotificationProvider[]
     {
         new NotificationProvider("gmail", "Gmail", "https://mail.google.com/mail/u/0/#inbox", new[] { "mail.google.com" }, @"\((?<n>\d{1,6})\)"),
-        new NotificationProvider("gchat", "Google Chat", "https://chat.google.com/", new[] { "chat.google.com" }, LeadingCount),
+        new NotificationProvider("gchat", "Google Chat", "https://chat.google.com/", new[] { "chat.google.com" }, LeadingCount, unreadLabels: true),
         new NotificationProvider("discord", "Discord", "https://discord.com/channels/@me", new[] { "discord.com", "discordapp.com" }, LeadingCount),
         new NotificationProvider("teams", "Microsoft Teams", "https://teams.microsoft.com/", new[] { "teams.microsoft.com", "teams.live.com", "teams.cloud.microsoft" }, LeadingCount),
         new NotificationProvider("slack", "Slack", "https://app.slack.com/client", new[] { "slack.com" }, LeadingCount + @"|^(?<m>[*!])\s"),
@@ -233,7 +307,7 @@ public sealed partial class NotificationProviders
     {
         _all = BuiltIn.Concat(custom ?? Array.Empty<INotificationProvider>())
             .Select(p => overrides != null && p is NotificationProvider np && overrides.TryGetValue(p.Id, out var o)
-                ? np.With(o.Mode ?? np.Mode, o.Selector ?? np.Selector, o.Selector == null ? o.Attribute ?? np.Attribute : o.Attribute)
+                ? np.With(o.Mode ?? np.Mode, o.Selector ?? np.Selector, o.Selector == null ? o.Attribute ?? np.Attribute : o.Attribute, o.Favicon, o.LabelPattern)
                 : p)
             .ToList();
     }
@@ -305,7 +379,7 @@ public sealed partial class NotificationProviders
                 var mode = ReadMode(item) ?? BadgeMode.Auto;
                 if (regex == null && selector == null && mode != BadgeMode.Off) throw new FormatException("titleRegex ou selector est nécessaire");
                 if (mode == BadgeMode.Selector && selector == null) throw new FormatException("badgeMode « selector » demande un selector");
-                list.Add(new NotificationProvider(id, name, url.AbsoluteUri, hosts, regex, selector, attribute, mode));
+                list.Add(new NotificationProvider(id, name, url.AbsoluteUri, hosts, regex, selector, attribute, mode, ReadFavicon(item) ?? false));
             }
             catch (Exception ex) when (ex is FormatException or ArgumentException or RegexParseException or UriFormatException)
             {
@@ -336,11 +410,21 @@ public sealed partial class NotificationProviders
                 if (attribute != null && !AttributePattern().IsMatch(attribute)) throw new FormatException("attribute : lettres, chiffres, tiret ou deux-points");
                 var mode = ReadMode(entry.Value);
                 if (mode == BadgeMode.Selector && selector == null) throw new FormatException("badgeMode « selector » demande un selector");
-                result[entry.Name] = new BadgeOverride(mode, selector, attribute);
+                var pattern = Text(entry.Value, "labelPattern");
+                if (pattern != null) NotificationProvider.ValidateLabelPattern(pattern);
+                result[entry.Name] = new BadgeOverride(mode, selector, attribute, ReadFavicon(entry.Value), pattern);
             }
             catch (FormatException ex) { warn($"{FileName} : réglage de badge « {entry.Name} » ignoré ({ex.Message})"); }
         }
         return result;
+    }
+
+    /// <summary>Réglage <c>favicon</c> (booléen) ; null si absent ; <see cref="FormatException"/> si ce n'est pas un booléen.</summary>
+    static bool? ReadFavicon(JsonElement item)
+    {
+        if (!item.TryGetProperty("favicon", out var v) || v.ValueKind == JsonValueKind.Null) return null;
+        if (v.ValueKind is JsonValueKind.True or JsonValueKind.False) return v.GetBoolean();
+        throw new FormatException("favicon : true ou false");
     }
 
     /// <summary>Mode de badge de <c>badgeMode</c> (sans casse) ; null si la clé est absente ; <see cref="FormatException"/> si la valeur est inconnue.</summary>
@@ -436,7 +520,7 @@ public static class NotificationBadge
 }
 
 /// <summary>Réglages de badge d'un service dans <c>notifications.json</c> › <c>badges</c> ; une propriété null garde la valeur du service.</summary>
-public sealed record BadgeOverride(BadgeMode? Mode, string? Selector, string? Attribute);
+public sealed record BadgeOverride(BadgeMode? Mode, string? Selector, string? Attribute, bool? Favicon = null, string? LabelPattern = null);
 
 /// <summary>
 /// Message de la page cachée (ADR 0021) : validation stricte, sans rien exécuter ni conserver. Tout ce qui n'est pas exactement
@@ -448,18 +532,26 @@ public static class NotificationMessage
     public const int MaxLength = 256;
 
     /// <summary>true et le nombre si <paramref name="json"/> est un message valide, que le mode du service demande le script, et que <paramref name="source"/> (adresse du document émetteur) est une page du service.</summary>
-    public static bool TryRead(INotificationProvider provider, string? source, string? json, out int count)
+    public static bool TryRead(INotificationProvider provider, string? source, string? json, out int count) => TryRead(provider, source, json, out count, out _);
+
+    /// <summary>Comme ci-dessus, avec le nombre de candidats (-1 s'il n'est pas donné).</summary>
+    public static bool TryRead(INotificationProvider provider, string? source, string? json, out int count, out int candidates)
     {
         count = 0;
+        candidates = -1;
         if (provider.Mode is BadgeMode.Off or BadgeMode.Title) return false;                 // le script n'est pas demandé : rien à écouter
         if (!Uri.TryCreate(source, UriKind.Absolute, out var origin) || !provider.Matches(origin)) return false;
-        return TryParse(json, out count);
+        return TryParse(json, out count, out candidates);
     }
 
     /// <summary>Forme du message seule, sans l'origine.</summary>
-    public static bool TryParse(string? json, out int count)
+    public static bool TryParse(string? json, out int count) => TryParse(json, out count, out _);
+
+    /// <summary>Forme du message avec le nombre de candidats facultatif (<c>candidates</c>, entier de 0 à 100 000, sert au seul journal) ; -1 s'il est absent.</summary>
+    public static bool TryParse(string? json, out int count, out int candidates)
     {
         count = 0;
+        candidates = -1;
         if (string.IsNullOrEmpty(json) || json.Length > MaxLength) return false;
         try
         {
@@ -468,11 +560,14 @@ public static class NotificationMessage
             if (root.ValueKind != JsonValueKind.Object) return false;
             int properties = 0;
             foreach (var _ in root.EnumerateObject()) properties++;
-            if (properties != 2) return false;
+            bool hasCandidates = root.TryGetProperty("candidates", out var found);
+            if (properties != (hasCandidates ? 3 : 2)) return false;
+            if (hasCandidates && (found.ValueKind != JsonValueKind.Number || !found.TryGetInt32(out var c) || c < 0 || c > 100_000)) return false;
             if (!root.TryGetProperty("type", out var type) || type.ValueKind != JsonValueKind.String || type.GetString() != NotificationProvider.MessageType) return false;
             if (!root.TryGetProperty("count", out var number) || number.ValueKind != JsonValueKind.Number || !number.TryGetInt32(out var n)) return false;
             if (n < 0 || n > NotificationTitle.MaxCount) return false;
             count = n;
+            if (hasCandidates) candidates = found.GetInt32();
             return true;
         }
         catch (JsonException) { return false; }

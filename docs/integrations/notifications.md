@@ -23,8 +23,11 @@ masqué, les pages sont mises en veille. Coût : un processus de navigateur (≈
 | Service | Titre lu | Remarque |
 |---|---|---|
 | Gmail | `(12)` n'importe où dans le titre | |
-| Google Chat, Discord, Teams | `(3)` en début de titre | |
+| Discord, Teams | `(3)` en début de titre | |
+| Google Chat | `(3)` en début de titre, sinon **libellés d'accessibilité** `aria-label` / `title` de la page (« 3 messages non lus », « 2 unread ») | voir plus bas |
 | Slack | `(3)` en début de titre, ou `*` / `!` (au moins un) | |
+
+**Non vérifié sur le vrai Google Chat** (pas de compte ici) : les libellés réels de son DOM ; les tests couvrent des libellés français et anglais sur une page locale.
 
 **Ces formats ne sont pas garantis** : les services changent leur page. Non vérifié ici (pas de compte) : le titre réel de chacun ; les tests couvrent les formats
 ci-dessus avec de vraies pages WebView2 servies localement. Si un service ne suit plus ce format, son badge reste simplement absent : décris-le alors
@@ -69,7 +72,7 @@ Chaque service a un **mode** (`auto` par défaut) qui dit d'où vient le nombre.
 
 | Mode | Source du nombre |
 |---|---|
-| `auto` | le titre de la page d'abord ; à défaut le sélecteur CSS s'il est configuré ; à défaut un **point** si l'icône (favicon) de l'onglet a changé |
+| `auto` | le titre de la page d'abord ; à défaut le sélecteur CSS (ou, pour Google Chat, les libellés « non lus ») ; un **point** si l'icône (favicon) de l'onglet a changé **et seulement si `favicon` est activé** |
 | `title` | le titre seul |
 | `selector` | le sélecteur seul (observateur sur le DOM, sans relecture à la minute) |
 | `off` | aucun suivi : aucune page cachée n'est ouverte pour ce service |
@@ -80,8 +83,28 @@ Un service que tu décris prend `"badgeMode": "title"` dans son entrée. Pour un
 { "badges": { "gmail": { "badgeMode": "off" }, "slack": { "badgeMode": "selector", "selector": "span.p-channel_sidebar__badge", "attribute": "data-count" } } }
 ```
 
-Un mode inconnu, un mode `selector` sans sélecteur ou un sélecteur trop long : l'entrée est ignorée, avec un avertissement dans `streamdak.log`. Le **point** est une
-heuristique (une icône qui change sans message peut le déclencher) : `title` ou `off` le désactive. Google Agenda n'a volontairement pas de badge.
+Un mode inconnu, un mode `selector` sans sélecteur ou un sélecteur trop long : l'entrée est ignorée, avec un avertissement dans `streamdak.log`. Un compteur lu à **0**, ou l'absence de nombre, n'affiche **aucun** badge. Le **point** d'activité par icône n'existe que **sur demande** : `"favicon": true` dans l'entrée du service
+(défaut faux ; la première icône vue n'est pas toujours « sans notification », ce qui donnait de faux badges). Google Agenda n'a volontairement pas de badge.
+
+### Google Chat : nombre de non lus (libellés d'accessibilité)
+
+Google Chat n'affiche aucun `(N)` dans le titre. Son suivi lit donc, avec l'observateur (`MutationObserver`, anti-rebond 500 ms), les attributs `aria-label` et `title` de la
+page cachée : un libellé contenant un nombre associé à « non lu(s/e/es) » ou « unread » (« 3 messages non lus », « 2 unread », « Non lus : 4 », « Unread (5) ») compte pour ce nombre.
+Les classes CSS de Google sont obfusquées et instables ; les libellés d'accessibilité le sont beaucoup moins. Garde-fous : un libellé de plus de 120 caractères est ignoré (jamais un texte de
+message), un nombre doit avoir 1 à 6 chiffres et être strictement positif, au plus 200 éléments candidats, un élément qui en contient un autre portant aussi un libellé n'est pas compté deux fois
+(parent et enfant : seul le plus interne compte), somme bornée à 999 999. Le titre reste prioritaire s'il contient un nombre. Si tu poses un `selector`, il remplace cette lecture.
+
+Ajuster sans recompiler, dans `notifications.json` :
+
+```json
+{ "badges": { "gchat": { "labelPattern": "([0-9]+) à lire", "favicon": false } } }
+```
+
+`labelPattern` : expression régulière (200 caractères, au moins un groupe de capture : le premier groupe qui capture est le nombre ; insensible à la casse) appliquée à chaque libellé ;
+`selector` / `attribute` : sélecteur CSS et attribut à la place des libellés ; `favicon` : point d'activité par icône (défaut `false`). Valeurs invalides : entrée ignorée avec un avertissement.
+
+**Journal** (`streamdak.log`, jamais de texte de conversation) : une ligne par changement, par exemple `Google Chat : mode Auto · libellés non lus · candidats 2 · retenu 5`, et, une fois, un
+avertissement si l'icône de l'onglet a changé alors que **0 candidat** n'a été trouvé : le réglage (`labelPattern`, `selector`) ne correspond pas à la page, à ajuster.
 
 ## Ajouter un fournisseur pour un nouveau service
 
@@ -99,7 +122,7 @@ heuristique (une icône qui change sans message peut le déclencher) : `title` o
 ## Où le badge apparaît
 
 - **Touche « site web »** : pastille rouge au coin haut droit (`TileFace`).
-- **Onglet d'une page web** : `InfoBadge` de WPF-UI (rouge « critique » du thème, clair ou sombre), nombre plafonné « 99+ », **simple point** pour une activité sans nombre,
+- **Onglet d'une page web** : `InfoBadge` de WPF-UI (rouge « critique » du thème, clair ou sombre), nombre plafonné « 99+ », **simple point rond** pour une activité sans nombre (seulement avec `favicon`),
   rien à zéro. Nom accessible : « 3 notifications non lues ».
 - **Bouton du deck dans la barre des tâches** : pastille (*overlay*) avec le **total** des non lus de toutes les pages web de **tous les profils**, « 99+ » au-delà,
   retirée à zéro. Une activité (point) ne compte pas ; un service suivi par plusieurs pages n'est compté qu'une fois. ADR 0023.

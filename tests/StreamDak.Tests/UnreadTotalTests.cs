@@ -143,12 +143,16 @@ public class UnreadTotalTests
                 var shown = WpfHost.Descendants<Wpf.Ui.Controls.InfoBadge>((DependencyObject)win.Content)
                     .Where(b => b.DataContext is TabViewModel && b.Visibility == Visibility.Visible).ToList();
                 var every = WpfHost.Descendants<Wpf.Ui.Controls.InfoBadge>((DependencyObject)win.Content).Select(b => $"{(b.DataContext as TabViewModel)?.Badge}/{b.Visibility}/{b.Value}/{System.Windows.Data.BindingOperations.GetBindingExpressionBase(b, Wpf.Ui.Controls.InfoBadge.ValueProperty)?.Status}").ToList();
-                Assert.True(shown.Count == 2, $"tabs={main.Tabs.Count} badges: {string.Join(", ", every)}");
+                Assert.True(shown.Count == 1, $"tabs={main.Tabs.Count} badges: {string.Join(", ", every)}");
                 Assert.Equal("3", shown[0].Value);
-                Assert.Null(shown[1].Value);
                 Assert.Equal("3 notifications non lues", System.Windows.Automation.AutomationProperties.GetName(shown[0]));
-                Assert.Equal("activité", System.Windows.Automation.AutomationProperties.GetName(shown[1]));
-                Assert.All(shown, b => Assert.Equal(Wpf.Ui.Controls.InfoBadgeSeverity.Critical, b.Severity));
+                Assert.Equal(Wpf.Ui.Controls.InfoBadgeSeverity.Critical, shown[0].Severity);
+                // L'activité sans nombre est un disque rond (Ellipse), jamais un InfoBadge vide
+                var dots = WpfHost.Descendants<System.Windows.Shapes.Ellipse>((DependencyObject)win.Content)
+                    .Where(e => e.DataContext is TabViewModel && e.Visibility == Visibility.Visible).ToList();
+                Assert.Single(dots);
+                Assert.Equal(dots[0].Width, dots[0].Height);
+                Assert.Equal("activité", System.Windows.Automation.AutomationProperties.GetName(dots[0]));
             });
             lock (_host.Bindings.Messages) Assert.True(_host.Bindings.Messages.Count == 0, string.Join(" | ", _host.Bindings.Messages));
         }

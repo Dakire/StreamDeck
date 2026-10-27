@@ -511,6 +511,55 @@ public class WebNotificationWatcherTests
         finally { await titleOnly.StopAsync(); }
     }
 
+    const string LabelPage = "<html><head><title>Chat</title></head><body>" +
+        "<div aria-label='3 messages non lus'><span aria-label='3 messages non lus'></span></div>" +       // parent et enfant : compté une fois
+        "<button title='2 unread'></button>" +
+        "<span aria-label='0 unread'></span><span aria-label='-4 non lus'></span><span aria-label='1234567 unread'></span>" +   // valeurs invalides
+        "<span aria-label='Messages non lus'></span><span aria-label='Salut, 9 non lus ? voici un très long texte qui ressemble à un message de conversation et qui dépasse largement la limite de cent vingt caractères permise'></span>" +
+        "</body></html>";
+
+    static NotificationProvider LabelProvider(int port, bool favicon = false) =>
+        new("chatlocal", "Chat local", $"http://localhost:{port}/", new[] { "localhost" }, @"^\s*\((\d+)\)", unreadLabels: true, showFavicon: favicon);
+
+    [Fact]
+    public async Task UnreadLabelsAreSummedWithoutDoubleCountingAndInvalidOnesAreIgnored()
+    {
+        using var site = new Site(_ => LabelPage);
+        _host.Reset(ConfigFor(site.Port));
+        var seen = new List<(string, int?)>();
+        var watcher = NewWatcher(LabelProvider(site.Port), seen);
+        try
+        {
+            watcher.Start(new HashSet<string>());
+            await WaitFor(() => Has(seen, 5));                                        // 3 (parent/enfant) + 2 ; le reste est ignoré
+            lock (seen) Assert.DoesNotContain(seen, s => s.Item2 is > 5);
+        }
+        finally { await watcher.StopAsync(); }
+    }
+
+    [Fact]
+    public async Task AFaviconChangeWithATitleWithoutNumberShowsNoBadgeByDefault()
+    {
+        const string page = "<html><head><title>Chat</title><link rel='icon' href='/a.ico'></head><body>" +
+            "<script>setTimeout(function(){document.querySelector('link').href='/b.ico?v=2'},1500)</script></body></html>";
+        using var site = new Site(_ => page);
+        _host.Reset(ConfigFor(site.Port));
+
+        var counts = new List<(string, int?)>();
+        var quiet = NewWatcher(LabelProvider(site.Port), counts);
+        var activity = new List<bool>();
+        quiet.ActivityChanged += (_, on) => { lock (activity) activity.Add(on); };
+        try
+        {
+            quiet.Start(new HashSet<string>());
+            await WaitFor(() => Has(counts, 0));                                      // la page est lue : « Chat » sans nombre = 0
+            await Task.Delay(4000);                                                   // le favicon a changé entre-temps
+            lock (activity) Assert.DoesNotContain(true, activity);                    // aucun point par défaut
+            lock (counts) Assert.DoesNotContain(counts, s => s.Item2 is > 0);
+        }
+        finally { await quiet.StopAsync(); }
+    }
+
     [Fact]
     public async Task ModeOffNeverOpensAPage()
     {
