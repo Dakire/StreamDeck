@@ -25,11 +25,16 @@ automatique (une fois par jour, désactivable). Rien ne s'installe sans ton acco
 
 ## Widgets de données et badges
 
+- **Discord sans raccourci** (Paramètres › Intégrations › Discord) : micro, sourdine, volumes et « quitter le salon » par le **RPC local** de Discord, même quand Discord est
+  réduit ou derrière un jeu en administrateur ; voyants en direct. Une application Discord à toi suffit (5 minutes, une fois) : [Discord](docs/integrations/discord.md).
+- **Mélangeur audio** (catalogue › Widgets) : un **curseur précis par canal** (Sonar : jeu, discussion, média, aux, micro ; Discord ; périphériques Windows), avec la valeur exacte,
+  *couper*, *revenir au niveau de réinitialisation* (↺) et une pastille de disponibilité. Chaque ligne dit ce qu'elle règle (mélangeur Sonar, volume Windows, volume Discord).
 - **Niveau audio** (catalogue › Widgets) : une **roue** qu'on tourne au doigt (niveau au centre, toucher le centre coupe), ou un **curseur** vertical ou horizontal, lié à un canal **Sonar** ou à un
   **périphérique audio Windows** choisi par son nom (micro Focusrite, casque Arctis…, sans changer le périphérique par défaut). Choix du canal et de la forme dans les propriétés (mode édition).
   Le gain analogique d'une carte son ne se pilote pas (il se règle dans Sonar). [Sonar et audio par périphérique](docs/integrations/sonar.md), [tests manuels](docs/tests-manuels-sonar.md), [ADR 0024](docs/adr/0024-sonar-audio-par-peripherique-et-controles-de-niveau.md).
 - **Widgets** (catalogue › Widgets) : horloge et date, processeur, mémoire, **disque**, **réseau**, **ping / latence** vers des hôtes, **état de services** (page web ou port TCP),
-  **météo** (Open-Meteo, sans compte), **prochain événement** (Google Agenda), **compteur** lu dans une réponse JSON (tickets…). Tailles 1 × 1, 2 × 1, 2 × 2, intervalle réglable ;
+  **météo** (Open-Meteo, sans compte), **prochain événement** (Google Agenda), **compteur** lu dans une réponse JSON (tickets…), **batterie**, **durée de fonctionnement**,
+  **périphériques audio actifs**, **lecture en cours** (Spotify, navigateur…), **flux d'actualités** (RSS / Atom). Tailles 1 × 1, 2 × 1, 2 × 2, intervalle réglable ;
   ils ne relèvent rien quand leur page n'est pas affichée ni quand le deck est masqué. Ajouter un widget : [ADR 0019](docs/adr/0019-widgets-de-donnees.md).
 - **Badges de notifications** : un badge rouge (« 99+ ») sur les boutons « site web » de Gmail, Google Chat, Discord, Teams, Slack ou d'un service décrit dans `notifications.json`.
   Paramètres › Intégrations › Notifications ; session partagée avec les pages web du deck, aucun mot de passe enregistré : [Notifications](docs/integrations/notifications.md).
@@ -57,6 +62,7 @@ automatique (une fois par jour, désactivable). Rien ne s'installe sans ton acco
 | [Bilan des intégrations, plugins et API](docs/phase8-9-report.md) | Ce qui est fait, mesures, écarts avec la demande, décisions à prendre (phases 8 et 9) |
 | [Intégrations](docs/integrations/) | OBS, vMix, Elgato, Hue, Windows, Teams, X-Plane, Twitch, ClickUp, Notion, monday, Sonar (et audio par périphérique), raccourcis d'applications |
 | [Tests manuels Sonar](docs/tests-manuels-sonar.md) | À dérouler sur le PC avec SteelSeries GG : découverte, diagnostic, canaux, roue au doigt |
+| [Discord](docs/integrations/discord.md), [tests manuels Discord, web, menus](docs/tests-manuels-discord-web-menus.md) | RPC local, raccourcis et leurs limites ; validation en arrière-plan, pages web passives, mélangeur, nouveaux widgets |
 | [Plugins](docs/plugins.md), [API locale](docs/local-api.md) | Ajouter une intégration sans modifier StreamDak ; piloter le deck depuis un script |
 
 ## Fonctionnalités
@@ -126,8 +132,10 @@ sur plusieurs cases (de 1 × 1 à 5 × 3, réglable dans les propriétés ; les 
   masque temporairement la page ; la page n'est **pas rechargée** quand tu changes de page du deck (le cadre est gardé, 6 au plus) ; **zoom** avec − / + / « 100 % » dans la barre, au pincement
 du doigt ou à Ctrl + molette, mémorisé. **Notifications, micro et caméra** sont autorisés aux pages `https` du même site que l'adresse saisie (rappels de
 Google Agenda, Meet) ; tout autre droit est refusé, et Windows doit aussi autoriser micro et caméra aux applications de bureau.
-La saisie au clavier démarre toute seule quand un champ de texte de la page a le focus (et rend le focus en le quittant) ; le bouton *Saisie au clavier* de la tuile la force.
-  Pour modifier ce widget, passe en mode édition (le toucher dans la page appartient à la page). Le bouton *Retour* de la barre du cadre revient à
+**Interaction avec la souris et le doigt** (propriétés du widget, ou *Page* › *Interaction avec la page*) : *Toucher pour interagir* (défaut : la page s'affiche sans rien capter ; un
+toucher ou un clic l'ouvre à l'interaction, qui se termine seule après 30 s sans geste ou par le bouton *Interagir*), *Passive* (affichage seul ; bouton *Interagir* pour s'en servir) ou
+*Interactive* (la page reçoit tout, en permanence). Hors interaction, appui long et clic droit sur la page ouvrent le menu de la case ; en mode édition, la page ne capte jamais rien.
+Pendant l'interaction, la saisie au clavier démarre toute seule quand un champ de texte de la page a le focus (et rend le focus en le quittant) ; le bouton *Saisie au clavier* de la tuile la force. Le bouton *Retour* de la barre du cadre revient à
   la page précédente (ou à la page de départ) ; un lien « nouvel onglet » vers un autre site (un document reçu dans Chat) s'ouvre dans le navigateur
   par défaut. Le bouton *Ouvrir dans le navigateur* de la barre du cadre ouvre l'adresse dans le navigateur par défaut ; si Google refuse la connexion dans un cadre intégré, la tuile le dit.
 
@@ -139,7 +147,9 @@ grille de boutons* pour revenir (les boutons de la page sont conservés). Les r�
 
 - Connecteurs livrés : **OBS Studio**, **vMix**, **lampes Elgato**, **Philips Hue**, **Système Windows** (processeur, mémoire, média en cours,
   donc Spotify sans compte), **Microsoft Teams**, **X-Plane 12**, **Twitch**, **ClickUp**, **Notion**, **monday.com**, **SteelSeries Sonar** (volume et coupure des canaux du mélangeur ; API non vérifiée, [Sonar](docs/integrations/sonar.md)). 35 boutons de
-  raccourcis prêts à l'emploi pour Zoom, Teams, Discord, Premiere, Photoshop, DaVinci, Blender, Outlook, Word, Excel et Star Citizen.
+  raccourcis prêts à l'emploi pour Zoom, Teams, Discord, Premiere, Photoshop, DaVinci, Blender, Outlook, Word, Excel et Star Citizen. **Discord** par son RPC local
+  ([Discord](docs/integrations/discord.md)). Outils d'administration (Services, Observateur d'événements, Gestion des disques, Connexions réseau, panneau Son…),
+  terminal dans un dossier, SSH, projet dans VS Code, **chronomètre**.
 - Les commandes sont des actions du catalogue (une catégorie par intégration). L'état s'affiche sur les touches : voyant plein / vide
   (micro coupé, direct en cours…) et valeurs dans les titres, par exemple `Scène : {obs.scene}`, `CPU {sys.cpu} %`.
 - Une intégration en panne ne gêne jamais le deck : reconnexion automatique (2, 4, 8… 60 s), état lisible dans les paramètres.
@@ -338,15 +348,19 @@ animations coupées par le réglage StreamDak ou celui de Windows.
 - Pas de traduction : l'interface est en français, il n'y a pas de sélecteur de langue.
 - Les profils par application se basent sur le nom du programme au premier plan, relevé toutes les 0,8 s.
 - Le glisser-déposer tactile dépend de la prise en charge de Windows ; le presse-papiers interne et `Alt+flèches` / le menu *Déplacer* offrent des alternatives.
-- La touche Menu (ou Maj+F10) n'ouvre pas le menu d'une case : le deck ne prend jamais le focus clavier. Clic droit ou appui long.
+- La touche Menu (ou Maj+F10) n'ouvre pas le menu d'une case : le deck ne prend jamais le focus clavier. Clic droit, appui long, ou bouton **Case** du dock en mode édition.
+- Discord : le RPC n'est accordé qu'à une application dont tu es propriétaire (ou testeur) ; rejoindre un salon précis, la caméra et le partage d'écran ne sont pas pilotés.
+- Audio : le périphérique par défaut de Windows ne se change pas depuis StreamDak (pas d'API publique) : le bouton *Son : périphériques* ouvre le panneau de Windows. Le volume par
+  application et le gain matériel d'une carte son ne sont pas pilotés.
 - Le panneau de création rapide est une petite fenêtre (le deck n'accepte pas la saisie) : la recherche demande un clavier ou le clavier tactile de Windows ; les modèles et *Parcourir les actions* se font sans clavier.
 - Les images importées ne sont jamais supprimées automatiquement (les sauvegardes peuvent encore les référencer).
 
 ## FAQ
 
 **Un raccourci n'arrive pas dans l'application.**
-- Vérifiez d'abord que l'application cible n'est pas lancée en administrateur. Windows refuse la saisie simulée vers une
-  application élevée depuis une application qui ne l'est pas ; le journal le signale (« SendInput : … acceptés »).
+- Vérifiez d'abord que l'application au premier plan n'est pas lancée en administrateur. Windows refuse la saisie simulée vers une
+  application élevée depuis une application qui ne l'est pas ; la touche passe en erreur avec ce message, et le journal le signale.
+- Discord : utilisez l'intégration Discord (aucune touche simulée) ; un raccourci Ctrl+Maj+M n'est qu'un raccourci *local* de Discord.
 - Sinon, placez une étape « Fenêtre au premier plan » avant le raccourci, suivie d'une pause d'environ 150 ms.
 
 **Le toucher agit sur le mauvais écran.**
@@ -363,6 +377,8 @@ suivant.
 
 **Où trouver le journal ?**
 Dans `%APPDATA%\StreamDak\streamdak.log`. Le bouton Paramètres › « Ouvrir le dossier de configuration » y mène directement.
+Variables de diagnostic : `STREAMDAK_LOG_LEVEL=warning` (journal plus court ; `info` par défaut), `STREAMDAK_TOUCHLOG=1` (détail du toucher). Les étapes lentes
+sont consignées d'elles-mêmes : fermeture des paramètres (durée par étape), menu de case de plus de 50 ms, touches refusées par Windows.
 
 **Comment essayer sans risque ?**
 Lancez `StreamDak.exe --simulate` : les actions s'affichent au lieu d'être exécutées. Ajoutez `STREAMDAK_DATA_DIR` pour

@@ -118,6 +118,7 @@ classDiagram
 | `Kind` | absent | `web` : la page affiche `Url` sur tout l'espace central, sans grille (les `Buttons` sont conservés, masqués). Absent ou inconnu : grille de boutons. |
 | `Url` | absent | Adresse `http` ou `https` d'une page `web`. Ignorée pour une grille. |
 | `Zoom` | absent (`100 %`) | Zoom d'une page `web`, en % (25 à 500). Absent à 100 %. |
+| `WebInput` | absent (`touch`) | Interaction d'une page `web` avec la souris et le doigt : `passive` (affichage seul), `touch` (toucher pour interagir, défaut, non écrit), `interactive` (la page reçoit tout). |
 
 ### Bouton (`DeckButton`)
 
@@ -135,7 +136,7 @@ classDiagram
 | `ImageFit` | absent | `cover` (remplit la touche, défaut) ou `contain` (image entière). |
 | `IsFolder`, `Children` | absents | Dossier et son contenu, sur 8 niveaux au maximum. |
 | `Widget` | absent | `clock`, `agenda`, `web`, `cpu` ou `ram` : le bouton est un widget (affichage, pas d'action). Identifiant inconnu : ignoré. |
-| `WidgetOptions` | absent | Réglages du widget : `seconds`, `hour12`, `date` (horloge), `count`, `days` (agenda), `url` (page web, http ou https), `zoom` (page web, 25 à 500), `source` (niveau audio : `sonar:game`, `windows:capture:Focusrite`), `shape` (niveau audio : `vertical` ou `horizontal`, absent = roue). |
+| `WidgetOptions` | absent | Réglages du widget : `seconds`, `hour12`, `date` (horloge), `count`, `days` (agenda), `url` (page web, http ou https), `zoom` (page web, 25 à 500), `source` (niveau audio : `sonar:game`, `windows:capture:Focusrite`, `discord:input`, `discord:output`), `shape` (niveau audio : `vertical` ou `horizontal`, absent = roue), `input` (page web : `passive`, `interactive` ; absent = toucher pour interagir), `sources` (mélangeur : cibles séparées par une virgule, absent = cinq canaux Sonar), `reset` (niveau audio et mélangeur : niveau de réinitialisation 0 à 100), et les réglages des widgets de données (`url`, `count`…). |
 | `ColSpan`, `RowSpan` | absents (une case) | Largeur et hauteur d'un widget en cases (1 à 8). Les cases recouvertes doivent être vides. |
 
 Les clés marquées « absent » ne sont écrites que si elles ont une valeur (`JsonIgnore(WhenWritingDefault/Null)`) : le

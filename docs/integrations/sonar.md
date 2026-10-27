@@ -13,6 +13,22 @@ Connecteur `StreamDak.Integrations.Sonar` (type d'action `sonar`), action `audio
 | Volume et coupure des canaux du mélangeur Sonar (jeu, discussion, média, aux, micro, principal) | Intégration **Sonar** : actions `volume`, `mute`, `unmute`, `togglemute` |
 | Niveau et coupure d'un périphérique audio Windows choisi par son nom (micro Focusrite, casque Arctis…), même s'il n'est pas celui par défaut | Action **Audio : périphérique** (`audiodevice`) |
 | Régler tout ça **au doigt**, comme un potentiomètre | Widget **Niveau audio** : roue, curseur vertical ou curseur horizontal |
+| Plusieurs canaux d'un coup, avec la valeur exacte | Widget **Mélangeur audio** : un curseur horizontal par canal, couper, ↺ (réinitialiser), pastille de disponibilité |
+
+## Volume Windows, mélangeur Sonar, gain : ce que règle chaque contrôle
+
+| Réglage | Où il agit | Contrôle StreamDak |
+|---|---|---|
+| Volume d'un canal Sonar (jeu, discussion, média, aux) | Mélangeur de Sonar, avant le casque | Cible `sonar:<canal>` (sous-titre « Mélangeur Sonar ») |
+| Micro dans Sonar (`chatCapture`) | Niveau du micro **dans Sonar** (traitement de Sonar) | Cible `sonar:chatCapture` (« Micro dans le mélangeur Sonar ») |
+| Volume Windows d'un périphérique | Volume de l'endpoint Windows (Paramètres › Son) | Cible `windows:render:…` (« Volume Windows du périphérique ») |
+| Niveau d'entrée Windows | Niveau de l'endpoint d'enregistrement | Cible `windows:capture:…` (« Niveau d'entrée Windows ») |
+| Volume d'une application | Mélangeur de volume par application de Windows | Non piloté (pas d'API publique simple et stable par application) |
+| Gain matériel d'une carte son | Le bouton de la Scarlett | **Aucun** : c'est du matériel, aucune API |
+| Volumes de Discord | Réglages Voix et vidéo de Discord | Cibles `discord:input`, `discord:output` |
+
+Aucun contrôle ne présente un volume Windows comme un gain Sonar : chaque tuile et chaque ligne du mélangeur l'écrivent sous leur nom. Au démarrage, rien
+n'est réappliqué : la tuile lit le niveau réel ; le bouton ↺ ne fait que remettre le niveau choisi (réglage `reset`, 100 % par défaut, 50 % pour Windows).
 
 ## Prérequis
 

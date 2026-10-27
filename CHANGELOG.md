@@ -4,6 +4,29 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Corrigé
+- **Discord en arrière-plan** : les boutons Discord envoyaient Ctrl+Maj+M / D, raccourcis *locaux* de Discord (focus requis) et micro de Teams. Nouvelle
+  **intégration Discord** par le RPC local (micro, sourdine, volumes, quitter le salon ; état en direct ; indépendante du focus et du clavier) avec l'application
+  OAuth2 de l'utilisateur, jeton chiffré et renouvelé (`ISecretRotating`). Boutons « raccourci » sur Ctrl+Alt+Maj+M / D. [Discord](docs/integrations/discord.md).
+- **Touches simulées** : code de balayage, maintien de 30 ms hors du thread d'interface, refus de Windows (application en administrateur) affiché sur la touche.
+  Conflits de raccourcis signalés. Second appui ignoré pendant 150 ms ou tant que la touche s'exécute.
+- **Gel de 6 s à la fermeture des paramètres** : parcours d'arbre exponentiel du nettoyage des barres de titre (44,8 millions de visites pour 2 552 éléments).
+  Fermeture chronométrée dans le journal ; champs d'intégration enregistrés après la frappe, plus à chaque caractère.
+- **Pages web qui capturaient la souris** : modes *passive*, *toucher pour interagir* (défaut) et *interactive* (`WebInput`, option `input`) ; hors interaction,
+  la fenêtre du cadre est désactivée (le pointeur revient au deck) et la page ne vole plus le clavier.
+- **Clic droit lent en édition** (144 à 233 ms : rechargement complet de l'éditeur à chaque menu) : simple sélection, 32 à 37 ms.
+- **Verrouiller la session** : Win+L simulé ne verrouille pas ; `LockWorkStation`.
+- **Scripts** : le code de sortie et la dernière ligne d'erreur s'affichent sur la touche (observation de 3 s, le script continue seul au-delà).
+
+### Ajouté
+- **Mélangeur audio** : un curseur précis par canal (Sonar, Discord, périphériques Windows) avec valeur, couper, réinitialiser, disponibilité ; chaque contrôle
+  dit ce qu'il règle (mélangeur Sonar, volume Windows, volume Discord). Niveau de réinitialisation réglable.
+- **Menus de case** selon le contenu : ouvrir le dossier, régler le widget, renommer, changer l'icône, déplacer, *Remplacer par*. Bouton **Case** dans le dock d'édition.
+- **Widgets** : batterie, durée de fonctionnement, périphériques audio actifs, lecture en cours, flux RSS/Atom. **Chronomètre** (minuteur de durée 0).
+- **Actions prêtes à l'emploi** : panneau Son, Gestionnaire de périphériques, Services, Observateur d'événements, Gestion de l'ordinateur et des disques,
+  Connexions réseau, Planificateur de tâches, Moniteur de ressources, Informations système, terminal dans un dossier, SSH, projet dans VS Code.
+  `%VARIABLES%` développées dans le programme et les arguments lancés. ADR 0025, [tests manuels](docs/tests-manuels-discord-web-menus.md).
+
 ### Ajouté (SteelSeries Sonar et audio par périphérique)
 - **Connecteur SteelSeries Sonar** (`sonar`) : découverte locale par `coreProps.json`, volume et coupure des canaux (principal, jeu, discussion, média, aux, micro ; modes classic et streamer), valeurs
   `{sonar.game.volume}` et `{sonar.game.muted}`, commande **Diagnostic** en lecture seule qui écrit `sonar-diagnostic.txt`. Adresses locales seulement, routes et canaux réglables sans recompiler.
