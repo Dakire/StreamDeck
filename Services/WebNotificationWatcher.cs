@@ -15,8 +15,9 @@ namespace StreamDak;
 /// <summary>
 /// Suit le nombre de notifications non lues des services dont un bouton porte l'adresse, dans des pages WebView2 cachées : une par service, avec le profil de
 /// navigation de StreamDak (la session ouverte dans une page web du deck sert aussi ici ; aucun identifiant n'est lu ni enregistré). Le compteur se lit sur événement
-/// (<c>DocumentTitleChanged</c>, fin de navigation) ; un script en lecture seule ne tourne que pour les services décrits avec un sélecteur CSS, et seulement toutes les
-/// minutes. Deck masqué, les pages sont mises en veille (<see cref="CoreWebView2.TrySuspendAsync"/>). Aucune fenêtre, aucun son, aucune autorisation, aucun téléchargement,
+/// (<c>DocumentTitleChanged</c>, fin de navigation, <c>FaviconChanged</c> pour une simple activité) ; pour un service décrit avec un sélecteur CSS, un
+/// <c>MutationObserver</c> injecté dans la seule page cachée envoie le nombre par message web (validé strictement, ADR 0021 ; sans cet observateur, relecture toutes les
+/// minutes). Les modes <see cref="BadgeMode.Title"/> et <see cref="BadgeMode.Off"/> n'injectent rien. Deck masqué, les pages sont mises en veille (<see cref="CoreWebView2.TrySuspendAsync"/>). Aucune fenêtre, aucun son, aucune autorisation, aucun téléchargement,
 /// aucun objet de l'application exposé à la page. Tous les appels passent par le thread d'interface.
 /// </summary>
 public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
@@ -30,7 +31,14 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         public CoreWebView2Controller? Controller { get; set; }
         public DispatcherTimer? Timer { get; set; }
         public int? Last { get; set; }
+        public bool LastActivity { get; set; }
         public bool Reported { get; set; }
+        public int? TitleCount { get; set; }
+        public int? SelectorCount { get; set; }
+        public bool Activity { get; set; }
+        public bool ObserverInstalled { get; set; }
+        public FaviconActivity Favicon { get; } = new();
+        public Action? Detach { get; set; }
         public bool Closed { get; set; }
         public bool Suspended { get; set; }
         public int Generation { get; set; }
@@ -55,6 +63,9 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
 
     /// <inheritdoc/>
     public event Action<string, int?>? CountChanged;
+
+    /// <inheritdoc/>
+    public event Action<string, bool>? ActivityChanged;
 
     /// <summary>Identifiants des services actuellement suivis (tests).</summary>
     public IReadOnlyCollection<string> Watched => _sessions.Keys.ToList();
@@ -104,7 +115,7 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
     List<INotificationProvider> Wanted()
     {
         var urls = NotificationBadge.Urls(_doc.Config).ToList();
-        return _providers.All.Where(p => (_only.Count == 0 || _only.Contains(p.Id)) && urls.Any(p.Matches)).ToList();
+        return _providers.All.Where(p => p.Mode != BadgeMode.Off && (_only.Count == 0 || _only.Contains(p.Id)) && urls.Any(p.Matches)).ToList();
     }
 
     void Sync()
@@ -146,10 +157,12 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
             controller.IsVisible = false;
             controller.Bounds = new System.Drawing.Rectangle(0, 0, 1100, 800);   // une taille de fenêtre normale : certaines pages n'affichent leur compteur que dans une mise en page large
             Configure(session, controller.CoreWebView2);
-            Log.Info($"Notifications : suivi de {session.Provider.Name} ({session.Provider.StartUrl.Host})");
+            session.ObserverInstalled = await InstallObserverAsync(session, controller.CoreWebView2);
+            if (session.Closed || generation != session.Generation) return;
+            Log.Info($"Notifications : suivi de {session.Provider.Name} ({session.Provider.StartUrl.Host}, mode {session.Provider.Mode}{(session.ObserverInstalled ? ", observateur" : "")})");
             controller.CoreWebView2.Navigate(session.Provider.StartUrl.AbsoluteUri);
             if (_background) _ = ApplyBackgroundAsync(session);
-            if (session.Provider.ScriptInterval is { } interval)
+            if (session.Provider.ScriptInterval is { } interval && !session.ObserverInstalled)
             {
                 session.Timer = new DispatcherTimer(interval, DispatcherPriority.Background, (_, _) => _ = EvaluateAsync(session), _ui);
                 if (_background) session.Timer.Stop();
@@ -158,7 +171,28 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         catch (Exception ex) when (ex is WebView2RuntimeNotFoundException or COMException or InvalidOperationException or ArgumentException or IOException or UnauthorizedAccessException or ObjectDisposedException)
         {
             Log.Warn($"Notifications : {session.Provider.Name} indisponible ({ex.Message})");
-            Report(session, null);
+            if (!session.Reported) Report(session, new BadgeReading(null, false));      // sinon on garde la dernière valeur connue
+        }
+    }
+
+    /// <summary>
+    /// Injecte l'observateur du sélecteur dans cette seule page cachée si le mode le demande. Les messages web ne sont activés que sur ce contrôleur ; le cadre visible
+    /// d'une page web du deck garde <c>IsWebMessageEnabled = false</c>. Rend false (relecture périodique) si l'injection échoue.
+    /// </summary>
+    static async Task<bool> InstallObserverAsync(Session session, CoreWebView2 core)
+    {
+        if (session.Provider.ObserverScript is not { } script) return false;
+        try
+        {
+            core.Settings.IsWebMessageEnabled = true;
+            await core.AddScriptToExecuteOnDocumentCreatedAsync(script);
+            return true;
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException or ArgumentException or ObjectDisposedException)
+        {
+            Log.Warn($"Notifications : observateur de {session.Provider.Name} indisponible ({ex.Message})");
+            try { core.Settings.IsWebMessageEnabled = false; } catch (Exception inner) when (inner is COMException or InvalidOperationException or ObjectDisposedException) { }
+            return false;
         }
     }
 
@@ -173,19 +207,77 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         settings.IsGeneralAutofillEnabled = false;
         settings.IsPasswordAutosaveEnabled = false;
         core.IsMuted = true;                                           // une page cachée ne fait aucun bruit
-        core.NewWindowRequested += (_, a) => a.Handled = true;
-        core.DownloadStarting += (_, a) => a.Cancel = true;
-        core.PermissionRequested += (_, a) => a.State = CoreWebView2PermissionState.Deny;   // ni micro, ni caméra, ni notifications système : le badge suffit
-        core.NavigationStarting += (_, a) => { if (!WidgetTypes.IsWebAddress(a.Uri, out Uri _)) a.Cancel = true; };
-        core.DocumentTitleChanged += (_, _) => _ = EvaluateAsync(session);
-        core.NavigationCompleted += (_, _) => _ = EvaluateAsync(session);
-        core.SourceChanged += (_, _) => _ = EvaluateAsync(session);
-        core.ProcessFailed += (_, a) =>
+        // Gestionnaires nommés pour pouvoir s'en désabonner à la fermeture (aucune fuite si la page est rouverte).
+        EventHandler<CoreWebView2NewWindowRequestedEventArgs> newWindow = (_, a) => a.Handled = true;
+        EventHandler<CoreWebView2DownloadStartingEventArgs> download = (_, a) => a.Cancel = true;
+        // Permissions toujours refusées : ni micro, ni caméra, ni notifications système (donc pas de NotificationReceived) ; le badge suffit.
+        EventHandler<CoreWebView2PermissionRequestedEventArgs> permission = (_, a) => a.State = CoreWebView2PermissionState.Deny;
+        EventHandler<CoreWebView2NavigationStartingEventArgs> navigation = (_, a) => { if (!WidgetTypes.IsWebAddress(a.Uri, out Uri _)) a.Cancel = true; };
+        EventHandler<object> title = (_, _) => _ = EvaluateAsync(session);
+        EventHandler<CoreWebView2NavigationCompletedEventArgs> completed = (_, _) => _ = EvaluateAsync(session);
+        EventHandler<CoreWebView2SourceChangedEventArgs> source = (_, _) => _ = EvaluateAsync(session);
+        EventHandler<object> favicon = (_, _) => OnFaviconChanged(session, core);
+        EventHandler<CoreWebView2WebMessageReceivedEventArgs> message = (_, a) => OnWebMessage(session, a);
+        EventHandler<CoreWebView2ProcessFailedEventArgs> failed = (_, a) =>
         {
-            Log.Warn($"Notifications : la page de {session.Provider.Name} a cessé de répondre ({a.ProcessFailedKind})");
-            Report(session, null);
+            Log.Warn($"Notifications : la page de {session.Provider.Name} a cessé de répondre ({a.ProcessFailedKind})");   // la dernière valeur connue reste affichée
             _ = ReopenLaterAsync(session);
         };
+        core.NewWindowRequested += newWindow;
+        core.DownloadStarting += download;
+        core.PermissionRequested += permission;
+        core.NavigationStarting += navigation;
+        core.DocumentTitleChanged += title;
+        core.NavigationCompleted += completed;
+        core.SourceChanged += source;
+        core.FaviconChanged += favicon;
+        core.ProcessFailed += failed;
+        if (session.Provider.ObserverScript != null) core.WebMessageReceived += message;
+        session.Detach = () =>
+        {
+            try
+            {
+                core.NewWindowRequested -= newWindow;
+                core.DownloadStarting -= download;
+                core.PermissionRequested -= permission;
+                core.NavigationStarting -= navigation;
+                core.DocumentTitleChanged -= title;
+                core.NavigationCompleted -= completed;
+                core.SourceChanged -= source;
+                core.FaviconChanged -= favicon;
+                core.ProcessFailed -= failed;
+                core.WebMessageReceived -= message;
+            }
+            catch (Exception ex) when (ex is COMException or InvalidOperationException or ObjectDisposedException) { /* déjà libérée */ }
+        };
+    }
+
+    /// <summary>
+    /// Message web de la page cachée. Tout est ignoré sauf <c>{"type":"streamdak.badge","count":N}</c> (N entier de 0 à 999 999) envoyé par un document de l'hôte du
+    /// service, quand le mode du service demande l'observateur (<see cref="NotificationMessage"/>).
+    /// </summary>
+    void OnWebMessage(Session session, CoreWebView2WebMessageReceivedEventArgs a)
+    {
+        if (session.Closed) return;
+        try
+        {
+            if (!NotificationMessage.TryRead(session.Provider, a.Source, a.WebMessageAsJson, out var count)) return;
+            session.SelectorCount = count;
+            Recompute(session);
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException or ObjectDisposedException or ArgumentException) { /* message illisible : ignoré */ }
+    }
+
+    /// <summary>Le favicon change : signal d'activité (point sans chiffre) quand aucun nombre n'est lisible.</summary>
+    void OnFaviconChanged(Session session, CoreWebView2 core)
+    {
+        if (session.Closed || session.Provider.Mode != BadgeMode.Auto) return;
+        try
+        {
+            session.Activity = session.Favicon.Observe(core.FaviconUri);
+            Recompute(session);
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException or ObjectDisposedException) { /* page libérée */ }
     }
 
     async Task ReopenLaterAsync(Session session)
@@ -195,6 +287,8 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         await _ui.InvokeAsync(() =>
         {
             if (session.Closed || generation != session.Generation || !_sessions.ContainsKey(session.Provider.Id)) return;
+            session.Detach?.Invoke();
+            session.Detach = null;
             session.Controller?.Close();
             session.Controller = null;
             _ = OpenAsync(session);
@@ -208,14 +302,20 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         try
         {
             Uri.TryCreate(core.Source, UriKind.Absolute, out var page);
-            int? count = page == null ? null : session.Provider.CountFromTitle(page, core.DocumentTitle ?? "");
-            if (count != null && page != null && session.Provider.CountScript is { } script && session.Provider.Matches(page))
+            // En mode « sélecteur », le titre ne sert qu'à savoir qu'on est bien sur une page du service.
+            int? count = page == null ? null
+                : session.Provider.Mode == BadgeMode.Selector ? (session.Provider.Matches(page) ? 0 : null)
+                : session.Provider.CountFromTitle(page, core.DocumentTitle ?? "");
+            session.TitleCount = count;
+            if (count == null) { session.SelectorCount = null; session.Activity = false; session.Favicon.Reset(); }   // hors du service : plus rien de lu
+            else if (page != null && session.Provider.CountScript is { } script && session.Provider.Matches(page) && !session.ObserverInstalled)
             {
                 var raw = await core.ExecuteScriptAsync(script);
-                if (!session.Closed && TryNumber(raw, out var scripted)) count = scripted;
+                if (!session.Closed && TryNumber(raw, out var scripted)) session.SelectorCount = scripted;
             }
-            LogReading(session, page, core.DocumentTitle, count);
-            Report(session, count);
+            var reading = NotificationBadge.Resolve(session.Provider.Mode, session.TitleCount, session.SelectorCount, session.Activity);
+            LogReading(session, page, core.DocumentTitle, reading.Count);
+            Report(session, reading);
         }
         catch (Exception ex) when (ex is COMException or InvalidOperationException or ObjectDisposedException or JsonException)
         {
@@ -249,12 +349,25 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         return true;
     }
 
-    void Report(Session session, int? count)
+    /// <summary>Recalcule la lecture du service d'après ses sources (titre, sélecteur, activité) et la publie si elle a changé.</summary>
+    void Recompute(Session session) =>
+        Report(session, NotificationBadge.Resolve(session.Provider.Mode, session.TitleCount, session.SelectorCount, session.Activity));
+
+    /// <summary>Publie le nombre et l'activité s'ils ont changé ; toujours sur le thread d'interface.</summary>
+    void Report(Session session, BadgeReading reading)
     {
-        if (session.Reported && session.Last == count) return;
-        session.Reported = true;
-        session.Last = count;
-        CountChanged?.Invoke(session.Provider.Id, count);
+        if (!_ui.CheckAccess()) { _ui.InvokeAsync(() => Report(session, reading)); return; }
+        if (!session.Reported || session.Last != reading.Count)
+        {
+            session.Reported = true;
+            session.Last = reading.Count;
+            CountChanged?.Invoke(session.Provider.Id, reading.Count);
+        }
+        if (session.LastActivity != reading.Activity)
+        {
+            session.LastActivity = reading.Activity;
+            ActivityChanged?.Invoke(session.Provider.Id, reading.Activity);
+        }
     }
 
     async Task ApplyBackgroundAsync(Session session)
@@ -286,10 +399,17 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         session.Closed = true;
         session.Timer?.Stop();
         session.Timer = null;
+        session.Detach?.Invoke();
+        session.Detach = null;
         try { session.Controller?.Close(); }
         catch (Exception ex) when (ex is COMException or InvalidOperationException or ObjectDisposedException) { /* déjà fermée */ }
         session.Controller = null;
-        if (report) { session.Last = null; CountChanged?.Invoke(session.Provider.Id, null); }
+        if (report)
+        {
+            session.Last = null;
+            CountChanged?.Invoke(session.Provider.Id, null);
+            if (session.LastActivity) { session.LastActivity = false; ActivityChanged?.Invoke(session.Provider.Id, false); }
+        }
     }
 
     /// <summary>Arrête le suivi.</summary>

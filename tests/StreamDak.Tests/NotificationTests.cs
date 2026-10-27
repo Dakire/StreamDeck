@@ -486,6 +486,49 @@ public class WebNotificationWatcherTests
     }
 
     [Fact]
+    public async Task TheObserverFollowsThePageWithoutPollingAndTheTitleModeInjectsNothing()
+    {
+        using var site = new Site(_ => "<html><head><title>Messagerie</title></head><body><script>setTimeout(function(){var s=document.createElement('span');s.className='b';s.textContent='6';document.body.appendChild(s)},1500)</script></body></html>");
+        _host.Reset(ConfigFor(site.Port));
+        var seen = new List<(string, int?)>();
+        var watcher = NewWatcher(new NotificationProvider("obs", "Observé", $"http://localhost:{site.Port}/", new[] { "localhost" }, null, ".b"), seen);
+        try
+        {
+            watcher.Start(new HashSet<string>());
+            await WaitFor(() => Has(seen, 6));                                       // le DOM change : l'observateur envoie le nombre (60 s d'intervalle sinon)
+        }
+        finally { await watcher.StopAsync(); }
+
+        var quiet = new List<(string, int?)>();
+        var titleOnly = NewWatcher(new NotificationProvider("titre", "Titre", $"http://localhost:{site.Port}/", new[] { "localhost" }, null, ".b", null, BadgeMode.Title), quiet);
+        try
+        {
+            titleOnly.Start(new HashSet<string>());
+            await WaitFor(() => quiet.Count > 0);
+            await Task.Delay(2500);
+            lock (quiet) Assert.DoesNotContain(quiet, s => s.Item2 == 6);           // mode titre : le sélecteur est ignoré
+        }
+        finally { await titleOnly.StopAsync(); }
+    }
+
+    [Fact]
+    public async Task ModeOffNeverOpensAPage()
+    {
+        using var site = new Site(_ => "<html><head><title>(2) x</title></head></html>");
+        _host.Reset(ConfigFor(site.Port));
+        var seen = new List<(string, int?)>();
+        var watcher = NewWatcher(new NotificationProvider("eteint", "Éteint", $"http://localhost:{site.Port}/", new[] { "localhost" }, @"\((\d+)\)", null, null, BadgeMode.Off), seen);
+        try
+        {
+            watcher.Start(new HashSet<string>());
+            await Task.Delay(1500);
+            Assert.Empty(watcher.Watched);
+            lock (seen) Assert.Empty(seen);
+        }
+        finally { await watcher.StopAsync(); }
+    }
+
+    [Fact]
     public async Task AnInjectionAttemptInTheSelectorStaysAString()
     {
         using var site = new Site(_ => "<html><head><title>x</title></head><body><script>window.hacked = false</script></body></html>");
