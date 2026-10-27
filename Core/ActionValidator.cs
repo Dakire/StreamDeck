@@ -43,6 +43,8 @@ public static class ActionValidator
     public static readonly string[] MediaKeys = { "playpause", "prev", "next", "stop", "mute", "voldown", "volup" };
     /// <summary>Commandes de l'action « audio » ; « volume » prend le niveau (0 à 100) dans Args.</summary>
     public static readonly string[] AudioCommands = StreamDak.AudioCommands.All.ToArray();
+    /// <summary>Commandes de l'action « audiodevice » ; le périphérique (et le niveau) est dans Args.</summary>
+    public static readonly string[] AudioDeviceCommands = StreamDak.AudioDeviceCommands.All.ToArray();
     /// <summary>Protocoles jamais ouverts par l'action « url » : ils permettent d'exécuter du code ou de lire des fichiers par détour.</summary>
     public static readonly string[] BlockedSchemes = { "javascript", "vbscript", "data", "file" };
 
@@ -115,6 +117,16 @@ public static class ActionValidator
                 else if (value.Equals(StreamDak.AudioCommands.Volume, StringComparison.OrdinalIgnoreCase)
                          && (!int.TryParse(a.Args, out var level) || level is < 0 or > 100))
                     Err("Indique un volume entre 0 et 100");
+                break;
+            case ActionTypes.AudioDevice:
+                if (!AudioDeviceCommands.Contains(value.ToLowerInvariant())) Err("Choisis une commande audio dans la liste");
+                else if (value.Equals(StreamDak.AudioDeviceCommands.List, StringComparison.OrdinalIgnoreCase)) break;
+                else if (string.IsNullOrWhiteSpace(a.Args)) Err("Indique le nom du périphérique audio (par exemple Focusrite)");
+                else if (value.Equals(StreamDak.AudioDeviceCommands.Volume, StringComparison.OrdinalIgnoreCase))
+                {
+                    try { AudioDeviceSyntax.SplitLevel(a.Args); }
+                    catch (ArgumentException e) { Err(e.Message); }
+                }
                 break;
             case ActionTypes.Timer:
                 if (!int.TryParse(value, out var seconds) || seconds <= 0) Err("La durée doit être un nombre de secondes");

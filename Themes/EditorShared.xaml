@@ -63,6 +63,11 @@
             <ItemsControl ItemsSource="{Binding AudioChoices}" Style="{StaticResource ChipWrap}"/>
           </StackPanel>
 
+          <StackPanel Visibility="{Binding ShowAudioDevice, Converter={StaticResource BoolVis}}">
+            <TextBlock Text="Commande sur un périphérique" Style="{StaticResource EditorCaption}"/>
+            <ItemsControl ItemsSource="{Binding AudioDeviceChoices}" Style="{StaticResource ChipWrap}"/>
+          </StackPanel>
+
           <StackPanel Visibility="{Binding ShowCommand, Converter={StaticResource BoolVis}}">
             <TextBlock Text="Commande" Style="{StaticResource EditorCaption}"/>
             <ItemsControl ItemsSource="{Binding CommandChoices}" Style="{StaticResource ChipWrap}"/>

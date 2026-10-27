@@ -34,11 +34,13 @@ public static class ActionTypes
     public const string Audio = "audio";
     /// <summary>Compte à rebours affiché sur le bouton.</summary>
     public const string Timer = "timer";
+    /// <summary>Volume et coupure d'un périphérique audio choisi par son nom (voir <see cref="AudioDeviceCommands"/>).</summary>
+    public const string AudioDevice = "audiodevice";
 
     /// <summary>Tous les types connus, dans l'ordre de l'éditeur.</summary>
     public static readonly IReadOnlyList<string> All = new[]
     {
-        Hotkey, Text, Media, Launch, Script, Url, Page, Profile, Delay, Focus, Http, Audio, Timer,
+        Hotkey, Text, Media, Launch, Script, Url, Page, Profile, Delay, Focus, Http, Audio, Timer, AudioDevice,
     };
 }
 
@@ -49,6 +51,24 @@ public static class PageTargets
     public const string Home = "home";
     /// <summary>Page affichée juste avant.</summary>
     public const string Back = "back";
+}
+
+/// <summary>Valeurs de l'action <see cref="ActionTypes.AudioDevice"/> ; le périphérique (et le niveau) est dans <c>Args</c>.</summary>
+public static class AudioDeviceCommands
+{
+    /// <summary>Règle le niveau : « périphérique=50 », « périphérique=+5 ».</summary>
+    public const string Volume = "volume";
+    /// <summary>Coupe le périphérique.</summary>
+    public const string Mute = "mute";
+    /// <summary>Rétablit le périphérique.</summary>
+    public const string Unmute = "unmute";
+    /// <summary>Coupe ou rétablit le périphérique.</summary>
+    public const string Toggle = "toggle";
+    /// <summary>Lecture seule : liste les périphériques audio actifs (pour connaître les noms).</summary>
+    public const string List = "list";
+
+    /// <summary>Toutes les commandes, dans l'ordre de l'éditeur.</summary>
+    public static readonly IReadOnlyList<string> All = new[] { Toggle, Mute, Unmute, Volume, List };
 }
 
 /// <summary>Valeurs de l'action <see cref="ActionTypes.Audio"/>.</summary>

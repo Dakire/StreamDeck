@@ -157,6 +157,13 @@ public static class ActionCatalog
         C("audio.level", Audio, "Volume 50 %", "Règle le volume de sortie à un niveau précis.", "Speaker224", "#334155", new[] { A(ActionTypes.Audio, "volume", "50") },
             "Change le niveau dans « Volume (0 à 100) ».", "niveau son"),
 
+        C("audio.device.mute", Audio, "Micro ou sortie d'une carte son", "Coupe ou rétablit un périphérique audio choisi par son nom (micro Focusrite, casque Arctis…), même s'il n'est pas celui par défaut.",
+            "Mic24", "#BE123C", new[] { A(ActionTypes.AudioDevice, "toggle", "capture:Focusrite") },
+            "Remplace « Focusrite » par une partie du nom du périphérique (« capture: » pour un micro, « render: » pour une sortie). Le choix « Lister les périphériques » affiche les noms.", "focusrite scarlett arctis interface"),
+        C("audio.device.level", Audio, "Volume d'un périphérique", "Règle le volume d'un périphérique audio choisi par son nom, sans changer le périphérique par défaut.",
+            "Speaker224", "#334155", new[] { A(ActionTypes.AudioDevice, "volume", "render:Arctis=50") },
+            "« nom=niveau » : 0 à 100, ou +5 / -5 pour ajuster.", "niveau casque arctis focusrite"),
+
         // --- Raccourcis clavier ---
         C("key.hotkey", Keyboard, "Raccourci clavier", "Envoie une combinaison de touches.", "Keyboard24", "#334155", new[] { A(ActionTypes.Hotkey, "") }),
         C("key.text", Keyboard, "Saisie de texte", "Tape un texte dans l'application active.", "TextT24", "#334155", new[] { A(ActionTypes.Text, "") }),

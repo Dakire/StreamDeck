@@ -25,5 +25,6 @@ public static class BuiltInActions
         new HttpAction(),
         new AudioAction(),
         new TimerAction(),
+        new AudioDeviceAction(),
     };
 }

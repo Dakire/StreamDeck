@@ -54,13 +54,19 @@ public partial class ActionStepViewModel : ObservableObject
         (ActionTypes.Hotkey, "Raccourci"), (ActionTypes.Text, "Texte"), (ActionTypes.Media, "Média"),
         (ActionTypes.Launch, "Programme"), (ActionTypes.Script, "Script"), (ActionTypes.Url, "Lien web"),
         (ActionTypes.Page, "Page"), (ActionTypes.Profile, "Profil"), (ActionTypes.Focus, "Fenêtre"), (ActionTypes.Delay, "Pause"),
-        (ActionTypes.Http, "Requête web"), (ActionTypes.Audio, "Audio"), (ActionTypes.Timer, "Minuteur"),
+        (ActionTypes.Http, "Requête web"), (ActionTypes.Audio, "Audio"), (ActionTypes.AudioDevice, "Audio : périphérique"), (ActionTypes.Timer, "Minuteur"),
     };
 
     static readonly (string Key, string Label)[] AudioOptions =
     {
         (AudioCommands.MicToggle, "Micro : couper / rétablir"), (AudioCommands.MicMute, "Couper le micro"), (AudioCommands.MicUnmute, "Rétablir le micro"),
         (AudioCommands.OutToggle, "Son : couper / rétablir"), (AudioCommands.Volume, "Régler le volume"),
+    };
+
+    static readonly (string Key, string Label)[] AudioDeviceOptions =
+    {
+        (AudioDeviceCommands.Toggle, "Couper / rétablir"), (AudioDeviceCommands.Mute, "Couper"), (AudioDeviceCommands.Unmute, "Rétablir"),
+        (AudioDeviceCommands.Volume, "Régler le niveau"), (AudioDeviceCommands.List, "Lister les périphériques"),
     };
 
     static readonly (string Key, string Label)[] MediaKeys =
@@ -79,7 +85,7 @@ public partial class ActionStepViewModel : ObservableObject
     readonly List<string> _profileKeys = new();
     bool _loading = true;
 
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowValue), nameof(ShowCommand), nameof(ShowMedia), nameof(ShowAudio), nameof(ShowPage), nameof(ShowProfile), nameof(ShowProcesses),
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowValue), nameof(ShowCommand), nameof(ShowMedia), nameof(ShowAudio), nameof(ShowAudioDevice), nameof(ShowPage), nameof(ShowProfile), nameof(ShowProcesses),
         nameof(ShowBrowseValue), nameof(ShowBrowseArgs), nameof(ShowArgs), nameof(ValueCaption), nameof(ValueHint),
         nameof(ShowValueHint), nameof(ArgsCaption), nameof(ArgsHint), nameof(ShowArgsHint), nameof(TypeLabel))]
     string _type;
@@ -98,6 +104,8 @@ public partial class ActionStepViewModel : ObservableObject
     public ObservableCollection<ChoiceViewModel> CommandChoices { get; } = new();
     /// <summary>Commandes audio proposées.</summary>
     public ObservableCollection<ChoiceViewModel> AudioChoices { get; } = new();
+    /// <summary>Commandes proposées pour un périphérique audio choisi par son nom.</summary>
+    public ObservableCollection<ChoiceViewModel> AudioDeviceChoices { get; } = new();
     /// <summary>Pages proposées (accueil, retour, puis pages du profil).</summary>
     public ObservableCollection<ChoiceViewModel> PageChoices { get; } = new();
     /// <summary>Profils proposés.</summary>
@@ -124,6 +132,7 @@ public partial class ActionStepViewModel : ObservableObject
         foreach (var t in _types) TypeChoices.Add(new ChoiceViewModel(t.Label, () => SetType(t.Key)));
         foreach (var m in MediaKeys) MediaChoices.Add(new ChoiceViewModel(m.Label, () => Value = m.Key));
         foreach (var c in AudioOptions) AudioChoices.Add(new ChoiceViewModel(c.Label, () => Value = c.Key));
+        foreach (var c in AudioDeviceOptions) AudioDeviceChoices.Add(new ChoiceViewModel(c.Label, () => Value = c.Key));
         foreach (var name in SpecialPages.Concat(owner.PageNames))
         {
             var n = name;
@@ -146,7 +155,7 @@ public partial class ActionStepViewModel : ObservableObject
     // ---------- affichage selon le type ----------
 
     /// <summary>true si la valeur se saisit au clavier (sinon elle se choisit dans une liste).</summary>
-    public bool ShowValue => !IsIntegration && Type is not (ActionTypes.Media or ActionTypes.Audio or ActionTypes.Page or ActionTypes.Profile);
+    public bool ShowValue => !IsIntegration && Type is not (ActionTypes.Media or ActionTypes.Audio or ActionTypes.AudioDevice or ActionTypes.Page or ActionTypes.Profile);
     /// <summary>true pour choisir une commande d'intégration.</summary>
     public bool ShowCommand => IsIntegration;
     bool IsIntegration => Integration != null;
@@ -156,6 +165,8 @@ public partial class ActionStepViewModel : ObservableObject
     public bool ShowMedia => Type == ActionTypes.Media;
     /// <summary>true pour choisir une commande audio.</summary>
     public bool ShowAudio => Type == ActionTypes.Audio;
+    /// <summary>true pour choisir une commande sur un périphérique audio désigné par son nom.</summary>
+    public bool ShowAudioDevice => Type == ActionTypes.AudioDevice;
     /// <summary>true pour choisir une page.</summary>
     public bool ShowPage => Type == ActionTypes.Page;
     /// <summary>true pour choisir un profil.</summary>
@@ -167,7 +178,7 @@ public partial class ActionStepViewModel : ObservableObject
     /// <summary>true pour proposer « Parcourir » sur les arguments (programme à lancer si la fenêtre manque).</summary>
     public bool ShowBrowseArgs => Type == ActionTypes.Focus;
     /// <summary>true si le type utilise les arguments (le volume n'en a que pour la commande « volume »).</summary>
-    public bool ShowArgs => IsIntegration || Type is ActionTypes.Launch or ActionTypes.Script or ActionTypes.Focus or ActionTypes.Http || (Type == ActionTypes.Audio && Value == AudioCommands.Volume);
+    public bool ShowArgs => IsIntegration || Type is ActionTypes.Launch or ActionTypes.Script or ActionTypes.Focus or ActionTypes.Http || (Type == ActionTypes.Audio && Value == AudioCommands.Volume) || (Type == ActionTypes.AudioDevice && Value != AudioDeviceCommands.List);
 
     /// <summary>Libellé du champ de valeur selon le type.</summary>
     public string ValueCaption => Type switch
@@ -203,11 +214,15 @@ public partial class ActionStepViewModel : ObservableObject
         ActionTypes.Script => "Arguments (fichiers uniquement, facultatif)",
         ActionTypes.Http => "Corps de la requête (facultatif, JSON ou texte)",
         ActionTypes.Audio => "Volume (0 à 100)",
+        ActionTypes.AudioDevice => Value == AudioDeviceCommands.Volume ? "Périphérique=niveau (ex. Focusrite=60, Arctis=+5)" : "Nom du périphérique (ex. Focusrite, capture:Focusrite)",
         _ => "Arguments (facultatif)",
     };
     /// <summary>Conseil d'enchaînement pour la fenêtre au premier plan.</summary>
     public string ArgsHint => Type == ActionTypes.Focus
-        ? "Astuce : place cette étape en premier, puis une Pause (≈150 ms), puis un Raccourci : il sera envoyé à cette fenêtre." : "";
+        ? "Astuce : place cette étape en premier, puis une Pause (≈150 ms), puis un Raccourci : il sera envoyé à cette fenêtre."
+        : Type == ActionTypes.AudioDevice
+            ? "Une partie du nom suffit, sans tenir compte des majuscules ; « capture: » (micro) ou « render: » (sortie) lève un doute. Le périphérique par défaut de Windows n'est pas changé. « Lister les périphériques » affiche les noms."
+            : "";
     /// <summary>true si un conseil est disponible pour les arguments.</summary>
     public bool ShowArgsHint => ArgsHint.Length > 0;
 
@@ -221,7 +236,7 @@ public partial class ActionStepViewModel : ObservableObject
         _loading = true;
         Type = key;
         Value = _owner.Integrations.FirstOrDefault(i => i.Id == key) is { } integration ? (integration.Commands.Count > 0 ? integration.Commands[0].Name : "")
-            : key switch { ActionTypes.Delay => "500", ActionTypes.Url or ActionTypes.Http => "https://", ActionTypes.Page => PageTargets.Home, ActionTypes.Audio => AudioCommands.MicToggle, ActionTypes.Timer => "300", _ => "" };
+            : key switch { ActionTypes.Delay => "500", ActionTypes.Url or ActionTypes.Http => "https://", ActionTypes.Page => PageTargets.Home, ActionTypes.Audio => AudioCommands.MicToggle, ActionTypes.AudioDevice => AudioDeviceCommands.Toggle, ActionTypes.Timer => "300", _ => "" };
         Args = "";
         _loading = false;
         LoadProcesses();
@@ -238,6 +253,7 @@ public partial class ActionStepViewModel : ObservableObject
             return;
         }
         OnPropertyChanged(nameof(ShowArgs));   // « volume » est la seule commande audio avec un niveau
+        OnPropertyChanged(nameof(ArgsCaption));
         RefreshSelection();
         Changed();
     }
@@ -290,6 +306,7 @@ public partial class ActionStepViewModel : ObservableObject
         for (int i = 0; i < CommandChoices.Count; i++) CommandChoices[i].IsSelected = string.Equals(_commandKeys[i], Value, StringComparison.OrdinalIgnoreCase);
         for (int i = 0; i < MediaKeys.Length; i++) MediaChoices[i].IsSelected = MediaKeys[i].Key == Value;
         for (int i = 0; i < AudioOptions.Length; i++) AudioChoices[i].IsSelected = AudioOptions[i].Key == Value;
+        for (int i = 0; i < AudioDeviceOptions.Length; i++) AudioDeviceChoices[i].IsSelected = AudioDeviceOptions[i].Key == Value;
         for (int i = 0; i < PageChoices.Count; i++)
             PageChoices[i].IsSelected = string.Equals(_pageKeys[i], Value, StringComparison.OrdinalIgnoreCase);
         for (int i = 0; i < ProfileChoices.Count; i++)

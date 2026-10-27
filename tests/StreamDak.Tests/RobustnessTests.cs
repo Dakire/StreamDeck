@@ -59,9 +59,10 @@ public class FormatKeysTests
     [Fact]
     public void ActionTypeIdentifiersAreStableConfigKeys()
     {
-        Assert.Equal(new[] { "hotkey", "text", "media", "launch", "script", "url", "page", "profile", "delay", "focus", "http", "audio", "timer" },
+        Assert.Equal(new[] { "hotkey", "text", "media", "launch", "script", "url", "page", "profile", "delay", "focus", "http", "audio", "timer", "audiodevice" },
             ActionTypes.All);
         Assert.Equal(new[] { "mic-toggle", "mic-mute", "mic-unmute", "out-toggle", "volume" }, AudioCommands.All);
+        Assert.Equal(new[] { "toggle", "mute", "unmute", "volume", "list" }, AudioDeviceCommands.All);
         Assert.Equal(("home", "back"), (PageTargets.Home, PageTargets.Back));
     }
 }

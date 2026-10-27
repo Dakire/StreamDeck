@@ -53,4 +53,13 @@ public sealed class WindowsPlatform : IKeyboardService, IAppLauncher, IWindowSer
     public void SetMute(AudioDevice device, bool muted) => NativeAudio.SetMute(device, muted);
     /// <inheritdoc/>
     public void SetVolume(AudioDevice device, int percent) => NativeAudio.SetVolume(device, percent);
+
+    /// <inheritdoc/>
+    public IReadOnlyList<AudioEndpoint> Endpoints() => NativeAudio.Endpoints();
+    /// <inheritdoc/>
+    public AudioEndpointState ReadEndpoint(string id) => NativeAudio.Read(id);
+    /// <inheritdoc/>
+    public void SetEndpointVolume(string id, int percent) => NativeAudio.SetEndpointVolume(id, percent);
+    /// <inheritdoc/>
+    public void SetEndpointMute(string id, bool muted) => NativeAudio.SetEndpointMute(id, muted);
 }

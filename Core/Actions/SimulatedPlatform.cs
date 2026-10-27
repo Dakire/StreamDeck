@@ -24,6 +24,14 @@ public sealed class SimulatedPlatform : IKeyboardService, IAppLauncher, IWindowS
     /// <summary>Dernier volume réglé, en pourcentage.</summary>
     public int Volume { get; private set; } = 50;
 
+    /// <summary>Périphériques audio « branchés » : les tests en ajoutent ; par défaut un haut-parleur et un micro.</summary>
+    public List<AudioEndpoint> AudioEndpoints { get; } = new()
+    {
+        new("render-default", "Haut-parleurs (Simulation)", AudioFlow.Render, true),
+        new("capture-default", "Microphone (Simulation)", AudioFlow.Capture, true),
+    };
+    readonly Dictionary<string, AudioEndpointState> _endpointStates = new();
+
     /// <summary>Les quatre services de plateforme, tous fournis par cette instance.</summary>
     public PlatformServices Services => new(this, this, this, this);
 
@@ -79,5 +87,31 @@ public sealed class SimulatedPlatform : IKeyboardService, IAppLauncher, IWindowS
     {
         Volume = percent;
         Record($"volume {device} {percent}");
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<AudioEndpoint> Endpoints() => AudioEndpoints.ToList();
+
+    /// <inheritdoc/>
+    public AudioEndpointState ReadEndpoint(string id)
+    {
+        if (AudioEndpoints.All(e => e.Id != id)) throw new InvalidOperationException("Ce périphérique audio n'est plus disponible");
+        lock (_endpointStates) return _endpointStates.TryGetValue(id, out var state) ? state : new AudioEndpointState(50, false);
+    }
+
+    /// <inheritdoc/>
+    public void SetEndpointVolume(string id, int percent)
+    {
+        var current = ReadEndpoint(id);
+        lock (_endpointStates) _endpointStates[id] = current with { Percent = Math.Clamp(percent, 0, 100) };
+        Record($"endpoint-volume {id} {percent}");
+    }
+
+    /// <inheritdoc/>
+    public void SetEndpointMute(string id, bool muted)
+    {
+        var current = ReadEndpoint(id);
+        lock (_endpointStates) _endpointStates[id] = current with { Muted = muted };
+        Record($"endpoint-mute {id} {muted}");
     }
 }
