@@ -28,6 +28,15 @@ public static partial class WidgetFormat
         return (bytes >= 100 || unit == 0 ? bytes.ToString("0", culture) : bytes.ToString("0.0", culture)) + " " + units[unit];
     }
 
+    /// <summary>Durée en « 45 min », « 3 h 20 », « 2 j 4 h ».</summary>
+    public static string Duration(TimeSpan span, CultureInfo culture)
+    {
+        if (span < TimeSpan.Zero) span = TimeSpan.Zero;
+        if (span.TotalDays >= 1) return $"{((int)span.TotalDays).ToString(culture)} j {span.Hours.ToString(culture)} h";
+        if (span.TotalHours >= 1) return $"{((int)span.TotalHours).ToString(culture)} h {span.Minutes.ToString("00", culture)}";
+        return $"{Math.Max(0, span.Minutes).ToString(culture)} min";
+    }
+
     /// <summary>Débit en « 830 Ko/s », « 12,4 Mo/s ».</summary>
     public static string Rate(double bytesPerSecond, CultureInfo culture) => Bytes(Math.Max(0, bytesPerSecond), culture) + "/s";
 
@@ -71,6 +80,14 @@ public static partial class WidgetFormat
     /// <summary>GET d'un document JSON : http ou https seulement, délai de 10 s, réponse limitée à <see cref="MaxResponseBytes"/>.</summary>
     public static async Task<JsonNode?> GetJsonAsync(WidgetContext context, Uri uri, CancellationToken cancellation)
     {
+        var bytes = await GetBytesAsync(context, uri, cancellation);
+        try { return JsonNode.Parse(bytes); }
+        catch (System.Text.Json.JsonException) { throw new InvalidOperationException("La réponse n'est pas du JSON"); }
+    }
+
+    /// <summary>GET d'un document : http ou https seulement, délai de 10 s, réponse limitée à <paramref name="limit"/> octets (par défaut <see cref="MaxResponseBytes"/>).</summary>
+    public static async Task<byte[]> GetBytesAsync(WidgetContext context, Uri uri, CancellationToken cancellation, int limit = MaxResponseBytes)
+    {
         if (uri.Scheme is not ("http" or "https")) throw new InvalidOperationException("L'adresse doit commencer par http:// ou https://");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
         timeout.CancelAfter(RequestTimeout);
@@ -78,7 +95,7 @@ public static partial class WidgetFormat
         {
             using var response = await context.Http.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
             if (!response.IsSuccessStatusCode) throw new InvalidOperationException($"Le serveur a répondu {(int)response.StatusCode}");
-            if (response.Content.Headers.ContentLength > MaxResponseBytes) throw new InvalidOperationException("Réponse trop volumineuse");
+            if (response.Content.Headers.ContentLength > limit) throw new InvalidOperationException("Réponse trop volumineuse");
             await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
             using var buffer = new System.IO.MemoryStream();
             var chunk = new byte[8192];
@@ -86,10 +103,9 @@ public static partial class WidgetFormat
             while ((read = await stream.ReadAsync(chunk, timeout.Token)) > 0)
             {
                 buffer.Write(chunk, 0, read);
-                if (buffer.Length > MaxResponseBytes) throw new InvalidOperationException("Réponse trop volumineuse");
+                if (buffer.Length > limit) throw new InvalidOperationException("Réponse trop volumineuse");
             }
-            try { return JsonNode.Parse(buffer.ToArray()); }
-            catch (System.Text.Json.JsonException) { throw new InvalidOperationException("La réponse n'est pas du JSON"); }
+            return buffer.ToArray();
         }
         catch (OperationCanceledException) when (!cancellation.IsCancellationRequested) { throw new TimeoutException("Le serveur ne répond pas (délai dépassé)"); }
         catch (HttpRequestException ex) { throw new InvalidOperationException("Serveur injoignable : " + ex.Message, ex); }

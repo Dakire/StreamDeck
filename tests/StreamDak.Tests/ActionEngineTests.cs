@@ -232,7 +232,8 @@ public class ActionEngineTests
         countdowns.Tick();
         Assert.Same(b, Assert.Single(finished));
         Assert.False(countdowns.Any);
-        Assert.False((await engine.RunAsync(Button(("timer", "0", null)), _nav)).Ok);
+        Assert.False((await engine.RunAsync(Button(("timer", "-1", null)), _nav)).Ok);
+        Assert.Equal("Chronomètre lancé", (await engine.RunAsync(Button(("timer", "0", null)), _nav)).Message);   // 0 : chronomètre
     }
 
     [Fact]

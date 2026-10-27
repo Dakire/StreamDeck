@@ -12,6 +12,7 @@ public sealed class Countdowns
 {
     readonly Func<DateTime> _now;
     readonly Dictionary<DeckButton, (DateTime End, TimeSpan Duration)> _ends = new(ReferenceEqualityComparer.Instance);
+    readonly Dictionary<DeckButton, DateTime> _stopwatches = new(ReferenceEqualityComparer.Instance);   // chronomètres : heure de départ
 
     /// <summary>Un compte à rebours vient d'arriver à zéro (signalé par <see cref="Tick"/>).</summary>
     public event Action<DeckButton>? Finished;
@@ -21,7 +22,7 @@ public sealed class Countdowns
     public Countdowns(Func<DateTime>? now = null) { _now = now ?? (() => DateTime.UtcNow); }
 
     /// <summary>true si au moins un minuteur tourne (le deck rafraîchit alors l'affichage chaque seconde).</summary>
-    public bool Any => _ends.Count > 0;
+    public bool Any => _ends.Count > 0 || _stopwatches.Count > 0;
 
     /// <summary>Démarre le compte à rebours de ce bouton, ou l'arrête s'il tourne. Retourne true s'il vient de démarrer.</summary>
     public bool Toggle(DeckButton button, TimeSpan duration)
@@ -31,12 +32,36 @@ public sealed class Countdowns
         return true;
     }
 
-    /// <summary>Arrête le minuteur du bouton, s'il tourne.</summary>
-    public void Stop(DeckButton button) => _ends.Remove(button);
+    /// <summary>
+    /// Démarre le chronomètre du bouton (temps écoulé affiché sur la touche), ou l'arrête s'il tourne. Retourne true s'il vient de démarrer ;
+    /// <paramref name="elapsed"/> : temps mesuré à l'arrêt.
+    /// </summary>
+    public bool ToggleStopwatch(DeckButton button, out TimeSpan elapsed)
+    {
+        elapsed = TimeSpan.Zero;
+        if (_stopwatches.Remove(button, out var start)) { elapsed = _now() - start; return false; }
+        _stopwatches[button] = _now();
+        return true;
+    }
 
-    /// <summary>Temps restant (arrondi à la seconde supérieure), ou null si le bouton n'a pas de minuteur en cours.</summary>
+    /// <summary>Arrête le minuteur ou le chronomètre du bouton, s'il tourne.</summary>
+    public void Stop(DeckButton button)
+    {
+        _ends.Remove(button);
+        _stopwatches.Remove(button);
+    }
+
+    /// <summary>
+    /// Temps restant d'un minuteur (arrondi à la seconde supérieure), temps écoulé d'un chronomètre (à la seconde inférieure), ou null si le bouton n'a
+    /// rien en cours.
+    /// </summary>
     public TimeSpan? Remaining(DeckButton button)
     {
+        if (_stopwatches.TryGetValue(button, out var start))
+        {
+            var up = _now() - start;
+            return TimeSpan.FromSeconds(Math.Floor(Math.Max(0, up.TotalSeconds)));
+        }
         if (!_ends.TryGetValue(button, out var t)) return null;
         var left = t.End - _now();
         if (left < TimeSpan.Zero) left = TimeSpan.Zero;

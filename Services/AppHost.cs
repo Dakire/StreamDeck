@@ -76,6 +76,18 @@ public static class AppHost
     const int LogFilesKept = 3;
 
     /// <summary>
+    /// Niveau du journal : variable <c>STREAMDAK_LOG_LEVEL</c> (<c>warning</c> pour un journal plus court, <c>info</c> par défaut). Les diagnostics détaillés
+    /// restent derrière leurs propres variables (<c>STREAMDAK_TOUCHLOG=1</c> pour le toucher) : jamais des milliers de lignes par défaut.
+    /// </summary>
+    internal static Serilog.Events.LogEventLevel LogLevelFromEnvironment() =>
+        Environment.GetEnvironmentVariable("STREAMDAK_LOG_LEVEL")?.Trim().ToLowerInvariant() switch
+        {
+            "warning" or "warn" => Serilog.Events.LogEventLevel.Warning,
+            "error" => Serilog.Events.LogEventLevel.Error,
+            _ => Serilog.Events.LogEventLevel.Information,
+        };
+
+    /// <summary>
     /// Construit le conteneur : journal, configuration, document, plateforme (réelle ou simulée), moteur d'actions,
     /// sauvegarde automatique, apparence et fenêtres. Doit être appelé sur le thread d'interface, après
     /// <c>ConfigStore.UseDirectory</c> éventuel. Libérer le conteneur enregistre les modifications en attente et interrompt
@@ -85,7 +97,7 @@ public static class AppHost
     {
         var clock = System.Diagnostics.Stopwatch.StartNew();
         var serilog = new LoggerConfiguration()
-            .MinimumLevel.Information()
+            .MinimumLevel.Is(LogLevelFromEnvironment())
             .WriteTo.File(new RedactingFormatter("{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3} {Message:lj}{NewLine}{Exception}"),
                 Path.Combine(ConfigStore.Dir, LogFileName), fileSizeLimitBytes: LogMaxBytes, rollOnFileSizeLimit: true,
                 retainedFileCountLimit: LogFilesKept, shared: true)
@@ -157,6 +169,11 @@ public static class AppHost
         services.AddSingleton<IWidget, WeatherWidget>();
         services.AddSingleton<IWidget, NextEventWidget>();
         services.AddSingleton<IWidget, CounterWidget>();
+        services.AddSingleton<IWidget>(_ => new BatteryWidget(options.Simulate ? () => new BatteryState(true, 76, false, TimeSpan.FromMinutes(190)) : WindowsPlatform.ReadBattery));
+        services.AddSingleton<IWidget, UptimeWidget>();
+        services.AddSingleton<IWidget>(sp => new AudioDevicesWidget(sp.GetRequiredService<PlatformServices>().Audio));
+        services.AddSingleton<IWidget, NowPlayingWidget>();
+        services.AddSingleton<IWidget, FeedWidget>();
         services.AddSingleton(sp => new WidgetRegistry(sp.GetServices<IWidget>()));
         // Badges de notifications : services connus + ceux de notifications.json, suivis dans des pages WebView2 cachées (seulement si le connecteur est activé)
         services.AddSingleton(_ => NotificationProviders.Load(ConfigStore.Dir));

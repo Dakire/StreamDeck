@@ -16,6 +16,13 @@ public interface IKeyboardService
     bool TryValidateHotkey(string combo, out string error);
 }
 
+/// <summary>Ce qu'un script a donné pendant le temps où il a été observé.</summary>
+/// <param name="Finished">true s'il s'est terminé pendant l'observation (sinon il continue seul).</param>
+/// <param name="ExitCode">Code de sortie (0 : réussite), s'il est terminé.</param>
+/// <param name="Output">Dernières lignes de la sortie standard (bornées).</param>
+/// <param name="Error">Dernières lignes de la sortie d'erreur (bornées).</param>
+public sealed record ScriptResult(bool Finished, int ExitCode, string Output, string Error);
+
 /// <summary>Lancement de programmes, dossiers, adresses et scripts.</summary>
 public interface IAppLauncher
 {
@@ -23,6 +30,16 @@ public interface IAppLauncher
     void Open(string target, string? arguments);
     /// <summary>Exécute un fichier de script ou une commande en ligne.</summary>
     void RunScript(string scriptOrCommand, string? arguments);
+
+    /// <summary>
+    /// Exécute un script et l'observe au plus <paramref name="wait"/> : code de sortie et dernières lignes s'il a fini, sinon il continue seul. Par défaut
+    /// (plateforme sans observation) : lancé sans attendre.
+    /// </summary>
+    ScriptResult RunScriptObserved(string scriptOrCommand, string? arguments, System.TimeSpan wait)
+    {
+        RunScript(scriptOrCommand, arguments);
+        return new ScriptResult(false, 0, "", "");
+    }
 }
 
 /// <summary>Fenêtres des autres applications.</summary>

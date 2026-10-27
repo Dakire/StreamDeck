@@ -62,6 +62,7 @@ public static class WidgetTypes
         // Widgets de données (IWidget) : relevés à intervalle régulier, seulement tant que leur page est affichée
         DiskWidget.Description, NetworkWidget.Description, PingWidget.Description, ServiceStatusWidget.Description,
         WeatherWidget.Description, NextEventWidget.Description, CounterWidget.Description,
+        BatteryWidget.Description, UptimeWidget.Description, AudioDevicesWidget.Description, NowPlayingWidget.Description, FeedWidget.Description,
     };
 
     /// <summary>Le widget d'identifiant donné, ou null s'il est inconnu.</summary>

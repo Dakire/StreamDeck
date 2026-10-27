@@ -129,7 +129,7 @@ public static class ActionValidator
                 }
                 break;
             case ActionTypes.Timer:
-                if (!int.TryParse(value, out var seconds) || seconds <= 0) Err("La durée doit être un nombre de secondes");
+                if (!int.TryParse(value, out var seconds) || seconds < 0) Err("La durée doit être un nombre de secondes (0 : chronomètre)");
                 else if (seconds > 86_400) Warn("Minuteur de plus de 24 heures");
                 break;
             default:
