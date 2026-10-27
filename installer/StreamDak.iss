@@ -22,6 +22,13 @@
   #define OutputDir "..\artifacts\installer"
 #endif
 
+; Version des propriétés du fichier : Windows n'accepte que des nombres (x.y.z), sans suffixe de pré-version (« 0.2.0-alpha » → « 0.2.0 »)
+#if Pos("-", AppVersion) > 0
+  #define AppVersionNumeric Copy(AppVersion, 1, Pos("-", AppVersion) - 1)
+#else
+  #define AppVersionNumeric AppVersion
+#endif
+
 #define AppName "StreamDak"
 #define AppExe "StreamDak.exe"
 #define AppId "{{7C1D5F0A-3B6E-4E52-9A1B-5D2F8C4E9A71}"
@@ -35,7 +42,8 @@ AppPublisher=StreamDak
 AppPublisherURL=https://github.com/Dakire/StreamDeck
 AppSupportURL=https://github.com/Dakire/StreamDeck/issues
 AppUpdatesURL=https://github.com/Dakire/StreamDeck/releases
-VersionInfoVersion={#AppVersion}
+VersionInfoVersion={#AppVersionNumeric}
+VersionInfoTextVersion={#AppVersion}
 VersionInfoProductName={#AppName}
 VersionInfoDescription=Installation de {#AppName}
 
