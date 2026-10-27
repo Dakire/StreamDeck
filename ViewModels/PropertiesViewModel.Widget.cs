@@ -127,6 +127,7 @@ public sealed partial class PropertiesViewModel
         OnPropertyChanged(nameof(IsAgendaWidget));
         OnPropertyChanged(nameof(IsWebWidget));
         RefreshWidgetSelection(b);
+        LoadLevel(b);
     }
 
     void RefreshWidgetSelection(DeckButton? b)
@@ -136,6 +137,7 @@ public sealed partial class PropertiesViewModel
         int count = b?.OptionInt(WidgetOptionKeys.Count, 4, 1, 20) ?? 4, days = b?.OptionInt(WidgetOptionKeys.Days, 7, 1, 60) ?? 7;
         for (int i = 0; i < AgendaCounts.Length; i++) AgendaCountChoices[i].IsSelected = AgendaCounts[i] == count;
         for (int i = 0; i < AgendaDayChoices.Length; i++) AgendaDaysChoices[i].IsSelected = AgendaDayChoices[i] == days;
+        RefreshLevelSelection(b);
     }
 
     /// <summary>

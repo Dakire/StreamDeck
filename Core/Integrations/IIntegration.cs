@@ -49,8 +49,9 @@ public sealed record SettingField(string Key, string Label, SettingKind Kind, st
 /// « {arg} » est remplacé par l'argument de la commande.</param>
 /// <param name="Icon">Icône Fluent du bouton créé.</param>
 /// <param name="Color">Couleur du bouton créé.</param>
+/// <param name="Offline">true si la commande s'exécute même quand l'intégration n'est pas connectée (diagnostic en lecture seule : il sert justement à comprendre pourquoi elle ne l'est pas).</param>
 public sealed record IntegrationCommand(string Name, string Label, string Description, string? ArgHint = null, bool ArgRequired = false,
-    string? StateKey = null, string Icon = "PlugConnected24", string Color = "#334155");
+    string? StateKey = null, string Icon = "PlugConnected24", string Color = "#334155", bool Offline = false);
 
 /// <summary>
 /// Un logiciel ou un service que StreamDak sait piloter. Une intégration expose ses <see cref="Commands"/> (actions), ses

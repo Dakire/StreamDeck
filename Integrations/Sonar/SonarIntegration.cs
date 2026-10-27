@@ -30,6 +30,7 @@ public sealed class SonarIntegration : PolledHttpIntegration, IBackgroundAware
     static readonly TimeSpan ReportEvery = TimeSpan.FromMinutes(5);
 
     SonarConfig _config = new();
+    HttpClient? _diagnoseClient;   // client temporaire du diagnostic quand le connecteur n'est pas connecté
     Uri? _sonar;
     volatile bool _background;
     DateTime _lastReport = DateTime.MinValue;
@@ -77,7 +78,7 @@ public sealed class SonarIntegration : PolledHttpIntegration, IBackgroundAware
         new IntegrationCommand("unmute", "Rétablir un canal", "Rétablit le son d'un canal Sonar.", "le canal", true, null, "Speaker224", "#334155"),
         new IntegrationCommand("togglemute", "Couper / rétablir un canal", "Bascule la coupure d'un canal ; le voyant est plein quand il est coupé.", "le canal", true, "{arg}.muted", "SpeakerMute24", "#BE123C"),
         new IntegrationCommand("diagnose", "Diagnostic Sonar", "Lecture seule : liste les canaux que GG expose et leurs niveaux, et écrit sonar-diagnostic.txt dans le dossier de configuration.",
-            null, false, null, "Stethoscope24", "#475569"),
+            null, false, null, "Stethoscope24", "#475569", Offline: true),
     };
 
     /// <inheritdoc/>
@@ -198,7 +199,7 @@ public sealed class SonarIntegration : PolledHttpIntegration, IBackgroundAware
     {
         if (!SonarApi.IsLocalAddress(uri)) throw new InvalidOperationException("Adresse refusée : Sonar ne se joint qu'en local");
         using var request = new HttpRequestMessage(method, uri);
-        using var response = await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation);
+        using var response = await (_diagnoseClient ?? Http).SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation);
         if (response.Content.Headers.ContentLength > SonarApi.MaxResponseBytes) throw new InvalidOperationException("Réponse trop grosse : ce n'est pas l'API de Sonar");
         await using var stream = await response.Content.ReadAsStreamAsync(cancellation);
         var buffer = new MemoryStream();
@@ -289,6 +290,9 @@ public sealed class SonarIntegration : PolledHttpIntegration, IBackgroundAware
     {
         var trace = new List<string>();
         _sonar = null;
+        HttpClient? temporary = null;
+        try { _ = Http; }
+        catch (InvalidOperationException) { _diagnoseClient = temporary = CreateClient(new IntegrationSettings()); }   // pas connecté : le diagnostic sert justement à savoir pourquoi
         try
         {
             await EnsureSonarAsync(config, trace, cancellation);
@@ -303,6 +307,11 @@ public sealed class SonarIntegration : PolledHttpIntegration, IBackgroundAware
             trace.Add("Échec : " + ex.Message);
             WriteReport(config, trace);
             throw new InvalidOperationException("Diagnostic Sonar : " + ex.Message + " (détails dans " + ReportFileName + ")", ex);
+        }
+        finally
+        {
+            _diagnoseClient = null;
+            temporary?.Dispose();
         }
         var path = WriteReport(config, trace);
         var summary = trace.LastOrDefault(l => l.StartsWith("Canaux reconnus", StringComparison.Ordinal)) ?? "Canaux reconnus : aucun";

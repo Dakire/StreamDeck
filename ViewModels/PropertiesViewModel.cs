@@ -118,7 +118,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     public ObservableCollection<IconPickViewModel> IconChoices { get; } = new();
 
     /// <summary>Panneau de propriétés de l'éditeur.</summary>
-    public PropertiesViewModel(DeckDocument doc, EditorViewModel editor, IEditorShell shell, IWindowService windows, IntegrationManager integrations)
+    public PropertiesViewModel(DeckDocument doc, EditorViewModel editor, IEditorShell shell, IWindowService windows, IntegrationManager integrations, IAudioDevices? audio = null)
     {
         _doc = doc; _editor = editor; _shell = shell; _windows = windows; _integrations = integrations;
         foreach (var (key, label) in new (string?, string)[] { (null, "Sous l'icône"), ("top", "En haut"), ("middle", "Au centre"), ("bottom", "En bas") })
@@ -131,6 +131,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         foreach (var c in Palette) Swatches.Add(new SwatchViewModel(c, v => { Color = v; Flush(); }));
         foreach (var c in TextPalette) TextSwatches.Add(new SwatchViewModel(c, v => { TextColor = v; Flush(); }));
         InitWidgetChoices();
+        InitLevelChoices(audio);
         RebuildIcons();
     }
 

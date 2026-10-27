@@ -123,6 +123,24 @@
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
 
+              <!-- Niveau audio : ce que la roue règle (canal Sonar ou périphérique Windows) et sa forme -->
+              <StackPanel Visibility="{Binding IsLevelWidget, Converter={StaticResource BoolVis}}">
+                <TextBlock Text="Ce que le contrôle règle" Style="{StaticResource EditorCaption}"/>
+                <ItemsControl ItemsSource="{Binding LevelTargetChoices}" Style="{StaticResource ChipWrap}"/>
+                <StackPanel Visibility="{Binding ShowLevelDevice, Converter={StaticResource BoolVis}}">
+                  <TextBlock Text="Nom du périphérique Windows" Style="{StaticResource EditorCaption}"/>
+                  <ui:TextBox Text="{Binding LevelDevice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"
+                              PlaceholderText="Focusrite, capture:Focusrite, render:Arctis" AutomationProperties.Name="Nom du périphérique audio Windows"/>
+                  <TextBlock Text="Une partie du nom suffit, sans tenir compte des majuscules. « capture: » vise un micro, « render: » une sortie. Le périphérique par défaut de Windows n'est pas changé." Style="{StaticResource EditorHint}"/>
+                  <TextBlock Text="Périphériques détectés" Style="{StaticResource EditorCaption}"/>
+                  <ItemsControl ItemsSource="{Binding LevelDeviceChoices}" Style="{StaticResource ChipWrap}"/>
+                  <TextBlock Text="{Binding LevelDeviceMessage}" Style="{StaticResource EditorHint}"/>
+                </StackPanel>
+                <TextBlock Text="Forme" Style="{StaticResource EditorCaption}"/>
+                <ItemsControl ItemsSource="{Binding LevelShapeChoices}" Style="{StaticResource ChipWrap}"/>
+                <TextBlock Text="Sonar : active le connecteur dans Paramètres › Intégrations (SteelSeries GG doit tourner). Roue : tourne l'anneau au doigt, touche le centre pour couper. Le gain du micro d'une carte son se règle dans Sonar." Style="{StaticResource EditorHint}"/>
+              </StackPanel>
+
               <StackPanel Visibility="{Binding IsWebWidget, Converter={StaticResource BoolVis}}">
                 <TextBlock Text="Adresse de la page" Style="{StaticResource EditorCaption}"/>
                 <ui:TextBox Text="{Binding WidgetUrl, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"

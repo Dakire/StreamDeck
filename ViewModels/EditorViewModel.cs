@@ -147,7 +147,7 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         _windows = windows;
         _profile = _doc.ActiveProfile.Name;
         Catalog = new CatalogViewModel(_doc) { Choose = a => AddCatalogAction(a) };
-        Properties = new PropertiesViewModel(_doc, this, shell, platform.Windows, integrations);
+        Properties = new PropertiesViewModel(_doc, this, shell, platform.Windows, integrations, platform.Audio);
 
         _doc.Changed += OnDocumentChanged;
         Notifier.Posted += OnNotice;

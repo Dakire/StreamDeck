@@ -21,7 +21,8 @@ public sealed class IntegrationAction : ActionHandler
     /// <inheritdoc/>
     public override async Task<string?> ExecuteAsync(DeckAction action, StepContext context, CancellationToken cancellation)
     {
-        if (_integration.State != ConnectionState.Connected)
+        bool offline = _integration.Commands.FirstOrDefault(c => c.Name.Equals(action.Value, StringComparison.OrdinalIgnoreCase))?.Offline == true;
+        if (_integration.State != ConnectionState.Connected && !offline)
             throw new InvalidOperationException($"{_integration.Name} n'est pas connecté" + (_integration.Error is { } e ? $" ({e})" : ""));
         return await _integration.ExecuteAsync(action.Value, action.Args, cancellation);
     }

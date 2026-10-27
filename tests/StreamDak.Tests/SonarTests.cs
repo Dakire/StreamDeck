@@ -325,6 +325,32 @@ public sealed class SonarTests : IDisposable
         Assert.Contains(SonarIntegration.ReportFileName, ex.Message);
     }
 
+    sealed class Nav : StreamDak.Actions.INavigator
+    {
+        public void GoToPage(string name) { }
+        public void SwitchProfile(string name) { }
+    }
+
+    [Fact]
+    public async Task OnlyTheDiagnosticRunsThroughTheEngineWhileSonarIsNotConnected()
+    {
+        ServeFakeGg(levels: """{ "something": "else" }""");
+        var sonar = Create();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sonar.ConnectAsync(Settings(), CancellationToken.None));   // réponse inconnue : en erreur
+        Assert.Equal(ConnectionState.Error, sonar.State);
+
+        ServeFakeGg();   // GG répond correctement à présent, mais le connecteur n'a pas encore repris sa connexion
+        var engine = new StreamDak.Actions.ActionEngine(new StreamDak.Actions.ActionContext { Platform = new StreamDak.Actions.SimulatedPlatform().Services, Http = new System.Net.Http.HttpClient() },
+            new StreamDak.Actions.IActionHandler[] { new IntegrationAction(sonar) });
+        DeckButton Step(string command, string? args) => new() { Label = "S", Actions = { new DeckAction { Type = "sonar", Value = command, Args = args } } };
+
+        var diagnostic = await engine.RunAsync(Step("diagnose", null), new Nav());
+        Assert.True(diagnostic.Ok, diagnostic.Message);
+        Assert.Contains("game 60 %", diagnostic.Message);
+        Assert.False((await engine.RunAsync(Step("volume", "game=10"), new Nav())).Ok);   // une commande qui écrit exige la connexion
+        Assert.DoesNotContain(_server.Requests, r => r.Method == "PUT");
+    }
+
     [Fact]
     public void TheIntegrationDescribesItsCommandsAndSettings()
     {

@@ -308,6 +308,34 @@
       </Border>
     </DataTemplate>
 
+    <!-- Niveau audio : roue ou curseur tactile lié à un canal Sonar ou à un périphérique Windows. Le doigt est routé vers le contrôle par la fenêtre (ADR 0013) -->
+    <DataTemplate DataType="{x:Type vm:LevelWidgetViewModel}">
+      <Border Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1" AutomationProperties.Name="{Binding AccessibleName}"
+              Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+              CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}" ClipToBounds="True">
+        <Grid Margin="12,10">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+          </Grid.RowDefinitions>
+          <StackPanel Orientation="Horizontal">
+            <ui:SymbolIcon Symbol="Speaker224" Foreground="{DynamicResource DeckAccentText}" Margin="0,0,8,0" VerticalAlignment="Center"
+                           FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Foreground="{Binding Face.LabelBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                       FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+          </StackPanel>
+          <controls:LevelControl Grid.Row="1" Margin="0,6,0,0" Shape="{Binding Shape}" Value="{Binding Level, Mode=OneWay}" IsMuted="{Binding IsMuted}"
+                                 ChangeCommand="{Binding ChangeCommand}" MuteCommand="{Binding ToggleMuteCommand}"
+                                 TrackBrush="{DynamicResource DeckTileTrack}" FillBrush="{DynamicResource DeckAccent}" MutedBrush="{DynamicResource DeckDanger}"
+                                 TextBrush="{Binding Face.LabelBrush}" AutomationProperties.Name="{Binding AccessibleName}"
+                                 Visibility="{Binding HasReading, Converter={StaticResource BoolVis}}"/>
+          <TextBlock Grid.Row="1" Text="{Binding Status}" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource DeckDim}"
+                     FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                     Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}"/>
+        </Grid>
+      </Border>
+    </DataTemplate>
+
     <!-- Agenda : prochains événements, ou ce qu'il manque pour en afficher -->
     <DataTemplate DataType="{x:Type vm:AgendaWidgetViewModel}">
       <Border Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1" AutomationProperties.Name="{Binding AccessibleName}"

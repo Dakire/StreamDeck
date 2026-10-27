@@ -42,6 +42,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     /// <summary>Info-bulle du bouton de menu (« Menu » ou « Menu · version 1.4.0 disponible »).</summary>
     public string MenuTooltip => _updates.HasUpdate ? $"Menu · version {_updates.NewVersionText} disponible" : "Menu";
     readonly HashSet<DataWidgetViewModel> _dataWidgets = new();
+    readonly HashSet<LevelWidgetViewModel> _levelWidgets = new();
     readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
     bool _integrationRefreshPending;
     static readonly TimeSpan StatusDelay = TimeSpan.FromSeconds(5);
@@ -593,6 +594,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             _ when _widgets.Find(def.Widget) is { } data => CreateDataWidget(data, def, edit, name),
             WidgetTypes.Agenda => new AgendaWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
             WidgetTypes.Web => CreateWebWidget(def, edit, name, place, index),
+            WidgetTypes.Level => CreateLevelWidget(def, edit, name),
             WidgetTypes.Cpu or WidgetTypes.Ram => new SystemMeterWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
             _ => new ClockWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
         };
@@ -618,16 +620,42 @@ public partial class MainViewModel : ObservableObject, INavigator
         return tile;
     }
 
+    /// <summary>Tuile d'un niveau audio (roue ou curseur) : sa lecture démarre ici et s'arrête quand la tuile quitte la grille.</summary>
+    LevelWidgetViewModel CreateLevelWidget(DeckButton def, System.Windows.Input.ICommand edit, string name)
+    {
+        var source = StreamDak.Audio.LevelSources.Create(def.Option(StreamDak.Audio.LevelOptions.Source), _integrations, _engine.Context.Platform.Audio);
+        var tile = new LevelWidgetViewModel(source, StreamDak.Audio.LevelShapes.Parse(def.Option(StreamDak.Audio.LevelOptions.Shape)), a => _ui.BeginInvoke(a))
+        {
+            Button = def, Edit = edit, AccessibleName = source == null ? name : $"{name} : {source.Title}",
+            ErrorReported = message => SetStatus(message),
+        };
+        _levelWidgets.Add(tile);
+        tile.SetPaused(!_active);
+        tile.Start();
+        return tile;
+    }
+
     /// <summary>Fenêtre fermée : tous les relevés de widgets s'arrêtent.</summary>
     public void StopWidgets()
     {
         foreach (var data in _dataWidgets) data.Dispose();
         _dataWidgets.Clear();
+        foreach (var level in _levelWidgets) level.Dispose();
+        _levelWidgets.Clear();
     }
 
     /// <summary>Arrête les relevés des widgets de données dont la tuile n'est plus dans la grille (page changée, widget supprimé, thème changé).</summary>
     void ReleaseDataWidgets()
     {
+        if (_levelWidgets.Count > 0)
+        {
+            var shownLevels = Tiles.OfType<LevelWidgetViewModel>().ToHashSet();
+            foreach (var gone in _levelWidgets.Where(w => !shownLevels.Contains(w)).ToList())
+            {
+                gone.Dispose();
+                _levelWidgets.Remove(gone);
+            }
+        }
         if (_dataWidgets.Count == 0) return;
         var shown = Tiles.OfType<DataWidgetViewModel>().ToHashSet();
         foreach (var gone in _dataWidgets.Where(w => !shown.Contains(w)).ToList())
@@ -1016,6 +1044,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         _active = active;
         _integrations.SetBackground(!active);
         foreach (var data in _dataWidgets) data.SetPaused(!active);
+        foreach (var level in _levelWidgets) level.SetPaused(!active);
         if (active)
         {
             _appTimer.Start();

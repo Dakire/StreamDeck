@@ -49,6 +49,8 @@ public partial class MainWindow
     bool _touchDragging;
     (int X, int Y) _dragOffset;
     long _lastBarTapTick;
+    Controls.LevelControl? _levelTouch;   // roue ou curseur de niveau audio tenu par un doigt (le doigt est routé vers lui, pas vers le test d'appui)
+    uint _levelPointer;
     ICommand? _pressEdit;                 // édition de la case sous le doigt (appui long), null si la case ne s'édite pas
     readonly DispatcherTimer _longPressTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
     bool _longPressWired;
@@ -56,6 +58,8 @@ public partial class MainWindow
     /// <summary>Oublie le doigt suivi (fin ou début du mode édition : son relâchement est traité par WPF, pas par le deck).</summary>
     internal void ResetTouchTracking()
     {
+        _levelTouch?.PointerCancel();
+        _levelTouch = null;
         _tap.Cancel();
         _longPressTimer.Stop();
         _pressEdit = null;
@@ -81,6 +85,7 @@ public partial class MainWindow
         uint id = (uint)((long)wParam & 0xFFFF);
         if (!GetPointerInfo(id, out var info)) return;
         int x = info.ptPixelLocation.X, y = info.ptPixelLocation.Y;
+        if (RouteToLevelControl(msg, id, x, y, (info.pointerFlags & POINTER_FLAG_INCONTACT) != 0)) return;
         switch (msg)
         {
             case WM_POINTERDOWN:
@@ -142,6 +147,48 @@ public partial class MainWindow
                 });
                 break;
         }
+    }
+
+    /// <summary>
+    /// Roue ou curseur de niveau audio : un doigt posé dessus lui appartient jusqu'à son relâchement (rotation continue, pas d'appui long, pas de test d'appui).
+    /// Retourne true si le message a été traité ici. Un second doigt pendant le geste est ignoré.
+    /// </summary>
+    bool RouteToLevelControl(int msg, uint id, int x, int y, bool inContact)
+    {
+        if (_levelTouch != null && id != _levelPointer)
+        {
+            // Un autre doigt : ignoré tant que le premier tient le contrôle ; si le premier a été perdu (relâchement jamais reçu), le contrôle est libéré
+            if (GetPointerInfo(_levelPointer, out var held) && (held.pointerFlags & POINTER_FLAG_INCONTACT) != 0) return true;
+            _levelTouch.PointerCancel();
+            _levelTouch = null;
+        }
+        if (_levelTouch == null)
+        {
+            if (msg != WM_POINTERDOWN || _vm.IsEdit || _vm.MenuOpen || _vm.HasDialog || _tap.Tracking) return false;
+            if (LevelControlAt(HitVisual(x, y)) is not { IsEnabled: true } level) return false;
+            _levelTouch = level;
+            _levelPointer = id;
+            _longPressTimer.Stop();
+            _pressEdit = null;
+            level.PointerDown(level.PointFromScreen(new Point(x, y)));
+            return true;
+        }
+        var at = _levelTouch.PointFromScreen(new Point(x, y));
+        if (msg == WM_POINTERUPDATE && inContact) _levelTouch.PointerMove(at);
+        else if (msg == WM_POINTERUP || !inContact)
+        {
+            _levelTouch.PointerUp(at);
+            _levelTouch = null;
+        }
+        return true;
+    }
+
+    /// <summary>Contrôle de niveau audio qui contient cet élément, ou null.</summary>
+    static Controls.LevelControl? LevelControlAt(DependencyObject? hit)
+    {
+        for (DependencyObject? d = hit; d != null; d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+            if (d is Controls.LevelControl level) return level;
+        return null;
     }
 
     /// <summary>Le doigt est resté immobile assez longtemps sur une case : l'éditeur s'ouvre dessus (une seule fois par appui).</summary>
