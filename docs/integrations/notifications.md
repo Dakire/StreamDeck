@@ -63,6 +63,60 @@ Il faut `titleRegex` ou `selector`. Au plus 10 services, 64 Ko. Une entrée inva
 transmis à la page comme une **chaîne** (jamais collé dans du code), le script ne fait que lire le DOM, et une expression régulière trop lente est
 interrompue après 100 ms.
 
+## Mode de badge par service
+
+Chaque service a un **mode** (`auto` par défaut) qui dit d'où vient le nombre. Réglage dans `notifications.json`, sans nouvelle clé de `config.json` (ADR 0022).
+
+| Mode | Source du nombre |
+|---|---|
+| `auto` | le titre de la page d'abord ; à défaut le sélecteur CSS s'il est configuré ; à défaut un **point** si l'icône (favicon) de l'onglet a changé |
+| `title` | le titre seul |
+| `selector` | le sélecteur seul (observateur sur le DOM, sans relecture à la minute) |
+| `off` | aucun suivi : aucune page cachée n'est ouverte pour ce service |
+
+Un service que tu décris prend `"badgeMode": "title"` dans son entrée. Pour un service **livré**, la section `badges` change son mode (et, au besoin, son sélecteur) :
+
+```json
+{ "badges": { "gmail": { "badgeMode": "off" }, "slack": { "badgeMode": "selector", "selector": "span.p-channel_sidebar__badge", "attribute": "data-count" } } }
+```
+
+Un mode inconnu, un mode `selector` sans sélecteur ou un sélecteur trop long : l'entrée est ignorée, avec un avertissement dans `streamdak.log`. Le **point** est une
+heuristique (une icône qui change sans message peut le déclencher) : `title` ou `off` le désactive. Google Agenda n'a volontairement pas de badge.
+
+## Ajouter un fournisseur pour un nouveau service
+
+**Sans recompiler** : une entrée de `notifications.json` (voir plus haut) suffit pour un service dont le titre ou le DOM porte le nombre.
+
+**Dans le code** : un service livré est une ligne de `NotificationProviders.BuiltIn` (`Core/Notifications/NotificationProviders.cs`) :
+`new NotificationProvider("id", "Nom", "https://page-suivie/", new[] { "hote.exemple" }, motifDeTitre)`. Le motif rend le nombre dans le groupe `n`
+(`LeadingCount` pour « (3) » en tête de titre ; le groupe `m` signifie « au moins un »). Un service très différent implémente `INotificationProvider`
+(`Matches`, `CountFromTitle`, et au besoin `CountScript` / `ObserverScript`) et se passe à `NotificationProviders`. Règles :
+
+1. un nombre n'est lu que sur une page de l'**hôte** du service (jamais un hôte qui lui ressemble) ;
+2. aucun secret, aucun code distant exécuté : le script est en lecture seule et le sélecteur est une chaîne ;
+3. ajouter des tests dans `tests/StreamDak.Tests/NotificationTests.cs` (titre réel, hôte voisin, mode) et mettre à jour ce document.
+
+## Où le badge apparaît
+
+- **Touche « site web »** : pastille rouge au coin haut droit (`TileFace`).
+- **Onglet d'une page web** : `InfoBadge` de WPF-UI (rouge « critique » du thème, clair ou sombre), nombre plafonné « 99+ », **simple point** pour une activité sans nombre,
+  rien à zéro. Nom accessible : « 3 notifications non lues ».
+- **Bouton du deck dans la barre des tâches** : pastille (*overlay*) avec le **total** des non lus de toutes les pages web de **tous les profils**, « 99+ » au-delà,
+  retirée à zéro. Une activité (point) ne compte pas ; un service suivi par plusieurs pages n'est compté qu'une fois. ADR 0023.
+
+## Réglages par page web
+
+En mode édition, menu de la page (bouton *Options de la page* du dock) :
+
+- **Afficher le badge** : décoché, la page n'a plus de badge et ne compte plus dans le total.
+- **Exclure du total** : la page garde son badge mais n'entre pas dans la pastille de la barre des tâches.
+
+Clés `BadgeEnabled` (absent = vrai) et `BadgeExcludeFromTotal` (absent = faux) de la page dans `config.json` ; modifications annulables.
+
+## Diagnostiquer un badge absent
+
+Consulte `%APPDATA%\StreamDak\streamdak.log` (le titre lu et le compteur de chaque service y sont consignés, jamais un secret). Liste de vérifications : [tests manuels des badges](../tests-manuels-badges.md).
+
 ## Limites
 
 - Le badge ne compte que ce que voit la **session de StreamDak**. Si tu lis ta messagerie dans un autre navigateur avec un autre compte, les nombres peuvent différer.

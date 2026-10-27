@@ -27,5 +27,6 @@ effacée : elle passe au statut « Remplacée par … ».
 | [0020](0020-badges-de-notifications.md) | Badges de notifications (Gmail, Google Chat, Discord, Teams, Slack, services configurables) | Acceptée |
 | [0021](0021-mises-a-jour-github-releases.md) | Mises à jour par les releases GitHub (SHA-256, signature, sauvegarde et restauration) | Acceptée |
 | [0022](0022-modes-de-badge-observateur-et-reglages-par-page.md) | Badges : modes par service, observateur de sélecteur, activité par favicon, réglages par page | Acceptée |
+| [0023](0023-infobadge-et-pastille-de-la-barre-des-taches.md) | Badge d'onglet en InfoBadge, total de non lus et pastille de la barre des tâches | Acceptée |
 
 Modèle d'une nouvelle décision : contexte, décision, conséquences, statut et date.

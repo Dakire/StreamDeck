@@ -30,6 +30,10 @@ automatique (une fois par jour, désactivable). Rien ne s'installe sans ton acco
   ils ne relèvent rien quand leur page n'est pas affichée ni quand le deck est masqué. Ajouter un widget : [ADR 0019](docs/adr/0019-widgets-de-donnees.md).
 - **Badges de notifications** : un badge rouge (« 99+ ») sur les boutons « site web » de Gmail, Google Chat, Discord, Teams, Slack ou d'un service décrit dans `notifications.json`.
   Paramètres › Intégrations › Notifications ; session partagée avec les pages web du deck, aucun mot de passe enregistré : [Notifications](docs/integrations/notifications.md).
+  - **Modes par service** (`auto`, `title`, `selector`, `off`) et services personnalisés dans `notifications.json` ; un point signale une simple activité (icône de l'onglet).
+  - **Onglets** : badge `InfoBadge` (Fluent, thèmes clair et sombre, « 99+ »). **Barre des tâches** : pastille du total de non lus de toutes les pages web de tous les profils.
+  - **Par page web** (mode édition › Options de la page) : *Afficher le badge* et *Exclure du total*.
+  - Ajouter un service dans le code ou diagnostiquer un badge absent : [Notifications](docs/integrations/notifications.md) et [tests manuels](docs/tests-manuels-badges.md).
 
 ## Documentation
 

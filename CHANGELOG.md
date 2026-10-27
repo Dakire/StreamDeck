@@ -14,6 +14,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
   intervalle réglable, arrêt hors page visible et deck masqué ; réglages générés dans le panneau de propriétés. ADR 0019.
 - **Badges de notifications** (Gmail, Google Chat, Discord, Teams, Slack, services de `notifications.json`) sur les boutons « site web » : pages WebView2 cachées, lecture sur événement,
   session partagée, aucun identifiant enregistré. ADR 0020.
+- **Badges : modes, onglets, barre des tâches** : mode par service (`auto`, `title`, `selector`, `off`) dans `notifications.json`, observateur de sélecteur dans la page cachée, point d'activité par
+  icône de l'onglet ; badge d'onglet en `InfoBadge` (WPF-UI) ; pastille du **total de non lus** dans la barre des tâches (toutes les pages web de tous les profils) ; réglages par page web
+  *Afficher le badge* et *Exclure du total* (clés `BadgeEnabled` et `BadgeExcludeFromTotal`, valeurs par défaut non écrites). ADR 0022 et 0023.
 - `SECURITY.md` (audit), `.github/workflows/ci.yml` (compilation, tests, dépendances vulnérables), version unique dans `Directory.Build.props`, SDK épinglé (`global.json`).
 
 ### Sécurité
