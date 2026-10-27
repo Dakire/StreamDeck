@@ -44,13 +44,19 @@ public static class WindowCleanup
         }
     }
 
-    static IEnumerable<DependencyObject> Descendants(DependencyObject root)
+    /// <summary>
+    /// Éléments de l'arbre visuel et de l'arbre logique, chacun une seule fois. Un panneau a les mêmes enfants dans les deux arbres : sans mémoire des
+    /// éléments vus, chaque niveau doublait le parcours (mesuré sur les paramètres : 44,8 millions de visites pour 2 552 éléments, 6,6 s de gel à la fermeture).
+    /// </summary>
+    internal static IEnumerable<DependencyObject> Descendants(DependencyObject root)
     {
+        var seen = new HashSet<DependencyObject>(ReferenceEqualityComparer.Instance);
         var stack = new Stack<DependencyObject>();
         stack.Push(root);
         while (stack.Count > 0)
         {
             var current = stack.Pop();
+            if (!seen.Add(current)) continue;
             yield return current;
             int count = current is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetChildrenCount(current) : 0;
             for (int i = 0; i < count; i++) stack.Push(VisualTreeHelper.GetChild(current, i));

@@ -123,10 +123,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     void OnChanged(DocumentChange c)
     {
-        if (!_loading && !c.InPlace) Load();   // un bouton modifié sur place ne touche à aucun réglage
+        // Un bouton modifié sur place ne touche à aucun réglage ; une carte d'intégration a déjà affiché ce qu'elle enregistre
+        if (_loading || c.InPlace || c.Label == IntegrationCardViewModel.ChangeLabel) return;
+        Load(refreshBackups: c.Kind == ChangeKind.Replaced);   // la liste des sauvegardes (lecture du disque) ne change qu'à une restauration ou un import
     }
 
-    void Load()
+    void Load(bool refreshBackups = true)
     {
         _loading = true;
         try
@@ -144,7 +146,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             SystemReducesMotion = !SystemParameters.ClientAreaAnimation;
             foreach (var t in ThemeChoices.Zip(Themes)) t.First.IsSelected = t.Second.Key == c.Theme;
             RefreshDevices();
-            RefreshBackups();
+            if (refreshBackups) RefreshBackups();
         }
         finally { _loading = false; }
     }

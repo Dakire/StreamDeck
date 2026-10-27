@@ -22,8 +22,27 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow, ISettingsShe
         InitializeComponent();
         ShortcutList.ItemsSource = SettingsViewModel.Shortcuts.Select(s => new { s.Keys, s.What }).ToList();
         Icon = Application.Current.MainWindow?.Icon;
-        Closed += (_, _) => { _vm.Dispose(); WindowCleanup.ReleaseTitleBars(this); };
+        Closed += (_, _) => OnClosed();
     }
+
+    /// <summary>
+    /// Libération à la fermeture, une seule fois, chronométrée étape par étape : une ligne dans le journal, en avertissement au-delà de 100 ms
+    /// (la fermeture gelait l'interface 6 s avant la correction du parcours de <see cref="WindowCleanup"/>).
+    /// </summary>
+    void OnClosed()
+    {
+        if (_closed) return;
+        _closed = true;
+        var total = System.Diagnostics.Stopwatch.StartNew();
+        _vm.Dispose();
+        long vm = total.ElapsedMilliseconds;
+        WindowCleanup.ReleaseTitleBars(this);
+        long bars = total.ElapsedMilliseconds - vm;
+        var line = $"Fermeture des paramètres : {total.ElapsedMilliseconds} ms (réglages en attente et abonnements {vm} ms, barres de titre {bars} ms)";
+        if (total.ElapsedMilliseconds > 100) Log.Warn(line); else Log.Info(line);
+    }
+
+    bool _closed;
 
     /// <inheritdoc/>
     public Task<bool> ConfirmAsync(string title, string message, string confirmText, bool danger = false) =>

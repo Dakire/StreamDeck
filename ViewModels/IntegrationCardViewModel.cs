@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ using Wpf.Ui.Controls;
 
 namespace StreamDak.ViewModels;
 
-/// <summary>Un réglage d'intégration à renseigner (adresse, port, mot de passe) ; enregistré quand le champ perd le focus.</summary>
+/// <summary>Un réglage d'intégration à renseigner (adresse, port, mot de passe) ; enregistré 600 ms après la dernière frappe, ou à la fermeture des paramètres.</summary>
 public sealed partial class IntegrationFieldViewModel : ObservableObject
 {
     readonly Action<IntegrationFieldViewModel> _commit;
@@ -49,7 +50,15 @@ public sealed partial class IntegrationCardViewModel : ObservableObject, IDispos
     readonly DeckDocument _doc;
     readonly ISecretStore _secrets;
     readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
+    readonly DispatcherTimer _commitTimer;
+    readonly HashSet<IntegrationFieldViewModel> _pending = new();
     bool _loading = true;
+
+    /// <summary>Attente après la dernière frappe avant d'enregistrer : un mot de passe tapé ne relance plus la connexion à chaque caractère.</summary>
+    public static readonly TimeSpan CommitDelay = TimeSpan.FromMilliseconds(600);
+
+    /// <summary>Libellé des modifications du document faites par les cartes (les paramètres ne se rechargent pas pour elles).</summary>
+    public const string ChangeLabel = "Intégrations";
 
     /// <summary>Carte de <paramref name="integration"/> ; lit et écrit ses réglages dans le document et le magasin de secrets.</summary>
     public IntegrationCardViewModel(IIntegration integration, IntegrationManager manager, DeckDocument doc, ISecretStore secrets)
@@ -64,6 +73,8 @@ public sealed partial class IntegrationCardViewModel : ObservableObject, IDispos
             var text = field.Kind == SettingKind.Secret ? settings.Secret(field.Key) : settings.Get(field.Key, field.Default ?? "");
             Fields.Add(new IntegrationFieldViewModel(field, text, Commit));
         }
+        _commitTimer = new DispatcherTimer(DispatcherPriority.Background, _ui) { Interval = CommitDelay };
+        _commitTimer.Tick += (_, _) => FlushPending();
         _isEnabled = manager.IsEnabled(integration.Id);
         _loading = false;
         integration.StateChanged += OnStateChanged;
@@ -109,7 +120,18 @@ public sealed partial class IntegrationCardViewModel : ObservableObject, IDispos
     void Commit(IntegrationFieldViewModel field)
     {
         if (_loading) return;
-        if (field.IsSecret) _secrets.Set(IntegrationManager.SecretKey(_integration.Id, field.Field.Key), field.Text);
+        _pending.Add(field);
+        _commitTimer.Stop();
+        _commitTimer.Start();
+    }
+
+    /// <summary>Enregistre tout de suite les champs saisis depuis le dernier enregistrement (fin de la frappe, association, test, fermeture).</summary>
+    public void FlushPending()
+    {
+        _commitTimer.Stop();
+        if (_pending.Count == 0) return;
+        foreach (var field in _pending.Where(f => f.IsSecret)) _secrets.Set(IntegrationManager.SecretKey(_integration.Id, field.Field.Key), field.Text);
+        _pending.Clear();
         Save();
         _manager.ApplyAll();   // un secret modifié ne change pas le document : on relit explicitement
     }
@@ -121,7 +143,7 @@ public sealed partial class IntegrationCardViewModel : ObservableObject, IDispos
             c.Integrations ??= new();
             var values = Fields.Where(f => !f.IsSecret && !string.IsNullOrWhiteSpace(f.Text)).ToDictionary(f => f.Field.Key, f => f.Text.Trim());
             c.Integrations[_integration.Id] = new IntegrationConfig { Enabled = IsEnabled, Values = values.Count == 0 ? null : values };
-        }, "Intégrations");
+        }, ChangeLabel);
     }
 
     void OnStateChanged() => _ui.BeginInvoke(Refresh);
@@ -155,7 +177,8 @@ public sealed partial class IntegrationCardViewModel : ObservableObject, IDispos
             };
             var key = await pairable.PairAsync(current, default);
             var field = Fields.First(f => f.Field.Key == pairable.PairedSecretField);
-            field.Text = key;   // enregistre le secret et relance la connexion
+            field.Text = key;
+            FlushPending();     // enregistre le secret et relance la connexion
             TestResult = "Association réussie.";
         }
         catch (Exception ex) { TestResult = "Échec : " + ex.Message; }
@@ -168,11 +191,16 @@ public sealed partial class IntegrationCardViewModel : ObservableObject, IDispos
     {
         IsTesting = true;
         TestResult = "Test en cours…";
+        FlushPending();   // le test porte sur ce qui vient d'être saisi
         try { TestResult = await _manager.TestAsync(_integration.Id); }
         catch (Exception ex) { TestResult = "Échec : " + ex.Message; }
         finally { IsTesting = false; Refresh(); }
     }
 
-    /// <summary>Se désabonne de l'intégration (fermeture des paramètres).</summary>
-    public void Dispose() => _integration.StateChanged -= OnStateChanged;
+    /// <summary>Enregistre la saisie en cours et se désabonne de l'intégration (fermeture des paramètres).</summary>
+    public void Dispose()
+    {
+        FlushPending();
+        _integration.StateChanged -= OnStateChanged;
+    }
 }
