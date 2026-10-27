@@ -143,7 +143,7 @@ public class LevelResetTests
         var own = new LevelWidgetViewModel(source, LevelShape.Wheel, a => a(), delay: _ => Task.CompletedTask, resetLevel: 35) { Button = new DeckButton() };
         own.ResetCommand.Execute(null);
         for (int i = 0; i < 100 && source.Set.Count < 2; i++) await Task.Delay(10);
-        Assert.Equal(new[] { 80, 35 }, source.Set);
+        Assert.Equal(new[] { 35, 80 }, source.Set.OrderBy(v => v));   // deux tuiles, deux files d'envoi : l'ordre d'arrivée n'est pas garanti
         Assert.False(own.ShowMuteButton);   // la roue coupe au toucher du centre
         Assert.True(tile.ShowMuteButton);
     }
