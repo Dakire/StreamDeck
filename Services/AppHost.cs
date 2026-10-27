@@ -10,6 +10,7 @@ using Serilog;
 using StreamDak.Actions;
 using StreamDak.Integrations;
 using StreamDak.Integrations.ClickUp;
+using StreamDak.Integrations.Discord;
 using StreamDak.Integrations.ElgatoLight;
 using StreamDak.Integrations.Google;
 using StreamDak.Integrations.Hue;
@@ -136,6 +137,7 @@ public static class AppHost
         AddIntegration<GoogleIntegration>(services, takenIds);
         AddIntegration<NotificationIntegration>(services, takenIds);
         AddIntegration<SonarIntegration>(services, takenIds);
+        AddIntegration<DiscordIntegration>(services, takenIds);
         AddPlugins(services, takenIds);
 
         services.AddSingleton<IDisplayService, WindowsDisplayService>();

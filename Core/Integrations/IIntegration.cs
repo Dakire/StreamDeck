@@ -128,6 +128,16 @@ public interface ISecretStore
 }
 
 /// <summary>
+/// Intégration dont un secret se renouvelle de lui-même : un jeton de rafraîchissement OAuth (Discord) est remplacé à chaque usage et l'ancien ne vaut plus rien.
+/// Le gestionnaire enregistre la nouvelle valeur dans le magasin chiffré, sans relancer la connexion en cours.
+/// </summary>
+public interface ISecretRotating
+{
+    /// <summary>Un secret a changé : clé du champ secret et nouvelle valeur (peut être levé depuis n'importe quel thread). La valeur n'est jamais journalisée.</summary>
+    event Action<string, string>? SecretRotated;
+}
+
+/// <summary>
 /// Intégration qui sait ralentir quand personne ne regarde le deck (fenêtre réduite ou masquée) : un relevé toutes les secondes
 /// pour un affichage invisible réveille le processeur pour rien. Le gestionnaire le signale à chaque changement.
 /// </summary>

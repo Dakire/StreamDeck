@@ -155,6 +155,7 @@ public static class ActionValidator
         // Une horloge ({time}, {date}) n'a pas besoin d'action : elle sert d'affichage
         if (b.Actions.Count == 0 && !LabelTemplate.IsDynamic(b.Label)) issues.Add(new Issue(Severity.Warning, "Ce bouton n'a aucune action"));
         foreach (var a in b.Actions) issues.AddRange(Validate(a, cfg, profile));
+        foreach (var w in HotkeyConflicts.Warnings(b, cfg)) issues.Add(new Issue(Severity.Warning, w));
         if (!string.IsNullOrEmpty(b.ImagePath) && IconNames.Resolve(b.ImagePath) is { } path && !File.Exists(path))
             issues.Add(new Issue(Severity.Warning, "L'image du bouton est introuvable"));
         return issues;

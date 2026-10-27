@@ -24,7 +24,7 @@ public sealed class IntegrationManager : IDisposable
     sealed class Runner
     {
         public required CancellationTokenSource Cts { get; init; }
-        public required string Fingerprint { get; init; }
+        public required string Fingerprint { get; set; }
         public Task Loop { get; set; } = Task.CompletedTask;
     }
 
@@ -48,7 +48,20 @@ public sealed class IntegrationManager : IDisposable
         {
             integration.StateChanged += () => StateChanged?.Invoke(integration);
             integration.ValuesChanged += keys => ValuesChanged?.Invoke(keys.Select(k => integration.Id + "." + k).ToArray());
+            if (integration is ISecretRotating rotating) rotating.SecretRotated += (field, value) => OnSecretRotated(integration, field, value);
         }
+    }
+
+    /// <summary>Secret renouvelé par l'intégration : enregistré chiffré ; l'empreinte de la boucle suit, pour qu'il ne relance pas la connexion qui vient de l'obtenir.</summary>
+    void OnSecretRotated(IIntegration integration, string field, string value)
+    {
+        _secrets.Set(SecretKey(integration.Id, field), value);
+        lock (_gate)
+        {
+            if (!_disposed && _runners.TryGetValue(integration.Id, out var runner) && IsEnabled(integration.Id))
+                runner.Fingerprint = Fingerprint(SettingsFor(integration));
+        }
+        Log.Info($"{integration.Name} : jeton renouvelé et enregistré");   // jamais sa valeur
     }
 
     /// <summary>Intégrations disponibles, dans l'ordre d'enregistrement.</summary>

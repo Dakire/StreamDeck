@@ -4,9 +4,17 @@ using System.Runtime.InteropServices;
 
 namespace StreamDak.Platform.Windows;
 
-/// <summary>Envoi de touches / texte au système via SendInput.</summary>
+/// <summary>
+/// Envoi de touches / texte au système via SendInput. Chaque touche porte son code de balayage (les crochets clavier globaux, comme celui des raccourcis de
+/// Discord, et les jeux en entrée brute lisent ce code, absent jusqu'ici) et reste enfoncée <see cref="HoldMs"/> ms : un appui et un relâchement dans la même
+/// microseconde passent inaperçus pour les applications qui relèvent l'état du clavier. Un envoi refusé par Windows (application au premier plan exécutée en
+/// administrateur : UIPI) lève une exception au message lisible, affiché sur la touche, au lieu d'échouer en silence.
+/// </summary>
 internal static class NativeInput
 {
+    /// <summary>Durée pendant laquelle la combinaison reste enfoncée.</summary>
+    internal const int HoldMs = 30;
+
     const uint INPUT_KEYBOARD = 1;
     const uint KEYEVENTF_EXTENDEDKEY = 0x1;
     const uint KEYEVENTF_KEYUP = 0x2;
@@ -33,6 +41,10 @@ internal static class NativeInput
 
     [DllImport("user32.dll")]
     static extern short VkKeyScan(char ch);
+
+    [DllImport("user32.dll")]
+    static extern uint MapVirtualKey(uint code, uint mapType);
+    const uint MAPVK_VK_TO_VSC = 0;
 
     static readonly Dictionary<string, ushort> Named = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -62,19 +74,32 @@ internal static class NativeInput
             ki = new KEYBDINPUT
             {
                 wVk = vk,
+                wScan = (ushort)MapVirtualKey(vk, MAPVK_VK_TO_VSC),   // 0 pour les touches média : Windows s'en contente
                 dwFlags = (Extended.Contains(vk) ? KEYEVENTF_EXTENDEDKEY : 0) | (up ? KEYEVENTF_KEYUP : 0),
             }
         }
     };
 
+    /// <summary>Envoie les événements ; false si Windows en a refusé (en général : application au premier plan élevée, UIPI).</summary>
+    static bool TrySend(List<INPUT> inputs)
+    {
+        if (inputs.Count == 0) return true;
+        var arr = inputs.ToArray();
+        uint sent = SendInput((uint)arr.Length, arr, Marshal.SizeOf<INPUT>());
+        if (sent == arr.Length) return true;
+        Log.Warn($"SendInput : {sent} événement(s) sur {arr.Length} acceptés (premier plan : {WindowFocus.ForegroundDescription()})");
+        return false;
+    }
+
     static void Send(List<INPUT> inputs)
     {
-        if (inputs.Count == 0) return;
-        var arr = inputs.ToArray();
-        // Moins d'événements acceptés que fournis : en général l'application active est élevée (UIPI) et refuse la saisie
-        uint sent = SendInput((uint)arr.Length, arr, Marshal.SizeOf<INPUT>());
-        if (sent != arr.Length) Log.Warn($"SendInput : {sent} événement(s) sur {arr.Length} acceptés (application cible élevée ?)");
+        if (!TrySend(inputs)) throw Blocked();
     }
+
+    /// <summary>Message affiché sur la touche quand Windows refuse les touches simulées.</summary>
+    static InvalidOperationException Blocked() => new(WindowFocus.ForegroundIsElevated()
+        ? "Windows a bloqué les touches : l'application au premier plan est exécutée en administrateur (lance StreamDak en administrateur, ou cette application sans)"
+        : "Windows a refusé les touches simulées (écran de verrouillage, contrôle de compte ou bureau sécurisé au premier plan ?)");
 
     static ushort ParseKey(string k)
     {
@@ -102,11 +127,17 @@ internal static class NativeInput
         foreach (var p in parts)
             (HotkeySyntax.Modifiers.Contains(p) ? mods : keys).Add(ParseKey(p));
 
-        var seq = new List<INPUT>();
-        foreach (var m in mods) seq.Add(Key(m, false));
-        foreach (var k in keys) { seq.Add(Key(k, false)); seq.Add(Key(k, true)); }
-        for (int i = mods.Count - 1; i >= 0; i--) seq.Add(Key(mods[i], true));
-        Send(seq);
+        // Appui (modificateurs puis touches), maintien, relâchement dans l'ordre inverse : relâché même si l'appui a été refusé à moitié
+        var down = new List<INPUT>();
+        foreach (var m in mods) down.Add(Key(m, false));
+        foreach (var k in keys) down.Add(Key(k, false));
+        var up = new List<INPUT>();
+        for (int i = keys.Count - 1; i >= 0; i--) up.Add(Key(keys[i], true));
+        for (int i = mods.Count - 1; i >= 0; i--) up.Add(Key(mods[i], true));
+        bool pressed = TrySend(down);
+        if (pressed) System.Threading.Thread.Sleep(HoldMs);
+        bool released = TrySend(up);
+        if (!pressed || !released) throw Blocked();
     }
 
     /// <summary>Touche média / simple (playpause, mute, volup…).</summary>

@@ -24,6 +24,14 @@ internal static class WindowFocus
     [DllImport("user32.dll")] static extern bool AttachThreadInput(uint from, uint to, bool attach);
     [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int index);
     [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")] static extern bool EnableWindow(IntPtr h, bool enable);
+    [DllImport("user32.dll")] static extern bool IsWindowEnabled(IntPtr h);
+    [DllImport("kernel32.dll", SetLastError = true)] static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);
+    [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
+    [DllImport("advapi32.dll", SetLastError = true)] static extern bool OpenProcessToken(IntPtr process, uint access, out IntPtr token);
+    [DllImport("advapi32.dll", SetLastError = true)] static extern bool GetTokenInformation(IntPtr token, int infoClass, out int info, int length, out int returned);
+    const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000, TOKEN_QUERY = 0x0008;
+    const int TokenElevation = 20;
 
     const int GWL_EXSTYLE = -20;
     const int WS_EX_TOOLWINDOW = 0x80;
@@ -75,6 +83,50 @@ internal static class WindowFocus
         // Relevé toutes les 0,8 s : un processus qui vient de se terminer n'est pas une erreur, on ne journalise pas
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception) { return null; }
         catch (Exception ex) { Log.Error("Lecture de l'application au premier plan impossible", ex); return null; }
+    }
+
+    /// <summary>
+    /// true si le programme au premier plan tourne avec des droits plus élevés que StreamDak : Windows (UIPI) refuse alors toute touche simulée.
+    /// Un processus dont le jeton est illisible (protégé, élevé) compte comme élevé.
+    /// </summary>
+    public static bool ForegroundIsElevated()
+    {
+        if (IsElevated(Environment.ProcessId)) return false;   // StreamDak élevé : rien ne lui est refusé
+        var h = GetForegroundWindow();
+        if (h == IntPtr.Zero) return false;
+        _ = GetWindowThreadProcessId(h, out uint pid);
+        return pid != 0 && pid != (uint)Environment.ProcessId && IsElevated((int)pid);
+    }
+
+    static bool IsElevated(int pid)
+    {
+        var process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, (uint)pid);
+        if (process == IntPtr.Zero) return true;
+        try
+        {
+            if (!OpenProcessToken(process, TOKEN_QUERY, out var token)) return true;
+            try { return GetTokenInformation(token, TokenElevation, out int elevated, sizeof(int), out _) && elevated != 0; }
+            finally { CloseHandle(token); }
+        }
+        finally { CloseHandle(process); }
+    }
+
+    /// <summary>Programme au premier plan et son élévation, pour le journal (« Game (administrateur) »).</summary>
+    public static string ForegroundDescription()
+    {
+        var name = ForegroundProcessName() ?? "aucun ou StreamDak";
+        return ForegroundIsElevated() ? name + " (administrateur)" : name;
+    }
+
+    /// <summary>
+    /// Active ou désactive une fenêtre enfant hébergée (cadre WebView2). Désactivée, Windows ne lui donne plus ni souris ni doigt ni clavier : le point
+    /// sous le pointeur revient à la fenêtre parente. WPF ne le fait pas de lui-même (IsEnabled d'un HwndHost ne touche pas la fenêtre Win32).
+    /// Sans effet si l'état est déjà le bon ou si la fenêtre n'existe pas encore.
+    /// </summary>
+    public static void SetInputEnabled(IntPtr window, bool enabled)
+    {
+        if (window == IntPtr.Zero || IsWindowEnabled(window) == enabled) return;
+        EnableWindow(window, enabled);
     }
 
     /// <summary>Distinct par programme, pour proposer un choix dans l'éditeur.</summary>

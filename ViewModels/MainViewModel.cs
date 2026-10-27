@@ -786,13 +786,32 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     // ---------- exécution et retour visuel ----------
 
-    /// <summary>Exécute le bouton et affiche son état sur la tuile : en cours (si l'action dure), réussi ou en erreur.</summary>
+    /// <summary>Second appui ignoré sur la même touche pendant ce délai (rebond du doigt, double clic involontaire sur une bascule).</summary>
+    public const int RepeatGuardMs = 150;
+
+    /// <summary>
+    /// Exécute le bouton et affiche son état sur la tuile : en cours (si l'action dure), réussi ou en erreur. Un second appui pendant l'exécution, ou moins
+    /// de <see cref="RepeatGuardMs"/> ms après le premier, est ignoré : une bascule (micro Discord, coupure Sonar) ne s'inverse jamais deux fois par accident.
+    /// </summary>
     public async Task RunTileAsync(DeckTileViewModel tile)
     {
         var def = tile.Button!;
-        var run = _engine.RunAsync(def, this);
-        if (await Task.WhenAny(run, Task.Delay(RunningDelay)) != run) tile.RunState = TileRunState.Running;
-        var result = await run;
+        long now = Environment.TickCount64;
+        if (tile.InFlight || now - tile.LastRunTick < RepeatGuardMs)
+        {
+            Log.Info($"Bouton « {def.Label} » : appui ignoré ({(tile.InFlight ? "exécution en cours" : "rebond")})");
+            return;
+        }
+        tile.InFlight = true;
+        tile.LastRunTick = now;
+        ActionResult result;
+        try
+        {
+            var run = _engine.RunAsync(def, this);
+            if (await Task.WhenAny(run, Task.Delay(RunningDelay)) != run) tile.RunState = TileRunState.Running;
+            result = await run;
+        }
+        finally { tile.InFlight = false; }
         UpdateFace(tile);          // un minuteur vient peut-être de démarrer ou de s'arrêter
         UpdateLiveTimer();
         if (result.Outcome == ActionOutcome.Cancelled) { tile.RunState = TileRunState.Idle; return; }

@@ -50,11 +50,14 @@ public static class AppShortcutPresets
         P("preset.teams.share", "Teams", "partager", "Ouvre le partage de contenu (Ctrl+Maj+E).", "ShareScreenStart24", "#6264A7", "Teams", "ctrl+shift+e", null, "réunion visio écran"),
         P("preset.teams.leave", "Teams", "raccrocher", "Quitte l'appel ou la réunion (Ctrl+Maj+H).", "CallEnd24", "#BE123C", "Teams", "ctrl+shift+h", null, "réunion visio quitter"),
 
-        // --- Discord (raccourcis globaux : à définir dans Paramètres › Raccourcis clavier) ---
-        G("preset.discord.mute", "Discord", "micro", "Coupe ou rétablit le micro (Ctrl+Maj+M).", "MicOff24", "#4752C4", "ctrl+shift+m",
-            "Raccourci global à définir dans Discord : Paramètres › Raccourcis clavier › Activer/désactiver le micro. Il fonctionne même quand Discord est réduit.", "vocal"),
-        G("preset.discord.deafen", "Discord", "sourdine", "Coupe ou rétablit le casque (Ctrl+Maj+D).", "Headphones24", "#4752C4", "ctrl+shift+d",
-            "Raccourci global à définir dans Discord : Paramètres › Raccourcis clavier › Activer/désactiver la sourdine.", "vocal casque"),
+        // --- Discord (raccourcis globaux : à déclarer dans Discord › Paramètres › Raccourcis clavier). Ctrl+Maj+M / D sont les raccourcis LOCAUX de Discord
+        // (seulement quand sa fenêtre a le focus) et Ctrl+Maj+M coupe aussi le micro de Teams : les boutons prêts à l'emploi envoient une combinaison libre.
+        // Sans dépendance au focus ni au clavier : l'intégration Discord (RPC local), catégorie « Discord » du catalogue.
+        G("preset.discord.mute", "Discord", "micro (raccourci)", "Coupe ou rétablit le micro (Ctrl+Alt+Maj+M, raccourci global à déclarer dans Discord).", "MicOff24", "#4752C4", "ctrl+alt+shift+m",
+            "Déclare la même combinaison dans Discord : Paramètres › Raccourcis clavier › Ajouter un raccourci › action « Toggle Mute » (coupure du micro). Elle fonctionne alors même quand Discord est réduit, " +
+            "sauf si l'application au premier plan est exécutée en administrateur (Windows bloque les touches). Sans raccourci : intégration Discord (catégorie Discord).", "vocal"),
+        G("preset.discord.deafen", "Discord", "sourdine (raccourci)", "Coupe ou rétablit le casque (Ctrl+Alt+Maj+D, raccourci global à déclarer dans Discord).", "Headphones24", "#4752C4", "ctrl+alt+shift+d",
+            "Déclare la même combinaison dans Discord : Paramètres › Raccourcis clavier › Ajouter un raccourci › action « Toggle Deafen » (sourdine). Sans raccourci : intégration Discord (catégorie Discord).", "vocal casque"),
 
         // --- Adobe ---
         P("preset.premiere.play", "Premiere", "lecture", "Lecture ou pause du moniteur (Espace).", "Play24", "#5B4FC9", "Premiere Pro", "space", null, "adobe montage vidéo"),

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Discord par son RPC local (canal nommé discord-ipc-N du client de bureau) et OAuth2 de l'application de l'utilisateur. Sans dépendance externe. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>StreamDak.Integrations.Discord</AssemblyName>
+    <RootNamespace>StreamDak.Integrations.Discord</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\StreamDak.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="StreamDak.Tests" />
+  </ItemGroup>
+</Project>

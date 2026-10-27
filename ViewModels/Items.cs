@@ -63,6 +63,11 @@ public sealed partial class DeckTileViewModel : PlacedTile, IEditableTile
 
     /// <summary>true pendant une exécution longue.</summary>
     public bool IsRunning => RunState == TileRunState.Running;
+
+    /// <summary>true du début à la fin d'une exécution du bouton (garde contre un second déclenchement).</summary>
+    internal bool InFlight { get; set; }
+    /// <summary>Instant (ms) de la dernière exécution lancée, pour ignorer un rebond.</summary>
+    internal long LastRunTick { get; set; } = long.MinValue / 2;
     /// <summary>true juste après une réussite.</summary>
     public bool IsSuccess => RunState == TileRunState.Success;
     /// <summary>true juste après un échec.</summary>
