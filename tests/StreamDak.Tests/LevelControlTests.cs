@@ -222,7 +222,7 @@ public class LevelSourceTests
         var reading = source.Read(out var problem);
         Assert.Equal("", problem);
         Assert.Equal(new LevelReading(50, false), reading);
-        Assert.Equal("Focusrite USB Audio", source.Title);
+        Assert.Equal("Entrée · Focusrite USB Audio", source.Title);   // le sens distingue l'entrée et la sortie d'une même carte
 
         await source.SetLevelAsync(72);
         await source.SetMutedAsync(true);

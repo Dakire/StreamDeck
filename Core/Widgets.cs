@@ -39,6 +39,8 @@ public static class WidgetTypes
 
     /// <summary>Niveau audio : roue ou curseur lié à un canal Sonar ou à un périphérique audio de Windows (réglages <c>source</c> et <c>shape</c>).</summary>
     public const string Level = "level";
+    /// <summary>Mélangeur audio : un curseur horizontal par canal (réglage <c>sources</c>).</summary>
+    public const string Mixer = "mixer";
 
     /// <summary>Plus grande emprise d'un widget, en cases (par sens).</summary>
     public const int MaxSpan = 8;
@@ -51,9 +53,12 @@ public static class WidgetTypes
         new(Web, "Page web", "Affiche un site dans le deck : chat, tableau de bord, météo…", "Globe24", "#0E7490", 3, 2),
         new(Cpu, "Processeur", "Charge du processeur en temps réel (%), rafraîchie chaque seconde.", "DeveloperBoard24", "#0F766E", 2, 1),
         new(Ram, "Mémoire", "Mémoire vive utilisée (Go sur le total), rafraîchie chaque seconde.", "Memory16", "#6D28D9", 2, 1),
-        new(Level, "Niveau audio", "Roue ou curseur tactile pour régler le volume d'un canal Sonar (jeu, discussion, média, micro…) ou d'un périphérique audio de Windows (micro Focusrite, casque Arctis…).",
+        new(Level, "Niveau audio", "Roue ou curseur tactile pour régler le volume d'un canal Sonar (jeu, discussion, média, micro…), de Discord ou d'un périphérique audio de Windows (micro Focusrite, casque Arctis…).",
             "Speaker224", "#C2410C", 2, 2,
             new[] { new WidgetSize(1, 1), new WidgetSize(2, 2), new WidgetSize(3, 3), new WidgetSize(1, 2), new WidgetSize(1, 3), new WidgetSize(2, 1), new WidgetSize(3, 1) }),
+        new(Mixer, "Mélangeur audio", "Un curseur précis par canal, côte à côte : Sonar (jeu, discussion, média, aux, micro), Discord ou périphériques Windows, avec la valeur exacte, la coupure et la réinitialisation.",
+            "Options24", "#C2410C", 3, 2,
+            new[] { new WidgetSize(2, 2), new WidgetSize(3, 2), new WidgetSize(4, 2), new WidgetSize(3, 3), new WidgetSize(4, 3), new WidgetSize(5, 3) }),
         // Widgets de données (IWidget) : relevés à intervalle régulier, seulement tant que leur page est affichée
         DiskWidget.Description, NetworkWidget.Description, PingWidget.Description, ServiceStatusWidget.Description,
         WeatherWidget.Description, NextEventWidget.Description, CounterWidget.Description,

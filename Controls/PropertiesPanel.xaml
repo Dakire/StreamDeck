@@ -138,7 +138,24 @@
                 </StackPanel>
                 <TextBlock Text="Forme" Style="{StaticResource EditorCaption}"/>
                 <ItemsControl ItemsSource="{Binding LevelShapeChoices}" Style="{StaticResource ChipWrap}"/>
-                <TextBlock Text="Sonar : active le connecteur dans Paramètres › Intégrations (SteelSeries GG doit tourner). Roue : tourne l'anneau au doigt, touche le centre pour couper. Le gain du micro d'une carte son se règle dans Sonar." Style="{StaticResource EditorHint}"/>
+                <TextBlock Text="Sonar règle le volume d'un canal de son mélangeur ; « Périphérique Windows » règle le volume Windows du périphérique ; Discord règle ses propres volumes. Aucun ne règle le gain matériel d'une carte son. Active Sonar ou Discord dans Paramètres › Intégrations. Roue : tourne l'anneau au doigt, touche le centre pour couper." Style="{StaticResource EditorHint}"/>
+              </StackPanel>
+
+              <!-- Mélangeur audio : canaux affichés, un curseur par canal -->
+              <StackPanel Visibility="{Binding IsMixerWidget, Converter={StaticResource BoolVis}}">
+                <TextBlock Text="Canaux du mélangeur" Style="{StaticResource EditorCaption}"/>
+                <ItemsControl ItemsSource="{Binding MixerChoices}" Style="{StaticResource ChipWrap}"/>
+                <TextBlock Text="Touche un canal pour l'ajouter ou le retirer (huit au plus). Chaque ligne dit ce qu'elle règle : canal Sonar, volume Discord ou volume Windows d'un périphérique." Style="{StaticResource EditorHint}"/>
+              </StackPanel>
+
+              <!-- Niveau du bouton de réinitialisation (niveau audio et mélangeur) -->
+              <StackPanel Visibility="{Binding IsAudioWidget, Converter={StaticResource BoolVis}}">
+                <TextBlock Text="Niveau de réinitialisation (%)" Style="{StaticResource EditorCaption}"/>
+                <ui:TextBox Text="{Binding LevelReset, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"
+                            PlaceholderText="100 (Sonar, Discord), 50 (Windows)" AutomationProperties.Name="Niveau de réinitialisation en pourcentage"/>
+                <TextBlock Text="{Binding LevelResetError}" Foreground="{DynamicResource DeckDanger}" FontSize="12" TextWrapping="Wrap" Margin="2,6,0,0"
+                           AutomationProperties.LiveSetting="Assertive"/>
+                <TextBlock Text="Le bouton ↺ de la tuile remet ce niveau. Au démarrage, la tuile affiche toujours le niveau réel : aucun ancien niveau n'est réappliqué." Style="{StaticResource EditorHint}"/>
               </StackPanel>
 
               <StackPanel Visibility="{Binding IsWebWidget, Converter={StaticResource BoolVis}}">

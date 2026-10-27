@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -29,13 +31,21 @@ public sealed partial class LevelWidgetViewModel : WidgetTileViewModel, IDisposa
 
     [ObservableProperty] int _level;
     [ObservableProperty] bool _isMuted;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasStatus), nameof(HasReading))] string _status = "";
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasStatus), nameof(HasReading), nameof(IsAvailable), nameof(Availability))] string _status = "";
 
     /// <summary>Tuile pour <paramref name="source"/> (null : la cible du widget manque ou est illisible) ; <paramref name="post"/> exécute sur le thread d'interface.</summary>
-    public LevelWidgetViewModel(ILevelSource? source, LevelShape shape, Action<Action> post, Func<long>? clock = null, Func<TimeSpan, Task>? delay = null)
+    /// <param name="source">Ce que le contrôle règle.</param>
+    /// <param name="shape">Roue ou curseur.</param>
+    /// <param name="post">Exécute sur le thread d'interface.</param>
+    /// <param name="clock">Horloge en millisecondes (tests).</param>
+    /// <param name="delay">Attente entre deux envois (tests).</param>
+    /// <param name="resetLevel">Niveau du bouton de réinitialisation ; null : celui de la cible.</param>
+    public LevelWidgetViewModel(ILevelSource? source, LevelShape shape, Action<Action> post, Func<long>? clock = null, Func<TimeSpan, Task>? delay = null, int? resetLevel = null)
     {
         _source = source;
         Shape = shape;
+        ResetLevel = Math.Clamp(resetLevel ?? source?.ResetLevel ?? 100, 0, 100);
+        Symbol = IconCatalog.TryResolve(source?.Icon, out var symbol) ? symbol : Wpf.Ui.Controls.SymbolRegular.Speaker224;
         _post = post;
         _clock = clock ?? (() => Environment.TickCount64);
         _sender = new LevelSender(async percent => await Required().SetLevelAsync(percent), delay, ReportError);
@@ -54,6 +64,28 @@ public sealed partial class LevelWidgetViewModel : WidgetTileViewModel, IDisposa
     public bool HasStatus => Status.Length > 0;
     /// <summary>true quand le niveau est affiché.</summary>
     public bool HasReading => Status.Length == 0;
+    /// <summary>true quand la cible répond (pastille verte) ; false : périphérique absent, Sonar ou Discord fermé (pastille grise, message à la place du contrôle).</summary>
+    public bool IsAvailable => HasReading;
+    /// <summary>Disponibilité en toutes lettres (lecteurs d'écran, info-bulle de la pastille).</summary>
+    public string Availability => HasReading ? "Disponible" : "Indisponible : " + Status;
+    /// <summary>Ce que le contrôle règle réellement (« Volume du canal Jeu dans le mélangeur Sonar »).</summary>
+    public string Controls => _source?.Controls ?? "";
+    /// <summary>true si la description de la cible existe.</summary>
+    public bool HasControls => Controls.Length > 0;
+    /// <summary>Icône de la cible.</summary>
+    public Wpf.Ui.Controls.SymbolRegular Symbol { get; }
+    /// <summary>Niveau rendu par le bouton de réinitialisation.</summary>
+    public int ResetLevel { get; }
+    /// <summary>Texte du bouton de réinitialisation (« Revenir à 100 % »).</summary>
+    public string ResetText => $"Revenir à {ResetLevel} %";
+    /// <summary>true pour un curseur : la coupure a son propre bouton (la roue coupe au toucher du centre).</summary>
+    public bool ShowMuteButton => !IsWheel;
+    /// <summary>true si la tuile a la place d'afficher ses boutons (couper, réinitialiser) : au moins deux cases.</summary>
+    public bool ShowActions => Math.Max(1, ColSpan) * Math.Max(1, RowSpan) >= 2;
+
+    /// <summary>Remet le niveau de réinitialisation (réglage <c>reset</c> du widget, sinon celui de la cible).</summary>
+    [RelayCommand]
+    void Reset() => Change(ResetLevel);
 
     /// <summary>Appelé avec le message d'une erreur d'envoi (renseigné par le deck : barre d'état).</summary>
     public Action<string>? ErrorReported { get; set; }
@@ -119,6 +151,8 @@ public sealed partial class LevelWidgetViewModel : WidgetTileViewModel, IDisposa
         {
             lock (_gate) { if (_disposed) return; }
             OnPropertyChanged(nameof(Title));   // le nom du périphérique n'est connu qu'une fois trouvé
+            OnPropertyChanged(nameof(Controls));
+            OnPropertyChanged(nameof(HasControls));
             if (reading == null) { Status = problem; return; }
             Status = "";
             if (_clock() < Interlocked.Read(ref _holdUntil) || _sender.IsBusy) return;
@@ -159,4 +193,26 @@ public sealed partial class LevelWidgetViewModel : WidgetTileViewModel, IDisposa
         if (_source != null) _source.Changed -= OnSourceChanged;
         (_source as IDisposable)?.Dispose();
     }
+}
+
+/// <summary>
+/// Widget « Mélangeur audio » : un curseur horizontal précis par canal (Sonar, Discord, périphérique Windows), chacun avec son nom, son icône, sa valeur,
+/// sa coupure, sa réinitialisation et sa disponibilité. Chaque ligne est une <see cref="LevelWidgetViewModel"/> : mêmes relevés, même envoi limité.
+/// </summary>
+public sealed class MixerWidgetViewModel : WidgetTileViewModel, IDisposable
+{
+    /// <summary>Mélangeur des lignes données (dans l'ordre d'affichage).</summary>
+    public MixerWidgetViewModel(IEnumerable<LevelWidgetViewModel> channels) { Channels = channels.ToList(); }
+
+    /// <summary>Une ligne par canal.</summary>
+    public IReadOnlyList<LevelWidgetViewModel> Channels { get; }
+
+    /// <summary>Démarre les relevés de toutes les lignes.</summary>
+    public void Start() { foreach (var c in Channels) c.Start(); }
+
+    /// <summary>Suspend (deck masqué) ou reprend les relevés.</summary>
+    public void SetPaused(bool paused) { foreach (var c in Channels) c.SetPaused(paused); }
+
+    /// <summary>Arrête les relevés et libère les sources.</summary>
+    public void Dispose() { foreach (var c in Channels) c.Dispose(); }
 }

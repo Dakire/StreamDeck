@@ -44,18 +44,20 @@ public static class LevelShapes
     };
 }
 
-/// <summary>Ce que le contrôle règle : un canal Sonar ou un périphérique audio de Windows.</summary>
+/// <summary>Ce que le contrôle règle : un canal Sonar, un périphérique audio de Windows ou un volume de Discord.</summary>
 public enum LevelBackend
 {
     /// <summary>Canal du mélangeur Sonar (connecteur « sonar »).</summary>
     Sonar,
     /// <summary>Périphérique audio de Windows, choisi par son nom.</summary>
     Windows,
+    /// <summary>Volume d'entrée (micro) ou de sortie de Discord (connecteur « discord »).</summary>
+    Discord,
 }
 
 /// <summary>
 /// Cible d'un contrôle de niveau, écrite en texte dans le réglage <c>source</c> du widget : « sonar:game », « windows:Focusrite »,
-/// « windows:capture:Focusrite » (sens facultatif). Une cible illisible est refusée par <see cref="TryParse"/>.
+/// « windows:capture:Focusrite » (sens facultatif), « discord:input », « discord:output ». Une cible illisible est refusée par <see cref="TryParse"/>.
 /// </summary>
 /// <param name="Backend">Sonar ou Windows.</param>
 /// <param name="Name">Canal Sonar (nom canonique) ou désignation du périphérique Windows (« capture:Focusrite »).</param>
@@ -74,11 +76,16 @@ public sealed record LevelTarget(LevelBackend Backend, string Name)
         if (name.Length == 0 || name.Length > 200) return false;
         if (kind.Equals("sonar", StringComparison.OrdinalIgnoreCase)) { target = new LevelTarget(LevelBackend.Sonar, name); return true; }
         if (kind.Equals("windows", StringComparison.OrdinalIgnoreCase)) { target = new LevelTarget(LevelBackend.Windows, name); return true; }
+        if (kind.Equals("discord", StringComparison.OrdinalIgnoreCase) && LevelOptions.DiscordTargets.Any(d => d.Target.Equals(name, StringComparison.OrdinalIgnoreCase)))
+        {
+            target = new LevelTarget(LevelBackend.Discord, name.ToLowerInvariant());
+            return true;
+        }
         return false;
     }
 
     /// <summary>Texte écrit dans le réglage.</summary>
-    public string ToText() => (Backend == LevelBackend.Sonar ? "sonar:" : "windows:") + Name;
+    public string ToText() => Backend switch { LevelBackend.Sonar => "sonar:", LevelBackend.Discord => "discord:", _ => "windows:" } + Name;
 }
 
 /// <summary>Niveau lu : pourcentage (0 à 100) et coupure (null si inconnue).</summary>
@@ -91,6 +98,15 @@ public interface ILevelSource
 {
     /// <summary>Nom affiché sur la tuile (« Jeu », « Focusrite USB Audio »).</summary>
     string Title { get; }
+    /// <summary>
+    /// Ce que le contrôle règle réellement, en toutes lettres (« Volume du canal Jeu dans le mélangeur Sonar ») : un volume Windows n'est jamais présenté comme
+    /// un gain Sonar, ni l'inverse.
+    /// </summary>
+    string Controls => "";
+    /// <summary>Icône Fluent de la cible (manette pour le jeu, micro pour une entrée…).</summary>
+    string Icon => "Speaker224";
+    /// <summary>Niveau rendu par le bouton de réinitialisation (0 à 100), si le widget n'en précise pas d'autre.</summary>
+    int ResetLevel => 100;
     /// <summary>Quand relire : null si la source prévient d'elle-même par <see cref="Changed"/> ; sinon l'intervalle de relevé.</summary>
     TimeSpan? PollInterval { get; }
     /// <summary>Le niveau a peut-être changé (peut être levé depuis n'importe quel thread).</summary>
@@ -234,6 +250,31 @@ public static class LevelOptions
     public const string Source = "source";
     /// <summary>Réglage : forme (<see cref="LevelShapes"/>).</summary>
     public const string Shape = "shape";
+    /// <summary>Réglage : niveau du bouton de réinitialisation (0 à 100) ; absent : celui de la cible.</summary>
+    public const string Reset = "reset";
+    /// <summary>Réglage du mélangeur : cibles séparées par une virgule (« sonar:game,sonar:chatRender,discord:input »).</summary>
+    public const string Sources = "sources";
+
+    /// <summary>Canaux du mélangeur quand rien n'est choisi : les cinq canaux de Sonar qu'on règle au quotidien.</summary>
+    public const string DefaultMixer = "sonar:game,sonar:chatRender,sonar:media,sonar:aux,sonar:chatCapture";
+
+    /// <summary>Cibles Discord : (nom, libellé).</summary>
+    public static readonly IReadOnlyList<(string Target, string Label)> DiscordTargets = new[] { ("input", "Micro"), ("output", "Sortie") };
+
+    /// <summary>Icône Fluent d'un canal Sonar.</summary>
+    public static string ChannelIcon(string channel) => channel.ToLowerInvariant() switch
+    {
+        "game" => "Games24", "chatrender" => "Chat24", "media" => "MusicNote224", "aux" => "PlugConnected24", "chatcapture" => "Mic24", _ => "Speaker224",
+    };
+
+    /// <summary>Cibles d'un mélangeur (réglage <see cref="Sources"/>) : les lisibles, sans doublon, huit au plus ; le défaut si aucune.</summary>
+    public static IReadOnlyList<LevelTarget> MixerTargets(string? text)
+    {
+        var targets = (string.IsNullOrWhiteSpace(text) ? DefaultMixer : text).Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Select(t => LevelTarget.TryParse(t, out var target) ? target : null).OfType<LevelTarget>()
+            .DistinctBy(t => t.ToText(), StringComparer.OrdinalIgnoreCase).Take(8).ToList();
+        return targets.Count > 0 ? targets : MixerTargets(DefaultMixer);
+    }
 
     /// <summary>Canaux Sonar proposés dans l'éditeur, dans l'ordre : (nom canonique, libellé).</summary>
     public static readonly IReadOnlyList<(string Channel, string Label)> SonarChannels = new[]

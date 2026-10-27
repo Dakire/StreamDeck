@@ -43,6 +43,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     public string MenuTooltip => _updates.HasUpdate ? $"Menu · version {_updates.NewVersionText} disponible" : "Menu";
     readonly HashSet<DataWidgetViewModel> _dataWidgets = new();
     readonly HashSet<LevelWidgetViewModel> _levelWidgets = new();
+    readonly HashSet<MixerWidgetViewModel> _mixers = new();
     readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
     bool _integrationRefreshPending;
     static readonly TimeSpan StatusDelay = TimeSpan.FromSeconds(5);
@@ -596,6 +597,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             WidgetTypes.Agenda => new AgendaWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
             WidgetTypes.Web => CreateWebWidget(def, edit, name, place, index),
             WidgetTypes.Level => CreateLevelWidget(def, edit, name),
+            WidgetTypes.Mixer => CreateMixerWidget(def, edit, name),
             WidgetTypes.Cpu or WidgetTypes.Ram => new SystemMeterWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
             _ => new ClockWidgetViewModel { Button = def, Edit = edit, AccessibleName = name },
         };
@@ -625,7 +627,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     LevelWidgetViewModel CreateLevelWidget(DeckButton def, System.Windows.Input.ICommand edit, string name)
     {
         var source = StreamDak.Audio.LevelSources.Create(def.Option(StreamDak.Audio.LevelOptions.Source), _integrations, _engine.Context.Platform.Audio);
-        var tile = new LevelWidgetViewModel(source, StreamDak.Audio.LevelShapes.Parse(def.Option(StreamDak.Audio.LevelOptions.Shape)), a => _ui.BeginInvoke(a))
+        var tile = new LevelWidgetViewModel(source, StreamDak.Audio.LevelShapes.Parse(def.Option(StreamDak.Audio.LevelOptions.Shape)), a => _ui.BeginInvoke(a), resetLevel: ResetLevelOf(def))
         {
             Button = def, Edit = edit, AccessibleName = source == null ? name : $"{name} : {source.Title}",
             ErrorReported = message => SetStatus(message),
@@ -636,9 +638,32 @@ public partial class MainViewModel : ObservableObject, INavigator
         return tile;
     }
 
+    static int? ResetLevelOf(DeckButton def) => def.Option(StreamDak.Audio.LevelOptions.Reset).Length > 0 ? def.OptionInt(StreamDak.Audio.LevelOptions.Reset, 100, 0, 100) : null;
+
+    /// <summary>Mélangeur : une ligne de niveau par cible du réglage « sources » ; les relevés démarrent ici et s'arrêtent quand la tuile quitte la grille.</summary>
+    MixerWidgetViewModel CreateMixerWidget(DeckButton def, System.Windows.Input.ICommand edit, string name)
+    {
+        var rows = StreamDak.Audio.LevelOptions.MixerTargets(def.Option(StreamDak.Audio.LevelOptions.Sources)).Select(target =>
+        {
+            var source = StreamDak.Audio.LevelSources.Create(target, _integrations, _engine.Context.Platform.Audio);
+            return new LevelWidgetViewModel(source, StreamDak.Audio.LevelShape.HorizontalSlider, a => _ui.BeginInvoke(a), resetLevel: ResetLevelOf(def))
+            {
+                Button = def, Edit = edit, AccessibleName = source?.Title ?? target.ToText(), ErrorReported = message => SetStatus(message),
+                Face = TileFaceData.From(def),   // couleurs du texte de la tuile (contraste dans les deux thèmes)
+            };
+        }).ToList();
+        var mixer = new MixerWidgetViewModel(rows) { Button = def, Edit = edit, AccessibleName = name };
+        _mixers.Add(mixer);
+        mixer.SetPaused(!_active);
+        mixer.Start();
+        return mixer;
+    }
+
     /// <summary>Fenêtre fermée : tous les relevés de widgets s'arrêtent.</summary>
     public void StopWidgets()
     {
+        foreach (var mixer in _mixers) mixer.Dispose();
+        _mixers.Clear();
         foreach (var data in _dataWidgets) data.Dispose();
         _dataWidgets.Clear();
         foreach (var level in _levelWidgets) level.Dispose();
@@ -648,6 +673,15 @@ public partial class MainViewModel : ObservableObject, INavigator
     /// <summary>Arrête les relevés des widgets de données dont la tuile n'est plus dans la grille (page changée, widget supprimé, thème changé).</summary>
     void ReleaseDataWidgets()
     {
+        if (_mixers.Count > 0)
+        {
+            var shownMixers = Tiles.OfType<MixerWidgetViewModel>().ToHashSet();
+            foreach (var gone in _mixers.Where(m => !shownMixers.Contains(m)).ToList())
+            {
+                gone.Dispose();
+                _mixers.Remove(gone);
+            }
+        }
         if (_levelWidgets.Count > 0)
         {
             var shownLevels = Tiles.OfType<LevelWidgetViewModel>().ToHashSet();
@@ -1066,6 +1100,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         _integrations.SetBackground(!active);
         foreach (var data in _dataWidgets) data.SetPaused(!active);
         foreach (var level in _levelWidgets) level.SetPaused(!active);
+        foreach (var mixer in _mixers) mixer.SetPaused(!active);
         if (active)
         {
             _appTimer.Start();
