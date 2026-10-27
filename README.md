@@ -25,6 +25,9 @@ automatique (une fois par jour, désactivable). Rien ne s'installe sans ton acco
 
 ## Widgets de données et badges
 
+- **Niveau audio** (catalogue › Widgets) : une **roue** qu'on tourne au doigt (niveau au centre, toucher le centre coupe), ou un **curseur** vertical ou horizontal, lié à un canal **Sonar** ou à un
+  **périphérique audio Windows** choisi par son nom (micro Focusrite, casque Arctis…, sans changer le périphérique par défaut). Choix du canal et de la forme dans les propriétés (mode édition).
+  Le gain analogique d'une carte son ne se pilote pas (il se règle dans Sonar). [Sonar et audio par périphérique](docs/integrations/sonar.md), [tests manuels](docs/tests-manuels-sonar.md), [ADR 0024](docs/adr/0024-sonar-audio-par-peripherique-et-controles-de-niveau.md).
 - **Widgets** (catalogue › Widgets) : horloge et date, processeur, mémoire, **disque**, **réseau**, **ping / latence** vers des hôtes, **état de services** (page web ou port TCP),
   **météo** (Open-Meteo, sans compte), **prochain événement** (Google Agenda), **compteur** lu dans une réponse JSON (tickets…). Tailles 1 × 1, 2 × 1, 2 × 2, intervalle réglable ;
   ils ne relèvent rien quand leur page n'est pas affichée ni quand le deck est masqué. Ajouter un widget : [ADR 0019](docs/adr/0019-widgets-de-donnees.md).
@@ -52,7 +55,8 @@ automatique (une fois par jour, désactivable). Rien ne s'installe sans ton acco
 | [Bilan du nettoyage](docs/cleanup-report.md) | Corrections, mesures avant / après, risques restants (phase 1) |
 | [Bilan de l'architecture](docs/phase2-report.md) | Trois projets, injection de dépendances, Serilog, gestionnaires d'action (phase 2) |
 | [Bilan des intégrations, plugins et API](docs/phase8-9-report.md) | Ce qui est fait, mesures, écarts avec la demande, décisions à prendre (phases 8 et 9) |
-| [Intégrations](docs/integrations/) | OBS, vMix, Elgato, Hue, Windows, Teams, X-Plane, Twitch, ClickUp, Notion, monday, raccourcis d'applications |
+| [Intégrations](docs/integrations/) | OBS, vMix, Elgato, Hue, Windows, Teams, X-Plane, Twitch, ClickUp, Notion, monday, Sonar (et audio par périphérique), raccourcis d'applications |
+| [Tests manuels Sonar](docs/tests-manuels-sonar.md) | À dérouler sur le PC avec SteelSeries GG : découverte, diagnostic, canaux, roue au doigt |
 | [Plugins](docs/plugins.md), [API locale](docs/local-api.md) | Ajouter une intégration sans modifier StreamDak ; piloter le deck depuis un script |
 
 ## Fonctionnalités
@@ -134,7 +138,7 @@ grille de boutons* pour revenir (les boutons de la page sont conservés). Les r�
 **Intégrations** (Paramètres › Intégrations, chacune activée à la demande)
 
 - Connecteurs livrés : **OBS Studio**, **vMix**, **lampes Elgato**, **Philips Hue**, **Système Windows** (processeur, mémoire, média en cours,
-  donc Spotify sans compte), **Microsoft Teams**, **X-Plane 12**, **Twitch**, **ClickUp**, **Notion**, **monday.com**. 35 boutons de
+  donc Spotify sans compte), **Microsoft Teams**, **X-Plane 12**, **Twitch**, **ClickUp**, **Notion**, **monday.com**, **SteelSeries Sonar** (volume et coupure des canaux du mélangeur ; API non vérifiée, [Sonar](docs/integrations/sonar.md)). 35 boutons de
   raccourcis prêts à l'emploi pour Zoom, Teams, Discord, Premiere, Photoshop, DaVinci, Blender, Outlook, Word, Excel et Star Citizen.
 - Les commandes sont des actions du catalogue (une catégorie par intégration). L'état s'affiche sur les touches : voyant plein / vide
   (micro coupé, direct en cours…) et valeurs dans les titres, par exemple `Scène : {obs.scene}`, `CPU {sys.cpu} %`.
@@ -280,6 +284,8 @@ sauf `Pages` qui descend dans `Profiles[].Pages`. Les nouvelles clés sont facul
 | `focus` | Titre ou processus de la fenêtre | Programme à lancer si absente |
 | `http` | Adresse `http://` ou `https://` (requête GET) | Corps facultatif : requête POST, en JSON s'il commence par `{` ou `[` |
 | `audio` | `mic-toggle`, `mic-mute`, `mic-unmute`, `out-toggle`, `volume` | Niveau 0 à 100 pour `volume` |
+| `audiodevice` | `toggle`, `mute`, `unmute`, `volume`, `list` | Périphérique audio par son nom : `capture:Focusrite`, `render:Arctis=50`, `Focusrite=+5` (le défaut de Windows n'est jamais changé) |
+| `sonar` | `volume`, `mute`, `unmute`, `togglemute`, `diagnose` | Canal Sonar : `game=60`, `chatRender=+5`, `micro` (SteelSeries GG requis, API non vérifiée) |
 | `timer` | Durée en secondes ; toucher à nouveau arrête le minuteur | |
 
 Chaque étape a un délai maximal (5 s pour le clavier, 10 s pour `http` et `focus`, 15 s pour lancer un programme ;
@@ -306,7 +312,7 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 | `Core/Actions/` | Moteur d'actions (`ActionEngine`, `ActionRegistry`), un gestionnaire par type dans `Handlers/`, interfaces de plateforme, plateforme simulée |
 | `Platform/Windows/` (projet `StreamDak.Platform.Windows`) | Implémentation Windows des interfaces de plateforme : `SendInput`, fenêtres Win32, Core Audio, registre. Seul `WindowsPlatform` est public |
 | `Core/Integrations/`, `Core/Api/`, `Core/Plugins/` | Cadre d'intégrations (`IIntegration`, `IntegrationManager`, bases HTTP et REST), API locale, chargeur de plugins |
-| `Integrations/<Nom>/` | Un projet par connecteur : Obs, Vmix, ElgatoLight, Hue, WindowsSystem, XPlane, Teams, Twitch, ClickUp, Notion, Monday |
+| `Integrations/<Nom>/` | Un projet par connecteur : Obs, Vmix, ElgatoLight, Hue, WindowsSystem, XPlane, Teams, Twitch, ClickUp, Notion, Monday, Sonar |
 | `samples/HelloPlugin` | Exemple de plugin |
 | `Services/` | `AppHost` (racine de composition, journal Serilog), `ConfigPersistence` (sauvegarde auto, rechargement à chaud), `AppearanceService`, `AppWindows`, `DisplayService`, `IconStore`, `DropPayload` (lecture d'un glisser-déposer), `ProfilePackage`, `TransferService`, `Notifier`, `Motion` |
 | `ViewModels/` | `MainViewModel` (deck ; menu des cases, glisser-déposer et mode édition en classes partielles), `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `DeckDialogViewModel`, `SettingsViewModel`, `MenuSpec`, `CatalogMenu` |

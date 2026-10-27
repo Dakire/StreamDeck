@@ -4,6 +4,15 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Ajouté (SteelSeries Sonar et audio par périphérique)
+- **Connecteur SteelSeries Sonar** (`sonar`) : découverte locale par `coreProps.json`, volume et coupure des canaux (principal, jeu, discussion, média, aux, micro ; modes classic et streamer), valeurs
+  `{sonar.game.volume}` et `{sonar.game.muted}`, commande **Diagnostic** en lecture seule qui écrit `sonar-diagnostic.txt`. Adresses locales seulement, routes et canaux réglables sans recompiler.
+  **API non vérifiée contre un vrai GG** (testée contre un faux serveur local) : [Sonar](docs/integrations/sonar.md), [tests manuels](docs/tests-manuels-sonar.md).
+- **Audio Windows par périphérique** (action `audiodevice`) : énumération Core Audio, désignation par nom (`capture:Focusrite`, `render:Arctis`), niveau absolu ou relatif, coupure, liste ; le périphérique par défaut n'est
+  jamais changé. `IAudioService` hérite de `IAudioDevices`.
+- **Widget Niveau audio** : roue tactile (rotation continue sans saut ni zone morte, niveau au centre, toucher le centre coupe) ou curseur vertical / horizontal, lié à un canal Sonar ou à un périphérique Windows ;
+  choix de la cible et de la forme dans le panneau de propriétés. Réglages dans `WidgetOptions` (`source`, `shape`) : aucune nouvelle clé de premier niveau de `config.json`. ADR 0024.
+
 ### Ajouté (1.0.0, premières publications)
 - **Installateur Windows** (Inno Setup) : `build.ps1` produit `StreamDak-<version>-self-contained-Setup.exe`, `…-framework-dependent-Setup.exe` et `checksums.txt` ; dossier au choix,
   raccourcis, lancement avec Windows, mise à jour sur place sans toucher à `%AppData%`, désinstallation propre, WebView2 vérifié ; script de signature `installer/sign.ps1`. `docs/INSTALLATION.md`.

@@ -135,7 +135,7 @@ classDiagram
 | `ImageFit` | absent | `cover` (remplit la touche, défaut) ou `contain` (image entière). |
 | `IsFolder`, `Children` | absents | Dossier et son contenu, sur 8 niveaux au maximum. |
 | `Widget` | absent | `clock`, `agenda`, `web`, `cpu` ou `ram` : le bouton est un widget (affichage, pas d'action). Identifiant inconnu : ignoré. |
-| `WidgetOptions` | absent | Réglages du widget : `seconds`, `hour12`, `date` (horloge), `count`, `days` (agenda), `url` (page web, http ou https), `zoom` (page web, 25 à 500). |
+| `WidgetOptions` | absent | Réglages du widget : `seconds`, `hour12`, `date` (horloge), `count`, `days` (agenda), `url` (page web, http ou https), `zoom` (page web, 25 à 500), `source` (niveau audio : `sonar:game`, `windows:capture:Focusrite`), `shape` (niveau audio : `vertical` ou `horizontal`, absent = roue). |
 | `ColSpan`, `RowSpan` | absents (une case) | Largeur et hauteur d'un widget en cases (1 à 8). Les cases recouvertes doivent être vides. |
 
 Les clés marquées « absent » ne sont écrites que si elles ont une valeur (`JsonIgnore(WhenWritingDefault/Null)`) : le

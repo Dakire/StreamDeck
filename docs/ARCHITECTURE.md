@@ -63,7 +63,7 @@ branche le journal Serilog. Les tests construisent **le même conteneur** en sim
 | Service | Rôle |
 |---|---|
 | `StartupResult`, `DeckDocument` | Configuration chargée au démarrage (fichier invalide mis de côté) et document unique |
-| `PlatformServices` | Clavier, lancement, fenêtres, audio : Windows, ou simulés avec `--simulate` |
+| `PlatformServices` | Clavier, lancement, fenêtres, audio (défaut de Windows et périphériques par nom, `IAudioDevices`) : Windows, ou simulés avec `--simulate` |
 | `ActionRegistry`, `ActionEngine` | Un `IActionHandler` du conteneur par type d'action ; le moteur exécute les étapes |
 | `ConfigPersistence` | Sauvegarde 300 ms après la dernière modification, rechargement à chaud de `config.json` |
 | `AppearanceService` | Thème, animations et style des icônes, appliqués à chaque changement des réglages |
@@ -96,7 +96,7 @@ flowchart LR
         PL["PluginLoader<br/>un contexte par plugin"]
     end
     subgraph Conn["Integrations/*"]
-        OBS[Obs] & VM[Vmix] & HU[Hue] & EL[Elgato] & SYS[WindowsSystem] & XP[XPlane] & TM[Teams] & TW[Twitch] & TS["ClickUp · Notion · Monday"]
+        OBS[Obs] & VM[Vmix] & HU[Hue] & EL[Elgato] & SYS[WindowsSystem] & XP[XPlane] & TM[Teams] & TW[Twitch] & TS["ClickUp · Notion · Monday"] & SN[Sonar]
     end
     PLG["plugins/Nom/Nom.dll<br/>(code local de confiance)"]
     Deck["Deck · MainViewModel"] -- "valeurs, voyants" --> IM
