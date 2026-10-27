@@ -15,6 +15,7 @@ using StreamDak.Integrations.Google;
 using StreamDak.Integrations.Hue;
 using StreamDak.Integrations.Monday;
 using StreamDak.Integrations.Notifications;
+using StreamDak.Integrations.Sonar;
 using StreamDak.Integrations.Notion;
 using StreamDak.Integrations.Obs;
 using StreamDak.Integrations.Twitch;
@@ -134,6 +135,7 @@ public static class AppHost
         AddIntegration<TwitchIntegration>(services, takenIds);
         AddIntegration<GoogleIntegration>(services, takenIds);
         AddIntegration<NotificationIntegration>(services, takenIds);
+        AddIntegration<SonarIntegration>(services, takenIds);
         AddPlugins(services, takenIds);
 
         services.AddSingleton<IDisplayService, WindowsDisplayService>();

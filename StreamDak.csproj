@@ -62,6 +62,7 @@
     <ProjectReference Include="Integrations\Twitch\StreamDak.Integrations.Twitch.csproj" />
     <ProjectReference Include="Integrations\Google\StreamDak.Integrations.Google.csproj" />
     <ProjectReference Include="Integrations\Notifications\StreamDak.Integrations.Notifications.csproj" />
+    <ProjectReference Include="Integrations\Sonar\StreamDak.Integrations.Sonar.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
