@@ -4,9 +4,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
-## [0.3.1-alpha] — 2026-10-30
+## [0.3.1-rc.1] — 2026-10-30
 
-La 0.3.0-alpha n'a pas été publiée (tests en échec sur le runner de CI) : cette version reprend son contenu.
+Première release candidate. Elle reprend le contenu de la 0.3.0-alpha (non publiée : tests en échec sur le runner de CI) et de la 0.3.1-alpha.
 
 ### Modifié
 - **Mode édition style Stream Deck** : le catalogue d'actions passe à droite (recherche, catégories repliables), l'inspecteur de la case sous la grille (aperçu et titre à gauche,
