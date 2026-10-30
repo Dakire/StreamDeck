@@ -4,6 +4,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+## [0.3.4-rc] — 2026-10-30
+
 ### Corrigé
 - **Sonar : « a répondu 404 à /subApps »** : le certificat HTTPS auto-signé de GG était toujours refusé (le rappel de validation de `SocketsHttpHandler` reçoit le `SslStream`, pas la requête). La connexion retombait sur une adresse HTTP qui répond 404. Test avec un vrai serveur TLS local.
 
