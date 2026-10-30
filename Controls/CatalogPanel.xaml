@@ -10,12 +10,12 @@
 
     <!-- Ligne d'action : tout le rang est une cible tactile de 48 px au moins -->
     <DataTemplate DataType="{x:Type vm:CatalogItemViewModel}">
-      <Button Command="{Binding AddCommand}" MinHeight="48" Margin="0" Padding="8,4" HorizontalContentAlignment="Stretch"
+      <Button Command="{Binding AddCommand}" MinHeight="36" Margin="0" Padding="6,3" HorizontalContentAlignment="Stretch"
               Background="Transparent" BorderThickness="0" FocusVisualStyle="{StaticResource DeckFocusVisual}"
               AutomationProperties.Name="{Binding AutomationName}" ToolTip="{Binding Description}">
         <Button.Template>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="Row" CornerRadius="16" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+            <Border x:Name="Row" CornerRadius="10" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
               <ContentPresenter/>
             </Border>
             <ControlTemplate.Triggers>
@@ -29,12 +29,12 @@
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
           </Grid.ColumnDefinitions>
-          <Border Width="36" Height="36" CornerRadius="10" Background="{Binding Color}" VerticalAlignment="Center">
-            <ui:SymbolIcon Symbol="{Binding Symbol}" FontSize="22" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          <Border Width="28" Height="28" CornerRadius="8" Background="{Binding Color}" VerticalAlignment="Center">
+            <ui:SymbolIcon Symbol="{Binding Symbol}" FontSize="17" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
           </Border>
-          <StackPanel Grid.Column="1" Margin="12,0,4,0" VerticalAlignment="Center">
-            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource DeckText}"/>
-            <TextBlock Text="{Binding Description}" FontSize="12" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource DeckDim}"/>
+          <StackPanel Grid.Column="1" Margin="10,0,4,0" VerticalAlignment="Center">
+            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource DeckText}"/>
+            <TextBlock Text="{Binding Description}" FontSize="11" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource DeckDim}"/>
           </StackPanel>
         </Grid>
       </Button>
@@ -44,7 +44,7 @@
       <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Margin="0,0,0,2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
                 AutomationProperties.Name="{Binding AutomationName}" FocusVisualStyle="{StaticResource DeckFocusVisual}">
         <Expander.Header>
-          <StackPanel Orientation="Horizontal" MinHeight="40">
+          <StackPanel Orientation="Horizontal" MinHeight="34">
             <ui:SymbolIcon Symbol="{Binding Symbol}" FontSize="20" VerticalAlignment="Center" Foreground="{DynamicResource DeckDim}"/>
             <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
             <TextBlock Text="{Binding CountText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource DeckDim}"/>

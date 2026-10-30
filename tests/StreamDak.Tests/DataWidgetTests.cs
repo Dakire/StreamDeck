@@ -703,7 +703,7 @@ public class DeckDataWidgetTests
                 var boxes = WpfHost.Descendants<Wpf.Ui.Controls.TextBox>(win.DeckProps).Where(t => t.ActualHeight > 0 && Equals(System.Windows.Automation.AutomationProperties.GetName(t), "Hôtes")
                     || Equals(System.Windows.Automation.AutomationProperties.GetName(t), "Rafraîchissement (secondes)")).ToList();
                 Assert.Equal(2, boxes.Count);
-                Assert.All(boxes, b => Assert.True(b.ActualHeight >= 48, $"{System.Windows.Automation.AutomationProperties.GetName(b)} : {b.ActualHeight} px"));
+                Assert.All(boxes, b => Assert.True(b.ActualHeight >= 36, $"{System.Windows.Automation.AutomationProperties.GetName(b)} : {b.ActualHeight} px"));
             });
         }
         finally { _host.Run(win.Close); }

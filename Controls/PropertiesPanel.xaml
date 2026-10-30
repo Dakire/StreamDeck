@@ -84,7 +84,7 @@
               <TextBlock Text="Titre" Style="{StaticResource EditorCaption}"/>
               <ui:TextBox x:Name="TitleBox" Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"
                           PlaceholderText="Titre affiché sur le bouton" AutomationProperties.Name="Titre du bouton"/>
-              <ui:ToggleSwitch Content="Afficher le titre sur le bouton" IsChecked="{Binding ShowTitle, Mode=TwoWay}" Margin="2,10,0,0" MinHeight="48"
+              <ui:ToggleSwitch Content="Afficher le titre sur le bouton" IsChecked="{Binding ShowTitle, Mode=TwoWay}" Margin="2,10,0,0" MinHeight="36"
                                AutomationProperties.Name="Afficher le titre"/>
             </StackPanel>
           </Border>
@@ -103,9 +103,9 @@
               <TextBlock Text="Les cases à droite et en dessous doivent être vides." Style="{StaticResource EditorHint}"/>
 
               <StackPanel Visibility="{Binding IsClockWidget, Converter={StaticResource BoolVis}}" Margin="0,8,0,0">
-                <ui:ToggleSwitch Content="Afficher la date" IsChecked="{Binding ClockDate, Mode=TwoWay}" MinHeight="48" AutomationProperties.Name="Afficher la date"/>
-                <ui:ToggleSwitch Content="Afficher les secondes" IsChecked="{Binding ClockSeconds, Mode=TwoWay}" MinHeight="48" AutomationProperties.Name="Afficher les secondes"/>
-                <ui:ToggleSwitch Content="Heure sur 12 heures (AM / PM)" IsChecked="{Binding ClockHour12, Mode=TwoWay}" MinHeight="48" AutomationProperties.Name="Heure sur 12 heures"/>
+                <ui:ToggleSwitch Content="Afficher la date" IsChecked="{Binding ClockDate, Mode=TwoWay}" MinHeight="36" AutomationProperties.Name="Afficher la date"/>
+                <ui:ToggleSwitch Content="Afficher les secondes" IsChecked="{Binding ClockSeconds, Mode=TwoWay}" MinHeight="36" AutomationProperties.Name="Afficher les secondes"/>
+                <ui:ToggleSwitch Content="Heure sur 12 heures (AM / PM)" IsChecked="{Binding ClockHour12, Mode=TwoWay}" MinHeight="36" AutomationProperties.Name="Heure sur 12 heures"/>
               </StackPanel>
 
               <StackPanel Visibility="{Binding IsAgendaWidget, Converter={StaticResource BoolVis}}">
@@ -288,9 +288,9 @@
         </Style>
       </Border.Style>
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-        <ui:Button Content="Annuler" Icon="{ui:SymbolIcon Dismiss24}" Command="{Binding CancelButtonCommand}" MinHeight="48" MinWidth="120" Margin="0,0,10,0" CornerRadius="24"
+        <ui:Button Content="Annuler" Icon="{ui:SymbolIcon Dismiss24}" Command="{Binding CancelButtonCommand}" MinHeight="36" MinWidth="120" Margin="0,0,10,0" CornerRadius="24"
                    AutomationProperties.Name="Annuler les modifications de cette case" ToolTip="Revenir à l'état de la case à l'ouverture (Échap)"/>
-        <ui:Button Content="Enregistrer" Icon="{ui:SymbolIcon Checkmark24}" Command="{Binding SaveButtonCommand}" Appearance="Primary" MinHeight="48" MinWidth="140" CornerRadius="24"
+        <ui:Button Content="Enregistrer" Icon="{ui:SymbolIcon Checkmark24}" Command="{Binding SaveButtonCommand}" Appearance="Primary" MinHeight="36" MinWidth="140" CornerRadius="24"
                    AutomationProperties.Name="Enregistrer cette case" ToolTip="Valider et enregistrer (Entrée dans le titre)"/>
       </StackPanel>
     </Border>

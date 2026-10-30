@@ -35,7 +35,7 @@ public static class ContextMenuFactory
         {
             if (spec.IsSeparator) { parent.Items.Add(new Separator()); continue; }
 
-            var item = new System.Windows.Controls.MenuItem { Header = spec.Header, IsEnabled = spec.Enabled, MinHeight = 44 };
+            var item = new System.Windows.Controls.MenuItem { Header = spec.Header, IsEnabled = spec.Enabled, MinHeight = 32 };
             if (spec.Icon is { } icon) item.Icon = new SymbolIcon { Symbol = icon };
             if (spec.Gesture != null) item.InputGestureText = spec.Gesture;
             if (spec.Checked) { item.IsCheckable = true; item.IsChecked = true; }

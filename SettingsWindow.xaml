@@ -24,15 +24,15 @@
       <Setter Property="Margin" Value="0,0,0,4"/>
     </Style>
     <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
-      <Setter Property="MinHeight" Value="48"/>
+      <Setter Property="MinHeight" Value="36"/>
       <Setter Property="FocusVisualStyle" Value="{StaticResource DeckFocusVisual}"/>
     </Style>
     <Style TargetType="ui:ToggleSwitch" BasedOn="{StaticResource {x:Type ui:ToggleSwitch}}">
-      <Setter Property="MinHeight" Value="48"/>
+      <Setter Property="MinHeight" Value="36"/>
       <Setter Property="FocusVisualStyle" Value="{StaticResource DeckFocusVisual}"/>
     </Style>
     <Style TargetType="ui:NumberBox" BasedOn="{StaticResource {x:Type ui:NumberBox}}">
-      <Setter Property="MinHeight" Value="48"/>
+      <Setter Property="MinHeight" Value="36"/>
       <Setter Property="FocusVisualStyle" Value="{StaticResource DeckFocusVisual}"/>
     </Style>
   </ui:FluentWindow.Resources>
@@ -151,7 +151,7 @@
               <Run Text="Version installée : "/><Run Text="{Binding CurrentVersionText, Mode=OneWay}" FontWeight="SemiBold"/>
               <Run Text="{Binding RepositoryText, Mode=OneWay, StringFormat=' · releases de {0} sur GitHub'}"/>
             </TextBlock>
-            <ui:Button Content="Rechercher des mises à jour" Icon="{ui:SymbolIcon ArrowSync24}" Command="{Binding CheckNowCommand}" MinHeight="48" HorizontalAlignment="Left"
+            <ui:Button Content="Rechercher des mises à jour" Icon="{ui:SymbolIcon ArrowSync24}" Command="{Binding CheckNowCommand}" MinHeight="36" HorizontalAlignment="Left"
                        AutomationProperties.Name="Rechercher des mises à jour"/>
             <TextBlock Text="{Binding StatusText}" Margin="0,10,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
             <TextBlock Text="{Binding ErrorText}" Foreground="{DynamicResource DeckDanger}" Margin="0,6,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Assertive">
@@ -184,7 +184,7 @@
                     </ProgressBar.Style>
                   </ProgressBar>
                   <TextBlock Text="{Binding ProgressText}" Margin="0,6,0,8" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
-                  <ui:Button Content="Annuler" Icon="{ui:SymbolIcon Dismiss24}" Command="{Binding CancelDownloadCommand}" MinHeight="48" AutomationProperties.Name="Annuler le téléchargement"/>
+                  <ui:Button Content="Annuler" Icon="{ui:SymbolIcon Dismiss24}" Command="{Binding CancelDownloadCommand}" MinHeight="36" AutomationProperties.Name="Annuler le téléchargement"/>
                 </StackPanel>
                 <WrapPanel>
                   <WrapPanel.Style>
@@ -193,9 +193,9 @@
                       <Style.Triggers><DataTrigger Binding="{Binding IsInstalling}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
                     </Style>
                   </WrapPanel.Style>
-                  <ui:Button Content="Installer maintenant" Appearance="Primary" Icon="{ui:SymbolIcon ArrowDownload24}" Command="{Binding InstallNowCommand}" MinHeight="48" Margin="0,0,8,8"
+                  <ui:Button Content="Installer maintenant" Appearance="Primary" Icon="{ui:SymbolIcon ArrowDownload24}" Command="{Binding InstallNowCommand}" MinHeight="36" Margin="0,0,8,8"
                              Visibility="{Binding CanInstall, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Installer maintenant"/>
-                  <ui:Button Content="Voir la release" Icon="{ui:SymbolIcon Open24}" Command="{Binding OpenReleasePageCommand}" MinHeight="48" Margin="0,0,8,8" AutomationProperties.Name="Voir la release sur GitHub">
+                  <ui:Button Content="Voir la release" Icon="{ui:SymbolIcon Open24}" Command="{Binding OpenReleasePageCommand}" MinHeight="36" Margin="0,0,8,8" AutomationProperties.Name="Voir la release sur GitHub">
                     <ui:Button.Style>
                       <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -203,14 +203,14 @@
                       </Style>
                     </ui:Button.Style>
                   </ui:Button>
-                  <ui:Button Content="Plus tard" Command="{Binding PostponeUpdateCommand}" MinHeight="48" Margin="0,0,8,8" AutomationProperties.Name="Plus tard"/>
-                  <ui:Button Content="Ignorer cette version" Command="{Binding IgnoreUpdateCommand}" MinHeight="48" Margin="0,0,8,8" AutomationProperties.Name="Ignorer cette version"/>
+                  <ui:Button Content="Plus tard" Command="{Binding PostponeUpdateCommand}" MinHeight="36" Margin="0,0,8,8" AutomationProperties.Name="Plus tard"/>
+                  <ui:Button Content="Ignorer cette version" Command="{Binding IgnoreUpdateCommand}" MinHeight="36" Margin="0,0,8,8" AutomationProperties.Name="Ignorer cette version"/>
                 </WrapPanel>
               </StackPanel>
             </Border>
 
-            <ui:ToggleSwitch Content="Vérifier au démarrage (une fois par jour au plus, en arrière-plan)" IsChecked="{Binding AutoCheck, Mode=TwoWay}" Margin="0,8,0,0" MinHeight="48"/>
-            <ui:ToggleSwitch Content="Canal bêta : proposer aussi les pré-versions" IsChecked="{Binding Beta, Mode=TwoWay}" MinHeight="48"/>
+            <ui:ToggleSwitch Content="Vérifier au démarrage (une fois par jour au plus, en arrière-plan)" IsChecked="{Binding AutoCheck, Mode=TwoWay}" Margin="0,8,0,0" MinHeight="36"/>
+            <ui:ToggleSwitch Content="Canal bêta : proposer aussi les pré-versions" IsChecked="{Binding Beta, Mode=TwoWay}" MinHeight="36"/>
             <TextBlock Style="{StaticResource EditorHint}" TextWrapping="Wrap"
                        Text="Rien ne s'installe sans ton accord. Le téléchargement n'a lieu que depuis les releases GitHub du dépôt configuré (update.json), en HTTPS, et l'installateur n'est lancé que si sa somme SHA-256 correspond à celle publiée. Tes profils ne sont jamais touchés."/>
           </StackPanel>
@@ -248,7 +248,7 @@
                               <TextBlock Text="{Binding Label}" Style="{StaticResource EditorCaption}" Margin="2,6,0,4"/>
                               <ui:TextBox Text="{Binding Text, UpdateSourceTrigger=LostFocus}" Style="{StaticResource EditorInput}"
                                           Visibility="{Binding IsPlain, Converter={StaticResource BoolVis}}" AutomationProperties.Name="{Binding Label}"/>
-                              <ui:PasswordBox Password="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" MinHeight="48"
+                              <ui:PasswordBox Password="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" MinHeight="36"
                                               Visibility="{Binding IsSecret, Converter={StaticResource BoolVis}}" AutomationProperties.Name="{Binding Label}"/>
                               <TextBlock Text="{Binding Hint}" Style="{StaticResource EditorHint}" Visibility="{Binding HasHint, Converter={StaticResource BoolVis}}"/>
                             </StackPanel>
@@ -295,10 +295,10 @@
             <ItemsControl ItemsSource="{Binding Backups}" Focusable="False">
               <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type vm:BackupItemViewModel}">
-                  <Grid MinHeight="48">
+                  <Grid MinHeight="36">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                     <TextBlock Text="{Binding Display}" VerticalAlignment="Center"/>
-                    <ui:Button Grid.Column="1" Content="Restaurer" MinHeight="48" Padding="16,0" Command="{Binding RestoreCommand}"
+                    <ui:Button Grid.Column="1" Content="Restaurer" MinHeight="36" Padding="16,0" Command="{Binding RestoreCommand}"
                                FocusVisualStyle="{StaticResource DeckFocusVisual}" AutomationProperties.Name="{Binding Display, StringFormat='Restaurer la sauvegarde du {0}'}"/>
                   </Grid>
                 </DataTemplate>

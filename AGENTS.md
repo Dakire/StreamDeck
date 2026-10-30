@@ -23,7 +23,8 @@ Ajouter ou adapter un test pour tout changement de logique (`Core/`, `Services/`
 - **Fenêtre sans focus** : `WS_EX_NOACTIVATE` et `WM_MOUSEACTIVATE` dans `MainWindow.xaml.cs` ne doivent
   pas être retirés. Sans eux, les raccourcis envoyés ne parviennent plus à l'application active. Seule exception : le mode
   édition du deck (`MainWindow.SetEditing`, ADR 0015) les suspend le temps de la saisie, puis les rétablit et rend le focus.
-- **Cibles tactiles** : minimum 48 px de haut pour tout contrôle interactif (deck et éditeur).
+- **Cibles tactiles** : minimum 48 px de haut pour les touches, le dock, les dialogues et les widgets du deck ; 36 px pour les menus, le catalogue, l'inspecteur et les paramètres
+  (interface dense voulue par l'utilisateur, 31 octobre 2026 ; ne pas redescendre plus bas sans accord).
 - **Compatibilité de configuration** : `config.json` d'utilisateurs existants doit rester lisible.
   Ajouter des propriétés avec valeur par défaut (et `JsonIgnore(WhenWritingDefault/Null)` pour ne pas alourdir le fichier),
   ne jamais renommer ni supprimer une clé sans migration (`ConfigNormalizer`) ni test.

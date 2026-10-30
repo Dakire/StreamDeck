@@ -13,6 +13,7 @@ La 0.3.5-rc n'a pas été publiée (tests Discord instables en CI : le faux serv
   Ajouter, Déplacer, Propriétés) ; le menu d'une page s'ouvre au **clic droit / appui long sur son onglet** (renommer, dupliquer, masquer, page web, badge, exclure du total, supprimer).
   Une page change de rang en **glissant son onglet** (souris et doigt) ; « Nouvelle page » reste le bouton +.
 - **Raccourcis clavier du mode édition** : Suppr, Ctrl+C / X / V / D, F2 (titre), Entrée (ouvrir le dossier), Alt+flèches (déplacer), Ctrl+Z / Y.
+- **Interface plus dense** : cibles de 36 px (menus du deck, clic droit à 32 px, catalogue, inspecteur, paramètres), police et légendes plus petites ; dock, dialogues et widgets du deck gardent 48 px.
 - **Espacements plus compacts** : cartes, pastilles, légendes et champs de l'inspecteur, lignes du catalogue et des menus du deck, cartes des paramètres (cibles tactiles toujours de 48 px).
 
 ### Supprimé

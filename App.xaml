@@ -175,11 +175,11 @@
 
     <!-- Pastille tactile : la pastille sélectionnée prend la couleur d'accent -->
     <Style x:Key="EditorChip" TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
-      <Setter Property="MinHeight" Value="48"/>
-      <Setter Property="CornerRadius" Value="24"/>
-      <Setter Property="Padding" Value="14,0"/>
-      <Setter Property="Margin" Value="0,0,6,6"/>
-      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="MinHeight" Value="36"/>
+      <Setter Property="CornerRadius" Value="18"/>
+      <Setter Property="Padding" Value="12,0"/>
+      <Setter Property="Margin" Value="0,0,5,5"/>
+      <Setter Property="FontSize" Value="13"/>
       <Setter Property="FocusVisualStyle" Value="{StaticResource DeckFocusVisual}"/>
     </Style>
 
@@ -200,7 +200,7 @@
 
     <!-- Pastille de couleur : la case cochée est signalée par un repère en plus de la couleur -->
     <DataTemplate DataType="{x:Type vm:SwatchViewModel}">
-      <ui:Button Width="48" Height="48" Padding="0" CornerRadius="24" Margin="0,0,6,6"
+      <ui:Button Width="36" Height="36" Padding="0" CornerRadius="18" Margin="0,0,5,5"
                  Command="{Binding Command}" Background="{Binding Brush}" MouseOverBackground="{Binding Brush}"
                  PressedBackground="{Binding Brush}" BorderThickness="2" BorderBrush="{DynamicResource DeckSwatchRing}"
                  FocusVisualStyle="{StaticResource DeckFocusVisual}"
@@ -223,31 +223,31 @@
 
     <Style x:Key="EditorCaption" TargetType="TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource DeckDim}"/>
-      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontSize" Value="11"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="Margin" Value="2,8,0,4"/>
+      <Setter Property="Margin" Value="2,6,0,3"/>
     </Style>
 
     <Style x:Key="EditorHint" TargetType="TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource DeckDim}"/>
-      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontSize" Value="11"/>
       <Setter Property="TextWrapping" Value="Wrap"/>
-      <Setter Property="Margin" Value="2,3,0,0"/>
+      <Setter Property="Margin" Value="2,2,0,0"/>
     </Style>
 
     <Style x:Key="EditorInput" TargetType="ui:TextBox" BasedOn="{StaticResource {x:Type ui:TextBox}}">
-      <Setter Property="MinHeight" Value="48"/>
-      <Setter Property="FontSize" Value="14"/>
-      <Setter Property="Padding" Value="12,8"/>
+      <Setter Property="MinHeight" Value="36"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="Padding" Value="10,5"/>
       <Setter Property="FocusVisualStyle" Value="{StaticResource DeckFocusVisual}"/>
     </Style>
 
     <!-- Bouton icône seul (barre d'outils, panneaux) -->
     <Style x:Key="IconButton" TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
-      <Setter Property="Width" Value="48"/>
-      <Setter Property="Height" Value="48"/>
+      <Setter Property="Width" Value="36"/>
+      <Setter Property="Height" Value="36"/>
       <Setter Property="Padding" Value="0"/>
-      <Setter Property="Margin" Value="4,0,0,0"/>
+      <Setter Property="Margin" Value="3,0,0,0"/>
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
       <Setter Property="VerticalContentAlignment" Value="Center"/>
       <Setter Property="FocusVisualStyle" Value="{StaticResource DeckFocusVisual}"/>

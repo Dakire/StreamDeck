@@ -495,7 +495,7 @@ public class DeckWidgetTests
             {
                 var toggles = WpfHost.Descendants<Wpf.Ui.Controls.ToggleSwitch>(win.DeckProps).Where(t => t.ActualHeight > 0).ToList();
                 Assert.True(toggles.Count >= 3, $"{toggles.Count} bascules");
-                Assert.All(toggles, t => Assert.True(t.ActualHeight >= 48, $"{t.Content}: {t.ActualHeight} px"));
+                Assert.All(toggles, t => Assert.True(t.ActualHeight >= 36, $"{t.Content}: {t.ActualHeight} px"));
             });
         }
         finally { _host.Run(win.Close); }

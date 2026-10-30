@@ -51,7 +51,7 @@ public class UpdateUiTests
                 foreach (var name in new[] { "Rechercher des mises à jour", "Plus tard", "Ignorer cette version" })
                 {
                     var button = buttons.Single(b => Equals(System.Windows.Automation.AutomationProperties.GetName(b), name));
-                    Assert.True(button.ActualHeight >= 48, $"{name} : {button.ActualHeight} px");
+                    Assert.True(button.ActualHeight >= 36, $"{name} : {button.ActualHeight} px");
                 }
                 Assert.DoesNotContain(buttons, b => Equals(System.Windows.Automation.AutomationProperties.GetName(b), "Installer maintenant") && b.ActualHeight > 0);   // copie non installée : « Voir la release »
                 Assert.Contains(buttons, b => Equals(System.Windows.Automation.AutomationProperties.GetName(b), "Voir la release sur GitHub"));
@@ -74,7 +74,7 @@ public class UpdateUiTests
             {
                 var root = (DependencyObject)win.Content;
                 Assert.DoesNotContain(WpfHost.Descendants<MarkdownView>(root), m => m.IsVisible);
-                Assert.Contains(WpfHost.Descendants<Wpf.Ui.Controls.Button>(root), b => Equals(System.Windows.Automation.AutomationProperties.GetName(b), "Rechercher des mises à jour") && b.ActualHeight >= 48);
+                Assert.Contains(WpfHost.Descendants<Wpf.Ui.Controls.Button>(root), b => Equals(System.Windows.Automation.AutomationProperties.GetName(b), "Rechercher des mises à jour") && b.ActualHeight >= 36);
             });
             { var problems = BindingProblems(); Assert.True(problems.Length == 0, string.Join(Environment.NewLine, problems)); }
         }

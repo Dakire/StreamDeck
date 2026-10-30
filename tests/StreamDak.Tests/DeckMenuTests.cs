@@ -393,7 +393,7 @@ public class DeckMenuTests
                 var rows = WpfHost.Descendants<Button>((DependencyObject)win.Content)
                     .Where(b => b.DataContext is MenuEntryViewModel && b.ActualHeight > 0).ToList();   // IsVisible est faux hors écran
                 Assert.NotEmpty(rows);
-                Assert.All(rows, b => Assert.True(b.ActualHeight >= 48, $"« {((MenuEntryViewModel)b.DataContext).Text} » : {b.ActualHeight} px"));
+                Assert.All(rows, b => Assert.True(b.ActualHeight >= 36, $"« {((MenuEntryViewModel)b.DataContext).Text} » : {b.ActualHeight} px"));
                 Assert.Contains(WpfHost.Descendants<TextBlock>((DependencyObject)win.Content), t => t.DataContext is MenuHeaderViewModel);
             });
             lock (_host.Bindings.Messages) Assert.True(_host.Bindings.Messages.Count == 0, string.Join(" | ", _host.Bindings.Messages));

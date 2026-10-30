@@ -532,9 +532,9 @@ public class DeckEditModeTests
                 var content = (DependencyObject)win.Content;
                 var rows = WpfHost.Descendants<Button>(win.DeckCatalog).Where(b => b.DataContext is CatalogItemViewModel && b.ActualHeight > 0).ToList();
                 Assert.NotEmpty(rows);
-                Assert.All(rows, b => Assert.True(b.ActualHeight >= 48, $"{b.DataContext}: {b.ActualHeight} px"));
+                Assert.All(rows, b => Assert.True(b.ActualHeight >= 36, $"{b.DataContext}: {b.ActualHeight} px"));
                 var field = win.DeckProps.TitleBox;
-                Assert.True(field.ActualHeight >= 48, $"champ titre : {field.ActualHeight} px");
+                Assert.True(field.ActualHeight >= 36, $"champ titre : {field.ActualHeight} px");
                 Assert.Equal("Deux", field.Text);
                 Assert.True(win.DeckCatalog.ActualWidth > 200 && win.DeckProps.ActualWidth > 280);
                 var catalog = win.DeckCatalog.TransformToVisual((System.Windows.Media.Visual)content).Transform(new Point(0, 0));

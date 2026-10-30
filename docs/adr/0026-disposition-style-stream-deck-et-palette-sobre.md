@@ -23,6 +23,9 @@ Plusieurs éléments existaient déjà (recherche et sections repliables du cata
   l'adapte à `ILevelSource`. Wave Link ou Voicemeeter n'ont qu'à implémenter cette interface.
 - **Curseur vertical** : composant `Controls/VerticalSlider` (icône du canal qui coupe au toucher, niveau en %, nom), grisé et désactivé quand la source est indisponible.
 
+- **Densité** (31 octobre 2026) : les menus (rangées du deck, clic droit à 32 px), le catalogue, l'inspecteur et les paramètres passent à des cibles de **36 px** (pastilles, champs, interrupteurs,
+  boutons d'icône), police 13 px et légendes 11 px. Les touches, le dock, les dialogues et les widgets du deck restent à 48 px.
+
 ## Conséquences
 
 - Les tests de mode édition mesurent la position du catalogue (à droite) et de l'inspecteur (sous la grille).

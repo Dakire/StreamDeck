@@ -1003,7 +1003,7 @@
           <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly" Focusable="False" Margin="0,10,0,0">
             <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="15" Foreground="{DynamicResource DeckTextSoft}"/>
           </ScrollViewer>
-          <ui:TextBox x:Name="DialogInput" Style="{StaticResource EditorInput}" Margin="0,14,0,0" AutomationProperties.Name="Valeur"
+          <ui:TextBox x:Name="DialogInput" Style="{StaticResource EditorInput}" MinHeight="48" Margin="0,14,0,0" AutomationProperties.Name="Valeur"
                       Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
                       Visibility="{Binding ShowInput, Converter={StaticResource BoolVis}}">
             <ui:TextBox.InputBindings>
