@@ -15,13 +15,13 @@
       <Setter Property="BorderBrush" Value="{DynamicResource DeckLine}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="12"/>
-      <Setter Property="Padding" Value="20,14,20,18"/>
-      <Setter Property="Margin" Value="0,0,0,14"/>
+      <Setter Property="Padding" Value="16,10,16,12"/>
+      <Setter Property="Margin" Value="0,0,0,8"/>
     </Style>
     <Style x:Key="SectionTitle" TargetType="TextBlock">
       <Setter Property="FontSize" Value="16"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="Margin" Value="0,0,0,6"/>
+      <Setter Property="Margin" Value="0,0,0,4"/>
     </Style>
     <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
       <Setter Property="MinHeight" Value="48"/>

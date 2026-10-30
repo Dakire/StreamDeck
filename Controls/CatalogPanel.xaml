@@ -8,9 +8,9 @@
   <UserControl.Resources>
     <BooleanToVisibilityConverter x:Key="BoolVis"/>
 
-    <!-- Ligne d'action : tout le rang est une cible tactile de 56 px au moins -->
+    <!-- Ligne d'action : tout le rang est une cible tactile de 48 px au moins -->
     <DataTemplate DataType="{x:Type vm:CatalogItemViewModel}">
-      <Button Command="{Binding AddCommand}" MinHeight="56" Margin="0,1" Padding="8,6" HorizontalContentAlignment="Stretch"
+      <Button Command="{Binding AddCommand}" MinHeight="48" Margin="0" Padding="8,4" HorizontalContentAlignment="Stretch"
               Background="Transparent" BorderThickness="0" FocusVisualStyle="{StaticResource DeckFocusVisual}"
               AutomationProperties.Name="{Binding AutomationName}" ToolTip="{Binding Description}">
         <Button.Template>
@@ -29,7 +29,7 @@
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
           </Grid.ColumnDefinitions>
-          <Border Width="40" Height="40" CornerRadius="12" Background="{Binding Color}" VerticalAlignment="Center">
+          <Border Width="36" Height="36" CornerRadius="10" Background="{Binding Color}" VerticalAlignment="Center">
             <ui:SymbolIcon Symbol="{Binding Symbol}" FontSize="22" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
           </Border>
           <StackPanel Grid.Column="1" Margin="12,0,4,0" VerticalAlignment="Center">
@@ -41,7 +41,7 @@
     </DataTemplate>
 
     <DataTemplate DataType="{x:Type vm:CatalogSectionViewModel}">
-      <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Margin="0,0,0,6" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+      <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Margin="0,0,0,2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
                 AutomationProperties.Name="{Binding AutomationName}" FocusVisualStyle="{StaticResource DeckFocusVisual}">
         <Expander.Header>
           <StackPanel Orientation="Horizontal" MinHeight="40">
@@ -62,7 +62,7 @@
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
-    <TextBlock Text="Actions" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource DeckText}" Margin="4,0,0,10"/>
+    <TextBlock Text="Actions" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource DeckText}" Margin="4,0,0,6"/>
     <ui:TextBox x:Name="SearchBox" Grid.Row="1" Style="{StaticResource EditorInput}" Margin="0,0,6,0"
                 PlaceholderText="Rechercher une action…" Icon="{ui:SymbolIcon Search24}" ClearButtonEnabled="True"
                 Text="{Binding Catalog.Search, UpdateSourceTrigger=PropertyChanged}"

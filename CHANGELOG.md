@@ -4,6 +4,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Modifié
+- **Mode édition simplifié** : les boutons « Case » et « Page » du dock disparaissent. Le menu d'une case s'ouvre au **clic droit / appui long** et il est à plat (plus de sous-menus
+  Ajouter, Déplacer, Propriétés) ; le menu d'une page s'ouvre au **clic droit / appui long sur son onglet** (renommer, dupliquer, masquer, page web, badge, exclure du total, supprimer).
+  Une page change de rang en **glissant son onglet** (souris et doigt) ; « Nouvelle page » reste le bouton +.
+- **Raccourcis clavier du mode édition** : Suppr, Ctrl+C / X / V / D, F2 (titre), Entrée (ouvrir le dossier), Alt+flèches (déplacer), Ctrl+Z / Y.
+- **Espacements plus compacts** : cartes, pastilles, légendes et champs de l'inspecteur, lignes du catalogue et des menus du deck, cartes des paramètres (cibles tactiles toujours de 48 px).
+
 ### Supprimé
 - **Intégrations vMix, X-Plane, ClickUp et monday.com**, leurs tests, leur documentation et le modèle de profil « Simulation de vol ». Un `config.json` qui les mentionne reste lisible : leurs étapes sont signalées comme type inconnu.
 

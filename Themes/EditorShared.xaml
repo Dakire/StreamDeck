@@ -18,7 +18,7 @@
 
     <DataTemplate DataType="{x:Type vm:ActionStepViewModel}">
       <Border Background="{DynamicResource DeckSurface}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1"
-              CornerRadius="12" Padding="14,6,14,14" Margin="0,0,0,10">
+              CornerRadius="12" Padding="12,4,12,10" Margin="0,0,0,6">
         <StackPanel>
           <Grid>
             <Grid.ColumnDefinitions>
@@ -112,7 +112,7 @@
     </DataTemplate>
 
     <DataTemplate DataType="{x:Type vm:IconPickViewModel}">
-      <ui:Button Width="48" Height="48" Padding="0" Margin="0,0,6,6" CornerRadius="10" Command="{Binding Command}"
+      <ui:Button Width="48" Height="48" Padding="0" Margin="0,0,4,4" CornerRadius="10" Command="{Binding Command}"
                  FocusVisualStyle="{StaticResource DeckFocusVisual}"
                  AutomationProperties.Name="{Binding Name}" ToolTip="{Binding Name}"
                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
@@ -137,8 +137,8 @@
       <Setter Property="BorderBrush" Value="{DynamicResource DeckLine}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="12"/>
-      <Setter Property="Padding" Value="16,4,16,16"/>
-      <Setter Property="Margin" Value="0,0,0,12"/>
+      <Setter Property="Padding" Value="12,2,12,10"/>
+      <Setter Property="Margin" Value="0,0,0,8"/>
     </Style>
 
     <Style x:Key="PanelTitle" TargetType="TextBlock">
