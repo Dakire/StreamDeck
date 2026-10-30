@@ -4,8 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Media.Imaging;
 
 namespace StreamDak;
 
@@ -75,20 +73,8 @@ public static class DropPayload
     /// <summary>Icône de l'application (ou du type de fichier) enregistrée comme image du bouton ; sans effet si elle est introuvable.</summary>
     static void AttachIcon(DeckButton button, string path)
     {
-        if (!File.Exists(path)) return;   // un dossier garde son icône Fluent
-        try
-        {
-            using var icon = System.Drawing.Icon.ExtractAssociatedIcon(path);
-            if (icon == null) return;
-            var bitmap = Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-            bitmap.Freeze();
-            button.ImagePath = IconStore.Store(bitmap);
-            button.ImageFit = "contain";   // une icône de 32 px ne doit pas être étirée sur toute la touche
-        }
-        catch (Exception ex) when (ex is ArgumentException or IOException or InvalidDataException or NotSupportedException or System.ComponentModel.Win32Exception
-                                       or System.Runtime.InteropServices.COMException or UnauthorizedAccessException)
-        {
-            Log.Warn($"Icône de {Path.GetFileName(path)} introuvable : {ex.Message}");
-        }
+        if (AppIcon.Store(path) is not { } name) return;
+        button.ImagePath = name;
+        button.ImageFit = "contain";   // une icône de 32 px ne doit pas être étirée sur toute la touche
     }
 }

@@ -466,6 +466,41 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Notifier.Error("Lecture impossible : " + ex.Message); }
     }
 
+    /// <summary>Icône du site de la première étape « Lien web » (favicon), enregistrée comme image du bouton ; demandée par l'utilisateur, jamais en arrière-plan.</summary>
+    [RelayCommand]
+    async System.Threading.Tasks.Task FetchSiteIcon()
+    {
+        var step = Steps.FirstOrDefault(st => st.Type == ActionTypes.Url && SiteIcon.IsPageAddress(st.Value, out _));
+        if (step == null || !SiteIcon.IsPageAddress(step.Value, out var page)) { Notifier.Info("Ajoute d'abord une étape « Lien web » avec l'adresse du site"); return; }
+        var (place, index) = (_place, _index);
+        Notifier.Info("Recherche de l'icône du site…");
+        try
+        {
+            var name = await SiteIcon.FetchAsync(page);
+            if (!Equals(place, _place) || index != _index) { Notifier.Info("La sélection a changé : icône non appliquée"); return; }
+            ImageName = name;
+            ApplyNow(b => { b.ImagePath = name; b.ImageFit = "contain"; }, "Icône du site");
+            ImageFit = "contain";
+            Notifier.Success("Icône du site enregistrée");
+        }
+        catch (InvalidDataException ex) { Notifier.Error(ex.Message); }
+        catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or System.Threading.Tasks.TaskCanceledException) { Notifier.Error("Le site ne répond pas"); }
+    }
+
+    /// <summary>Icône du programme de la première étape « Lancer » ou « Fenêtre » (ou d'un fichier .ico), enregistrée comme image du bouton.</summary>
+    [RelayCommand]
+    void UseAppIcon()
+    {
+        var program = AppIcon.FirstProgram(Steps.Select(st => new DeckAction { Type = st.Type, Value = st.Value, Args = st.Args }));
+        if (program == null) { Notifier.Info("Ajoute d'abord une étape « Programme » ou « Fenêtre » qui désigne un programme existant"); return; }
+        var name = AppIcon.Store(program);
+        if (name == null) { Notifier.Error("Ce programme n'a pas d'icône lisible"); return; }
+        ImageName = name;
+        ApplyNow(b => { b.ImagePath = name; b.ImageFit = "contain"; }, "Icône de l'application");
+        ImageFit = "contain";
+        Notifier.Success("Icône de l'application enregistrée");
+    }
+
     [RelayCommand]
     void RemoveImage()
     {

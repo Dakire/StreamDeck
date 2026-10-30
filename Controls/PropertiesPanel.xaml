@@ -233,11 +233,15 @@
               <ItemsControl ItemsSource="{Binding IconChoices}" Style="{StaticResource ChipWrap}" Margin="0,10,0,0"/>
 
               <TextBlock Text="Image personnalisée" Style="{StaticResource EditorCaption}"/>
-              <StackPanel Orientation="Horizontal">
+              <WrapPanel>
                 <ui:Button Content="Importer une image…" Icon="{ui:SymbolIcon ImageAdd24}" Command="{Binding ImportImageCommand}" Style="{StaticResource EditorChip}"/>
+                <ui:Button Content="Icône du site" Icon="{ui:SymbolIcon Globe24}" Command="{Binding FetchSiteIconCommand}" Style="{StaticResource EditorChip}"
+                           ToolTip="Récupère le favicon du site de l'étape « Lien web »" AutomationProperties.Name="Utiliser l'icône du site de l'étape Lien web"/>
+                <ui:Button Content="Icône de l'appli" Icon="{ui:SymbolIcon Window24}" Command="{Binding UseAppIconCommand}" Style="{StaticResource EditorChip}"
+                           ToolTip="Utilise l'icône du programme de l'étape « Programme » ou « Fenêtre »" AutomationProperties.Name="Utiliser l'icône du programme"/>
                 <ui:Button Content="Retirer" Icon="{ui:SymbolIcon Delete24}" Command="{Binding RemoveImageCommand}" Style="{StaticResource EditorChip}"
                            Visibility="{Binding HasImage, Converter={StaticResource BoolVis}}"/>
-              </StackPanel>
+              </WrapPanel>
               <ItemsControl ItemsSource="{Binding FitChoices}" Style="{StaticResource ChipWrap}"
                             Visibility="{Binding HasImage, Converter={StaticResource BoolVis}}"/>
               <TextBlock Text="PNG, JPEG, BMP, GIF, ICO, TIFF ou WebP, 15 Mo maximum. L'image est réduite à 512 px et copiée dans la configuration."

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -56,8 +57,7 @@ public static class IconStore
         {
             using var stream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
-            if (decoder.Frames.Count == 0) throw new InvalidDataException("Image vide");
-            return Store(decoder.Frames[0]);
+            return Store(LargestFrame(decoder) ?? throw new InvalidDataException("Image vide"));
         }
         catch (InvalidDataException) { throw; }
         catch (Exception ex) when (ex is NotSupportedException or FileFormatException or IOException or ArgumentException or InvalidOperationException)
@@ -65,6 +65,10 @@ public static class IconStore
             throw new InvalidDataException("Impossible de lire cette image : fichier corrompu ou format non pris en charge", ex);
         }
     }
+
+    /// <summary>Plus grande image d'un fichier (un .ico en contient plusieurs tailles : 16, 32, 256 px) ; null s'il n'en a aucune.</summary>
+    public static BitmapFrame? LargestFrame(BitmapDecoder decoder) =>
+        decoder.Frames.OrderByDescending(f => (long)f.PixelWidth * f.PixelHeight).FirstOrDefault();
 
     /// <summary>Redimensionne, encode en PNG et enregistre une image déjà décodée.</summary>
     public static string Store(BitmapSource frame)
