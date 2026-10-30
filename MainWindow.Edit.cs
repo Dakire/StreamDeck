@@ -63,13 +63,55 @@ public partial class MainWindow
     /// <summary>Passe en mode édition sur une case (menu « Modifier… », échec d'un bouton, création qui demande un réglage) ; sans grille, celle qui est affichée.</summary>
     internal void EditCell(Place? place, int index) => _vm.StartEditing(place ?? _vm.CurrentPlace, index);
 
-    /// <summary>Ctrl+Z / Ctrl+Y en mode édition (le deck en a le clavier) : hors champ de saisie, pour ne pas voler l'annulation du texte.</summary>
+    /// <summary>
+    /// Raccourcis du mode édition (le deck en a le clavier), hors champ de saisie pour ne pas voler ceux du texte : Ctrl+Z / Ctrl+Y annuler et rétablir,
+    /// Suppr supprimer le bouton, Ctrl+C / X / V / D copier, couper, coller, dupliquer, F2 modifier le titre, Entrée ouvrir le dossier ou régler l'action,
+    /// Alt+flèches déplacer le bouton dans la grille. Ils agissent sur la case sélectionnée ; aucun n'agit menu ou dialogue ouvert.
+    /// </summary>
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         base.OnPreviewKeyDown(e);
-        if (!_editing || _vm.Editor is not { } editor || Keyboard.FocusedElement is TextBox || (Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
-        if (e.Key == Key.Z) { editor.UndoCommand.Execute(null); e.Handled = true; }
-        else if (e.Key == Key.Y) { editor.RedoCommand.Execute(null); e.Handled = true; }
+        if (!_editing || _vm.Editor is not { } editor || Keyboard.FocusedElement is TextBox || _vm.MenuOpen || _vm.HasDialog) return;
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (HandleEditKey(editor, key, Keyboard.Modifiers, () => { if (DeckProps.TitleBox.IsVisible) { DeckProps.TitleBox.Focus(); DeckProps.TitleBox.SelectAll(); } })) e.Handled = true;
+    }
+
+    /// <summary>Applique un raccourci du mode édition à l'éditeur ; false si la touche n'en est pas un (elle suit son cours).</summary>
+    internal static bool HandleEditKey(EditorViewModel editor, Key key, ModifierKeys modifiers, Action focusTitle)
+    {
+        bool ctrl = (modifiers & ModifierKeys.Control) != 0, alt = (modifiers & ModifierKeys.Alt) != 0;
+        if (ctrl && !alt)
+        {
+            switch (key)
+            {
+                case Key.Z: editor.UndoCommand.Execute(null); return true;
+                case Key.Y: editor.RedoCommand.Execute(null); return true;
+                case Key.C: editor.CopyCommand.Execute(null); return true;
+                case Key.X: editor.CutCommand.Execute(null); return true;
+                case Key.V: editor.PasteCommand.Execute(null); return true;
+                case Key.D: editor.DuplicateCommand.Execute(null); return true;
+            }
+        }
+        else if (alt && !ctrl)
+        {
+            switch (key)
+            {
+                case Key.Left: editor.MoveSelection(-1, 0); return true;
+                case Key.Right: editor.MoveSelection(1, 0); return true;
+                case Key.Up: editor.MoveSelection(0, -1); return true;
+                case Key.Down: editor.MoveSelection(0, 1); return true;
+            }
+        }
+        else if (!ctrl && !alt)
+        {
+            switch (key)
+            {
+                case Key.Delete: if (editor.SelectedIndex >= 0) editor.DeleteSelection(); return true;
+                case Key.F2: focusTitle(); return true;
+                case Key.Enter: if (editor.SelectedIndex >= 0) editor.OpenSelectedFolder(); return true;
+            }
+        }
+        return false;
     }
 
     /// <summary>Dialogues (affichés dans le deck) et focus des panneaux intégrés ; seuls les sélecteurs de fichiers de Windows restent des fenêtres.</summary>

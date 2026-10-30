@@ -214,7 +214,7 @@ public class QuickEditTests
             Assert.Equal(5, vm.Editor.SelectedIndex);
             add.Edit!.Execute(null);                                                  // appui long : menu de création de la case
             Assert.True(vm.MenuOpen);
-            Assert.Contains("Ajouter une action", vm.MenuEntries.OfType<MenuEntryViewModel>().Select(e => e.Text));   // menu complet de l'éditeur, dans le deck
+            Assert.Contains("Créer un dossier", vm.MenuEntries.OfType<MenuEntryViewModel>().Select(e => e.Text));   // menu à plat de l'éditeur, dans le deck
             Assert.Empty(windows.Opened);
         });
     }

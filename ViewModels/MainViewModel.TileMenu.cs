@@ -85,12 +85,27 @@ public partial class MainViewModel
         OpenTileMenu(editor.Place, editor.SelectedIndex);
     }
 
-    /// <summary>Options de la page affichée (renommer, dupliquer, masquer, déplacer, supprimer), en mode édition.</summary>
+    /// <summary>Options de la page affichée (renommer, dupliquer, masquer, supprimer…), en mode édition.</summary>
     [RelayCommand]
-    void OpenPageMenu()
+    void OpenPageMenu() => OpenPageMenuAt(_page);
+
+    /// <summary>Menu d'une page (clic droit ou appui long sur son onglet), en mode édition.</summary>
+    void OpenPageMenuAt(int index)
     {
-        if (Editor is not { } editor || editor.Pages.FirstOrDefault(p => p.Index == _page) is not { } page) return;
+        if (Editor is not { } editor || editor.Pages.FirstOrDefault(p => p.Index == index) is not { } page) return;
         OpenSpecMenu($"Page « {page.Name} »", editor.BuildPageMenu(page));
+    }
+
+    /// <summary>Glisser-déposer d'un onglet : la page <paramref name="from"/> prend le rang <paramref name="to"/> (annulable) ; la page affichée reste la même.</summary>
+    public void MoveTab(int from, int to)
+    {
+        if (!IsEdit || from == to) return;
+        int shown = _page;
+        var result = _doc.MovePage(CurrentProfile.Name, from, to - from);
+        if (!result.Ok) return;
+        _page = shown == from ? to : from < shown && shown <= to ? shown - 1 : to <= shown && shown < from ? shown + 1 : shown;
+        Editor?.GoTo(CurrentPlace, -1);
+        Rebuild();
     }
 
     /// <summary>

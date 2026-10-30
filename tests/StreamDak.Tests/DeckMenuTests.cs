@@ -311,7 +311,8 @@ public class DeckMenuTests
             Assert.Equal(5, vm.Editor!.SelectedIndex);
             add.Edit!.Execute(null);                                                  // un appui long ouvre le menu de création
             Assert.Equal("Case vide", Header(vm));
-            Assert.Contains("Ajouter une action", Texts(vm));                         // en édition : le menu complet de l'éditeur
+            Assert.Contains("Créer un dossier", Texts(vm));                           // en édition : menu à plat (le catalogue est à droite)
+            Assert.DoesNotContain("Ajouter une action", Texts(vm));
         });
     }
 

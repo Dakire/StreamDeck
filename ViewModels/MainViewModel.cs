@@ -1020,6 +1020,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             {
                 Text = p.Hidden ? p.Name + " (masquée)" : p.Name, IsActive = i == _page, Badge = p.IsWeb ? NotificationCountFor(p.Url, p.BadgeEnabled) : null,
                 Command = new RelayCommand(() => GoTo(target)),
+                Index = i, Edit = IsEdit ? new RelayCommand(() => OpenPageMenuAt(target)) : null,
             });
         }
     }

@@ -39,6 +39,49 @@ public partial class MainWindow
         finally { _vm.EndDrag(); }
     }
 
+    // ---------- onglets de page (mode édition) : clic droit = menu de la page, glisser-déposer = changer son rang ----------
+
+    const string TabFormat = "StreamDak.Tab";
+    TabViewModel? _tabSource;
+    Point _tabStart;
+
+    static TabViewModel? TabOf(object sender) => (sender as FrameworkElement)?.DataContext as TabViewModel;
+
+    /// <summary>Clic droit sur un onglet en mode édition : menu de la page (le clic droit fabriqué par un appui long du doigt est ignoré : l'appui long l'a déjà ouvert).</summary>
+    void OnTabRightClick(object sender, MouseButtonEventArgs e)
+    {
+        if (!_vm.IsEdit || IsSyntheticFromTouch()) { e.Handled = IsSyntheticFromTouch(); return; }
+        if (TabOf(sender) is { Edit: { } edit } && edit.CanExecute(null)) { edit.Execute(null); e.Handled = true; }
+    }
+
+    void OnTabMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        _tabSource = _vm.IsEdit && !IsSyntheticFromTouch() ? TabOf(sender) : null;
+        _tabStart = e.GetPosition(null);
+    }
+
+    void OnTabMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_tabSource == null || e.LeftButton != MouseButtonState.Pressed) return;
+        var now = e.GetPosition(null);
+        if (Math.Abs(now.X - _tabStart.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(now.Y - _tabStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+        var source = _tabSource;
+        _tabSource = null;
+        DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(TabFormat, source), DragDropEffects.Move);
+    }
+
+    void OnTabDragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = _vm.IsEdit && e.Data.GetDataPresent(TabFormat) ? DragDropEffects.Move : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    void OnTabDrop(object sender, DragEventArgs e)
+    {
+        e.Handled = true;
+        if (e.Data.GetData(TabFormat) is TabViewModel moved && TabOf(sender) is { } target) _vm.MoveTab(moved.Index, target.Index);
+    }
+
     void OnDeckDragOver(object sender, DragEventArgs e)
     {
         if (e.Data.GetDataPresent(TileFormat))

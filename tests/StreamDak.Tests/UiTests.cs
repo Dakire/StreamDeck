@@ -526,29 +526,21 @@ ulle\part.exe" } } });
         {
             vm.SelectIndex(0);
             var occupied = Headers(ContextMenuFactory.Build(vm.BuildSlotMenu(vm.Slots[0])));
-            foreach (var h in new[] { "Configurer l'action", "Modifier le titre", "Modifier l'icône", "Copier", "Couper", "Coller", "Dupliquer le bouton",
-                         "Déplacer le bouton", "Ajouter une action", "Créer un dossier", "Réinitialiser le bouton", "Afficher les propriétés", "Supprimer le bouton" })
+            foreach (var h in new[] { "Modifier le titre", "Copier", "Couper", "Coller", "Dupliquer", "Réinitialiser", "Supprimer" })
                 Assert.Contains(h, occupied.Keys);
+            foreach (var h in new[] { "Configurer l'action", "Modifier l'icône", "Déplacer le bouton", "Ajouter une action", "Créer un dossier", "Afficher les propriétés" })
+                Assert.DoesNotContain(h, occupied.Keys);                // le catalogue, l'inspecteur et le glisser-déposer sont toujours à l'écran
             Assert.True(occupied["Copier"]);
             Assert.False(occupied["Coller"]);                           // presse-papiers vide
-            Assert.False(occupied["Créer un dossier"]);                  // case occupée
 
             vm.CopyCommand.Execute(null);
             Assert.True(Headers(ContextMenuFactory.Build(vm.BuildSlotMenu(vm.Slots[0])))["Coller"]);
 
             vm.SelectIndex(12);
             var empty = Headers(ContextMenuFactory.Build(vm.BuildSlotMenu(vm.Slots[12])));
-            Assert.False(empty["Copier"]);
-            Assert.False(empty["Supprimer le bouton"]);
-            Assert.False(empty["Déplacer le bouton"]);
+            Assert.Equal(new[] { "Coller", "Créer un dossier" }, empty.Keys.OrderBy(k => k));   // case vide : seulement ce qui a un sens
             Assert.True(empty["Créer un dossier"]);
-            Assert.True(empty["Ajouter une action"]);
             Assert.True(empty["Coller"]);
-
-            var menu = ContextMenuFactory.Build(vm.BuildSlotMenu(vm.Slots[12]));
-            var add = menu.Items.OfType<MenuItem>().First(i => (string)i.Header == "Ajouter une action");
-            Assert.Equal(ActionCatalog.Categories.Count, add.Items.Count);
-            Assert.All(add.Items.OfType<MenuItem>(), c => Assert.NotEmpty(c.Items));
 
             var profile = Headers(ContextMenuFactory.Build(vm.BuildProfileMenu("Principal")));
             foreach (var h in new[] { "Renommer", "Dupliquer", "Exporter…", "Importer…", "Supprimer", "Définir comme profil actif" })

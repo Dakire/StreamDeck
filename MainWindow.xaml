@@ -748,7 +748,9 @@
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type vm:TabViewModel}">
-                  <Button Style="{StaticResource DockTab}" Command="{Binding Command}" AutomationProperties.Name="{Binding AutomationName}">
+                  <Button Style="{StaticResource DockTab}" Command="{Binding Command}" AutomationProperties.Name="{Binding AutomationName}"
+                          AllowDrop="True" PreviewMouseRightButtonDown="OnTabRightClick" PreviewMouseLeftButtonDown="OnTabMouseDown" PreviewMouseMove="OnTabMouseMove"
+                          DragOver="OnTabDragOver" Drop="OnTabDrop">
                     <StackPanel Orientation="Horizontal">
                       <TextBlock Text="{Binding Text}" VerticalAlignment="Center"/>
                       <!-- Badge de notifications d'une page web (Google Chat, Gmail…) : InfoBadge de WPF-UI (rouge franc du thème, chiffre blanc) ; une activité sans nombre
@@ -796,20 +798,6 @@
             <Button Style="{StaticResource DockButton}" Command="{Binding Editor.RedoCommand}" IsEnabled="{Binding Editor.CanRedo}" Width="{Binding L.BarH}" Padding="0"
                     AutomationProperties.Name="Rétablir la modification annulée" ToolTip="{Binding Editor.RedoTooltip}">
               <ui:SymbolIcon Symbol="ArrowRedo24"/>
-            </Button>
-            <Button Style="{StaticResource DockButton}" Command="{Binding OpenSelectedTileMenuCommand}" AutomationProperties.Name="Options de la case sélectionnée"
-                    ToolTip="Menu de la case sélectionnée (comme le clic droit ou l'appui long) : modifier, déplacer, dupliquer, supprimer…">
-              <StackPanel Orientation="Horizontal">
-                <ui:SymbolIcon Symbol="MoreVertical24" Margin="0,0,8,0"/>
-                <TextBlock Text="Case" VerticalAlignment="Center"/>
-              </StackPanel>
-            </Button>
-            <Button Style="{StaticResource DockButton}" Command="{Binding OpenPageMenuCommand}" AutomationProperties.Name="Options de la page"
-                    ToolTip="Renommer, dupliquer, déplacer ou supprimer cette page">
-              <StackPanel Orientation="Horizontal">
-                <ui:SymbolIcon Symbol="MoreHorizontal24" Margin="0,0,8,0"/>
-                <TextBlock Text="Page" VerticalAlignment="Center"/>
-              </StackPanel>
             </Button>
             <Button Style="{StaticResource DockButton}" Command="{Binding QuitEditCommand}" AutomationProperties.Name="Quitter sans enregistrer"
                     ToolTip="Quitter en annulant les modifications faites depuis l'ouverture du mode édition">

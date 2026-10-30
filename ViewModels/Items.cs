@@ -125,6 +125,10 @@ public sealed class TabViewModel
     public bool IsActive { get; init; }
     /// <summary>Affiche cette page.</summary>
     public required ICommand Command { get; init; }
+    /// <summary>Rang de la page dans le profil.</summary>
+    public int Index { get; init; }
+    /// <summary>Ouvre le menu de la page (clic droit, appui long) en mode édition ; null hors édition.</summary>
+    public ICommand? Edit { get; init; }
     /// <summary>Texte du badge rouge de notifications (« 3 », « 99+ ») d'une page web de Gmail, Google Chat, Discord…, ou null.</summary>
     public string? Badge { get; init; }
     /// <summary>true si un badge est affiché.</summary>

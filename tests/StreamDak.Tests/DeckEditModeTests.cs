@@ -318,8 +318,11 @@ public class DeckEditModeTests
             EnterEdit(vm);
             vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Deux").Edit!.Execute(null);
             var texts = vm.MenuEntries.OfType<MenuEntryViewModel>().Select(e => e.Text).ToList();
-            Assert.Contains("Déplacer le bouton", texts);
-            Assert.Contains("Réinitialiser le bouton", texts);
+            Assert.Contains("Dupliquer", texts);                               // menu à plat : plus de sous-menu « Déplacer », « Ajouter » ni « Propriétés »
+            Assert.Contains("Réinitialiser", texts);
+            Assert.Contains("Supprimer", texts);
+            Assert.DoesNotContain("Déplacer le bouton", texts);
+            Assert.DoesNotContain("Afficher les propriétés", texts);
             Assert.Equal(1, vm.Editor!.SelectedIndex);                         // le menu vise la case touchée
         });
     }

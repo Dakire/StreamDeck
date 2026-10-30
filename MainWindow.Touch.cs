@@ -46,9 +46,10 @@ public partial class MainWindow
     bool _tapOnBar;
     bool _dragging;
     DeckTileViewModel? _touchDragTile;   // touche saisie au doigt en mode édition
-    bool _touchDragging;
+    bool _touchDragging, _touchDraggingTab;
     (int X, int Y) _dragOffset;
     long _lastBarTapTick;
+    TabViewModel? _touchDragTab;   // onglet de page tenu par un doigt en mode édition : le lâcher sur un autre onglet change son rang
     Controls.LevelControl? _levelTouch;   // roue ou curseur de niveau audio tenu par un doigt (le doigt est routé vers lui, pas vers le test d'appui)
     uint _levelPointer;
     ICommand? _pressEdit;                 // édition de la case sous le doigt (appui long), null si la case ne s'édite pas
@@ -65,7 +66,7 @@ public partial class MainWindow
         _pressEdit = null;
         _dragging = false;
         _touchDragTile = null;
-        _touchDragging = false;
+        _touchDragging = _touchDraggingTab = false;
         _vm.EndDrag();
     }
 
@@ -97,8 +98,9 @@ public partial class MainWindow
                 _tap.Down(id, x, y, Environment.TickCount64);
                 _tapOnBar = Hit(x, y).bar;
                 _dragging = false;
-                _touchDragging = false;
+                _touchDragging = _touchDraggingTab = false;
                 _touchDragTile = _vm.IsEdit && !tracked ? TileAt(HitVisual(x, y)) as DeckTileViewModel : null;   // glisser une touche pour la déplacer
+                _touchDragTab = _vm.IsEdit && !tracked && _touchDragTile == null ? TabAt(HitVisual(x, y)) : null;
                 // Appui long : seulement pour le doigt suivi (un second doigt est ignoré), sur une case qui s'édite
                 _pressEdit = tracked ? null : EditTargetAt(HitVisual(x, y));
                 if (_pressEdit != null) _longPressTimer.Start(); else _longPressTimer.Stop();
@@ -114,10 +116,22 @@ public partial class MainWindow
                         _touchDragging = true;
                     }
                     if (_touchDragging) { var at = Root.PointFromScreen(new Point(x, y)); _vm.UpdateDrag(at.X, at.Y, TileAt(HitVisual(x, y))); }
+                    if (_touchDragTab != null) _touchDraggingTab = true;
                 }
                 break;
             case WM_POINTERUP:
                 _longPressTimer.Stop();
+                if (_touchDraggingTab && _touchDragTab is { } movedTab)
+                {
+                    // Doigt relâché après un glissement depuis un onglet : la page prend le rang de l'onglet sous le doigt
+                    var dropTab = TabAt(HitVisual(x, y));
+                    _tap.Up(id, x, y);
+                    _touchDraggingTab = false;
+                    _touchDragTab = null;
+                    if (dropTab != null && dropTab.Index != movedTab.Index) Dispatcher.BeginInvoke(DispatcherPriority.Input, () => _vm.MoveTab(movedTab.Index, dropTab.Index));
+                    break;
+                }
+                _touchDragTab = null;
                 bool wasDragging = _dragging;
                 _dragging = false;
                 if (_touchDragging && _touchDragTile is { } dragged)
@@ -219,7 +233,15 @@ public partial class MainWindow
     /// Commande d'édition de la case qui contient cet élément (bouton, case vide, emplacement « + »), ou null : barre, dock, menu,
     /// flèche « retour ». Le contexte de données d'un élément de la case est la case elle-même.
     /// </summary>
-    internal static ICommand? EditTargetAt(DependencyObject? hit) => TileAt(hit)?.Edit;
+    internal static ICommand? EditTargetAt(DependencyObject? hit) => TileAt(hit)?.Edit ?? TabAt(hit)?.Edit;
+
+    /// <summary>Onglet de page qui contient cet élément, ou null.</summary>
+    internal static TabViewModel? TabAt(DependencyObject? hit)
+    {
+        for (DependencyObject? d = hit; d != null; d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+            if (d is FrameworkElement { DataContext: TabViewModel tab }) return tab;
+        return null;
+    }
 
     /// <summary>Case (bouton, case vide, emplacement « + », flèche « retour ») qui contient cet élément, ou null.</summary>
     internal static IEditableTile? TileAt(DependencyObject? hit)

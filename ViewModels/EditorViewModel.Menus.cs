@@ -19,53 +19,41 @@ public sealed partial class EditorViewModel
         var place = Place;
         bool occupied = !slot.IsEmpty;
         bool folder = slot.IsFolder;
-        int pos = slot.Position;
-        bool canLeft = pos % Columns > 0, canRight = pos % Columns < Columns - 1, canUp = pos >= Columns, canDown = pos + Columns < Slots.Count;
 
+        // Menu à plat : le catalogue, l'inspecteur et le glisser-déposer sont toujours à l'écran, donc plus de sous-menus d'ajout, de déplacement ni de propriétés.
+        // Les raccourcis clavier (Suppr, Ctrl+C / X / V / D, F2, Alt+flèches) sont affichés en face des entrées.
         var items = new List<MenuItemSpec>();
-        if (folder) items.Add(new("Ouvrir le dossier", OpenSelectedFolder, SymbolRegular.FolderOpen24, "Entrée"));
-        items.Add(new("Configurer l'action", () => _shell.FocusProperties(), SymbolRegular.Settings24, "Entrée", Enabled: occupied && !folder));
-        items.Add(new("Modifier le titre", () => _shell.FocusTitle(), SymbolRegular.TextT24, "F2", Enabled: occupied));
-        items.Add(new("Modifier l'icône", () => _shell.FocusIcon(), SymbolRegular.Image24, Enabled: occupied));
-        items.Add(MenuItemSpec.Separator);
-        items.Add(new("Copier", () => CopyCommand.Execute(null), SymbolRegular.Copy24, "Ctrl+C", Enabled: occupied));
-        items.Add(new("Couper", () => CutCommand.Execute(null), SymbolRegular.Cut24, "Ctrl+X", Enabled: occupied));
-        items.Add(new("Coller", () => PasteCommand.Execute(null), SymbolRegular.ClipboardPaste24, "Ctrl+V", Enabled: _doc.HasClipboard));
-        items.Add(new("Dupliquer le bouton", () => DuplicateCommand.Execute(null), SymbolRegular.CopyAdd24, "Ctrl+D", Enabled: occupied));
-
-        var move = new List<MenuItemSpec>
+        if (!occupied)
         {
-            new("À gauche", () => MoveSelection(-1, 0), SymbolRegular.ArrowLeft24, "Alt+←", Enabled: occupied && canLeft),
-            new("À droite", () => MoveSelection(1, 0), SymbolRegular.ArrowRight24, "Alt+→", Enabled: occupied && canRight),
-            new("Vers le haut", () => MoveSelection(0, -1), SymbolRegular.ArrowUp24, "Alt+↑", Enabled: occupied && canUp),
-            new("Vers le bas", () => MoveSelection(0, 1), SymbolRegular.ArrowDown24, "Alt+↓", Enabled: occupied && canDown),
-        };
-        var otherPages = Pages.Where(p => p.Index != _page).ToList();
-        if (otherPages.Count > 0 && occupied)
-        {
-            move.Add(MenuItemSpec.Separator);
-            move.Add(new("Vers la page", Icon: SymbolRegular.Document24,
-                Children: otherPages.Select(p => new MenuItemSpec(p.Name, () => MoveToPage(slot.Index, p))).ToList()));
+            items.Add(new("Coller", () => { SelectIndex(slot.Index); PasteCommand.Execute(null); }, SymbolRegular.ClipboardPaste24, "Ctrl+V", Enabled: _doc.HasClipboard));
+            items.Add(new("Créer un dossier", () => { SelectIndex(slot.Index); CreateFolderHere(); }, SymbolRegular.FolderAdd24));
+            return items;
         }
+        if (folder) items.Add(new("Ouvrir le dossier", OpenSelectedFolder, SymbolRegular.FolderOpen24, "Entrée"));
+        items.Add(new("Modifier le titre", () => _shell.FocusTitle(), SymbolRegular.TextT24, "F2"));
+        items.Add(MenuItemSpec.Separator);
+        items.Add(new("Copier", () => CopyCommand.Execute(null), SymbolRegular.Copy24, "Ctrl+C"));
+        items.Add(new("Couper", () => CutCommand.Execute(null), SymbolRegular.Cut24, "Ctrl+X"));
+        items.Add(new("Coller", () => PasteCommand.Execute(null), SymbolRegular.ClipboardPaste24, "Ctrl+V", Enabled: _doc.HasClipboard));
+        items.Add(new("Dupliquer", () => DuplicateCommand.Execute(null), SymbolRegular.CopyAdd24, "Ctrl+D"));
+
+        var otherPages = Pages.Where(p => p.Index != _page).ToList();
         var folders = Slots.Where(s => s.IsFolder && s.Index != slot.Index).ToList();
-        if (folders.Count > 0 && occupied)
-            move.Add(new("Vers le dossier", Icon: SymbolRegular.Folder24,
+        if (otherPages.Count > 0 || folders.Count > 0 || _folder.Count > 0) items.Add(MenuItemSpec.Separator);
+        if (otherPages.Count > 0)
+            items.Add(new("Vers la page", Icon: SymbolRegular.Document24,
+                Children: otherPages.Select(p => new MenuItemSpec(p.Name, () => MoveToPage(slot.Index, p))).ToList()));
+        if (folders.Count > 0)
+            items.Add(new("Vers le dossier", Icon: SymbolRegular.Folder24,
                 Children: folders.Select(f => new MenuItemSpec(_doc.Get(place, f.Index)?.Label is { Length: > 0 } t ? t : "Dossier", () => MoveToFolder(slot.Index, f.Index))).ToList()));
-        if (_folder.Count > 0 && occupied)
-            move.Add(new("Sortir du dossier", () => MoveOut(slot.Index), SymbolRegular.ArrowUpLeft24));
-        items.Add(new("Déplacer le bouton", Icon: SymbolRegular.ArrowMove24, Enabled: occupied, Children: move));
+        if (_folder.Count > 0)
+            items.Add(new("Sortir du dossier", () => MoveOut(slot.Index), SymbolRegular.ArrowUpLeft24));
 
         items.Add(MenuItemSpec.Separator);
-        items.Add(new("Ajouter une action", Icon: SymbolRegular.Add24, Children: BuildAddMenu(slot.Index)));
-        items.Add(new("Créer un dossier", () => { SelectIndex(slot.Index); CreateFolderHere(); }, SymbolRegular.FolderAdd24, Enabled: !occupied));
-        items.Add(new("Réinitialiser le bouton", () => ResetButtonCommand.Execute(null), SymbolRegular.ArrowReset24, Enabled: occupied));
-        items.Add(MenuItemSpec.Separator);
-        items.Add(new("Afficher les propriétés", () => _shell.FocusProperties(), SymbolRegular.Info24, Enabled: occupied));
-        items.Add(new("Supprimer le bouton", () => DeleteSelection(), SymbolRegular.Delete24, "Suppr", Enabled: occupied, Danger: true));
+        items.Add(new("Réinitialiser", () => ResetButtonCommand.Execute(null), SymbolRegular.ArrowReset24));
+        items.Add(new("Supprimer", () => DeleteSelection(), SymbolRegular.Delete24, "Suppr", Danger: true));
         return items;
     }
-
-    List<MenuItemSpec> BuildAddMenu(int index) => CatalogMenu.Categories(a => AddCatalogAction(a, index));
 
     void MoveToPage(int index, PageTabViewModel page)
     {
@@ -119,8 +107,6 @@ public sealed partial class EditorViewModel
         int count = Pages.Count;
         return new List<MenuItemSpec>
         {
-            new("Nouvelle page…", () => AddPageCommand.Execute(null), SymbolRegular.DocumentAdd24),
-            MenuItemSpec.Separator,
             new("Renommer", async () => await RenamePageAsync(page), SymbolRegular.Rename24),
             new("Dupliquer", () => DuplicatePage(page), SymbolRegular.CopyAdd24),
             page.IsWeb
@@ -133,9 +119,6 @@ public sealed partial class EditorViewModel
                 .Select(m => new MenuItemSpec(m.Label, () => SetPageWebInput(page, m.Mode), Checked: page.WebInput == m.Mode)).ToList()),
             new("Afficher le badge", () => TogglePageBadge(page), SymbolRegular.Alert24, Enabled: page.IsWeb, Checked: page.IsWeb && page.BadgeEnabled),
             new("Exclure du total", () => TogglePageBadgeExcluded(page), SymbolRegular.AlertOff24, Enabled: page.IsWeb && page.BadgeEnabled, Checked: page.IsWeb && page.BadgeExcludeFromTotal),
-            MenuItemSpec.Separator,
-            new("Déplacer à gauche", () => MovePage(page, -1), SymbolRegular.ArrowLeft24, Enabled: page.Index > 0),
-            new("Déplacer à droite", () => MovePage(page, 1), SymbolRegular.ArrowRight24, Enabled: page.Index < count - 1),
             MenuItemSpec.Separator,
             new("Supprimer la page", async () => await DeletePageAsync(page), SymbolRegular.Delete24, Enabled: count > 1, Danger: true),
         };

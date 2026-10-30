@@ -47,7 +47,7 @@ public class TileMenuTests
             Assert.True(vm.MenuOpen);
             Assert.Equal(1, vm.Editor.SelectedIndex);
             Assert.Equal(slots, vm.Editor.Slots.ToList());              // mêmes instances : rien n'a été reconstruit
-            Assert.Contains("Dupliquer le bouton", Texts(vm));          // menu complet de l'éditeur
+            Assert.Contains("Dupliquer", Texts(vm));                    // menu à plat de l'éditeur
         });
     }
 
