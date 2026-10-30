@@ -9,9 +9,13 @@ mise au premier plan d'une fenêtre. Un bouton peut aussi afficher l'heure ou la
 
 ![Le deck, thème sombre](docs/images/deck-dark.png)
 
-| Thème clair | Éditeur | Paramètres |
+| Thème clair | Mode édition (catalogue à droite, inspecteur en bas) | Curseurs verticaux Sonar (1 × 2) |
 |---|---|---|
-| ![Deck, thème clair](docs/images/deck-light.png) | ![Éditeur à trois panneaux](docs/images/editeur-dark.png) | ![Paramètres](docs/images/parametres-dark.png) |
+| ![Deck, thème clair](docs/images/deck-light.png) | ![Mode édition](docs/images/editeur-dark.png) | ![Curseurs verticaux](docs/images/curseurs-sonar.png) |
+
+| Paramètres |
+|---|
+| ![Paramètres](docs/images/parametres-dark.png) |
 
 *Captures rendues hors écran par le harnais de tests, en mode simulation (d'où le badge « Simulation »).*
 
@@ -29,7 +33,8 @@ automatique (une fois par jour, désactivable). Rien ne s'installe sans ton acco
   réduit ou derrière un jeu en administrateur ; voyants en direct. Une application Discord à toi suffit (5 minutes, une fois) : [Discord](docs/integrations/discord.md).
 - **Mélangeur audio** (catalogue › Widgets) : un **curseur précis par canal** (Sonar : jeu, discussion, média, aux, micro ; Discord ; périphériques Windows), avec la valeur exacte,
   *couper*, *revenir au niveau de réinitialisation* (↺) et une pastille de disponibilité. Chaque ligne dit ce qu'elle règle (mélangeur Sonar, volume Windows, volume Discord).
-- **Niveau audio** (catalogue › Widgets) : une **roue** qu'on tourne au doigt (niveau au centre, toucher le centre coupe), ou un **curseur** vertical ou horizontal, lié à un canal **Sonar** ou à un
+- **Niveau audio** (catalogue › Widgets) : une **roue** qu'on tourne au doigt (niveau au centre, toucher le centre coupe), ou un **curseur** vertical (1 × 2 : l'**icône du canal coupe** au toucher, le pourcentage et
+  le nom restent visibles, grisé quand Sonar est indisponible) ou horizontal, lié à un canal **Sonar** (Principal, Jeu, Discussion, Média, Aux, Micro) ou à un
   **périphérique audio Windows** choisi par son nom (micro Focusrite, casque Arctis…, sans changer le périphérique par défaut). Choix du canal et de la forme dans les propriétés (mode édition).
   Le gain analogique d'une carte son ne se pilote pas (il se règle dans Sonar). [Sonar et audio par périphérique](docs/integrations/sonar.md), [tests manuels](docs/tests-manuels-sonar.md), [ADR 0024](docs/adr/0024-sonar-audio-par-peripherique-et-controles-de-niveau.md).
 - **Widgets** (catalogue › Widgets) : horloge et date, processeur, mémoire, **disque**, **réseau**, **ping / latence** vers des hôtes, **état de services** (page web ou port TCP),
@@ -146,7 +151,7 @@ grille de boutons* pour revenir (les boutons de la page sont conservés). Les r�
 **Intégrations** (Paramètres › Intégrations, chacune activée à la demande)
 
 - Connecteurs livrés : **OBS Studio**, **vMix**, **lampes Elgato**, **Philips Hue**, **Système Windows** (processeur, mémoire, média en cours,
-  donc Spotify sans compte), **Microsoft Teams**, **X-Plane 12**, **Twitch**, **ClickUp**, **Notion**, **monday.com**, **SteelSeries Sonar** (volume et coupure des canaux du mélangeur ; API non vérifiée, [Sonar](docs/integrations/sonar.md)). 35 boutons de
+  donc Spotify sans compte), **Microsoft Teams**, **X-Plane 12**, **Twitch**, **ClickUp**, **Notion**, **monday.com**, **SteelSeries Sonar** (volume et coupure des canaux du mélangeur ; API vérifiée en mode classic, [Sonar](docs/integrations/sonar.md)). 35 boutons de
   raccourcis prêts à l'emploi pour Zoom, Teams, Discord, Premiere, Photoshop, DaVinci, Blender, Outlook, Word, Excel et Star Citizen. **Discord** par son RPC local
   ([Discord](docs/integrations/discord.md)). Outils d'administration (Services, Observateur d'événements, Gestion des disques, Connexions réseau, panneau Son…),
   terminal dans un dossier, SSH, projet dans VS Code, **chronomètre**.
@@ -178,6 +183,9 @@ Ces raccourcis ne s'appliquent jamais pendant la saisie dans un champ de texte.
 
 - Windows 10 ou 11 (Windows 11 recommandé : effet Mica dans l'éditeur et les paramètres ; le deck a son propre fond, opaque)
 - Runtime Desktop .NET 10 pour exécuter
+- Pour les curseurs et actions **Sonar** : [SteelSeries GG](https://steelseries.com/gg) installé et lancé, avec le module **Sonar** activé (mode classic ; le mode streamer
+  est pris en charge pour la lecture, son écriture n'est pas vérifiée). StreamDak lit `%ProgramData%\SteelSeries\SteelSeries Engine 3\coreProps.json`, n'envoie rien en dehors de ce PC,
+  et grise les curseurs tant que GG ou Sonar est absent (il se reconnecte seul). Paramètres › Intégrations › SteelSeries Sonar, puis [Sonar](docs/integrations/sonar.md).
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) pour compiler, runtime Desktop pour exécuter
 
 ## Compiler, lancer, tester
@@ -295,7 +303,7 @@ sauf `Pages` qui descend dans `Profiles[].Pages`. Les nouvelles clés sont facul
 | `http` | Adresse `http://` ou `https://` (requête GET) | Corps facultatif : requête POST, en JSON s'il commence par `{` ou `[` |
 | `audio` | `mic-toggle`, `mic-mute`, `mic-unmute`, `out-toggle`, `volume` | Niveau 0 à 100 pour `volume` |
 | `audiodevice` | `toggle`, `mute`, `unmute`, `volume`, `list` | Périphérique audio par son nom : `capture:Focusrite`, `render:Arctis=50`, `Focusrite=+5` (le défaut de Windows n'est jamais changé) |
-| `sonar` | `volume`, `mute`, `unmute`, `togglemute`, `diagnose` | Canal Sonar : `game=60`, `chatRender=+5`, `micro` (SteelSeries GG requis, API non vérifiée) |
+| `sonar` | `volume`, `mute`, `unmute`, `togglemute`, `diagnose` | Canal Sonar : `game=60`, `chatRender=+5`, `micro` (SteelSeries GG requis) |
 | `timer` | Durée en secondes ; toucher à nouveau arrête le minuteur | |
 
 Chaque étape a un délai maximal (5 s pour le clavier, 10 s pour `http` et `focus`, 15 s pour lancer un programme ;

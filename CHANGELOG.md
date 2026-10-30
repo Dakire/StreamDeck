@@ -4,7 +4,15 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Modifié (0.3.0-alpha)
+- **Mode édition style Stream Deck** : le catalogue d'actions passe à droite (recherche, catégories repliables), l'inspecteur de la case sous la grille (aperçu et titre à gauche,
+  actions et réglages à droite). Un seul accent bleu (couleur source `#2F7DF6`), neutres presque gris, contrastes toujours testés. Aucun changement du format de `config.json`. [ADR 0026](docs/adr/0026-disposition-style-stream-deck-et-palette-sobre.md).
+- **Curseur vertical 1 × 2** (composant `VerticalSlider`) : l'icône du canal coupe au toucher, niveau en %, nom du canal ; grisé (« – » à la place du niveau) quand Sonar est indisponible.
+- **`IAudioMixerProvider`** : abstraction des mélangeurs à canaux (Sonar aujourd'hui, Wave Link ou Voicemeeter plus tard), pourcentages de 0 à 100 côté application.
+
 ### Corrigé
+- **Sonar : coupure d'un canal** : la route `…/isMuted/{valeur}` répond 404 en mode classic ; la vraie route est `…/Mute/{valeur}`. L'API (lecture, volume, coupure, canal Principal) est désormais
+  vérifiée contre un GG réel en mode classic ; le mode streamer en écriture reste à vérifier.
 - **Discord en arrière-plan** : les boutons Discord envoyaient Ctrl+Maj+M / D, raccourcis *locaux* de Discord (focus requis) et micro de Teams. Nouvelle
   **intégration Discord** par le RPC local (micro, sourdine, volumes, quitter le salon ; état en direct ; indépendante du focus et du clavier) avec l'application
   OAuth2 de l'utilisateur, jeton chiffré et renouvelé (`ISecretRotating`). Boutons « raccourci » sur Ctrl+Alt+Maj+M / D. [Discord](docs/integrations/discord.md).
