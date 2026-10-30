@@ -67,19 +67,34 @@ public partial class MainWindow
         if (Math.Abs(now.X - _tabStart.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(now.Y - _tabStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
         var source = _tabSource;
         _tabSource = null;
-        DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(TabFormat, source), DragDropEffects.Move);
+        var element = (UIElement)sender;
+        element.Opacity = 0.4;   // l'onglet saisi est atténué tant qu'on le glisse
+        try { DragDrop.DoDragDrop(element, new DataObject(TabFormat, source), DragDropEffects.Move); }
+        finally { element.ClearValue(UIElement.OpacityProperty); }
     }
+
+    static bool AcceptsOnTab(DragEventArgs e) => e.Data.GetDataPresent(TabFormat) || e.Data.GetDataPresent(TileFormat);
+
+    void OnTabDragEnter(object sender, DragEventArgs e)
+    {
+        if (_vm.IsEdit && AcceptsOnTab(e)) Behaviors.DropState.SetIsOver((DependencyObject)sender, true);
+    }
+
+    void OnTabDragLeave(object sender, DragEventArgs e) => Behaviors.DropState.SetIsOver((DependencyObject)sender, false);
 
     void OnTabDragOver(object sender, DragEventArgs e)
     {
-        e.Effects = _vm.IsEdit && e.Data.GetDataPresent(TabFormat) ? DragDropEffects.Move : DragDropEffects.None;
+        e.Effects = _vm.IsEdit && AcceptsOnTab(e) ? DragDropEffects.Move : DragDropEffects.None;
         e.Handled = true;
     }
 
     void OnTabDrop(object sender, DragEventArgs e)
     {
         e.Handled = true;
-        if (e.Data.GetData(TabFormat) is TabViewModel moved && TabOf(sender) is { } target) _vm.MoveTab(moved.Index, target.Index);
+        Behaviors.DropState.SetIsOver((DependencyObject)sender, false);
+        if (TabOf(sender) is not { } target) return;
+        if (e.Data.GetData(TabFormat) is TabViewModel moved) _vm.MoveTab(moved.Index, target.Index);
+        else if (e.Data.GetData(TileFormat) is DeckTileViewModel tile) _vm.MoveTileToPage(tile, target.Index);   // une touche lâchée sur un onglet change de page
     }
 
     void OnDeckDragOver(object sender, DragEventArgs e)

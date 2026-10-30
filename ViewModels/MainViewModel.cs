@@ -111,6 +111,8 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     /// <summary>La vue a changé de page, de sous-page ou de dossier (+1 vers l'avant, -1 vers l'arrière) : la fenêtre anime l'entrée de la grille.</summary>
     public event Action<int>? Navigated;
+    /// <summary>Un dossier s'ouvre (1) ou se referme (-1) : la fenêtre joue une courte animation de zoom.</summary>
+    public event Action<int>? FolderNavigated;
 
     /// <summary>true si la page affichée (ou celle qu'on s'apprête à afficher) est une page web plein cadre : son cadre WebView2 ne doit pas être animé.</summary>
     public bool ShowsWebPage => CurrentPage.IsWeb || CurrentPage.Buttons.Any(b => b.Widget == WidgetTypes.Web);
@@ -328,6 +330,7 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     void EnterFolder(int listIndex)
     {
+        FolderNavigated?.Invoke(1);
         _folder.Add(listIndex);
         _sub = 0;
         Rebuild();
@@ -336,6 +339,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     void FolderUp()
     {
         if (_folder.Count == 0) return;
+        FolderNavigated?.Invoke(-1);
         _folder.RemoveAt(_folder.Count - 1);
         _sub = 0;
         Rebuild();

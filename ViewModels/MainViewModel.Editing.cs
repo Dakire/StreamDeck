@@ -93,7 +93,15 @@ public partial class MainViewModel
     /// </summary>
     public void MoveTile(object from, object to)
     {
-        if (!IsEdit || !TryGetSlot(from, out var sourcePlace, out int sourceIndex) || !TryGetSlot(to, out var targetPlace, out int targetIndex)) return;
+        if (!IsEdit || !TryGetSlot(from, out var sourcePlace, out int sourceIndex)) return;
+        if (IsBackTile(to))
+        {
+            var up = _doc.MoveToParent(sourcePlace, sourceIndex);
+            if (!up.Ok) { Notifier.Error(up.Message ?? "Déplacement impossible"); return; }
+            Notifier.Success("Bouton sorti du dossier", "Annuler", () => _doc.Undo());
+            return;
+        }
+        if (!TryGetSlot(to, out var targetPlace, out int targetIndex)) return;
         var source = _doc.Get(sourcePlace, sourceIndex);
         if (source == null || (sourcePlace.Equals(targetPlace) && sourceIndex == targetIndex)) return;
         var existing = _doc.Get(targetPlace, targetIndex);
@@ -102,6 +110,21 @@ public partial class MainViewModel
         if (!result.Ok) { Notifier.Error(result.Message ?? "Déplacement impossible"); return; }
         if (!intoFolder) SelectTile(targetPlace, targetIndex);
         Notifier.Success(intoFolder ? "Bouton déplacé dans le dossier" : existing == null ? "Bouton déplacé" : "Boutons échangés", "Annuler", () => _doc.Undo());
+    }
+
+    /// <summary>true pour la case « retour » d'un dossier (elle accepte une touche : elle la sort du dossier).</summary>
+    bool IsBackTile(object tile) { int at = Tiles.IndexOf(tile); return at >= 0 && at < _tileKeys.Count && _tileKeys[at].Kind == "back"; }
+
+    /// <summary>Touche glissée puis lâchée sur l'onglet d'une page : elle y est déplacée (première case libre) ; annulable.</summary>
+    public void MoveTileToPage(DeckTileViewModel moved, int pageIndex)
+    {
+        if (!IsEdit || pageIndex == _page || !TryGetSlot(moved, out var sourcePlace, out int sourceIndex) || _doc.Get(sourcePlace, sourceIndex) == null) return;
+        var dst = new Place(CurrentProfile.Name, pageIndex);
+        var result = _doc.MoveButton(sourcePlace, sourceIndex, dst, _doc.FirstEmptyIndex(dst));
+        if (!result.Ok) { Notifier.Error(result.Message ?? "Déplacement impossible"); return; }
+        Editor?.SelectIndex(-1);
+        var name = CurrentProfile.Pages[pageIndex].Name;
+        Notifier.Success($"Bouton déplacé vers « {name} »", "Annuler", () => _doc.Undo());
     }
 
     // ---------- glissement : touche atténuée, case visée en surbrillance, étiquette qui suit le pointeur ----------
@@ -137,7 +160,8 @@ public partial class MainViewModel
         if (!IsDragging || _dragSource == null) return;
         DragX = x + 14;
         DragY = y + 14;
-        bool valid = target != null && !ReferenceEquals(target, _dragSource) && TryGetSlot(target, out _, out _);
+        bool back = target != null && IsBackTile(target);
+        bool valid = target != null && !ReferenceEquals(target, _dragSource) && (back || TryGetSlot(target, out _, out _));
         foreach (var tile in Tiles)
         {
             bool on = valid && ReferenceEquals(tile, target);
@@ -145,6 +169,7 @@ public partial class MainViewModel
             else if (tile is AddTileViewModel add) add.IsDropTarget = on;
         }
         DragHint = !valid ? "Déposer sur une case"
+            : back ? "Sortir du dossier"
             : target is DeckTileViewModel { Button: { IsFolder: true } } ? "Ranger dans le dossier"
             : target is DeckTileViewModel ? "Échanger"
             : "Déplacer ici";

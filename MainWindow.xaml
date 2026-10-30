@@ -4,6 +4,7 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:vm="clr-namespace:StreamDak.ViewModels"
         xmlns:controls="clr-namespace:StreamDak.Controls"
+        xmlns:b="clr-namespace:StreamDak.Behaviors"
         Title="StreamDak" Width="1100" Height="650" Icon="Assets/icon.ico"
         ExtendsContentIntoTitleBar="True" WindowBackdropType="Mica" WindowCornerPreference="Round"
         ResizeMode="CanResize" MinWidth="640" MinHeight="420" Topmost="False" ShowInTaskbar="True"
@@ -52,6 +53,13 @@
           <Setter Property="Foreground" Value="{DynamicResource DeckOnSecondaryContainer}"/>
           <Setter Property="FontWeight" Value="SemiBold"/>
         </DataTrigger>
+        <!-- Glissement : l'onglet survolé s'allume (cadre et voile d'accent) -->
+        <Trigger Property="b:DropState.IsOver" Value="True">
+          <Setter Property="Background" Value="{DynamicResource DeckAccentSoft}"/>
+          <Setter Property="Foreground" Value="{DynamicResource DeckAccentText}"/>
+          <Setter Property="BorderBrush" Value="{DynamicResource DeckAccent}"/>
+          <Setter Property="BorderThickness" Value="2"/>
+        </Trigger>
       </Style.Triggers>
     </Style>
 
@@ -105,8 +113,25 @@
     <!-- ===== Touches ===== -->
 
     <DataTemplate DataType="{x:Type vm:DeckTileViewModel}">
+      <Grid>
+        <Grid.Style>
+          <Style TargetType="Grid">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding IsDragSource}" Value="True"><Setter Property="Opacity" Value="0.35"/></DataTrigger>
+              <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                  <Condition Binding="{Binding IsDragSource}" Value="True"/>
+                  <Condition Binding="{Binding Animate}" Value="True"/>
+                </MultiDataTrigger.Conditions>
+                <MultiDataTrigger.EnterActions>
+                  <BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0.35" Duration="0:0:0.16"/></Storyboard></BeginStoryboard>
+                </MultiDataTrigger.EnterActions>
+              </MultiDataTrigger>
+            </Style.Triggers>
+          </Style>
+        </Grid.Style>
       <Button Style="{DynamicResource DeckTileStyle}" Command="{Binding Click}" AutomationProperties.Name="{Binding AccessibleName}"
-              Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" Opacity="{Binding IsDragSource, Converter={StaticResource DragDim}}"
+              Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}"
               Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
               Tag="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
         <Grid>
@@ -119,7 +144,30 @@
           <!-- Glissement : la case visée s'allume (cadre épais et voile d'accent) -->
           <Border BorderThickness="6" BorderBrush="{DynamicResource DeckAccent}" Background="{DynamicResource DeckAccentSoft}" IsHitTestVisible="False"
                   CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                  Visibility="{Binding IsDropTarget, Converter={StaticResource BoolVis}}"/>
+                  Visibility="{Binding IsDropTarget, Converter={StaticResource BoolVis}}">
+            <Border.Style>
+              <Style TargetType="Border">
+                <Style.Triggers>
+                  <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                      <Condition Binding="{Binding IsDropTarget}" Value="True"/>
+                      <Condition Binding="{Binding Animate}" Value="True"/>
+                    </MultiDataTrigger.Conditions>
+                    <MultiDataTrigger.EnterActions>
+                      <BeginStoryboard>
+                        <Storyboard>
+                          <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.14"/>
+                          <ThicknessAnimation Storyboard.TargetProperty="Margin" From="14" To="0" Duration="0:0:0.18">
+                            <ThicknessAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.6"/></ThicknessAnimation.EasingFunction>
+                          </ThicknessAnimation>
+                        </Storyboard>
+                      </BeginStoryboard>
+                    </MultiDataTrigger.EnterActions>
+                  </MultiDataTrigger>
+                </Style.Triggers>
+              </Style>
+            </Border.Style>
+          </Border>
           <!-- Mode édition au toucher : chaque touche s'ouvre dans l'éditeur -->
           <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="8,4" CornerRadius="10"
                   Background="{DynamicResource DeckAccent}" Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
@@ -154,6 +202,7 @@
           </Border>
         </Grid>
       </Button>
+      </Grid>
     </DataTemplate>
 
     <!-- Emplacement libre hors édition : une touche « éteinte », comme sur un deck physique ; garde la place des voisines.
@@ -176,7 +225,30 @@
                   Visibility="{Binding IsSelected, Converter={StaticResource BoolVis}}"/>
           <Border BorderThickness="6" BorderBrush="{DynamicResource DeckAccent}" Background="{DynamicResource DeckAccentSoft}" IsHitTestVisible="False"
                   CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                  Visibility="{Binding IsDropTarget, Converter={StaticResource BoolVis}}"/>
+                  Visibility="{Binding IsDropTarget, Converter={StaticResource BoolVis}}">
+            <Border.Style>
+              <Style TargetType="Border">
+                <Style.Triggers>
+                  <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                      <Condition Binding="{Binding IsDropTarget}" Value="True"/>
+                      <Condition Binding="{Binding Animate}" Value="True"/>
+                    </MultiDataTrigger.Conditions>
+                    <MultiDataTrigger.EnterActions>
+                      <BeginStoryboard>
+                        <Storyboard>
+                          <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.14"/>
+                          <ThicknessAnimation Storyboard.TargetProperty="Margin" From="14" To="0" Duration="0:0:0.18">
+                            <ThicknessAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.6"/></ThicknessAnimation.EasingFunction>
+                          </ThicknessAnimation>
+                        </Storyboard>
+                      </BeginStoryboard>
+                    </MultiDataTrigger.EnterActions>
+                  </MultiDataTrigger>
+                </Style.Triggers>
+              </Style>
+            </Border.Style>
+          </Border>
           <ui:SymbolIcon Symbol="Add24" Foreground="{DynamicResource DeckDim}" HorizontalAlignment="Center" VerticalAlignment="Center"
                      FontSize="{Binding DataContext.L.AddGlyphSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
         </Grid>
@@ -687,11 +759,14 @@
         <controls:CatalogPanel x:Name="DeckCatalog" DataContext="{Binding Editor}"/>
       </Border>
 
-      <ItemsControl x:Name="DeckGrid" Grid.Column="0" ItemsSource="{Binding Tiles}" Focusable="False"
+      <ItemsControl x:Name="DeckGrid" Grid.Column="0" RenderTransformOrigin="0.5,0.5" ItemsSource="{Binding Tiles}" Focusable="False"
                     PreviewMouseRightButtonDown="OnDeckRightClick" PreviewMouseLeftButtonDown="OnDeckMouseDown" PreviewMouseMove="OnDeckMouseMove" AllowDrop="True" DragEnter="OnDeckDragOver" DragOver="OnDeckDragOver" Drop="OnDeckDrop"
                     Width="{Binding L.GridW}" Height="{Binding L.GridH}" HorizontalAlignment="Center" VerticalAlignment="Center">
         <ItemsControl.RenderTransform>
-          <TranslateTransform x:Name="GridShift"/>
+          <TransformGroup>
+            <ScaleTransform x:Name="GridScale"/>
+            <TranslateTransform x:Name="GridShift"/>
+          </TransformGroup>
         </ItemsControl.RenderTransform>
         <ItemsControl.ItemsPanel>
           <ItemsPanelTemplate>
@@ -750,7 +825,7 @@
                 <DataTemplate DataType="{x:Type vm:TabViewModel}">
                   <Button Style="{StaticResource DockTab}" Command="{Binding Command}" AutomationProperties.Name="{Binding AutomationName}"
                           AllowDrop="True" PreviewMouseRightButtonDown="OnTabRightClick" PreviewMouseLeftButtonDown="OnTabMouseDown" PreviewMouseMove="OnTabMouseMove"
-                          DragOver="OnTabDragOver" Drop="OnTabDrop">
+                          DragEnter="OnTabDragEnter" DragLeave="OnTabDragLeave" DragOver="OnTabDragOver" Drop="OnTabDrop">
                     <StackPanel Orientation="Horizontal">
                       <TextBlock Text="{Binding Text}" VerticalAlignment="Center"/>
                       <!-- Badge de notifications d'une page web (Google Chat, Gmail…) : InfoBadge de WPF-UI (rouge franc du thème, chiffre blanc) ; une activité sans nombre
@@ -896,10 +971,13 @@
     </Grid>
 
     <!-- ===== Glissement d'une touche : étiquette qui suit le pointeur, avec ce que ferait le dépôt ===== -->
-    <Border Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False" Padding="14,10" CornerRadius="16"
+    <Border x:Name="DragGhost" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False" Padding="14,10" CornerRadius="16"
             Background="{DynamicResource DeckAccent}" Visibility="{Binding IsDragging, Converter={StaticResource BoolVis}}">
       <Border.RenderTransform>
-        <TranslateTransform X="{Binding DragX}" Y="{Binding DragY}"/>
+        <TransformGroup>
+          <ScaleTransform x:Name="GhostScale"/>
+          <TranslateTransform X="{Binding DragX}" Y="{Binding DragY}"/>
+        </TransformGroup>
       </Border.RenderTransform>
       <StackPanel Orientation="Horizontal">
         <ui:SymbolIcon Symbol="ArrowMove24" Foreground="{DynamicResource DeckOnAccent}" Margin="0,0,8,0" VerticalAlignment="Center"/>

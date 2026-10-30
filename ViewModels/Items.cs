@@ -29,6 +29,9 @@ public interface IEditableTile
 /// </summary>
 public abstract class PlacedTile : ObservableObject
 {
+    /// <summary>false si les animations sont coupées (réglage StreamDak ou Windows) : les gabarits n'animent alors ni le glissement ni le dépôt.</summary>
+    public bool Animate => Motion.Enabled;
+
     /// <summary>Numéro de la case d'ancrage dans la page affichée.</summary>
     public int Cell { get; set; }
     /// <summary>Largeur en cases.</summary>

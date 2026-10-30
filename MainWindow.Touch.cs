@@ -138,11 +138,13 @@ public partial class MainWindow
                 {
                     // Doigt relâché après un glissement depuis une touche : déposée sur la case sous le doigt
                     var dropAt = TileAt(HitVisual(x, y));
+                    var dropTab = TabAt(HitVisual(x, y));
                     _tap.Up(id, x, y);
                     _touchDragging = false;
                     _touchDragTile = null;
                     _vm.EndDrag();
                     if (dropAt != null) Dispatcher.BeginInvoke(DispatcherPriority.Input, () => _vm.MoveTile(dragged, dropAt));
+                    else if (dropTab != null) Dispatcher.BeginInvoke(DispatcherPriority.Input, () => _vm.MoveTileToPage(dragged, dropTab.Index));   // lâchée sur un onglet : change de page
                     break;
                 }
                 if (!_tap.Up(id, x, y) || wasDragging) break;   // un appui long consommé n'est pas un appui : l'action ne s'exécute pas

@@ -66,6 +66,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         // Écran branché ou débranché : le deck suit (ou revient sur l'écran principal si le sien disparaît)
         _displays.Changed += () => PlaceOnScreen(displayChanged: true);
         _vm.Navigated += AnimateGridIn;
+        _vm.FolderNavigated += AnimateFolder;
+        _vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MainViewModel.IsDragging) && _vm.IsDragging) AnimateGhostIn(); };
         // Accrochage, agrandissement par le système : l'état « plein écran » et l'icône suivent la taille réelle de la fenêtre
         SizeChanged += (_, _) => SyncFullFlag();
         LocationChanged += (_, _) => SyncFullFlag();
@@ -101,6 +103,30 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         GridShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,
             new System.Windows.Media.Animation.DoubleAnimation(36 * direction, 0, duration) { EasingFunction = ease });
         DeckGrid.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0.35, 1, duration) { EasingFunction = ease });
+    }
+
+    /// <summary>Un dossier s'ouvre (1) ou se referme (-1) : zoom court de la grille (plus petite qui grossit à l'entrée, plus grande qui rétrécit à la sortie). Purement visuel.</summary>
+    void AnimateFolder(int direction)
+    {
+        if (!Motion.Enabled) return;
+        if (_vm.ShowsWebPage || _vm.Tiles.OfType<ViewModels.WebWidgetViewModel>().Any()) return;   // un cadre web est une fenêtre Win32 : il ne suit pas le zoom
+        var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+        var duration = TimeSpan.FromMilliseconds(170);
+        double from = direction > 0 ? 0.94 : 1.05;
+        GridScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleXProperty, new System.Windows.Media.Animation.DoubleAnimation(from, 1, duration) { EasingFunction = ease });
+        GridScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleYProperty, new System.Windows.Media.Animation.DoubleAnimation(from, 1, duration) { EasingFunction = ease });
+        DeckGrid.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0.3, 1, duration) { EasingFunction = ease });
+    }
+
+    /// <summary>Début d'un glissement : l'étiquette qui suit le pointeur apparaît en fondu en grossissant.</summary>
+    void AnimateGhostIn()
+    {
+        if (!Motion.Enabled) return;
+        var ease = new System.Windows.Media.Animation.BackEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut, Amplitude = 0.5 };
+        var duration = TimeSpan.FromMilliseconds(160);
+        GhostScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleXProperty, new System.Windows.Media.Animation.DoubleAnimation(0.8, 1, duration) { EasingFunction = ease });
+        GhostScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleYProperty, new System.Windows.Media.Animation.DoubleAnimation(0.8, 1, duration) { EasingFunction = ease });
+        DragGhost.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, duration));
     }
 
     // ---------- fenêtre : sans focus, dans la barre des tâches, placée sur l'écran tactile ----------
