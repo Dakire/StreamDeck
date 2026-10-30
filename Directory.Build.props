@@ -2,7 +2,7 @@
   <!-- Réglages communs à l'application et aux tests : analyseurs .NET, style vérifié à la compilation, avertissements bloquants. -->
   <PropertyGroup>
     <!-- Version de l'application : source unique pour l'assembly, l'installateur (build.ps1) et la comparaison de la mise à jour (SemVer) -->
-    <Version>0.3.4-rc</Version>
+    <Version>0.3.5-rc</Version>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <LangVersion>latest</LangVersion>
