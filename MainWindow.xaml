@@ -348,45 +348,60 @@
         </Ellipse>
       </Grid>
     </DataTemplate>
+    <DataTemplate x:Key="LevelClassicBody" DataType="{x:Type vm:LevelWidgetViewModel}">
+      <Grid Margin="12,10,12,6">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+      <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource LevelHeader}"/>
+      <controls:LevelControl Grid.Row="1" Margin="0,6,0,0" Shape="{Binding Shape}" Value="{Binding Level, Mode=OneWay}" IsMuted="{Binding IsMuted}"
+                             ChangeCommand="{Binding ChangeCommand}" MuteCommand="{Binding ToggleMuteCommand}"
+                             TrackBrush="{DynamicResource DeckTileTrack}" FillBrush="{DynamicResource DeckAccent}" MutedBrush="{DynamicResource DeckDanger}"
+                             TextBrush="{Binding Face.LabelBrush}" AutomationProperties.Name="{Binding AccessibleName}"
+                             Visibility="{Binding HasReading, Converter={StaticResource BoolVis}}"/>
+      <TextBlock Grid.Row="1" Text="{Binding Status}" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource DeckDim}"
+                 FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                 Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}"/>
+      <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Visibility="{Binding ShowActions, Converter={StaticResource BoolVis}}">
+        <Button Style="{StaticResource LevelAction}" Command="{Binding ToggleMuteCommand}" Visibility="{Binding ShowMuteButton, Converter={StaticResource BoolVis}}"
+                AutomationProperties.Name="Couper ou rétablir" ToolTip="Couper ou rétablir">
+          <ui:SymbolIcon>
+            <ui:SymbolIcon.Style>
+              <Style TargetType="ui:SymbolIcon">
+                <Setter Property="Symbol" Value="Speaker224"/>
+                <Setter Property="Foreground" Value="{DynamicResource DeckTextSoft}"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding IsMuted}" Value="True"><Setter Property="Symbol" Value="SpeakerMute24"/><Setter Property="Foreground" Value="{DynamicResource DeckDanger}"/></DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </ui:SymbolIcon.Style>
+          </ui:SymbolIcon>
+        </Button>
+        <Button Style="{StaticResource LevelAction}" Command="{Binding ResetCommand}" AutomationProperties.Name="{Binding ResetText}" ToolTip="{Binding ResetText}">
+          <ui:SymbolIcon Symbol="ArrowReset24" Foreground="{DynamicResource DeckTextSoft}"/>
+        </Button>
+      </StackPanel>
+    </Grid>
+    </DataTemplate>
+    <DataTemplate x:Key="LevelVerticalBody" DataType="{x:Type vm:LevelWidgetViewModel}">
+      <controls:VerticalSlider/>
+    </DataTemplate>
     <DataTemplate DataType="{x:Type vm:LevelWidgetViewModel}">
       <Border Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1" AutomationProperties.Name="{Binding AccessibleName}"
               Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
               CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}" ClipToBounds="True">
-        <Grid Margin="12,10,12,6">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-          </Grid.RowDefinitions>
-          <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource LevelHeader}"/>
-          <controls:LevelControl Grid.Row="1" Margin="0,6,0,0" Shape="{Binding Shape}" Value="{Binding Level, Mode=OneWay}" IsMuted="{Binding IsMuted}"
-                                 ChangeCommand="{Binding ChangeCommand}" MuteCommand="{Binding ToggleMuteCommand}"
-                                 TrackBrush="{DynamicResource DeckTileTrack}" FillBrush="{DynamicResource DeckAccent}" MutedBrush="{DynamicResource DeckDanger}"
-                                 TextBrush="{Binding Face.LabelBrush}" AutomationProperties.Name="{Binding AccessibleName}"
-                                 Visibility="{Binding HasReading, Converter={StaticResource BoolVis}}"/>
-          <TextBlock Grid.Row="1" Text="{Binding Status}" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource DeckDim}"
-                     FontSize="{Binding DataContext.L.BarFont, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                     Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}"/>
-          <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Visibility="{Binding ShowActions, Converter={StaticResource BoolVis}}">
-            <Button Style="{StaticResource LevelAction}" Command="{Binding ToggleMuteCommand}" Visibility="{Binding ShowMuteButton, Converter={StaticResource BoolVis}}"
-                    AutomationProperties.Name="Couper ou rétablir" ToolTip="Couper ou rétablir">
-              <ui:SymbolIcon>
-                <ui:SymbolIcon.Style>
-                  <Style TargetType="ui:SymbolIcon">
-                    <Setter Property="Symbol" Value="Speaker224"/>
-                    <Setter Property="Foreground" Value="{DynamicResource DeckTextSoft}"/>
-                    <Style.Triggers>
-                      <DataTrigger Binding="{Binding IsMuted}" Value="True"><Setter Property="Symbol" Value="SpeakerMute24"/><Setter Property="Foreground" Value="{DynamicResource DeckDanger}"/></DataTrigger>
-                    </Style.Triggers>
-                  </Style>
-                </ui:SymbolIcon.Style>
-              </ui:SymbolIcon>
-            </Button>
-            <Button Style="{StaticResource LevelAction}" Command="{Binding ResetCommand}" AutomationProperties.Name="{Binding ResetText}" ToolTip="{Binding ResetText}">
-              <ui:SymbolIcon Symbol="ArrowReset24" Foreground="{DynamicResource DeckTextSoft}"/>
-            </Button>
-          </StackPanel>
-        </Grid>
+        <ContentControl Content="{Binding}" Focusable="False" IsTabStop="False">
+          <ContentControl.Style>
+            <Style TargetType="ContentControl">
+              <Setter Property="ContentTemplate" Value="{StaticResource LevelClassicBody}"/>
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding IsVertical}" Value="True"><Setter Property="ContentTemplate" Value="{StaticResource LevelVerticalBody}"/></DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </ContentControl.Style>
+        </ContentControl>
       </Border>
     </DataTemplate>
 

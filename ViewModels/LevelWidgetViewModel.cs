@@ -60,6 +60,12 @@ public sealed partial class LevelWidgetViewModel : WidgetTileViewModel, IDisposa
     public bool IsWheel => Shape == LevelShape.Wheel;
     /// <summary>Nom affiché dans l'en-tête de la tuile.</summary>
     public string Title => _source?.Title ?? "Niveau audio";
+    /// <summary>true pour le curseur vertical (tuile compacte : icône qui coupe, niveau, nom du canal).</summary>
+    public bool IsVertical => Shape == LevelShape.VerticalSlider;
+    /// <summary>Nom court du canal sous le curseur vertical (« Jeu » pour « Sonar · Jeu »).</summary>
+    public string ShortTitle { get { var title = Title; int i = title.LastIndexOf(" · ", StringComparison.Ordinal); return i >= 0 ? title[(i + 3)..] : title; } }
+    /// <summary>Nom accessible de l'icône : l'action et le canal (« Couper ou rétablir Jeu »).</summary>
+    public string MuteAccessibleName => "Couper ou rétablir " + ShortTitle;
     /// <summary>true quand un message remplace le contrôle.</summary>
     public bool HasStatus => Status.Length > 0;
     /// <summary>true quand le niveau est affiché.</summary>
@@ -151,6 +157,8 @@ public sealed partial class LevelWidgetViewModel : WidgetTileViewModel, IDisposa
         {
             lock (_gate) { if (_disposed) return; }
             OnPropertyChanged(nameof(Title));   // le nom du périphérique n'est connu qu'une fois trouvé
+            OnPropertyChanged(nameof(ShortTitle));
+            OnPropertyChanged(nameof(MuteAccessibleName));
             OnPropertyChanged(nameof(Controls));
             OnPropertyChanged(nameof(HasControls));
             if (reading == null) { Status = problem; return; }

@@ -311,7 +311,8 @@ public sealed class LevelControl : RangeBase
         if (level > 0) dc.DrawLine(fill, P(reversed ? handle : lo), P(reversed ? hi : handle));
         dc.DrawEllipse(TextBrush ?? Brushes.White, new Pen(Filled, 3), P(handle), 15, 15);
 
-        var text = Text(IsMuted ? "Muet" : ((int)Math.Round(level)).ToString(CultureInfo.CurrentCulture) + " %", vertical ? Math.Clamp(ActualWidth * 0.26, 12, 22) : Math.Clamp(ActualHeight * 0.3, 12, 22),
+        // Désactivé (source indisponible) : jamais un faux « 0 % »
+        var text = Text(!IsEnabled ? "–" : IsMuted ? "Muet" : ((int)Math.Round(level)).ToString(CultureInfo.CurrentCulture) + " %", vertical ? Math.Clamp(ActualWidth * 0.26, 12, 22) : Math.Clamp(ActualHeight * 0.3, 12, 22),
             FontWeights.SemiBold, IsMuted ? MutedBrush : TextBrush);
         dc.DrawText(text, vertical ? new Point(ActualWidth / 2 - text.Width / 2, Math.Max(0, (TextBand - text.Height) / 2)) : new Point(2, ActualHeight / 2 - text.Height / 2));
     }

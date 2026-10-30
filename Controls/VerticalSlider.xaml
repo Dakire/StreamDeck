@@ -1,0 +1,66 @@
+<UserControl x:Class="StreamDak.Controls.VerticalSlider"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:StreamDak.Controls"
+             Focusable="False">
+  <!-- Curseur vertical d'un canal audio (DataContext : LevelWidgetViewModel) : l'icône du canal coupe ou rétablit au toucher, le niveau en % et le curseur
+       suivent, le nom du canal ferme la tuile. Indisponible (Sonar fermé…) : tout est grisé, le curseur ne reçoit plus le doigt et la raison est en info-bulle. -->
+  <UserControl.Resources>
+    <Style x:Key="MuteIconButton" TargetType="Button">
+      <Setter Property="MinHeight" Value="48"/>
+      <Setter Property="MinWidth" Value="48"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border Background="{TemplateBinding Background}" CornerRadius="{DynamicResource RadiusSm}">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </UserControl.Resources>
+  <Grid x:Name="Root" Margin="6,6,6,8" ToolTip="{Binding Availability}">
+    <Grid.Style>
+      <Style TargetType="Grid">
+        <Setter Property="Opacity" Value="1"/>
+        <Style.Triggers>
+          <DataTrigger Binding="{Binding IsAvailable}" Value="False"><Setter Property="Opacity" Value="0.4"/></DataTrigger>
+        </Style.Triggers>
+      </Style>
+    </Grid.Style>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <Button Command="{Binding ToggleMuteCommand}" Style="{StaticResource MuteIconButton}" HorizontalAlignment="Center"
+            AutomationProperties.Name="{Binding MuteAccessibleName}" ToolTip="{Binding MuteAccessibleName}">
+      <ui:SymbolIcon FontSize="24">
+        <ui:SymbolIcon.Style>
+          <Style TargetType="ui:SymbolIcon">
+            <Setter Property="Symbol" Value="{Binding Symbol}"/>
+            <Setter Property="Foreground" Value="{DynamicResource DeckAccentText}"/>
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding IsMuted}" Value="True">
+                <Setter Property="Symbol" Value="SpeakerMute24"/>
+                <Setter Property="Foreground" Value="{DynamicResource DeckDanger}"/>
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </ui:SymbolIcon.Style>
+      </ui:SymbolIcon>
+    </Button>
+    <controls:LevelControl Grid.Row="1" Shape="VerticalSlider" Value="{Binding Level, Mode=OneWay}" IsMuted="{Binding IsMuted}"
+                           ChangeCommand="{Binding ChangeCommand}" MuteCommand="{Binding ToggleMuteCommand}" IsEnabled="{Binding IsAvailable}"
+                           TrackBrush="{DynamicResource DeckTileTrack}" FillBrush="{DynamicResource DeckAccent}" MutedBrush="{DynamicResource DeckDanger}"
+                           TextBrush="{Binding Face.LabelBrush}" AutomationProperties.Name="{Binding Title}"/>
+    <TextBlock Grid.Row="2" Text="{Binding ShortTitle}" Foreground="{DynamicResource DeckTextSoft}" FontSize="{DynamicResource FontSizeBody}"
+               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,4,0,0"/>
+  </Grid>
+</UserControl>
