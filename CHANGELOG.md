@@ -4,6 +4,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+## [0.3.0-alpha] — 2026-10-30
+
 ### Modifié (0.3.0-alpha)
 - **Mode édition style Stream Deck** : le catalogue d'actions passe à droite (recherche, catégories repliables), l'inspecteur de la case sous la grille (aperçu et titre à gauche,
   actions et réglages à droite). Un seul accent bleu (couleur source `#2F7DF6`), neutres presque gris, contrastes toujours testés. Aucun changement du format de `config.json`. [ADR 0026](docs/adr/0026-disposition-style-stream-deck-et-palette-sobre.md).
