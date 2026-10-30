@@ -42,7 +42,7 @@ Préparation : GG lancé, Sonar activé ; Paramètres › Intégrations › **St
 | # | Scénario | Étapes | Résultat attendu |
 |---|---|---|---|
 | D1 | Poser une roue | Catalogue › Widgets › Niveau audio ; propriétés : *Sonar : Jeu*, forme Roue, 2 × 2 | Une roue avec le niveau réel de Sonar au centre |
-| D2 | Rotation au doigt | Poser le doigt sur l'anneau, tourner lentement puis vite, passer sous le centre, aller aux butées, revenir | Pas de saut au contact, niveau continu de 0 à 100, la roue repart dès qu'on revient d'une butée ; Sonar suit en temps réel (une valeur toutes les ~70 ms) |
+| D2 | Rotation au doigt | Poser le doigt sur l'anneau, tourner lentement puis vite, passer sous le centre, aller aux butées, revenir | Pas de saut au contact, niveau continu de 0 à 100, la roue repart dès qu'on revient d'une butée ; Sonar suit en temps réel (une valeur toutes les ~40 ms) |
 | D3 | Coupure | Toucher le centre de la roue | « Muet » s'affiche, le canal Sonar est coupé ; retoucher : rétabli |
 | D4 | Focus de la fenêtre | Pendant un geste sur la roue, regarder la fenêtre au premier plan (Bloc-notes par exemple) | Elle **garde le focus** : le deck n'en prend jamais ; un raccourci envoyé ensuite arrive toujours au Bloc-notes |
 | D5 | Curseurs | Mêmes essais en curseur vertical (1 × 2) et horizontal (2 × 1) ; saisir la poignée, toucher ailleurs sur la piste | Poignée saisie sans saut ; ailleurs, elle va sous le doigt |

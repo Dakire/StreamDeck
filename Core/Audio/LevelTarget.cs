@@ -130,7 +130,7 @@ public sealed class LevelSender
     bool _running;
 
     /// <summary>Délai minimal entre deux envois.</summary>
-    public static readonly TimeSpan MinInterval = TimeSpan.FromMilliseconds(70);
+    public static readonly TimeSpan MinInterval = TimeSpan.FromMilliseconds(40);
 
     /// <summary>Expéditeur : <paramref name="send"/> envoie un niveau, <paramref name="delay"/> attend (injecté pour les tests), <paramref name="failed"/> reçoit les erreurs.</summary>
     public LevelSender(Func<int, System.Threading.Tasks.Task> send, Func<TimeSpan, System.Threading.Tasks.Task>? delay = null, Action<Exception>? failed = null)
