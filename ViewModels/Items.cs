@@ -47,7 +47,7 @@ public sealed partial class DeckTileViewModel : PlacedTile, IEditableTile
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsRunning), nameof(IsSuccess), nameof(IsError))] TileRunState _runState;
     [ObservableProperty] string _accessibleName = "";
     /// <summary>true pour la touche sélectionnée dans le mode édition du deck (liseré d'accent).</summary>
-    [ObservableProperty] bool _isSelected;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(CanResize))] bool _isSelected;
     /// <summary>true pour la touche qu'on est en train de glisser (atténuée).</summary>
     [ObservableProperty] bool _isDragSource;
     /// <summary>true pour la case sous le pointeur pendant un glissement (surbrillance).</summary>
@@ -55,6 +55,8 @@ public sealed partial class DeckTileViewModel : PlacedTile, IEditableTile
 
     /// <summary>Bouton de la configuration représenté (null pour la case « retour »).</summary>
     public DeckButton? Button { get; init; }
+    /// <summary>true pour un widget sélectionné en mode édition : sa poignée de coin permet de le redimensionner en glissant sur la grille.</summary>
+    public bool CanResize => IsSelected && IsEdit && Button?.Widget != null;
     /// <summary>Titre enregistré (nom stable de la tuile ; l'affichage est dans <see cref="Face"/>).</summary>
     public string Label { get; init; } = "";
     /// <summary>true en mode « Modifier au toucher » : toucher ouvre l'éditeur au lieu d'exécuter.</summary>

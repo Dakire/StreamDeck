@@ -112,6 +112,9 @@ public partial class MainViewModel
         Notifier.Success(intoFolder ? "Bouton déplacé dans le dossier" : existing == null ? "Bouton déplacé" : "Boutons échangés", "Annuler", () => _doc.Undo());
     }
 
+    /// <summary>Poignée d'un widget glissée sur la grille : le widget sélectionné prend cette taille (ramenée à ce qui tient).</summary>
+    public void ResizeSelectedWidget(int cols, int rows) => Editor?.Properties.ResizeTo(cols, rows);
+
     /// <summary>true pour la case « retour » d'un dossier (elle accepte une touche : elle la sort du dossier).</summary>
     bool IsBackTile(object tile) { int at = Tiles.IndexOf(tile); return at >= 0 && at < _tileKeys.Count && _tileKeys[at].Kind == "back"; }
 

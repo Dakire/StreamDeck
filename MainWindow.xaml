@@ -168,6 +168,12 @@
               </Style>
             </Border.Style>
           </Border>
+          <!-- Widget sélectionné : poignée de coin, à glisser sur la grille pour le redimensionner -->
+          <Border Tag="ResizeHandle" Width="30" Height="30" CornerRadius="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8" Cursor="SizeNWSE"
+                  Background="{DynamicResource DeckAccent}" Visibility="{Binding CanResize, Converter={StaticResource BoolVis}}"
+                  ToolTip="Glisser pour redimensionner" AutomationProperties.Name="Redimensionner le widget">
+            <ui:SymbolIcon Symbol="ArrowMaximize24" FontSize="16" Foreground="{DynamicResource DeckOnAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
           <!-- Mode édition au toucher : chaque touche s'ouvre dans l'éditeur -->
           <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="8,4" CornerRadius="10"
                   Background="{DynamicResource DeckAccent}" Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
@@ -760,7 +766,7 @@
       </Border>
 
       <ItemsControl x:Name="DeckGrid" Grid.Column="0" RenderTransformOrigin="0.5,0.5" ItemsSource="{Binding Tiles}" Focusable="False"
-                    PreviewMouseRightButtonDown="OnDeckRightClick" PreviewMouseLeftButtonDown="OnDeckMouseDown" PreviewMouseMove="OnDeckMouseMove" AllowDrop="True" DragEnter="OnDeckDragOver" DragOver="OnDeckDragOver" Drop="OnDeckDrop"
+                    PreviewMouseRightButtonDown="OnDeckRightClick" PreviewMouseLeftButtonDown="OnDeckMouseDown" PreviewMouseLeftButtonUp="OnDeckMouseUp" PreviewMouseMove="OnDeckMouseMove" AllowDrop="True" DragEnter="OnDeckDragOver" DragOver="OnDeckDragOver" Drop="OnDeckDrop"
                     Width="{Binding L.GridW}" Height="{Binding L.GridH}" HorizontalAlignment="Center" VerticalAlignment="Center">
         <ItemsControl.RenderTransform>
           <TransformGroup>

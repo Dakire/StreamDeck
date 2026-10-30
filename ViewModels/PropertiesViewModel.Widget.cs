@@ -171,6 +171,23 @@ public sealed partial class PropertiesViewModel
         ApplyNow(b => { b.ColSpan = cols; b.RowSpan = rows; }, $"Taille {cols} × {rows}");
     }
 
+    /// <summary>
+    /// Redimensionnement en glissant la poignée du widget sur la grille : la taille demandée est ramenée à la plus grande qui tient (jamais hors de la page,
+    /// jamais sur une case occupée), sans message ; tout le glissement ne compte que pour une seule annulation.
+    /// </summary>
+    public void ResizeTo(int cols, int rows)
+    {
+        if (_place == null || _index < 0 || _widgetId == null) return;
+        var slot = _editor.Slots.FirstOrDefault(s => !s.IsBack && s.Index == _index);
+        if (slot == null) return;
+        bool Occupied(int cell) => cell >= _editor.Slots.Count || _editor.Slots[cell].IsBack || !_editor.Slots[cell].IsEmpty;
+        var (fitCols, fitRows) = TileSpans.Effective(slot.Position, Math.Clamp(cols, 1, WidgetTypes.MaxSpan), Math.Clamp(rows, 1, WidgetTypes.MaxSpan),
+            Math.Max(1, _editor.Columns), Math.Max(1, _editor.Rows), Occupied);
+        var current = _doc.Get(_place, _index)?.Span();
+        if (current == (fitCols, fitRows)) return;
+        ApplyNow(b => { b.ColSpan = fitCols; b.RowSpan = fitRows; }, $"Taille {fitCols} × {fitRows}", "resize");
+    }
+
     partial void OnClockSecondsChanged(bool value) => ApplyNow(b => b.SetOption(WidgetOptionKeys.Seconds, value ? "1" : null), value ? "Afficher les secondes" : "Masquer les secondes");
     partial void OnClockDateChanged(bool value) => ApplyNow(b => b.SetOption(WidgetOptionKeys.Date, value ? null : "0"), value ? "Afficher la date" : "Masquer la date");
     partial void OnClockHour12Changed(bool value) => ApplyNow(b => b.SetOption(WidgetOptionKeys.Hour12, value ? "1" : null), value ? "Heure sur 12 heures" : "Heure sur 24 heures");

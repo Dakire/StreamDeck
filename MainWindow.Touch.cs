@@ -87,6 +87,7 @@ public partial class MainWindow
         if (!GetPointerInfo(id, out var info)) return;
         int x = info.ptPixelLocation.X, y = info.ptPixelLocation.Y;
         if (RouteToLevelControl(msg, id, x, y, (info.pointerFlags & POINTER_FLAG_INCONTACT) != 0)) return;
+        if (RouteToResizeHandle(msg, x, y)) return;
         switch (msg)
         {
             case WM_POINTERDOWN:
@@ -163,6 +164,27 @@ public partial class MainWindow
                 });
                 break;
         }
+    }
+
+    bool _touchResizing;
+
+    /// <summary>
+    /// Poignée de coin d'un widget sélectionné (mode édition) : le doigt posé dessus lui appartient jusqu'au relâchement, la taille suit le doigt sur la grille ;
+    /// ni appui, ni appui long, ni glissement de touche. Retourne true si le message a été traité ici.
+    /// </summary>
+    bool RouteToResizeHandle(int msg, int x, int y)
+    {
+        if (_touchResizing)
+        {
+            if (msg == WM_POINTERUPDATE) ResizeTo(DeckGrid.PointFromScreen(new Point(x, y)));
+            else if (msg == WM_POINTERUP) { _touchResizing = false; _longPressTimer.Stop(); }
+            return true;
+        }
+        if (msg != WM_POINTERDOWN || !_vm.IsEdit || !IsResizeHandle(HitVisual(x, y), out var cell)) return false;
+        _touchResizing = true;
+        _resizeCell = cell;
+        _longPressTimer.Stop();
+        return true;
     }
 
     /// <summary>

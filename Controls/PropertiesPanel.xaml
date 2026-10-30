@@ -54,7 +54,7 @@
         <Grid Visibility="{Binding IsEditable, Converter={StaticResource BoolVis}}">
           <!-- Inspecteur sous la grille : l'aperçu et le titre à gauche, ce que fait le bouton à droite (une seule zone défilante) -->
           <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="340"/>
+            <ColumnDefinition Width="300"/>
             <ColumnDefinition Width="*" MinWidth="320"/>
           </Grid.ColumnDefinitions>
           <StackPanel Margin="0,0,16,0">
@@ -65,12 +65,12 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
               </Grid.ColumnDefinitions>
-              <Border Width="132" Height="132" CornerRadius="16" Background="{Binding Preview.Background}" BorderBrush="{Binding Preview.Border}" BorderThickness="1"
+              <Border Width="84" Height="84" CornerRadius="12" Background="{Binding Preview.Background}" BorderBrush="{Binding Preview.Border}" BorderThickness="1"
                       AutomationProperties.Name="Aperçu du bouton" AutomationProperties.HelpText="Rendu fidèle du bouton sur le deck">
-                <controls:TileFace Face="{Binding Preview}" CornerRadius="16"/>
+                <controls:TileFace Face="{Binding Preview}" CornerRadius="12"/>
               </Border>
-              <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="{Binding HeaderText}" FontWeight="SemiBold" FontSize="16" TextWrapping="Wrap"/>
+              <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding HeaderText}" FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap"/>
                 <TextBlock Text="{Binding Subtitle}" Style="{StaticResource EditorHint}"/>
                 <TextBlock Text="{Binding FolderInfo}" Style="{StaticResource EditorHint}"/>
                 <ItemsControl ItemsSource="{Binding ButtonIssues}" Focusable="False" AutomationProperties.LiveSetting="Polite"/>
@@ -81,10 +81,9 @@
           <!-- Apparence -->
           <Border Style="{StaticResource Card}">
             <StackPanel>
-              <TextBlock Text="Titre" Style="{StaticResource EditorCaption}"/>
-              <ui:TextBox x:Name="TitleBox" Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"
+              <ui:TextBox x:Name="TitleBox" Margin="0,8,0,0" Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"
                           PlaceholderText="Titre affiché sur le bouton" AutomationProperties.Name="Titre du bouton"/>
-              <ui:ToggleSwitch Content="Afficher le titre sur le bouton" IsChecked="{Binding ShowTitle, Mode=TwoWay}" Margin="2,10,0,0" MinHeight="36"
+              <ui:ToggleSwitch Content="Afficher le titre sur le bouton" IsChecked="{Binding ShowTitle, Mode=TwoWay}" Margin="2,4,0,0" MinHeight="36"
                                AutomationProperties.Name="Afficher le titre"/>
             </StackPanel>
           </Border>

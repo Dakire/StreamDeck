@@ -4,6 +4,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+## [1.0.0] — 2026-10-31
+
+Première version stable : reprend toutes les évolutions des versions 0.3.x (voir ci-dessous).
+
 ## [0.3.6-rc] — 2026-10-30
 
 La 0.3.5-rc n'a pas été publiée (tests Discord instables en CI : le faux serveur créait son canal après le début du test) : cette version reprend son contenu. Discord : la liste des canaux locaux est lue sans s'y connecter.
@@ -13,6 +17,8 @@ La 0.3.5-rc n'a pas été publiée (tests Discord instables en CI : le faux serv
   Ajouter, Déplacer, Propriétés) ; le menu d'une page s'ouvre au **clic droit / appui long sur son onglet** (renommer, dupliquer, masquer, page web, badge, exclure du total, supprimer).
   Une page change de rang en **glissant son onglet** (souris et doigt) ; « Nouvelle page » reste le bouton +.
 - **Raccourcis clavier du mode édition** : Suppr, Ctrl+C / X / V / D, F2 (titre), Entrée (ouvrir le dossier), Alt+flèches (déplacer), Ctrl+Z / Y.
+- **Redimensionner un widget depuis la grille** : un widget sélectionné en mode édition a une poignée de coin ; on la glisse (souris ou doigt) et la taille suit, bornée à la page et aux cases libres, en une seule annulation.
+- **Inspecteur plus compact** : aperçu plus petit, titre et interrupteur sur la même carte, plus de place pour les réglages.
 - **Ordre des intégrations** : dans les paramètres, on glisse la poignée d'une carte sur une autre (ou Alt + flèches) ; l'ordre est enregistré (clé facultative `IntegrationOrder`, absente tant qu'on n'a rien réordonné)
   et les catégories du catalogue le suivent au démarrage suivant.
 - **Icônes automatiques** : « Icône du site » (favicon de l'étape Lien web, sur demande) et « Icône de l'appli » (programme ou .ico, plus grande taille) dans l'inspecteur.

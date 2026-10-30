@@ -20,15 +20,72 @@ public partial class MainWindow
     Point _dragStart;
     DeckTileViewModel? _dragSource;
 
+    // ---------- redimensionnement d'un widget par sa poignée de coin ----------
+
+    bool _resizing;
+    int _resizeCell;
+
+    /// <summary>La poignée de redimensionnement (marque « ResizeHandle ») qui contient cet élément, et la case d'ancrage de son widget.</summary>
+    internal static bool IsResizeHandle(DependencyObject? hit, out int cell)
+    {
+        cell = -1;
+        for (DependencyObject? d = hit; d != null; d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+            if (d is FrameworkElement { Tag: "ResizeHandle", DataContext: DeckTileViewModel tile })
+            {
+                cell = tile.Cell;
+                return tile.CanResize;
+            }
+        return false;
+    }
+
+    /// <summary>Taille en cases du widget ancré à <paramref name="cell"/> pour un pointeur en <paramref name="p"/> (repère de la grille) : sa case la plus basse à droite est celle du pointeur.</summary>
+    internal static (int Cols, int Rows) SizeAt(Point p, int cell, double gridW, double gridH, int columns, int rows)
+    {
+        columns = Math.Max(1, columns); rows = Math.Max(1, rows);
+        double cw = gridW / columns, ch = gridH / rows;
+        int col = cell % columns, row = cell / columns;
+        int cols = (int)Math.Floor(p.X / Math.Max(1, cw)) - col + 1, spanRows = (int)Math.Floor(p.Y / Math.Max(1, ch)) - row + 1;
+        return (Math.Clamp(cols, 1, columns - col), Math.Clamp(spanRows, 1, Math.Max(1, rows - row)));
+    }
+
+    void ResizeTo(Point pointInGrid)
+    {
+        var (cols, rows) = SizeAt(pointInGrid, _resizeCell, DeckGrid.ActualWidth, DeckGrid.ActualHeight, _vm.L.Columns, _vm.L.Rows);
+        _vm.ResizeSelectedWidget(cols, rows);
+    }
+
+    void OnDeckMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_resizing) return;
+        _resizing = false;
+        DeckGrid.ReleaseMouseCapture();
+        e.Handled = true;
+    }
+
     /// <summary>Appui de la souris sur une touche en mode édition : le glisser-déposer pour la déplacer peut commencer.</summary>
     void OnDeckMouseDown(object sender, MouseButtonEventArgs e)
     {
+        if (_vm.IsEdit && !IsSyntheticFromTouch() && IsResizeHandle(e.OriginalSource as DependencyObject, out var cell))
+        {
+            _resizing = true;
+            _resizeCell = cell;
+            _dragSource = null;
+            DeckGrid.CaptureMouse();   // la touche est reconstruite à chaque changement de taille : la souris reste à la grille
+            e.Handled = true;
+            return;
+        }
         _dragSource = _vm.IsEdit && !IsSyntheticFromTouch() ? TileAt(e.OriginalSource as DependencyObject) as DeckTileViewModel : null;
         _dragStart = e.GetPosition(null);
     }
 
     void OnDeckMouseMove(object sender, MouseEventArgs e)
     {
+        if (_resizing)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed) ResizeTo(e.GetPosition(DeckGrid));
+            else { _resizing = false; DeckGrid.ReleaseMouseCapture(); }
+            return;
+        }
         if (_dragSource == null || e.LeftButton != MouseButtonState.Pressed) return;
         var now = e.GetPosition(null);
         if (Math.Abs(now.X - _dragStart.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(now.Y - _dragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
