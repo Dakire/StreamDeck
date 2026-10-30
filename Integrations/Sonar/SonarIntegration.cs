@@ -66,7 +66,7 @@ public sealed class SonarIntegration : PolledHttpIntegration, IBackgroundAware
         new SettingField("corepropspath", "Chemin de coreProps.json (avancé)", SettingKind.Text, null, "Vide : %PROGRAMDATA%\\SteelSeries\\SteelSeries Engine 3\\coreProps.json."),
         new SettingField("readroute", "Route de lecture (avancé)", SettingKind.Text, null, "Vide : volumeSettings/classic. Variables : {mode} {slider}."),
         new SettingField("volumeroute", "Route du volume (avancé)", SettingKind.Text, null, "Vide : volumeSettings/classic/{channel}/Volume/{value} (méthode PUT, valeur de 0 à 1)."),
-        new SettingField("muteroute", "Route de la coupure (avancé)", SettingKind.Text, null, "Vide : volumeSettings/classic/{channel}/isMuted/{value} (méthode PUT, true ou false)."),
+        new SettingField("muteroute", "Route de la coupure (avancé)", SettingKind.Text, null, "Vide : volumeSettings/classic/{channel}/Mute/{value} (méthode PUT, true ou false)."),
     };
 
     /// <inheritdoc/>

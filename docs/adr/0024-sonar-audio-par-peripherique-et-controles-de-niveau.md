@@ -1,6 +1,6 @@
 # 0024 — SteelSeries Sonar, audio Windows par périphérique et contrôles de niveau tactiles
 
-- **Statut** : acceptée, **API Sonar non vérifiée** (voir « Risques »).
+- **Statut** : acceptée. **API Sonar vérifiée le 30 octobre 2026 en mode classic** (lecture, volume et coupure ; voir « Vérification » en fin de document) ; le mode streamer en écriture ne l'est pas.
 - **Date** : 27 octobre 2026.
 
 ## Contexte
@@ -14,7 +14,7 @@ dont le niveau se règle dans Sonar. `IAudioService` ne gérait que les périph�
 
 **1. Connecteur Sonar** (`Integrations/Sonar`, id `sonar`, ADR 0011). `SonarIntegration` dérive de `PolledHttpIntegration`.
 - Découverte locale : `coreProps.json` (`%PROGRAMDATA%\SteelSeries\SteelSeries Engine 3`) donne les adresses de GG, la liste de ses sous-applications donne l'adresse du serveur web de Sonar.
-- **Lecture et écriture** par routes HTTP (lecture `volumeSettings/classic`, écriture PUT `…/{channel}/Volume/{value}` de 0 à 1 et `…/isMuted/{value}`). Valeurs publiées comme valeurs d'intégration :
+- **Lecture et écriture** par routes HTTP (lecture `volumeSettings/classic`, écriture PUT `…/{channel}/Volume/{value}` de 0 à 1 et `…/{channel}/Mute/{value}` ; la route `isMuted` écrite d'abord de mémoire renvoie 404 en mode classic). Valeurs publiées comme valeurs d'intégration :
   `{sonar.<canal>.volume}` (0 à 100), `{sonar.<canal>.muted}`.
 - **Garde-fous** : seules les adresses locales (127.0.0.1, localhost, ::1) sont jointes, sans identifiants ; pas de redirection suivie ; délais de 2 à 3 s ; réponses limitées à 1 Mo ; le certificat
   auto-signé de GG n'est accepté que pour une adresse locale (la requête est refusée avant l'envoi sinon). Aucune exception ne remonte : l'état « erreur » dit pourquoi (GG fermé, Sonar éteint…),

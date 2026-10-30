@@ -198,12 +198,12 @@ public sealed class SonarTests : IDisposable
         Assert.Contains(_server.Requests, r => r.Method == "PUT" && r.PathAndQuery == "/volumeSettings/classic/game/Volume/0.45");
 
         Assert.Equal("Micro coupé", await sonar.ExecuteAsync("mute", "micro", CancellationToken.None));
-        Assert.Contains(_server.Requests, r => r.Method == "PUT" && r.PathAndQuery == "/volumeSettings/classic/chatCapture/isMuted/true");
+        Assert.Contains(_server.Requests, r => r.Method == "PUT" && r.PathAndQuery == "/volumeSettings/classic/chatCapture/Mute/true");
         Assert.Equal("true", sonar.Values["chatCapture.muted"]);
         Assert.Equal("Micro rétabli", await sonar.ExecuteAsync("togglemute", "chatCapture", CancellationToken.None));
         Assert.Equal("false", sonar.Values["chatCapture.muted"]);
         await sonar.ExecuteAsync("unmute", "chatRender", CancellationToken.None);
-        Assert.Contains(_server.Requests, r => r.Method == "PUT" && r.PathAndQuery == "/volumeSettings/classic/chatRender/isMuted/false");
+        Assert.Contains(_server.Requests, r => r.Method == "PUT" && r.PathAndQuery == "/volumeSettings/classic/chatRender/Mute/false");
     }
 
     [Fact]

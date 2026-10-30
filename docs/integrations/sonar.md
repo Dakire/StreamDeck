@@ -52,7 +52,7 @@ Activer l'intégration suffit dans le cas normal. Réglages (tous facultatifs) :
 | Chemin de `coreProps.json` (`corepropspath`) | `%PROGRAMDATA%\SteelSeries\SteelSeries Engine 3\coreProps.json` | Où GG publie son adresse |
 | Route de lecture (`readroute`) | `volumeSettings/classic` | Lecture de tous les canaux |
 | Route du volume (`volumeroute`) | `volumeSettings/classic/{channel}/Volume/{value}` | PUT, valeur de 0 à 1 |
-| Route de la coupure (`muteroute`) | `volumeSettings/classic/{channel}/isMuted/{value}` | PUT, `true` ou `false` |
+| Route de la coupure (`muteroute`) | `volumeSettings/classic/{channel}/Mute/{value}` | PUT, `true` ou `false` |
 | Route des sous-applications (`subappsroute`) | `subApps` | Liste des sous-applications de GG |
 
 Variables de route : `{mode}` (classic / streamer), `{slider}`, `{channel}`, `{value}`. En mode streamer, les routes par défaut passent par `{slider}` :
@@ -128,13 +128,19 @@ Le diagnostic est **en lecture seule** (que des requêtes GET) :
 
 La commande `diagnose` s'exécute **même quand le connecteur n'est pas connecté** (c'est la seule : elle sert justement à comprendre pourquoi il ne l'est pas) ; elle utilise les réglages enregistrés lors de la dernière tentative de connexion. Les commandes qui écrivent (`volume`, `mute`…) exigent la connexion.
 
-## Ce qui n'est pas vérifié (pas de GG sur le PC de développement)
+## Vérifié et non vérifié
 
-- Que `coreProps.json` contient bien `ggEncryptedAddress` / `address`, et que ces adresses répondent à `/subApps`.
-- La forme exacte de la réponse de `/subApps` (`subApps.sonar.metadata.webServerAddress`, `isReady`, `isRunning`).
-- Les routes de volume et de coupure (`volumeSettings/classic/{channel}/Volume/{value}`, `…/isMuted/{value}`), la méthode PUT, la plage 0 à 1 et l'échelle (linéaire ou non).
-- La forme de la réponse de lecture (`masters`, `devices`, `classic`) et les noms de canaux (`master`, `game`, `chatRender`, `media`, `aux`, `chatCapture`).
-- Le mode streamer (routes avec `{slider}`).
+Vérifié le 30 octobre 2026 sur un PC avec SteelSeries GG et Sonar en mode classic (lectures, et écritures d'une valeur identique à l'état courant) :
+
+- `coreProps.json` (`ggEncryptedAddress`, `address`), la réponse de `/subApps` (`subApps.sonar.metadata.webServerAddress`, `isReady`, `isRunning`) : adresse de Sonar en HTTP local.
+- Lecture `volumeSettings/classic` : `masters.classic` et `devices.<canal>.classic` (`volume` de 0 à 1, `muted`) ; canaux `game`, `chatRender`, `chatCapture`, `media`, `aux`.
+- Écriture PUT `volumeSettings/classic/{channel}/Volume/{value}` (HTTP 200) et `…/{channel}/Mute/{true|false}` (HTTP 200). **`isMuted` n'existe pas en mode classic (HTTP 404)** : la route était fausse dans les premières versions.
+- Le canal `master` répond aux mêmes routes (`…/classic/master/Volume/…`, `…/master/Mute/…`).
+
+Non vérifié :
+
+- L'échelle du volume (linéaire ou non) entre 0 et 1.
+- Le mode streamer en écriture : les routes `volumeSettings/streamer/{streaming|monitoring}/{channel}/Volume/{value}` existent (réponse « Cannot be called in current mode » en mode classic) ; la coupure y serait `…/isMuted/{value}` (la route `Mute` y répond 404).
 - Le comportement au doigt de la roue sur un vrai écran tactile (les tests actionnent le contrôle par programme, pas avec un doigt).
 
 Liste de contrôle à dérouler sur le PC avec GG : [Tests manuels Sonar](../tests-manuels-sonar.md).

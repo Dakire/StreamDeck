@@ -53,7 +53,7 @@ public sealed class SonarConfig
         : Streamer ? "volumeSettings/streamer/{slider}/{channel}/Volume/{value}" : "volumeSettings/classic/{channel}/Volume/{value}";
     /// <summary>Gabarit d'écriture de la coupure effectif.</summary>
     public string EffectiveMuteRoute => MuteRoute.Length > 0 ? MuteRoute
-        : Streamer ? "volumeSettings/streamer/{slider}/{channel}/isMuted/{value}" : "volumeSettings/classic/{channel}/isMuted/{value}";
+        : Streamer ? "volumeSettings/streamer/{slider}/{channel}/isMuted/{value}" : "volumeSettings/classic/{channel}/Mute/{value}";
 
     /// <summary>Réglages d'après les champs de l'intégration.</summary>
     public static SonarConfig From(IntegrationSettings settings)
@@ -75,9 +75,11 @@ public sealed class SonarConfig
 }
 
 /// <summary>
-/// Ce que StreamDak sait (ou croit savoir) de l'API locale de SteelSeries GG / Sonar. <b>NON VÉRIFIÉ contre un vrai GG</b> : tout ce
-/// fichier est écrit d'après la connaissance publique de l'API (projets tiers, observations) ; routes, noms de canaux et formes des
-/// réponses sont réglables dans les paramètres de l'intégration pour qu'un écart se corrige sans recompiler, et la commande « Diagnostic »
+/// Ce que StreamDak sait de l'API locale de SteelSeries GG / Sonar. <b>Vérifié le 30 octobre 2026 contre GG + Sonar en mode classic</b> :
+/// <c>coreProps.json</c>, <c>/subApps</c>, la lecture <c>volumeSettings/classic</c> et les écritures <c>…/{canal}/Volume/{0..1}</c> et
+/// <c>…/{canal}/Mute/{true|false}</c> (la route <c>isMuted</c> y répond 404). <b>Non vérifié</b> : le mode streamer en écriture (les routes
+/// <c>streamer/{streaming|monitoring}/{canal}/Volume</c> existent mais refusent d'être appelées en mode classic ; la coupure y serait <c>isMuted</c>).
+/// Routes, noms de canaux et formes des réponses restent réglables dans les paramètres de l'intégration, et la commande « Diagnostic »
 /// montre ce que GG renvoie réellement.
 /// </summary>
 public static class SonarApi
