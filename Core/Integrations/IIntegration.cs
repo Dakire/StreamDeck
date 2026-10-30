@@ -61,7 +61,7 @@ public sealed record IntegrationCommand(string Name, string Label, string Descri
 /// </summary>
 public interface IIntegration
 {
-    /// <summary>Identifiant stable : clé de <c>Integrations</c> dans config.json et type d'action (« obs », « vmix »…).</summary>
+    /// <summary>Identifiant stable : clé de <c>Integrations</c> dans config.json et type d'action (« obs », « hue »…).</summary>
     string Id { get; }
     /// <summary>Nom affiché.</summary>
     string Name { get; }

@@ -43,7 +43,7 @@ public class DeckConfig
     /// <summary>Profils, dans l'ordre de l'éditeur ; au moins un après normalisation.</summary>
     public List<DeckProfile> Profiles { get; set; } = new();
     /// <summary>
-    /// Réglages des intégrations (OBS, vMix…) par identifiant. Absent tant qu'aucune n'est configurée. Les secrets (mots de
+    /// Réglages des intégrations (OBS, Hue…) par identifiant. Absent tant qu'aucune n'est configurée. Les secrets (mots de
     /// passe, jetons) n'y figurent jamais : ils sont dans le magasin chiffré de l'utilisateur.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

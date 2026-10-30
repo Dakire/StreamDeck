@@ -96,7 +96,7 @@ flowchart LR
         PL["PluginLoader<br/>un contexte par plugin"]
     end
     subgraph Conn["Integrations/*"]
-        OBS[Obs] & VM[Vmix] & HU[Hue] & EL[Elgato] & SYS[WindowsSystem] & XP[XPlane] & TM[Teams] & TW[Twitch] & TS["ClickUp · Notion · Monday"] & SN[Sonar]
+        OBS[Obs] & HU[Hue] & EL[Elgato] & SYS[WindowsSystem] & TM[Teams] & TW[Twitch] & TS[Notion] & SN[Sonar]
     end
     PLG["plugins/Nom/Nom.dll<br/>(code local de confiance)"]
     Deck["Deck · MainViewModel"] -- "valeurs, voyants" --> IM

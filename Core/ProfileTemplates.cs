@@ -74,15 +74,6 @@ public static class ProfileTemplates
                 S("preset.davinci.play"), S("preset.davinci.blade"), S("preset.davinci.select"), S("preset.davinci.save"),
                 S("preset.premiere.ripple"), S("sys.snip"), S("media.playpause"), S("audio.mute"),
             }),
-        new ProfileTemplate("flight", "Simulation de vol", "Commandes d'X-Plane (à vérifier : les noms dépendent de l'avion). Demande d'activer l'intégration X-Plane.",
-            "Airplane24", 4, 3, new[]
-            {
-                S("xplane.command", "sim/flight_controls/landing_gear_toggle", "Train"), S("xplane.command", "sim/flight_controls/flaps_up", "Volets -"),
-                S("xplane.command", "sim/flight_controls/flaps_down", "Volets +"), S("xplane.command", "sim/autopilot/servos_toggle", "Pilote auto"),
-                S("xplane.command", "sim/lights/landing_lights_toggle", "Phares"), S("xplane.command", "sim/lights/nav_lights_toggle", "Navigation"),
-                S("xplane.command", "sim/lights/strobe_lights_toggle", "Strobes"), S("xplane.command", "sim/lights/beacon_lights_toggle", "Balise"),
-                Empty, Empty, Empty, Empty,
-            }),
         new ProfileTemplate("desktop", "Poste de travail", "Charge du PC, média en cours, volume et raccourcis Windows (intégration « Système Windows » pour les valeurs en direct).",
             "Desktop24", 4, 3, new[]
             {

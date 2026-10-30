@@ -50,15 +50,11 @@
     <ProjectReference Include="Core\StreamDak.Core.csproj" />
     <ProjectReference Include="Platform\Windows\StreamDak.Platform.Windows.csproj" />
     <ProjectReference Include="Integrations\Obs\StreamDak.Integrations.Obs.csproj" />
-    <ProjectReference Include="Integrations\Vmix\StreamDak.Integrations.Vmix.csproj" />
     <ProjectReference Include="Integrations\ElgatoLight\StreamDak.Integrations.ElgatoLight.csproj" />
     <ProjectReference Include="Integrations\Hue\StreamDak.Integrations.Hue.csproj" />
     <ProjectReference Include="Integrations\WindowsSystem\StreamDak.Integrations.WindowsSystem.csproj" />
-    <ProjectReference Include="Integrations\XPlane\StreamDak.Integrations.XPlane.csproj" />
     <ProjectReference Include="Integrations\Teams\StreamDak.Integrations.Teams.csproj" />
-    <ProjectReference Include="Integrations\ClickUp\StreamDak.Integrations.ClickUp.csproj" />
     <ProjectReference Include="Integrations\Notion\StreamDak.Integrations.Notion.csproj" />
-    <ProjectReference Include="Integrations\Monday\StreamDak.Integrations.Monday.csproj" />
     <ProjectReference Include="Integrations\Twitch\StreamDak.Integrations.Twitch.csproj" />
     <ProjectReference Include="Integrations\Google\StreamDak.Integrations.Google.csproj" />
     <ProjectReference Include="Integrations\Notifications\StreamDak.Integrations.Notifications.csproj" />

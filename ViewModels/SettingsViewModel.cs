@@ -56,7 +56,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Mises à jour par les releases GitHub : version, recherche, notes, installation.</summary>
     public UpdateService Updates { get; }
 
-    /// <summary>Une carte par intégration (OBS, vMix…).</summary>
+    /// <summary>Une carte par intégration (OBS, Hue…).</summary>
     public ObservableCollection<IntegrationCardViewModel> Integrations { get; } = new();
     /// <summary>Choix du thème : système, sombre, clair.</summary>
     public ObservableCollection<ChoiceViewModel> ThemeChoices { get; } = new();

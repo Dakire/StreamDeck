@@ -4,6 +4,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Supprimé
+- **Intégrations vMix, X-Plane, ClickUp et monday.com**, leurs tests, leur documentation et le modèle de profil « Simulation de vol ». Un `config.json` qui les mentionne reste lisible : leurs étapes sont signalées comme type inconnu.
+
 ## [0.3.4-rc] — 2026-10-30
 
 ### Corrigé

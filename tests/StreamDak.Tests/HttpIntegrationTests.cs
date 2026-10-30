@@ -8,12 +8,11 @@ using System.Threading.Tasks;
 using StreamDak.Integrations;
 using StreamDak.Integrations.ElgatoLight;
 using StreamDak.Integrations.Hue;
-using StreamDak.Integrations.Vmix;
 using Xunit;
 
 namespace StreamDak.Tests;
 
-/// <summary>vMix, lampes Elgato et Philips Hue contre de faux serveurs HTTP : états, commandes, erreurs lisibles.</summary>
+/// <summary>Lampes Elgato et Philips Hue contre de faux serveurs HTTP : états, commandes, erreurs lisibles.</summary>
 public class HttpIntegrationTests
 {
     static IntegrationSettings For(FakeHttpServer server, string? appKey = null, params (string, string)[] more)
@@ -31,111 +30,6 @@ public class HttpIntegrationTests
     {
         var limit = DateTime.UtcNow.AddMilliseconds(ms);
         while (!condition()) { if (DateTime.UtcNow > limit) throw new TimeoutException("Condition non atteinte"); await Task.Delay(10); }
-    }
-
-    // ---------------------------------------------------------------- vMix
-
-    const string VmixXml = """
-        <vmix><version>29.0.0.1</version>
-          <inputs>
-            <input key="a1" number="1" type="Capture" title="Caméra 1" state="Running" muted="False"/>
-            <input key="b2" number="2" type="Colour" title="Titre" state="Paused" muted="True"/>
-          </inputs>
-          <active>1</active><preview>2</preview><recording>False</recording><streaming>True</streaming>
-        </vmix>
-        """;
-
-    [Fact]
-    public void VmixXmlBecomesValuesByNumberAndByTitle()
-    {
-        var v = VmixIntegration.Parse(VmixXml).ToDictionary(p => p.Key, p => p.Value);
-        Assert.Equal("Caméra 1", v["active"]);
-        Assert.Equal("Titre", v["preview"]);
-        Assert.Equal("true", v["streaming"]);
-        Assert.Equal("false", v["recording"]);
-        Assert.Equal("true", v["active.1"]);
-        Assert.Equal("true", v["active.Caméra 1"]);
-        Assert.Equal("false", v["active.2"]);
-        Assert.Equal("true", v["preview.Titre"]);
-        Assert.Equal("true", v["mute.2"]);
-        Assert.Equal("false", v["mute.1"]);
-    }
-
-    [Fact]
-    public void VmixRejectsAnythingThatIsNotItsApi()
-    {
-        Assert.Contains("Ce n'est pas l'API de vMix", Assert.Throws<InvalidOperationException>(() => VmixIntegration.Parse("<html><body>Bonjour</body></html>")).Message);
-        Assert.Contains("Ce n'est pas l'API de vMix", Assert.Throws<InvalidOperationException>(() => VmixIntegration.Parse("pas du xml")).Message);
-    }
-
-    [Fact]
-    public async Task VmixConnectsReadsItsStateAndSendsFunctionsWithEncodedInputs()
-    {
-        using var server = new FakeHttpServer();
-        bool recording = false;
-        server.Handler = r => r.PathAndQuery.StartsWith("/api/?Function=StartStopRecording", StringComparison.Ordinal)
-            ? Toggle() : (200, VmixXml.Replace("<recording>False</recording>", $"<recording>{(recording ? "True" : "False")}</recording>"));
-        (int, string) Toggle() { recording = !recording; return (200, ""); }
-
-        using var vmix = new VmixIntegration();
-        await vmix.ConnectAsync(For(server), CancellationToken.None);
-        Assert.Equal(ConnectionState.Connected, vmix.State);
-        Assert.Equal("Caméra 1", vmix.Values["active"]);
-
-        Assert.Equal("Coupé", await vmix.ExecuteAsync("cut", null, default));
-        Assert.Equal("Fondu lancé", await vmix.ExecuteAsync("fade", "500", default));
-        Assert.Equal("Fondu lancé", await vmix.ExecuteAsync("fade", null, default));
-        await vmix.ExecuteAsync("preview", "Caméra 1", default);
-        await vmix.ExecuteAsync("active", "2", default);
-        await vmix.ExecuteAsync("mute", "Titre", default);
-        await vmix.ExecuteAsync("stream", null, default);
-        await vmix.ExecuteAsync("function", "OverlayInput1&Input=3", default);
-        await vmix.ExecuteAsync("record", null, default);
-        var urls = server.Requests.Select(r => r.PathAndQuery).Where(u => u.Contains("Function=", StringComparison.Ordinal)).ToList();
-        Assert.Contains("/api/?Function=Cut", urls);
-        Assert.Contains("/api/?Function=Fade&Duration=500", urls);
-        Assert.Contains("/api/?Function=Fade&Duration=1000", urls);
-        Assert.Contains("/api/?Function=PreviewInput&Input=Cam%C3%A9ra%201", urls);
-        Assert.Contains("/api/?Function=ActiveInput&Input=2", urls);
-        Assert.Contains("/api/?Function=Audio&Input=Titre", urls);
-        Assert.Contains("/api/?Function=StartStopStreaming", urls);
-        Assert.Contains("/api/?Function=OverlayInput1&Input=3", urls);
-        Assert.Equal("true", vmix.Values["recording"]);   // l'état est relu tout de suite après la commande
-    }
-
-    [Fact]
-    public async Task VmixErrorsAreActionable()
-    {
-        using var server = new FakeHttpServer();
-        server.Handler = _ => (200, "<html/>");
-        using var vmix = new VmixIntegration();
-        Assert.Contains("Ce n'est pas l'API", (await Assert.ThrowsAsync<InvalidOperationException>(() => vmix.ConnectAsync(For(server), CancellationToken.None))).Message);
-
-        int closed;
-        using (var probe = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0)) { probe.Start(); closed = ((System.Net.IPEndPoint)probe.LocalEndpoint).Port; probe.Stop(); }
-        using var absent = new VmixIntegration();
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => absent.ConnectAsync(new IntegrationSettings { Values = new Dictionary<string, string> { ["port"] = closed.ToString(System.Globalization.CultureInfo.InvariantCulture) } }, CancellationToken.None));
-        Assert.Contains("Web Controller", ex.Message);
-
-        server.Handler = _ => (200, VmixXml);
-        using var ok = new VmixIntegration();
-        await ok.ConnectAsync(For(server), CancellationToken.None);
-        await Assert.ThrowsAsync<ArgumentException>(() => ok.ExecuteAsync("preview", "", default));
-        await Assert.ThrowsAsync<ArgumentException>(() => ok.ExecuteAsync("fade", "vite", default));
-        await Assert.ThrowsAsync<ArgumentException>(() => ok.ExecuteAsync("danser", null, default));
-        server.Handler = r => r.PathAndQuery.Contains("Function=", StringComparison.Ordinal) ? (500, "") : (200, VmixXml);
-        Assert.Contains("500", (await Assert.ThrowsAsync<InvalidOperationException>(() => ok.ExecuteAsync("cut", null, default))).Message);
-    }
-
-    [Fact]
-    public async Task APolledIntegrationDeclaresTheConnectionLostAfterRepeatedFailures()
-    {
-        using var server = new FakeHttpServer { Handler = _ => (200, VmixXml) };
-        using var vmix = new VmixIntegration();
-        await vmix.ConnectAsync(For(server), CancellationToken.None);
-        server.Handler = _ => (200, "<html/>");           // l'appareil ne répond plus correctement
-        await Until(() => vmix.State == ConnectionState.Error, 8000);
-        Assert.Empty(vmix.Values);
     }
 
     // ---------------------------------------------------------------- lampes Elgato
@@ -381,8 +275,8 @@ public class HttpIntegrationTests
     [Fact]
     public void EveryConnectorDescribesItsCommandsAndStateKeys()
     {
-        var all = new IIntegration[] { new VmixIntegration(), new ElgatoLightIntegration(), new HueIntegration() };
-        Assert.Equal(new[] { "vmix", "elgato", "hue" }, all.Select(i => i.Id));
+        var all = new IIntegration[] { new ElgatoLightIntegration(), new HueIntegration() };
+        Assert.Equal(new[] { "elgato", "hue" }, all.Select(i => i.Id));
         foreach (var integration in all)
         {
             Assert.False(string.IsNullOrWhiteSpace(integration.Help), integration.Id);

@@ -20,7 +20,7 @@ se passe de raccourci et fonctionne même derrière un jeu lancé en administrat
 ## Limites
 
 - Aucun état n'est lisible (pas de voyant) : une touche « micro » bascule sans savoir si le micro est coupé.
-  Pour un état réel, voir les intégrations OBS, vMix, Hue…
+  Pour un état réel, voir les intégrations OBS, Hue…
 - Ce sont les raccourcis par défaut ; s'ils sont modifiés dans l'application, change la combinaison du bouton.
 - Le titre de fenêtre recherché peut différer selon la langue ou la version : ajuste le champ « Fenêtre » du bouton.
 - Certains jeux ou anti-triche ignorent les touches simulées (`SendInput`). Aucun contournement n'est prévu. Quand l'application au premier plan tourne en

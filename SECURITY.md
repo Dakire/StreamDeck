@@ -30,7 +30,7 @@ des programmes ; StreamDak ne prétend pas s'en protéger.
 - **Binaires dans l'historique** : deux commits très anciens (`24d677f`, `2411db3`) contiennent un dossier `bin/Release/net9.0-windows/`
   (anciens binaires TouchDeck). Aucun secret, mais ils alourdissent le dépôt ; `bin/` est ignoré depuis. Les retirer demanderait de réécrire
   l'historique : non fait (décision à prendre par le propriétaire).
-- **Stockage** : les champs de type « secret » des intégrations (mots de passe OBS/vMix, jetons ClickUp, Notion, Monday, Twitch, clé du pont Hue,
+- **Stockage** : les champs de type « secret » des intégrations (mots de passe OBS, jetons Notion, Twitch, clé du pont Hue,
   secret client et jeton Google) vont dans `secrets.dat`, chiffré par **DPAPI portée utilisateur courant** avec une entropie propre à l'application
   (`DpapiSecretStore`). Le fichier copié sur un autre compte est illisible.
 - **Migration automatique** (nouveau) : `IntegrationManager.MigratePlaintextSecrets`, appelée au démarrage, déplace dans le magasin chiffré tout
@@ -78,7 +78,7 @@ Aucune télémétrie, aucun suivi d'usage, aucun appel de mise à jour automatiq
   désactivable dans Paramètres › Mises à jour ;
 - widgets de données : hôtes saisis (ping, états), adresse saisie (compteur) et `geocoding-api.open-meteo.com` / `api.open-meteo.com` (météo : le nom de la ville seulement, HTTPS) ;
 - **badges de notifications** : pages WebView2 cachées vers les services dont un bouton porte l'adresse (jamais sans le connecteur activé) ;
-- intégrations : OBS, vMix, Elgato, Hue (réseau local), Teams, ClickUp, Notion, Monday, Twitch, Google (OAuth « application de bureau » avec le
+- intégrations : OBS, Elgato, Hue (réseau local), Teams, Notion, Twitch, Google (OAuth « application de bureau » avec le
   projet Google Cloud de l'utilisateur) ;
 - pages web affichées dans WebView2 (adresses saisies par l'utilisateur).
 

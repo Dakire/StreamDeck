@@ -9,20 +9,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using StreamDak.Actions;
 using StreamDak.Integrations;
-using StreamDak.Integrations.ClickUp;
 using StreamDak.Integrations.Discord;
 using StreamDak.Integrations.ElgatoLight;
 using StreamDak.Integrations.Google;
 using StreamDak.Integrations.Hue;
-using StreamDak.Integrations.Monday;
 using StreamDak.Integrations.Notifications;
 using StreamDak.Integrations.Sonar;
 using StreamDak.Integrations.Notion;
 using StreamDak.Integrations.Obs;
 using StreamDak.Integrations.Twitch;
-using StreamDak.Integrations.Vmix;
 using StreamDak.Integrations.WindowsSystem;
-using StreamDak.Integrations.XPlane;
 using StreamDak.Integrations.Teams;
 using StreamDak.Platform.Windows;
 
@@ -136,15 +132,11 @@ public static class AppHost
         // Identifiants déjà pris (types d'action de StreamDak et intégrations livrées) : un plugin ne peut pas les reprendre
         var takenIds = new HashSet<string>(BuiltInActions.All.Select(h => h.Type), StringComparer.OrdinalIgnoreCase);
         AddIntegration<ObsIntegration>(services, takenIds);
-        AddIntegration<VmixIntegration>(services, takenIds);
         AddIntegration<ElgatoLightIntegration>(services, takenIds);
         AddIntegration<HueIntegration>(services, takenIds);
         AddIntegration<WindowsSystemIntegration>(services, takenIds);
-        AddIntegration<XPlaneIntegration>(services, takenIds);
         AddIntegration<TeamsIntegration>(services, takenIds);
-        AddIntegration<ClickUpIntegration>(services, takenIds);
         AddIntegration<NotionIntegration>(services, takenIds);
-        AddIntegration<MondayIntegration>(services, takenIds);
         AddIntegration<TwitchIntegration>(services, takenIds);
         AddIntegration<GoogleIntegration>(services, takenIds);
         AddIntegration<NotificationIntegration>(services, takenIds);

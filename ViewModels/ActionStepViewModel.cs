@@ -102,7 +102,7 @@ public partial class ActionStepViewModel : ObservableObject
     public ObservableCollection<ChoiceViewModel> TypeChoices { get; } = new();
     /// <summary>Touches média proposées.</summary>
     public ObservableCollection<ChoiceViewModel> MediaChoices { get; } = new();
-    /// <summary>Commandes de l'intégration choisie (OBS, vMix…).</summary>
+    /// <summary>Commandes de l'intégration choisie (OBS, Hue…).</summary>
     public ObservableCollection<ChoiceViewModel> CommandChoices { get; } = new();
     /// <summary>Commandes audio proposées.</summary>
     public ObservableCollection<ChoiceViewModel> AudioChoices { get; } = new();

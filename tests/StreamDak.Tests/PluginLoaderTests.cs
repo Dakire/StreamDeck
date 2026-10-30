@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using StreamDak.Integrations;
-using StreamDak.Integrations.Vmix;
+using StreamDak.Integrations.ElgatoLight;
 using Xunit;
 
 namespace StreamDak.Tests;
@@ -22,11 +22,11 @@ public class PluginLoaderTests : IDisposable
     }
 
     // Copie une des bibliothèques d'intégration de StreamDak comme si c'était un plugin posé par l'utilisateur
-    string InstallVmixCopy(string name)
+    string InstallSampleCopy(string name)
     {
         var folder = Path.Combine(_dir, name);
         Directory.CreateDirectory(folder);
-        var source = typeof(VmixIntegration).Assembly.Location;
+        var source = typeof(ElgatoLightIntegration).Assembly.Location;
         var target = Path.Combine(folder, name + ".dll");
         File.Copy(source, target);
         return target;
@@ -35,7 +35,7 @@ public class PluginLoaderTests : IDisposable
     [Fact]
     public void ALibraryWithAnIntegrationIsLoadedInItsOwnContextAndSharesTheCoreContract()
     {
-        var dll = InstallVmixCopy("MonPlugin");
+        var dll = InstallSampleCopy("MonPlugin");
 
         var plugins = PluginLoader.Load(_dir);
 
@@ -44,16 +44,16 @@ public class PluginLoaderTests : IDisposable
         Assert.Equal(dll, plugin.Path);
         Assert.Equal(64, plugin.Sha256.Length);
         var type = Assert.Single(plugin.Integrations);
-        Assert.NotSame(typeof(VmixIntegration), type);                       // chargé dans un autre contexte
+        Assert.NotSame(typeof(ElgatoLightIntegration), type);                       // chargé dans un autre contexte
         Assert.True(typeof(IIntegration).IsAssignableFrom(type));            // mais le contrat Core est le même
         using var instance = (IDisposable)Activator.CreateInstance(type)!;
-        Assert.Equal("vmix", ((IIntegration)instance).Id);
+        Assert.Equal("elgato", ((IIntegration)instance).Id);
     }
 
     [Fact]
     public void ABrokenOrEmptyPluginNeverStopsTheOthers()
     {
-        InstallVmixCopy("Bon");
+        InstallSampleCopy("Bon");
         Directory.CreateDirectory(Path.Combine(_dir, "SansDll"));                                  // dossier sans bibliothèque
         Directory.CreateDirectory(Path.Combine(_dir, "Corrompu"));
         File.WriteAllText(Path.Combine(_dir, "Corrompu", "Corrompu.dll"), "ceci n'est pas une bibliothèque .NET");
@@ -76,8 +76,8 @@ public class PluginLoaderTests : IDisposable
     [Fact]
     public void OnlyPublicConcreteIntegrationsWithAnEmptyConstructorAreOffered()
     {
-        var found = PluginLoader.FindIntegrations(typeof(VmixIntegration).Assembly);
-        Assert.Equal(new[] { typeof(VmixIntegration) }, found);
+        var found = PluginLoader.FindIntegrations(typeof(ElgatoLightIntegration).Assembly);
+        Assert.Equal(new[] { typeof(ElgatoLightIntegration) }, found);
         Assert.DoesNotContain(typeof(PolledHttpIntegration), PluginLoader.FindIntegrations(typeof(PolledHttpIntegration).Assembly));
     }
 }
