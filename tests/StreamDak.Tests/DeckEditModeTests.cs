@@ -65,14 +65,14 @@ public class DeckEditModeTests
         _host.Run(() =>
         {
             Assert.Null(vm.Editor);
-            Assert.Equal(0, vm.LeftPanelWidth + vm.RightPanelWidth);
+            Assert.Equal(0, vm.CatalogWidth + vm.InspectorHeight);
 
             EnterEdit(vm);
             Assert.NotNull(vm.Editor);
             Assert.True(vm.HasEditor);
             Assert.True(shell.Editing);                                      // la fenêtre devient activable pour la saisie
-            Assert.InRange(vm.LeftPanelWidth, 260, 380);
-            Assert.InRange(vm.RightPanelWidth, 320, 460);
+            Assert.InRange(vm.CatalogWidth, 300, 420);                       // catalogue à droite
+            Assert.InRange(vm.InspectorHeight, 320, 460);                    // inspecteur sous la grille
             Assert.Empty(windows.Opened);                                    // aucune fenêtre d'édition séparée
         });
     }
@@ -88,7 +88,7 @@ public class DeckEditModeTests
             Assert.False(vm.IsEdit);
             Assert.Null(vm.Editor);
             Assert.False(shell.Editing);                                     // le deck ne prend plus jamais le focus
-            Assert.Equal(0, vm.LeftPanelWidth + vm.RightPanelWidth);
+            Assert.Equal(0, vm.CatalogWidth + vm.InspectorHeight);
             Assert.Equal(2, shell.EditingChanges);
         });
     }
@@ -107,7 +107,8 @@ public class DeckEditModeTests
             EnterEdit(vm);
             Assert.Equal((cols, rows), (vm.L.Columns, vm.L.Rows));            // même disposition qu'en usage normal
             Assert.True(vm.L.GridW < width, "la grille cède de la place aux panneaux");
-            Assert.True(vm.L.GridW + vm.LeftPanelWidth + vm.RightPanelWidth <= 1920);
+            Assert.True(vm.L.GridW + vm.CatalogWidth <= 1920);
+            Assert.True(vm.L.GridH + vm.InspectorHeight <= 1080);
             vm.EndEditCommand.Execute(null);
             Assert.Equal(width, vm.L.GridW, 1);                               // retour à la taille d'origine
         });
@@ -533,6 +534,12 @@ public class DeckEditModeTests
                 Assert.True(field.ActualHeight >= 48, $"champ titre : {field.ActualHeight} px");
                 Assert.Equal("Deux", field.Text);
                 Assert.True(win.DeckCatalog.ActualWidth > 200 && win.DeckProps.ActualWidth > 280);
+                var catalog = win.DeckCatalog.TransformToVisual((System.Windows.Media.Visual)content).Transform(new Point(0, 0));
+                var inspector = win.DeckProps.TransformToVisual((System.Windows.Media.Visual)content).Transform(new Point(0, 0));
+                var grid = win.DeckGrid.TransformToVisual((System.Windows.Media.Visual)content).Transform(new Point(0, 0));
+                Assert.True(catalog.X > win.DeckGrid.ActualWidth / 2, $"le catalogue est à droite de la grille : catalogue {catalog}, grille {grid} {win.DeckGrid.ActualWidth}×{win.DeckGrid.ActualHeight}");
+                Assert.True(inspector.Y > grid.Y + win.DeckGrid.ActualHeight - 1, "l'inspecteur est sous la grille");
+                Assert.True(win.DeckProps.ActualWidth > win.DeckCatalog.ActualWidth, "l'inspecteur est large, sous la grille");
                 Assert.Contains(WpfHost.Descendants<Border>(content), b => b.DataContext is DeckTileViewModel { IsSelected: true });
             });
             lock (_host.Bindings.Messages) Assert.True(_host.Bindings.Messages.Count == 0, string.Join(" | ", _host.Bindings.Messages));

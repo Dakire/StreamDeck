@@ -673,18 +673,21 @@
     <!-- ===== Grille : centrée, à la taille exacte des touches (aucune touche étirée) ===== -->
     <Grid Grid.Row="1">
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="{Binding LeftPanelWidth}"/>
         <ColumnDefinition Width="*"/>
-        <ColumnDefinition Width="{Binding RightPanelWidth}"/>
+        <ColumnDefinition Width="{Binding CatalogWidth}"/>
       </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="*"/>
+        <RowDefinition Height="{Binding InspectorHeight}"/>
+      </Grid.RowDefinitions>
 
-      <!-- Mode édition : tiroir d'actions à gauche (toucher une action la pose dans la case choisie). La fenêtre est activable pendant l'édition. -->
-      <Border Grid.Column="0" Style="{StaticResource DrawerSheet}" Margin="{Binding L.GridMargin}"
+      <!-- Mode édition : catalogue d'actions à droite, sur toute la hauteur (toucher une action la pose dans la case choisie). La fenêtre est activable pendant l'édition. -->
+      <Border Grid.Column="1" Grid.RowSpan="2" Style="{StaticResource DrawerSheet}" Margin="{Binding L.GridMargin}"
               Visibility="{Binding HasEditor, Converter={StaticResource BoolVis}}">
         <controls:CatalogPanel x:Name="DeckCatalog" DataContext="{Binding Editor}"/>
       </Border>
 
-      <ItemsControl x:Name="DeckGrid" Grid.Column="1" ItemsSource="{Binding Tiles}" Focusable="False"
+      <ItemsControl x:Name="DeckGrid" Grid.Column="0" ItemsSource="{Binding Tiles}" Focusable="False"
                     PreviewMouseRightButtonDown="OnDeckRightClick" PreviewMouseLeftButtonDown="OnDeckMouseDown" PreviewMouseMove="OnDeckMouseMove" AllowDrop="True" DragEnter="OnDeckDragOver" DragOver="OnDeckDragOver" Drop="OnDeckDrop"
                     Width="{Binding L.GridW}" Height="{Binding L.GridH}" HorizontalAlignment="Center" VerticalAlignment="Center">
         <ItemsControl.RenderTransform>
@@ -705,8 +708,8 @@
         </ItemsControl.ItemContainerStyle>
       </ItemsControl>
 
-      <!-- Mode édition : propriétés de la case choisie à droite -->
-      <Border Grid.Column="2" Style="{StaticResource DrawerSheet}" Margin="{Binding L.GridMargin}"
+      <!-- Mode édition : inspecteur de la case choisie sous la grille -->
+      <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource DrawerSheet}" Margin="{Binding L.GridMargin}"
               Visibility="{Binding HasEditor, Converter={StaticResource BoolVis}}">
         <controls:PropertiesPanel x:Name="DeckProps" DataContext="{Binding Editor}" PanelRadius="28" EdgeThickness="0"/>
       </Border>

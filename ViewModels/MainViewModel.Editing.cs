@@ -5,17 +5,17 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace StreamDak.ViewModels;
 
-// Mode édition intégré au deck : un panneau d'actions à gauche et un panneau de propriétés à droite, dans la fenêtre du deck, à la place
+// Mode édition intégré au deck : le catalogue d'actions à droite et l'inspecteur de la case sous la grille, dans la fenêtre du deck, à la place
 // de l'éditeur séparé. Le moteur est l'EditorViewModel (catalogue, sélection, brouillon, annuler / rétablir), sans sa fenêtre.
 public partial class MainViewModel
 {
     /// <summary>Éditeur intégré (catalogue, sélection, propriétés), non nul pendant le mode édition.</summary>
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasEditor))] EditorViewModel? editor;
 
-    /// <summary>Largeur du panneau d'actions (gauche), 0 hors mode édition.</summary>
-    [ObservableProperty] double leftPanelWidth;
-    /// <summary>Largeur du panneau de propriétés (droite), 0 hors mode édition.</summary>
-    [ObservableProperty] double rightPanelWidth;
+    /// <summary>Largeur du catalogue d'actions (colonne de droite), 0 hors mode édition.</summary>
+    [ObservableProperty] double catalogWidth;
+    /// <summary>Hauteur de l'inspecteur de la case (sous la grille), 0 hors mode édition.</summary>
+    [ObservableProperty] double inspectorHeight;
 
     /// <summary>true pendant le mode édition (les panneaux sont affichés).</summary>
     public bool HasEditor => Editor != null;
@@ -23,14 +23,14 @@ public partial class MainViewModel
     /// <summary>Panneaux proportionnels à l'écran, bornés pour garder des cibles tactiles confortables et une grille lisible.</summary>
     void ApplyPanelWidths()
     {
-        if (IsEdit && _rawW > 0)
+        if (IsEdit && _rawW > 0 && _rawH > 0)
         {
-            LeftPanelWidth = Math.Min(Math.Clamp(_rawW * 0.2, 260, 380), _rawW * 0.28);
-            RightPanelWidth = Math.Min(Math.Clamp(_rawW * 0.26, 320, 460), _rawW * 0.34);
+            CatalogWidth = Math.Min(Math.Clamp(_rawW * 0.22, 300, 420), _rawW * 0.3);
+            InspectorHeight = Math.Min(Math.Clamp(_rawH * 0.4, 320, 460), _rawH * 0.5);
         }
-        else { LeftPanelWidth = 0; RightPanelWidth = 0; }
-        _w = _rawW - LeftPanelWidth - RightPanelWidth;
-        _h = _rawH;
+        else { CatalogWidth = 0; InspectorHeight = 0; }
+        _w = _rawW - CatalogWidth;
+        _h = _rawH - InspectorHeight;
     }
 
     partial void OnIsEditChanged(bool value)

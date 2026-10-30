@@ -51,8 +51,13 @@
         </StackPanel>
 
         <!-- Bouton ou dossier -->
-        <StackPanel Visibility="{Binding IsEditable, Converter={StaticResource BoolVis}}">
-
+        <Grid Visibility="{Binding IsEditable, Converter={StaticResource BoolVis}}">
+          <!-- Inspecteur sous la grille : l'aperçu et le titre à gauche, ce que fait le bouton à droite (une seule zone défilante) -->
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="340"/>
+            <ColumnDefinition Width="*" MinWidth="320"/>
+          </Grid.ColumnDefinitions>
+          <StackPanel Margin="0,0,16,0">
           <!-- Aperçu en direct -->
           <Border Style="{StaticResource Card}" Padding="16">
             <Grid>
@@ -84,6 +89,10 @@
             </StackPanel>
           </Border>
 
+          <ui:Button Content="Supprimer ce bouton" Icon="{ui:SymbolIcon Delete24}" Command="{Binding DeleteCommand}" Appearance="Danger"
+                     Style="{StaticResource EditorChip}" HorizontalAlignment="Left"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1">
           <!-- Widget : taille en cases et réglages propres au widget -->
           <Border Style="{StaticResource Card}" Visibility="{Binding IsWidget, Converter={StaticResource BoolVis}}">
             <StackPanel>
@@ -259,9 +268,8 @@
             </StackPanel>
           </Expander>
 
-          <ui:Button Content="Supprimer ce bouton" Icon="{ui:SymbolIcon Delete24}" Command="{Binding DeleteCommand}" Appearance="Danger"
-                     Style="{StaticResource EditorChip}" HorizontalAlignment="Left"/>
-        </StackPanel>
+          </StackPanel>
+        </Grid>
       </StackPanel>
     </ScrollViewer>
 

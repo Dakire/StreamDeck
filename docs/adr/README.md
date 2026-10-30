@@ -30,5 +30,6 @@ effacée : elle passe au statut « Remplacée par … ».
 | [0023](0023-infobadge-et-pastille-de-la-barre-des-taches.md) | Badge d'onglet en InfoBadge, total de non lus et pastille de la barre des tâches | Acceptée |
 | [0024](0024-sonar-audio-par-peripherique-et-controles-de-niveau.md) | SteelSeries Sonar, audio Windows par périphérique et contrôles de niveau tactiles (roue, curseurs) | Acceptée |
 | [0025](0025-discord-rpc-pages-web-passives-et-melangeur.md) | Discord par RPC local, pages web passives, menus sans rechargement, mélangeur audio, nouveaux widgets | Acceptée |
+| [0026](0026-disposition-style-stream-deck-et-palette-sobre.md) | Disposition du mode édition style Stream Deck (catalogue à droite, inspecteur en bas), palette sobre, curseur vertical, IAudioMixerProvider | Acceptée |
 
 Modèle d'une nouvelle décision : contexte, décision, conséquences, statut et date.
