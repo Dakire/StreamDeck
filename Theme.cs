@@ -15,8 +15,11 @@ public sealed record Palette(
 /// <summary>Palette claire / sombre de l'application ; sombre par défaut pour les nouvelles configurations, « système » suit Windows.</summary>
 public static class Theme
 {
-    /// <summary>Couleur source du thème Material Design 3 : toutes les couleurs de l'interface en sont tirées (palettes tonales, voir <see cref="MaterialColor"/>).</summary>
-    public const string Seed = "#6C5CE7";
+    /// <summary>
+    /// Couleur source du thème Material Design 3 : toutes les couleurs de l'interface en sont tirées (palettes tonales, voir <see cref="MaterialColor"/>).
+    /// Un seul accent bleu ; les neutres (surfaces, textes) en sont presque gris, et seuls le succès, l'erreur et la simulation ont leur propre couleur (ADR 0026).
+    /// </summary>
+    public const string Seed = "#2F7DF6";
 
     // Thème MD3 : surfaces tonales (l'élévation se lit par le ton, pas par une ombre), accent « primary » (clair en sombre, foncé en clair)
     // avec la couleur à poser dessus (OnAccent), conteneurs primaire et secondaire pour les éléments sélectionnés.
