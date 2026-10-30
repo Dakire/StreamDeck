@@ -38,6 +38,12 @@ public class DeckConfig
     public string? ActiveProfile { get; set; }
     /// <summary>Identifiants du catalogue d'actions mis en favoris.</summary>
     public List<string> Favorites { get; set; } = new();
+    /// <summary>
+    /// Ordre choisi des intégrations (identifiants), dans les paramètres et le catalogue. Absent tant qu'on n'a pas réordonné ; les intégrations qui n'y figurent pas
+    /// viennent ensuite, dans leur ordre d'origine, et un identifiant inconnu est ignoré.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? IntegrationOrder { get; set; }
     /// <summary>Identifiants du catalogue d'actions récemment ajoutés (le plus récent en premier).</summary>
     public List<string> Recents { get; set; } = new();
     /// <summary>Profils, dans l'ordre de l'éditeur ; au moins un après normalisation.</summary>

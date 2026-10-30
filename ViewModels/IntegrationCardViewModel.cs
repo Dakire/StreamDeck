@@ -81,6 +81,8 @@ public sealed partial class IntegrationCardViewModel : ObservableObject, IDispos
         Refresh();
     }
 
+    /// <summary>Identifiant stable de l'intégration (« obs », « sonar »).</summary>
+    public string Id => _integration.Id;
     /// <summary>Nom de l'intégration.</summary>
     public string Name => _integration.Name;
     /// <summary>Icône Fluent de l'intégration.</summary>

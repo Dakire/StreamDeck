@@ -58,6 +58,18 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     /// <summary>Une carte par intégration (OBS, Hue…).</summary>
     public ObservableCollection<IntegrationCardViewModel> Integrations { get; } = new();
+    /// <summary>
+    /// Glisser-déposer (ou Alt+flèches) d'une carte d'intégration : elle prend le rang de la carte visée ; l'ordre est enregistré (réglage, hors historique)
+    /// et suit au catalogue au prochain démarrage.
+    /// </summary>
+    public void MoveIntegration(int from, int to)
+    {
+        if (from == to || from < 0 || to < 0 || from >= Integrations.Count || to >= Integrations.Count) return;
+        Integrations.Move(from, to);
+        var order = Integrations.Select(c => c.Id).ToList();
+        _doc.UpdateSettings(c => c.IntegrationOrder = order, "Ordre des intégrations");
+    }
+
     /// <summary>Choix du thème : système, sombre, clair.</summary>
     public ObservableCollection<ChoiceViewModel> ThemeChoices { get; } = new();
     /// <summary>Écrans proposés pour le deck.</summary>
@@ -98,7 +110,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         IntegrationManager integrations, ISecretStore secrets, UpdateService updates)
     {
         Updates = updates;
-        foreach (var integration in integrations.Integrations) Integrations.Add(new IntegrationCardViewModel(integration, integrations, doc, secrets));
+        foreach (var integration in IntegrationOrder.Sort(integrations.Integrations, doc.Config.IntegrationOrder, i => i.Id)) Integrations.Add(new IntegrationCardViewModel(integration, integrations, doc, secrets));
         _shell = shell;
         _doc = doc;
         _displays = displays;

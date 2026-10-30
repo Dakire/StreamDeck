@@ -182,7 +182,8 @@ public static class AppHost
         // dans cet ordre, avant l'ouverture de la première fenêtre
         Log.Info($"Démarrage (dossier {ConfigStore.Dir}{(options.Simulate ? ", simulation" : "")})");
         ActionValidator.Keyboard = sp.GetRequiredService<PlatformServices>().Keyboard;
-        foreach (var integration in sp.GetServices<IIntegration>())
+        // Catalogue : les catégories d'intégrations suivent l'ordre choisi dans les paramètres
+        foreach (var integration in IntegrationOrder.Sort(sp.GetServices<IIntegration>(), sp.GetRequiredService<DeckDocument>().Config.IntegrationOrder, i => i.Id))
         {
             var captured = integration;
             ActionValidator.RegisterExternalType(captured.Id, a => IntegrationAction.Validate(captured, a));

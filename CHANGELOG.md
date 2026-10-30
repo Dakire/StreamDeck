@@ -13,6 +13,11 @@ La 0.3.5-rc n'a pas été publiée (tests Discord instables en CI : le faux serv
   Ajouter, Déplacer, Propriétés) ; le menu d'une page s'ouvre au **clic droit / appui long sur son onglet** (renommer, dupliquer, masquer, page web, badge, exclure du total, supprimer).
   Une page change de rang en **glissant son onglet** (souris et doigt) ; « Nouvelle page » reste le bouton +.
 - **Raccourcis clavier du mode édition** : Suppr, Ctrl+C / X / V / D, F2 (titre), Entrée (ouvrir le dossier), Alt+flèches (déplacer), Ctrl+Z / Y.
+- **Ordre des intégrations** : dans les paramètres, on glisse la poignée d'une carte sur une autre (ou Alt + flèches) ; l'ordre est enregistré (clé facultative `IntegrationOrder`, absente tant qu'on n'a rien réordonné)
+  et les catégories du catalogue le suivent au démarrage suivant.
+- **Icônes automatiques** : « Icône du site » (favicon de l'étape Lien web, sur demande) et « Icône de l'appli » (programme ou .ico, plus grande taille) dans l'inspecteur.
+- **Glisser-déposer animé** : touche atténuée, case visée et onglet survolé qui s'allument, étiquette qui apparaît en fondu ; une touche lâchée sur un onglet change de page, sur « Retour » sort du dossier ;
+  l'ouverture d'un dossier joue un court zoom (sauf animations coupées).
 - **Interface plus dense** : cibles de 36 px (menus du deck, clic droit à 32 px, catalogue, inspecteur, paramètres), police et légendes plus petites ; dock, dialogues et widgets du deck gardent 48 px.
 - **Espacements plus compacts** : cartes, pastilles, légendes et champs de l'inspecteur, lignes du catalogue et des menus du deck, cartes des paramètres (cibles tactiles toujours de 48 px).
 

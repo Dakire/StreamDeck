@@ -94,6 +94,11 @@ public static class ConfigNormalizer
         }
 
         cfg.Favorites = cfg.Favorites.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
+        if (cfg.IntegrationOrder != null)
+        {
+            cfg.IntegrationOrder = cfg.IntegrationOrder.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Take(100).ToList();
+            if (cfg.IntegrationOrder.Count == 0) cfg.IntegrationOrder = null;
+        }
         cfg.Recents = cfg.Recents.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().Take(MaxRecents).ToList();
         return new NormalizeResult(migrated, warnings);
     }
