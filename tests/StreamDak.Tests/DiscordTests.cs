@@ -35,13 +35,23 @@ sealed class FakeDiscord : IAsyncDisposable
     public int Input = 80, Output = 100;
     public string? Channel = "Général";
 
-    public FakeDiscord() { _loop = Task.Run(LoopAsync); }
+    NamedPipeServerStream? _first;
+
+    // Le premier canal existe dès la fin du constructeur : un test qui démarre tout de suite ne doit pas trouver Discord « fermé » (course avec le thread du serveur)
+    public FakeDiscord()
+    {
+        _first = NewServer();
+        _loop = Task.Run(LoopAsync);
+    }
+
+    NamedPipeServerStream NewServer() => new(Prefix + "0", PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
 
     async Task LoopAsync()
     {
         while (!_stop.IsCancellationRequested)
         {
-            var server = new NamedPipeServerStream(Prefix + "0", PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+            var server = _first ?? NewServer();
+            _first = null;
             try
             {
                 await server.WaitForConnectionAsync(_stop.Token);

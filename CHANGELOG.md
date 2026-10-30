@@ -4,7 +4,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
-## [0.3.5-rc] — 2026-10-30
+## [0.3.6-rc] — 2026-10-30
+
+La 0.3.5-rc n'a pas été publiée (tests Discord instables en CI : le faux serveur créait son canal après le début du test) : cette version reprend son contenu. Discord : la liste des canaux locaux est lue sans s'y connecter.
 
 ### Modifié
 - **Mode édition simplifié** : les boutons « Case » et « Page » du dock disparaissent. Le menu d'une case s'ouvre au **clic droit / appui long** et il est à plat (plus de sous-menus

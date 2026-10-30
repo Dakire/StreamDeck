@@ -1,7 +1,9 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
@@ -55,14 +57,23 @@ internal sealed class DiscordIpc : IAsyncDisposable
     /// <summary>Nom du canal ouvert (« discord-ipc-0 »).</summary>
     public string PipeName { get; private set; } = "";
 
+    /// <summary>Noms des canaux nommés présents sur ce PC, ou null si la liste n'est pas lisible (tous les canaux sont alors essayés).</summary>
+    static HashSet<string>? ExistingPipes()
+    {
+        try { return new HashSet<string>(Directory.EnumerateFiles(@"\\.\pipe\").Select(Path.GetFileName).OfType<string>(), StringComparer.OrdinalIgnoreCase); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException) { return null; }
+    }
+
     /// <summary>Ouvre le premier canal Discord disponible (<paramref name="prefix"/> suivi de 0 à 9), ou null si Discord n'est pas lancé.</summary>
     public static async Task<DiscordIpc?> OpenAsync(string prefix, CancellationToken cancellation)
     {
+        var existing = ExistingPipes();
         for (int i = 0; i < 10; i++)
         {
             var name = prefix + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            // Un canal qui n'existe pas est écarté tout de suite ; un canal qui existe (serveur occupé, machine chargée) a le temps de répondre
-            if (!File.Exists(@"\\.\pipe\" + name)) continue;
+            // Un canal qui n'existe pas est écarté tout de suite ; un canal qui existe (serveur occupé, machine chargée) a le temps de répondre.
+            // La liste est lue sans se connecter : sonder un canal (File.Exists) peut consommer son unique instance côté serveur.
+            if (existing != null && !existing.Contains(name)) continue;
             var pipe = new NamedPipeClientStream(".", name, PipeDirection.InOut, PipeOptions.Asynchronous);
             try
             {
