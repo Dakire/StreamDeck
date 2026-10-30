@@ -4,6 +4,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+## [0.3.2-rc] — 2026-10-30
+
 ### Modifié
 - **Curseurs Sonar prêts à poser** : la catégorie *Sonar* du catalogue propose en tête un **curseur vertical tactile 1 × 2 par canal** (Principal, Jeu, Discussion, Média, Aux, Micro) et un **Mélangeur Sonar**, au lieu des seules actions « +X / -X ».
 - **Inspecteur** : une étape n'affiche plus que son type choisi (bouton *Changer* pour déplier les autres), pour laisser la place aux réglages.
