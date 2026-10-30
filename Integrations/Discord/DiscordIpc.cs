@@ -61,10 +61,12 @@ internal sealed class DiscordIpc : IAsyncDisposable
         for (int i = 0; i < 10; i++)
         {
             var name = prefix + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            // Un canal qui n'existe pas est écarté tout de suite ; un canal qui existe (serveur occupé, machine chargée) a le temps de répondre
+            if (!File.Exists(@"\\.\pipe\" + name)) continue;
             var pipe = new NamedPipeClientStream(".", name, PipeDirection.InOut, PipeOptions.Asynchronous);
             try
             {
-                await pipe.ConnectAsync(150, cancellation);
+                await pipe.ConnectAsync(1500, cancellation);
                 return new DiscordIpc(pipe) { PipeName = name };
             }
             catch (Exception ex) when (ex is TimeoutException or IOException or UnauthorizedAccessException)

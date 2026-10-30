@@ -4,7 +4,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
-## [0.3.2-rc] — 2026-10-30
+## [0.3.3-rc] — 2026-10-30
+
+La 0.3.2-rc n'a pas été publiée (un test Discord de timing a échoué en CI) : cette version reprend son contenu. Discord : les canaux locaux inexistants sont écartés tout de suite et un canal existant a 1,5 s pour répondre (150 ms avant).
 
 ### Modifié
 - **Curseurs Sonar prêts à poser** : la catégorie *Sonar* du catalogue propose en tête un **curseur vertical tactile 1 × 2 par canal** (Principal, Jeu, Discussion, Média, Aux, Micro) et un **Mélangeur Sonar**, au lieu des seules actions « +X / -X ».
