@@ -239,7 +239,16 @@ public class GoogleTests
 
     // ---------- lecture de l'agenda (widget agenda) ----------
 
-    const string Events = """
+    /// <summary>Décalage de la machine ce jour-là : les heures du test sont celles de la machine, quel que soit son fuseau (le runner de la CI est en UTC).</summary>
+    static string LocalOffset()
+    {
+        var offset = TimeZoneInfo.Local.GetUtcOffset(new DateTime(2026, 10, 21, 12, 0, 0));
+        return (offset < TimeSpan.Zero ? "-" : "+") + offset.ToString("hh':'mm", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    static readonly string Events = EventsTemplate.Replace("+02:00", LocalOffset(), StringComparison.Ordinal);
+
+    const string EventsTemplate = """
         {"items":[
           {"summary":"Réunion d'équipe","status":"confirmed","start":{"dateTime":"2026-10-21T10:00:00+02:00"},"end":{"dateTime":"2026-10-21T11:00:00+02:00"}},
           {"summary":"Férié","start":{"date":"2026-10-22"},"end":{"date":"2026-10-23"}},
