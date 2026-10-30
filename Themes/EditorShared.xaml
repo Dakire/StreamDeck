@@ -40,7 +40,15 @@
           </Grid>
 
           <TextBlock Text="Type" Style="{StaticResource EditorCaption}" Margin="2,0,0,6"/>
-          <ItemsControl ItemsSource="{Binding TypeChoices}" Style="{StaticResource ChipWrap}"/>
+          <!-- Seul le type choisi est affiché (le reste de la place va aux réglages) ; « Changer » déplie toutes les pastilles -->
+          <StackPanel Orientation="Horizontal">
+            <Border CornerRadius="20" MinHeight="48" Padding="18,0" Background="{DynamicResource DeckAccentContainer}" AutomationProperties.Name="{Binding TypeLabel, StringFormat='Type : {0}'}">
+              <TextBlock Text="{Binding TypeLabel}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource DeckOnAccentContainer}"/>
+            </Border>
+            <ui:Button Content="Changer" Icon="{ui:SymbolIcon ChevronDown24}" Command="{Binding ToggleTypePickerCommand}" Style="{StaticResource EditorChip}"
+                       Margin="8,0,0,0" AutomationProperties.Name="Changer le type de l'étape"/>
+          </StackPanel>
+          <ItemsControl ItemsSource="{Binding TypeChoices}" Style="{StaticResource ChipWrap}" Visibility="{Binding IsTypePickerOpen, Converter={StaticResource BoolVis}}"/>
 
           <TextBlock Text="{Binding ValueCaption}" Style="{StaticResource EditorCaption}"
                      Visibility="{Binding ShowValue, Converter={StaticResource BoolVis}}"/>

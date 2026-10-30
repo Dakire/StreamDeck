@@ -347,7 +347,11 @@ ulle\part.exe" } } });
             vm.Properties.AddStepCommand.Execute(null);
             vm.Properties.AddStepCommand.Execute(null);
             Assert.Equal(3, vm.Properties.Steps.Count);
+            Assert.False(vm.Properties.Steps[2].IsTypePickerOpen);                     // seul le type choisi est affiché : plus de place pour les réglages
+            vm.Properties.Steps[2].ToggleTypePickerCommand.Execute(null);
+            Assert.True(vm.Properties.Steps[2].IsTypePickerOpen);                      // « Changer » déplie toutes les pastilles
             vm.Properties.Steps[2].TypeChoices[8].Command.Execute(null);               // Fenêtre → Pause (index 9) : on vérifie surtout l'ordre
+            Assert.False(vm.Properties.Steps[2].IsTypePickerOpen);                     // choisir referme le sélecteur
             vm.Properties.Steps[2].MoveUpCommand.Execute(null);
             var types = Doc.Get(vm.Place, 6)!.Actions.Select(a => a.Type).ToArray();
             Assert.Equal(3, types.Length);

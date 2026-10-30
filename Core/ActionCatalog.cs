@@ -7,7 +7,8 @@ namespace StreamDak;
 /// <summary>Une entrée du catalogue : un bouton prêt à poser, avec ses actions pré-remplies.</summary>
 public sealed record CatalogAction(
     string Id, string Category, string Name, string Description, string Icon, string Color,
-    DeckAction[] Actions, string? Note = null, bool IsFolder = false, string Keywords = "", string? Label = null, string? Widget = null, string? WidgetUrl = null)
+    DeckAction[] Actions, string? Note = null, bool IsFolder = false, string Keywords = "", string? Label = null, string? Widget = null, string? WidgetUrl = null,
+    IReadOnlyDictionary<string, string>? WidgetOptions = null, int Cols = 0, int Rows = 0)
 {
     /// <summary>Titre du bouton créé (par défaut le nom ; « {time} » pour l'horloge).</summary>
     public string ButtonLabel => Label ?? Name;
@@ -20,6 +21,9 @@ public sealed record CatalogAction(
         {
             var button = new DeckButton { Label = ButtonLabel, Icon = Icon, Color = Color, Widget = widget.Id, ColSpan = widget.Cols, RowSpan = widget.Rows };
             if (WidgetUrl != null) button.SetOption(WidgetOptionKeys.Url, WidgetUrl);   // page prête à l'emploi : adresse déjà renseignée
+            if (WidgetOptions != null) foreach (var (key, value) in WidgetOptions) button.SetOption(key, value);   // réglages prêts (canal Sonar, forme)
+            if (Cols > 0) button.ColSpan = Cols;
+            if (Rows > 0) button.RowSpan = Rows;
             return button;
         }
         return new DeckButton

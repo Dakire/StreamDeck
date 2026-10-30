@@ -194,6 +194,7 @@ public static class AppHost
         {
             var captured = integration;
             ActionValidator.RegisterExternalType(captured.Id, a => IntegrationAction.Validate(captured, a));
+            if (captured.Id == "sonar") ActionCatalog.Register(captured.Category, captured.Icon, StreamDak.Audio.LevelOptions.SonarSliderEntries());   // curseurs tactiles en tête de la catégorie
             ActionCatalog.Register(captured.Category, captured.Icon, IntegrationCatalog.Entries(captured));
         }
         sp.GetRequiredService<AppearanceService>();

@@ -276,6 +276,19 @@ public static class LevelOptions
         return targets.Count > 0 ? targets : MixerTargets(DefaultMixer);
     }
 
+    /// <summary>
+    /// Entrées de catalogue prêtes à poser dans la catégorie Sonar : un curseur vertical tactile 1 × 2 par canal, et le mélangeur de tous les canaux.
+    /// Identifiants stables (<c>sonar.slider.game</c>…).
+    /// </summary>
+    public static IReadOnlyList<CatalogAction> SonarSliderEntries() =>
+        SonarChannels.Select(c => new CatalogAction($"sonar.slider.{c.Channel}", "Sonar", $"Curseur : {c.Label}",
+                $"Curseur vertical tactile du canal Sonar « {c.Label} » : glisser pour régler le volume, toucher l'icône pour couper.", ChannelIcon(c.Channel), "#2563EB",
+                Array.Empty<DeckAction>(), null, false, $"sonar curseur slider volume {c.Label}", $"Sonar {c.Label}", WidgetTypes.Level, null,
+                new Dictionary<string, string> { [Source] = $"sonar:{c.Channel}", [Shape] = LevelShapes.KeyOf(LevelShape.VerticalSlider)! }, 1, 2))
+            .Append(new CatalogAction("sonar.mixer", "Sonar", "Mélangeur Sonar", "Un curseur par canal Sonar (jeu, discussion, média, aux, micro), côte à côte.", "Options24", "#2563EB",
+                Array.Empty<DeckAction>(), null, false, "sonar mélangeur mixer curseurs", "Mélangeur Sonar", WidgetTypes.Mixer, null, null, 3, 2))
+            .ToList();
+
     /// <summary>Canaux Sonar proposés dans l'éditeur, dans l'ordre : (nom canonique, libellé).</summary>
     public static readonly IReadOnlyList<(string Channel, string Label)> SonarChannels = new[]
     {

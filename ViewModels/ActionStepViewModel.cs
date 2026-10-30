@@ -92,6 +92,8 @@ public partial class ActionStepViewModel : ObservableObject
     [ObservableProperty] string _value;
     [ObservableProperty] string _args;
     [ObservableProperty] string _title = "";
+    /// <summary>true : toutes les pastilles de type sont affichées ; sinon seul le type choisi (plus de place pour les réglages).</summary>
+    [ObservableProperty] bool _isTypePickerOpen;
     [ObservableProperty] bool _canMoveUp;
     [ObservableProperty] bool _canMoveDown;
     [ObservableProperty] bool _canRemove;
@@ -232,6 +234,7 @@ public partial class ActionStepViewModel : ObservableObject
 
     void SetType(string key)
     {
+        IsTypePickerOpen = false;
         if (Type == key) return;
         _loading = true;
         Type = key;
@@ -322,6 +325,7 @@ public partial class ActionStepViewModel : ObservableObject
 
     // ---------- commandes ----------
 
+    [RelayCommand] void ToggleTypePicker() => IsTypePickerOpen = !IsTypePickerOpen;
     [RelayCommand] void MoveUp() => _owner.MoveStep(this, -1);
     [RelayCommand] void MoveDown() => _owner.MoveStep(this, 1);
     [RelayCommand] void Remove() => _owner.RemoveStep(this);
