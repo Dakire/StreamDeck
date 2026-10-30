@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json.Nodes;
 
 namespace StreamDak.Integrations.Sonar;
@@ -205,6 +206,27 @@ public static class SonarApi
         value = 0;
         return Child(obj, key) is JsonValue v && (v.TryGetValue(out value) || (v.TryGetValue<string>(out var text) && double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value)));
     }
+
+    /// <summary>
+    /// Gestionnaire HTTP de Sonar et de GG : aucune redirection, aucun proxy, et le certificat auto-signé de GG n'est accepté que si l'hôte joint est local.
+    /// Avec <see cref="SocketsHttpHandler"/>, l'expéditeur du rappel de validation est le <see cref="System.Net.Security.SslStream"/> (pas la requête) : son nom d'hôte cible fait foi.
+    /// </summary>
+    public static SocketsHttpHandler CreateLocalHandler()
+    {
+#pragma warning disable CA5359 // Do Not Disable Certificate Validation : limité aux hôtes locaux, voir ci-dessus
+        return new SocketsHttpHandler
+        {
+            AllowAutoRedirect = false,
+            UseProxy = false,
+            ConnectTimeout = TimeSpan.FromSeconds(2),
+            SslOptions = { RemoteCertificateValidationCallback = (sender, _, _, _) => IsLocalHost((sender as System.Net.Security.SslStream)?.TargetHostName) },
+        };
+#pragma warning restore CA5359
+    }
+
+    /// <summary>true pour « 127.0.0.1 », « localhost » ou « ::1 » (hôte cible d'une connexion TLS).</summary>
+    public static bool IsLocalHost(string? host) =>
+        host != null && (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) || (System.Net.IPAddress.TryParse(host.Trim('[', ']'), out var ip) && System.Net.IPAddress.IsLoopback(ip)));
 
     /// <summary>Route relative d'après un gabarit : <c>{mode}</c>, <c>{slider}</c>, <c>{channel}</c> et <c>{value}</c> sont remplacés (valeurs encodées). Refuse une route absolue ou qui remonte.</summary>
     public static string BuildRoute(string template, SonarConfig config, string channel = "", string value = "")

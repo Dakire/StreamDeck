@@ -2,9 +2,8 @@
 
 Connecteur `StreamDak.Integrations.Sonar` (type d'action `sonar`), action `audiodevice` et widget **Niveau audio** (roue ou curseur). ADR 0024.
 
-> **API Sonar non vérifiée.** Ce connecteur a été écrit sans SteelSeries GG sur le PC de développement. Les routes, les noms de canaux et la forme des réponses
-> viennent de la connaissance publique de l'API locale de GG (projets tiers, observations), **jamais testés contre un vrai GG**. Tout est réglable dans les
-> paramètres de l'intégration, et la commande **Diagnostic** montre ce que GG répond vraiment. Voir « Ce qui n'est pas vérifié » plus bas.
+> **API vérifiée le 30 octobre 2026** contre SteelSeries GG et Sonar en mode classic (voir « Vérifié et non vérifié » plus bas). GG répond en HTTPS avec un certificat
+> auto-signé, accepté uniquement pour une adresse locale ; la commande **Diagnostic** montre ce que GG répond vraiment.
 
 ## Ce que ça permet
 

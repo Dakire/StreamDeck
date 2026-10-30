@@ -92,16 +92,7 @@ public sealed class SonarIntegration : PolledHttpIntegration, IBackgroundAware
     {
         // Redirections suivies : jamais (une réponse de GG ne peut pas nous envoyer ailleurs). Certificat auto-signé de GG accepté pour une adresse
         // locale seulement : chaque requête passe par Local(), qui refuse tout autre hôte avant l'envoi.
-#pragma warning disable CA5359 // Do Not Disable Certificate Validation : limité aux adresses locales, voir ci-dessus
-        var handler = new SocketsHttpHandler
-        {
-            AllowAutoRedirect = false,
-            UseProxy = false,
-            ConnectTimeout = TimeSpan.FromSeconds(2),
-            SslOptions = { RemoteCertificateValidationCallback = (sender, _, _, _) => sender is HttpRequestMessage { RequestUri: { } uri } && SonarApi.IsLocalAddress(uri) },
-        };
-#pragma warning restore CA5359
-        return new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(3) };
+        return new HttpClient(SonarApi.CreateLocalHandler()) { Timeout = TimeSpan.FromSeconds(3) };
     }
 
     // ---------------------------------------------------------------- découverte et lecture
@@ -332,7 +323,7 @@ public sealed class SonarIntegration : PolledHttpIntegration, IBackgroundAware
             .AppendLine(CultureInfo.InvariantCulture, $"StreamDak : diagnostic Sonar (lecture seule), {DateTime.Now:yyyy-MM-dd HH:mm:ss}")
             .AppendLine(CultureInfo.InvariantCulture, $"Mode : {config.Mode}{(config.Streamer ? ", curseur " + config.Slider : "")} ; canaux demandés : {string.Join(", ", config.Channels)}")
             .AppendLine(CultureInfo.InvariantCulture, $"Routes : lecture {config.EffectiveReadRoute} ; volume {config.EffectiveVolumeRoute} ; coupure {config.EffectiveMuteRoute}")
-            .AppendLine("API Sonar non vérifiée : envoie ce fichier pour ajuster les routes.")
+            .AppendLine("API Sonar vérifiée en mode classic (30 octobre 2026) ; en cas d'écart, envoie ce fichier pour ajuster les routes.")
             .AppendLine();
         foreach (var line in trace) text.AppendLine(line);
         var report = text.ToString();

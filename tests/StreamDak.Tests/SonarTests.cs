@@ -310,7 +310,7 @@ public sealed class SonarTests : IDisposable
         Assert.Contains("chatRender 35 % (coupé)", message);
         Assert.DoesNotContain(_server.Requests.Skip(before), r => r.Method != "GET");   // lecture seule
         var report = File.ReadAllText(Path.Combine(_dir, SonarIntegration.ReportFileName));
-        Assert.Contains("API Sonar non vérifiée", report);
+        Assert.Contains("API Sonar vérifiée en mode classic", report);
         Assert.Contains("/volumeSettings/classic", report);
         Assert.Contains("Clés de premier niveau : masters, devices", report);
         Assert.Contains("Canaux reconnus", report);
@@ -320,6 +320,8 @@ public sealed class SonarTests : IDisposable
     public async Task TheDiagnosticStillExplainsWhenGgIsClosed()
     {
         var sonar = Create();
+        // GG fermé : coreProps.json absent (le test ne dépend pas du GG qui tourne peut-être sur cette machine)
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sonar.ConnectAsync(Settings(("corepropspath", Path.Combine(Path.GetTempPath(), "absent-coreProps.json"))), CancellationToken.None));
         // non connecté : la commande est refusée par le moteur, mais l'appel direct reste propre et documente l'échec
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => sonar.ExecuteAsync("diagnose", null, CancellationToken.None));
         Assert.Contains(SonarIntegration.ReportFileName, ex.Message);

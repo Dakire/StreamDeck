@@ -4,6 +4,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Corrigé
+- **Sonar : « a répondu 404 à /subApps »** : le certificat HTTPS auto-signé de GG était toujours refusé (le rappel de validation de `SocketsHttpHandler` reçoit le `SslStream`, pas la requête). La connexion retombait sur une adresse HTTP qui répond 404. Test avec un vrai serveur TLS local.
+
 ## [0.3.3-rc] — 2026-10-30
 
 La 0.3.2-rc n'a pas été publiée (un test Discord de timing a échoué en CI) : cette version reprend son contenu. Discord : les canaux locaux inexistants sont écartés tout de suite et un canal existant a 1,5 s pour répondre (150 ms avant).
