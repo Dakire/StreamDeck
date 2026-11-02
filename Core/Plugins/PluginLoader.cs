@@ -47,17 +47,36 @@ public static class PluginLoader
     }
 
     /// <summary>Charge tous les plugins du dossier. Un plugin illisible est ignoré et consigné : il ne bloque ni les autres ni le démarrage.</summary>
-    public static IReadOnlyList<LoadedPlugin> Load(string pluginsDir)
+    public static IReadOnlyList<LoadedPlugin> Load(string pluginsDir, PluginTrust? trust = null)
     {
         var loaded = new List<LoadedPlugin>();
+        if (trust != null) Directory.CreateDirectory(pluginsDir);   // la liste d'autorisation vit ici : un plugin posé plus tard ne doit pas être autorisé d'office
         if (!Directory.Exists(pluginsDir)) return loaded;
-        foreach (var folder in Directory.EnumerateDirectories(pluginsDir).OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
+        var folders = Directory.EnumerateDirectories(pluginsDir).OrderBy(d => d, StringComparer.OrdinalIgnoreCase).ToList();
+        // Première utilisation de la liste : les plugins déjà posés étaient acceptés jusque-là, ils le restent (empreintes relevées avant tout chargement)
+        if (trust is { FileExists: false, IsValid: true })
+        {
+            var existing = folders.Where(f => File.Exists(Path.Combine(f, Path.GetFileName(f) + ".dll"))).Select(f => (Path.GetFileName(f), PluginTrust.FolderHash(f))).ToList();
+            try { trust.TrustAndSave(existing); Log.Info($"Plugins : liste d'autorisation créée ({existing.Count} plugin(s) déjà présent(s))"); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Log.Warn($"Plugins : liste d'autorisation impossible à écrire ({ex.Message})"); }
+        }
+        foreach (var folder in folders)
         {
             var name = Path.GetFileName(folder);
             var dll = Path.Combine(folder, name + ".dll");
             if (!File.Exists(dll)) { Log.Warn($"Plugin « {name} » ignoré : {name}.dll est introuvable dans son dossier"); continue; }
             try
             {
+                if (trust != null)
+                {
+                    // Vérifié avant le chargement : le code d'un plugin non autorisé ne s'exécute jamais
+                    var folderHash = PluginTrust.FolderHash(folder);
+                    if (!trust.IsTrusted(name, folderHash))
+                    {
+                        Log.Warn($"Plugin « {name} » refusé : son empreinte n'est pas dans {PluginTrust.FileName}. Si tu fais confiance à ce code, ajoute \"{name}\": \"{folderHash}\" au fichier {FolderName}/{PluginTrust.FileName}.");
+                        continue;
+                    }
+                }
                 var assembly = new PluginContext(dll).LoadFromAssemblyPath(dll);
                 var types = FindIntegrations(assembly);
                 var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dll)));
@@ -65,7 +84,7 @@ public static class PluginLoader
                 Log.Info($"Plugin « {name} » chargé : {string.Join(", ", types.Select(t => t.Name))} (SHA-256 {hash[..16]}…)");
                 loaded.Add(new LoadedPlugin(name, dll, hash, types));
             }
-            catch (Exception ex) when (ex is BadImageFormatException or FileLoadException or ReflectionTypeLoadException or IOException or InvalidOperationException)
+            catch (Exception ex) when (ex is BadImageFormatException or FileLoadException or ReflectionTypeLoadException or IOException or InvalidOperationException or TypeLoadException or UnauthorizedAccessException)
             {
                 Log.Warn($"Plugin « {name} » ignoré : {ex.Message}");
             }

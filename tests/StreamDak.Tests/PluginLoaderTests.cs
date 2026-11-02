@@ -67,6 +67,42 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
+    public void FirstUseTrustsPluginsAlreadyThereThenRefusesNewOnesAndChangedOnes()
+    {
+        InstallSampleCopy("Ancien");
+        var trust = PluginTrust.Open(_dir);
+        Assert.False(trust.FileExists);
+
+        // Première utilisation : le plugin déjà posé reste chargé et la liste est créée
+        Assert.Equal(new[] { "Ancien" }, PluginLoader.Load(_dir, trust).Select(p => p.Name));
+        Assert.True(File.Exists(Path.Combine(_dir, PluginTrust.FileName)));
+
+        // Un plugin posé ensuite n'est pas chargé tant que son empreinte n'est pas listée
+        InstallSampleCopy("Nouveau");
+        Assert.Equal(new[] { "Ancien" }, PluginLoader.Load(_dir, PluginTrust.Open(_dir)).Select(p => p.Name));
+
+        // Une fois listée, il l'est
+        var reopened = PluginTrust.Open(_dir);
+        reopened.TrustAndSave(new[] { ("Nouveau", PluginTrust.FolderHash(Path.Combine(_dir, "Nouveau"))) });
+        Assert.Equal(new[] { "Ancien", "Nouveau" }, PluginLoader.Load(_dir, PluginTrust.Open(_dir)).Select(p => p.Name));
+
+        // Un plugin modifié après coup n'est plus autorisé
+        File.AppendAllText(Path.Combine(_dir, "Ancien", "Ancien.deps.json"), "{}");
+        File.WriteAllBytes(Path.Combine(_dir, "Ancien", "Autre.dll"), new byte[] { 1, 2, 3 });
+        Assert.Equal(new[] { "Nouveau" }, PluginLoader.Load(_dir, PluginTrust.Open(_dir)).Select(p => p.Name));
+    }
+
+    [Fact]
+    public void AnUnreadableTrustListLoadsNothingInsteadOfEverything()
+    {
+        InstallSampleCopy("Bon");
+        File.WriteAllText(Path.Combine(_dir, PluginTrust.FileName), "pas du json");
+        var trust = PluginTrust.Open(_dir);
+        Assert.False(trust.IsValid);
+        Assert.Empty(PluginLoader.Load(_dir, trust));
+    }
+
+    [Fact]
     public void ANonexistentFolderMeansNoPlugin()
     {
         Assert.Empty(PluginLoader.Load(Path.Combine(_dir, "absent")));

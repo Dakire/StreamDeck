@@ -46,12 +46,26 @@ public sealed class LocalApiServer : IDisposable
         Log.Info($"API locale à l'écoute sur le canal {PipeName}");
     }
 
+    /// <summary>Silence au-delà duquel un client est déconnecté.</summary>
+    public static readonly TimeSpan IdleTimeout = TimeSpan.FromMinutes(2);
+
     async Task AcceptLoopAsync()
     {
         while (!_stop.IsCancellationRequested)
         {
-            var pipe = new NamedPipeServerStream(PipeName, PipeDirection.InOut, MaxClients,
-                PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+            NamedPipeServerStream pipe;
+            try
+            {
+                pipe = new NamedPipeServerStream(PipeName, PipeDirection.InOut, MaxClients,
+                    PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+            }
+            // Toutes les instances occupées (plus de MaxClients clients) : l'écoute ne doit pas s'arrêter pour autant, on réessaie
+            catch (IOException ex)
+            {
+                Log.Warn($"API locale : canal indisponible, nouvel essai ({ex.Message})");
+                try { await Task.Delay(250, _stop.Token); } catch (OperationCanceledException) { return; }
+                continue;
+            }
             try { await pipe.WaitForConnectionAsync(_stop.Token); }
             catch (OperationCanceledException) { await pipe.DisposeAsync(); return; }
             catch (IOException ex) { Log.Warn($"API locale : connexion refusée : {ex.Message}"); await pipe.DisposeAsync(); continue; }
@@ -83,7 +97,10 @@ public sealed class LocalApiServer : IDisposable
         var text = new StringBuilder();
         var one = new char[1];
         bool tooBig = false;
-        while (await reader.ReadAsync(one.AsMemory(), _stop.Token) == 1)
+        // Un client qui ne dit plus rien pendant IdleTimeout est lâché : il ne garde pas un des MaxClients emplacements pour toujours
+        using var idle = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
+        idle.CancelAfter(IdleTimeout);
+        while (await reader.ReadAsync(one.AsMemory(), idle.Token) == 1)
         {
             if (one[0] == '\n') return tooBig ? "{\"cmd\":\"too-large\"}" : text.ToString().TrimEnd('\r');
             if (text.Length >= MaxRequestBytes) tooBig = true; else text.Append(one[0]);

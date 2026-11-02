@@ -18,7 +18,11 @@ public static partial class LogRedactor
         text = UserInfo().Replace(text, "$1" + Mask + "@");
         text = QueryParameter().Replace(text, "$1" + Mask);
         text = AuthScheme().Replace(text, "$1 " + Mask);
-        text = Assignment().Replace(text, "$1$2" + Mask);
+        text = Assignment().Replace(text, "$1" + Mask);
+        text = Header().Replace(text, "$1" + Mask);
+        text = Webhook().Replace(text, "$1" + Mask);
+        text = PathKey().Replace(text, "$1" + Mask);
+        text = BareCode().Replace(text, "$1" + Mask);
         return text;
     }
 
@@ -35,6 +39,22 @@ public static partial class LogRedactor
     private static partial Regex AuthScheme();
 
     // password=hunter2, "token": "abc", secret: xyz
-    [GeneratedRegex(@"(\b(?:password|passwd|pwd|secret|client_secret|api_?key|apikey|token|access_token|refresh_token)\b""?\s*[:=]\s*""?)[^\s,;""'&}]+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"(\b(?:password|passwd|pwd|secret|client_secret|api[_-]?key|apikey|token|access_token|refresh_token)\b""?\s*[:=]\s*)(?:""[^""]*""|'[^']*'|[^\s;""'&}]+)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex Assignment();
+
+    // En-têtes dont la valeur entière est secrète, y compris sans schéma (« Authorization: pk_… ») : Cookie: a=b; c=d
+    [GeneratedRegex(@"(\b(?:Authorization|Proxy-Authorization|Cookie|Set-Cookie|X-Api-Key|X-Auth-Token|X-Access-Token|hue-application-key)""?\s*[:=]\s*)(?:""[^""]*""|[^\r\n]+)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex Header();
+
+    // Webhooks Discord (/api/webhooks/id/jeton) et Slack (/services/T…/B…/x) : l'adresse entière donne le droit d'écrire
+    [GeneratedRegex(@"(/api/webhooks/\d+/|/services/T[A-Za-z0-9]+/B[A-Za-z0-9]+/)[A-Za-z0-9_\-]+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex Webhook();
+
+    // Hue : /api/<clé d'application>/lights
+    [GeneratedRegex(@"(/api/)[A-Za-z0-9_\-]{20,}(?=/|\s|$)", RegexOptions.CultureInvariant)]
+    private static partial Regex PathKey();
+
+    // Code d'autorisation OAuth hors paramètre d'adresse : code=4/0AbCdEf…
+    [GeneratedRegex(@"(\bcode=)[A-Za-z0-9._~/\-]{10,}", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex BareCode();
 }

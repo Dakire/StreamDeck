@@ -83,7 +83,7 @@ public sealed class GoogleIntegration : RestIntegrationBase, IPairableIntegratio
     /// <inheritdoc/>
     protected override void Configure(HttpClient http, string token) { /* le jeton d'accès est ajouté requête par requête */ }
 
-    static string AuthUrl(IntegrationSettings s) => s.Get("apiurl").Length > 0 ? s.Get("apiurl").TrimEnd('/') + "/auth" : "https://accounts.google.com/o/oauth2/v2/auth";
+    static string AuthUrl(IntegrationSettings s) => s.GetLocalOverride("apiurl", "").Length > 0 ? s.GetLocalOverride("apiurl", "").TrimEnd('/') + "/auth" : "https://accounts.google.com/o/oauth2/v2/auth";
     string TokenUrl() => _apiUrl.Length > 0 ? _apiUrl + "/token" : "https://oauth2.googleapis.com/token";
     string Sheets() => _apiUrl.Length > 0 ? _apiUrl + "/sheets" : "https://sheets.googleapis.com";
     string Docs() => _apiUrl.Length > 0 ? _apiUrl + "/docs" : "https://docs.googleapis.com";
@@ -92,7 +92,7 @@ public sealed class GoogleIntegration : RestIntegrationBase, IPairableIntegratio
     /// <inheritdoc/>
     protected override async Task VerifyAsync(IntegrationSettings settings, CancellationToken cancellation)
     {
-        _apiUrl = settings.Get("apiurl").TrimEnd('/');
+        _apiUrl = settings.GetLocalOverride("apiurl", "").TrimEnd('/');
         _clientId = settings.Get("clientid");
         _clientSecret = settings.Secret("clientsecret");
         _spreadsheet = settings.Get("spreadsheet");
@@ -223,7 +223,7 @@ public sealed class GoogleIntegration : RestIntegrationBase, IPairableIntegratio
         var clientId = settings.Get("clientid");
         var secret = settings.Secret("clientsecret");
         if (clientId.Length == 0 || secret.Length == 0) throw new InvalidOperationException("Renseigne d'abord l'ID client et le secret de ton projet Google Cloud");
-        _apiUrl = settings.Get("apiurl").TrimEnd('/');
+        _apiUrl = settings.GetLocalOverride("apiurl", "").TrimEnd('/');
 
         var verifier = Base64Url(RandomNumberGenerator.GetBytes(48));
         var challenge = Base64Url(SHA256.HashData(Encoding.ASCII.GetBytes(verifier)));

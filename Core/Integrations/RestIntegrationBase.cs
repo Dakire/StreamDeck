@@ -37,7 +37,7 @@ public abstract class RestIntegrationBase : IntegrationBase, IDisposable
     {
         Token = settings.Secret("token");
         if (Token.Length == 0) throw new InvalidOperationException($"Renseigne le jeton {Name} dans les réglages de l'intégration");
-        var baseUrl = settings.Get("baseurl", DefaultBaseUrl).TrimEnd('/') + "/";
+        var baseUrl = settings.GetLocalOverride("baseurl", DefaultBaseUrl).TrimEnd('/') + "/";
         _http = new HttpClient { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromSeconds(15) };
         Configure(_http, Token);
         try { await VerifyAsync(settings, cancellation); }

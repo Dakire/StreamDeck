@@ -110,6 +110,19 @@ public sealed class IntegrationSettings
     public string Get(string key, string fallback = "") =>
         Values.TryGetValue(key, out var v) && !string.IsNullOrWhiteSpace(v) ? v.Trim() : fallback;
 
+    /// <summary>
+    /// Adresse de service qu'un réglage caché peut remplacer (tests, serveur local). Une adresse qui ne mène pas à la machine locale est ignorée :
+    /// sans cela, une configuration importée enverrait les jetons de l'intégration vers un hôte choisi par son auteur.
+    /// </summary>
+    public string GetLocalOverride(string key, string fallback)
+    {
+        var value = Get(key);
+        if (value.Length == 0) return fallback;
+        if (Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" && uri.IsLoopback && string.IsNullOrEmpty(uri.UserInfo)) return value;
+        Log.Warn($"Réglage « {key} » ignoré : seule une adresse de la machine locale est acceptée");
+        return fallback;
+    }
+
     /// <summary>Réglage numérique, ou <paramref name="fallback"/> s'il est absent ou invalide.</summary>
     public int GetInt(string key, int fallback) =>
         int.TryParse(Get(key), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var n) && n is > 0 and < 65536 ? n : fallback;
