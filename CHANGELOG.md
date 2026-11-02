@@ -4,6 +4,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+## [1.1.0] — 2026-11-02
+
 Audit 2 (voir [docs/AUDIT-2.md](docs/AUDIT-2.md)) : freezes, WebView2, fiabilité des intégrations, sécurité. Aucune clé existante n'est renommée ni supprimée ; les clés ajoutées sont facultatives.
 
 ### Ajouté
