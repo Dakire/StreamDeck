@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -176,5 +177,277 @@ public class AuditFixesTests
         sim.Foreground = "notepad";
         sim.Foreground = null;
         Assert.Equal(new string?[] { "notepad", null }, seen);
+    }
+
+    // ---------- clés facultatives de configuration ----------
+
+    [Fact]
+    public void NewOptionalKeysAreAbsentFromTheFileWhileDefaultAndKeptWhenSet()
+    {
+        var cfg = ConfigStore.DefaultConfig();
+        var json = ConfigStore.Serialize(cfg);
+        foreach (var key in new[] { "EconomyMode", "CatalogWidth", "InspectorHeight", "CatalogCollapsed", "InspectorCollapsed", "SettingsWidth", "SettingsHeight" })
+            Assert.DoesNotContain("\"" + key + "\"", json);
+
+        cfg.EconomyMode = true; cfg.CatalogWidth = 380; cfg.InspectorHeight = 300; cfg.CatalogCollapsed = true; cfg.InspectorCollapsed = true; cfg.SettingsWidth = 900; cfg.SettingsHeight = 700;
+        var back = ConfigStore.Parse(ConfigStore.Serialize(cfg));
+        Assert.True(back.EconomyMode);
+        Assert.Equal((380d, 300d, 900d, 700d), (back.CatalogWidth, back.InspectorHeight, back.SettingsWidth, back.SettingsHeight));
+        Assert.True(back.CatalogCollapsed && back.InspectorCollapsed);
+    }
+
+    [Fact]
+    public void AbsurdSavedSizesBecomeAbsentInsteadOfAnUnusableWindow()
+    {
+        const string json = "{\"Version\":2,\"CatalogWidth\":5,\"InspectorHeight\":99999,\"SettingsWidth\":10,\"SettingsHeight\":100000,\"Profiles\":[]}";
+        var cfg = ConfigStore.Parse(json);
+        Assert.Null(cfg.CatalogWidth);
+        Assert.Null(cfg.InspectorHeight);
+        Assert.Null(cfg.SettingsWidth);
+        Assert.Null(cfg.SettingsHeight);
+    }
+
+    [Fact]
+    public void AConfigWithoutTheNewKeysStillLoads()
+    {
+        var cfg = ConfigStore.Parse("{\"Version\":2,\"Profiles\":[{\"Name\":\"A\",\"Pages\":[{\"Name\":\"P\",\"Buttons\":[]}]}]}");
+        Assert.False(cfg.EconomyMode);
+        Assert.Null(cfg.CatalogWidth);
+        Assert.Single(cfg.Profiles);
+    }
+
+    // ---------- existence d'un chemin sans bloquer ----------
+
+    [Fact]
+    public void PathProbeAnswersQuicklyAndCachesTheAnswer()
+    {
+        var temp = System.IO.Path.GetTempFileName();
+        try
+        {
+            Assert.True(PathProbe.Exists(temp));
+            Assert.False(PathProbe.Exists(temp + ".absent"));
+            var clock = Stopwatch.StartNew();
+            for (int i = 0; i < 100; i++) Assert.True(PathProbe.Exists(temp));   // en cache
+            Assert.True(clock.Elapsed < TimeSpan.FromSeconds(1));
+        }
+        finally { System.IO.File.Delete(temp); }
+    }
+
+    // ---------- niveau audio : une annulation est un échec, pas la fin silencieuse de la boucle ----------
+
+    [Fact]
+    public async Task ACancelledSendIsReportedAndDoesNotLeaveTheSenderBusyForever()
+    {
+        var failures = new List<Exception>();
+        var sender = new StreamDak.Audio.LevelSender(_ => throw new OperationCanceledException(), _ => Task.CompletedTask, failures.Add);
+        sender.Post(40);
+        var wait = Stopwatch.StartNew();
+        while (sender.IsBusy && wait.Elapsed < TimeSpan.FromSeconds(5)) await Task.Delay(10);
+        Assert.False(sender.IsBusy);
+        Assert.Single(failures);
+        Assert.IsType<TimeoutException>(failures[0]);
+    }
+
+    // ---------- touche d'intégration indisponible ----------
+
+    [Fact]
+    public void AnEnabledButDisconnectedIntegrationMakesItsKeyUnavailableUnlessTheCommandWorksOffline()
+    {
+        var doc = new DeckDocument(ConfigStore.DefaultConfig());
+        var fake = new FakeIntegration("dispo");
+        var manager = new IntegrationManager(new[] { fake }, doc, new MemorySecrets());
+        var go = new DeckAction { Type = "dispo", Value = "go", Args = "x" };
+
+        Assert.False(manager.IsUnavailable(go));                                    // désactivée : pas « indisponible », simplement non utilisée
+        doc.UpdateSettings(c => (c.Integrations ??= new())["dispo"] = new IntegrationConfig { Enabled = true }, "test");
+        Assert.True(manager.IsUnavailable(go));                                     // activée mais pas connectée
+        Assert.False(manager.IsUnavailable(new DeckAction { Type = "hotkey", Value = "ctrl+c" }));
+    }
+
+    // ---------- diagnostic ----------
+
+    [Fact]
+    public void TheDiagnosticCarriesFiguresAndNeverASecret()
+    {
+        Log.Warn("Appel https://hooks.slack.com/services/T0001/B0002/SECRETTOKEN refusé, token=abcdef123456");
+        var text = DiagnosticReport.Build(new DiagnosticInput
+        {
+            Version = "StreamDak 1.0.0",
+            WorkingSetBytes = 120L * 1048576,
+            WebView = new ProcessUsage(5, 640L * 1048576),
+            Uptime = TimeSpan.FromMinutes(75),
+            Pauses = new UiPauseSummary(3, 900, 450, 2, new[] { new UiPause(DateTimeOffset.Now, 450, "tâche : Reconstruction de la grille") }),
+            Integrations = new[] { new IntegrationStatus("OBS", true, "Error", "mot de passe=secret123 refusé"), new IntegrationStatus("Hue", false, "Disabled", null) },
+            RecentLog = Log.Recent(),
+            Content = (1, 2, 12),
+        });
+        Assert.Contains("120 Mo", text);
+        Assert.Contains("5 processus, 640 Mo", text);
+        Assert.Contains("760 Mo", text);
+        Assert.Contains("450 ms", text);
+        Assert.Contains("OBS : Error", text);
+        Assert.DoesNotContain("Hue :", text);              // désactivée : omise
+        Assert.DoesNotContain("SECRETTOKEN", text);
+        Assert.DoesNotContain("abcdef123456", text);
+        Assert.DoesNotContain("secret123", text);
+    }
+
+    // ---------- réordonner les profils ----------
+
+    [Fact]
+    public void ProfilesCanBeMovedUpAndDownAndTheMoveIsUndoable()
+    {
+        var doc = new DeckDocument(ConfigStore.DefaultConfig());
+        doc.AddProfile("B");
+        doc.AddProfile("C");
+        var names = () => doc.Config.Profiles.Select(p => p.Name).ToList();
+        var start = names();
+
+        Assert.True(doc.MoveProfile("C", -1).Ok);
+        Assert.Equal(new[] { start[0], "C", "B" }, names());
+        Assert.False(doc.MoveProfile(start[0], -1).Ok);                 // déjà en tête
+        Assert.False(doc.MoveProfile("B", 1).Ok);                       // déjà en queue
+        Assert.False(doc.MoveProfile("absent", 1).Ok);
+
+        doc.Undo();
+        Assert.Equal(start, names());
+    }
+
+    // ---------- requêtes web : méthode et en-têtes personnalisés ----------
+
+    [Fact]
+    public void HeadersAreParsedLineByLineAndDangerousOnesRefused()
+    {
+        Assert.True(HttpHeaderSpec.TryParse("Authorization: Bearer abc\r\nX-Token:  zz \n\nAccept: application/json", out var ok, out _));
+        Assert.Equal(new[] { ("Authorization", "Bearer abc"), ("X-Token", "zz"), ("Accept", "application/json") }, ok);
+        Assert.True(HttpHeaderSpec.TryParse(null, out var none, out _));
+        Assert.Empty(none);
+
+        foreach (var bad in new[] { "pas d'en-tête", "Host: evil.example", "Content-Length: 5", "Mauvais nom: x", ": vide", "X-A: ab" })
+        {
+            Assert.False(HttpHeaderSpec.TryParse(bad, out _, out var why), bad);
+            Assert.NotEmpty(why);
+        }
+        Assert.False(HttpHeaderSpec.TryParse(string.Join("\n", Enumerable.Range(0, 21).Select(i => "X-" + i + ": v")), out _, out _));
+        Assert.False(HttpHeaderSpec.TryParse(new string('a', HttpHeaderSpec.MaxLength + 1), out _, out _));
+    }
+
+    sealed class Recorder : HttpMessageHandler
+    {
+        public HttpRequestMessage? Seen;
+        public string? Type;
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Seen = request;
+            Type = request.Content?.Headers.ContentType?.MediaType;
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
+        }
+    }
+
+    [Fact]
+    public async Task AWebStepSendsItsCustomHeadersAndMethod()
+    {
+        var recorder = new Recorder();
+        var engine = new ActionEngine(new ActionContext
+        {
+            Platform = new SimulatedPlatform().Services,
+            Http = new HttpClient(recorder),
+            Countdowns = new Countdowns(() => DateTime.UtcNow),
+            Delay = (_, _) => Task.CompletedTask,
+        });
+        var button = new DeckButton
+        {
+            Label = "Appel",
+            Actions = new List<DeckAction> { new() { Type = ActionTypes.Http, Value = "https://hook.example/hook", Args = "{\"a\":1}", Method = "put", Headers = "Authorization: Bearer jeton\nX-Test: 42\nContent-Type: application/vnd.test+json" } },
+        };
+
+        var result = await engine.RunAsync(button, null!);
+
+        Assert.True(result.Ok, result.Message);
+        Assert.Equal(HttpMethod.Put, recorder.Seen!.Method);
+        Assert.Equal("Bearer jeton", recorder.Seen.Headers.GetValues("Authorization").Single());
+        Assert.Equal("42", recorder.Seen.Headers.GetValues("X-Test").Single());
+        Assert.Equal("application/vnd.test+json", recorder.Type);
+    }
+
+    [Fact]
+    public void TheValidatorFlagsABadMethodOrHeader()
+    {
+        var cfg = ConfigStore.DefaultConfig();
+        var step = new DeckAction { Type = ActionTypes.Http, Value = "https://exemple.test/x", Method = "TRACE", Headers = "Host: x" };
+        var issues = ActionValidator.Validate(step, cfg, cfg.Profiles[0]);
+        Assert.Equal(2, issues.Count(i => i.Severity == Severity.Error));
+        step.Method = "put"; step.Headers = "X-Ok: 1";
+        Assert.DoesNotContain(ActionValidator.Validate(step, cfg, cfg.Profiles[0]), i => i.Severity == Severity.Error);
+    }
+
+    [Fact]
+    public void OptionalWebStepKeysStayOutOfTheFileWhenUnused()
+    {
+        var json = JsonSerializer.Serialize(new DeckAction { Type = "http", Value = "https://a.b/" }, ConfigStore.Options);
+        Assert.DoesNotContain("Headers", json);
+        Assert.DoesNotContain("Method", json);
+    }
+
+    // ---------- raccourcis globaux ----------
+
+    [Theory]
+    [InlineData("ctrl+alt+f1", true)]
+    [InlineData("Alt + Ctrl + F1", true)]
+    [InlineData("f13", true)]
+    [InlineData("win+d", true)]
+    [InlineData("f1", false)]                // sans modificateur : volerait la touche à toutes les applications
+    [InlineData("a", false)]
+    [InlineData("ctrl+shift", false)]
+    [InlineData("ctrl+a+b", false)]          // une seule touche
+    [InlineData("win+l", false)]             // réservé à Windows
+    [InlineData("ctrl+truc", false)]
+    [InlineData("", false)]
+    public void GlobalHotkeyValidationRequiresAModifierExceptForFreeFunctionKeys(string combo, bool valid) =>
+        Assert.Equal(valid, StreamDak.Hotkeys.GlobalHotkeyPlan.TryValidate(combo, out _));
+
+    [Fact]
+    public void GlobalHotkeysAreNormalizedAndDuplicatesKeepTheFirstButton()
+    {
+        Assert.Equal("ctrl+alt+shift+f5", StreamDak.Hotkeys.GlobalHotkeyPlan.Normalize("Shift + Alt + Control + F5"));
+        var cfg = ConfigStore.DefaultConfig();
+        var buttons = cfg.Profiles[0].Pages[0].Buttons;
+        buttons.Clear();
+        buttons.Add(new DeckButton { Label = "A", GlobalHotkey = "Ctrl+Alt+F1" });
+        buttons.Add(new DeckButton { Label = "B", GlobalHotkey = "alt+ctrl+f1" });   // même combinaison
+        buttons.Add(new DeckButton { Label = "C", GlobalHotkey = "f1" });             // invalide
+        buttons.Add(new DeckButton { Label = "D", GlobalHotkey = "f14" });
+        buttons.Add(new DeckButton { Label = "E" });
+
+        var (planned, rejected) = StreamDak.Hotkeys.GlobalHotkeyPlan.Build(cfg);
+
+        Assert.Equal(new[] { "A", "D" }, planned.Select(p => p.Button.Label));
+        Assert.Equal(new[] { "B", "C" }, rejected.Select(r => r.Label));
+        Assert.Contains("Déjà utilisé", rejected[0].Reason);
+    }
+
+    [Fact]
+    public void ASimulatedHotkeyServiceRefusesWhatAnotherApplicationOwnsAndReportsPresses()
+    {
+        using var service = new StreamDak.Hotkeys.SimulatedHotkeyService();
+        service.Taken.Add("ctrl+alt+f9");
+        Assert.False(service.Register(1, "ctrl+alt+f9").Ok);
+        Assert.True(service.Register(2, "ctrl+alt+f1").Ok);
+        var pressed = new List<int>();
+        service.Pressed += pressed.Add;
+        service.Press(2);
+        service.Press(1);                       // jamais enregistré
+        service.Unregister(2);
+        service.Press(2);
+        Assert.Equal(new[] { 2 }, pressed);
+    }
+
+    [Fact]
+    public void AGlobalHotkeyKeyIsOptionalInTheFile()
+    {
+        var json = JsonSerializer.Serialize(new DeckButton { Label = "x" }, ConfigStore.Options);
+        Assert.DoesNotContain("GlobalHotkey", json);
+        var back = JsonSerializer.Deserialize<DeckButton>(JsonSerializer.Serialize(new DeckButton { Label = "x", GlobalHotkey = "ctrl+alt+f2" }, ConfigStore.Options), ConfigStore.Options)!;
+        Assert.Equal("ctrl+alt+f2", back.GlobalHotkey);
     }
 }

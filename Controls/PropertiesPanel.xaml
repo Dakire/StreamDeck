@@ -88,6 +88,25 @@
             </StackPanel>
           </Border>
 
+          <!-- Raccourci clavier global : déclenche ce bouton depuis n'importe quelle application -->
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <TextBlock Text="Raccourci clavier global" Style="{StaticResource EditorCaption}"/>
+              <ui:TextBox Margin="0,4,0,0" Text="{Binding GlobalHotkey, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}"
+                          PlaceholderText="ex. ctrl+alt+f1" AutomationProperties.Name="Raccourci clavier global"/>
+              <TextBlock Text="{Binding GlobalHotkeyError}" Foreground="{DynamicResource DeckDanger}" TextWrapping="Wrap" Margin="2,4,0,0" AutomationProperties.LiveSetting="Polite">
+                <TextBlock.Style>
+                  <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding GlobalHotkeyError}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
+                  </Style>
+                </TextBlock.Style>
+              </TextBlock>
+              <TextBlock Style="{StaticResource EditorHint}" TextWrapping="Wrap"
+                         Text="Un modificateur (Ctrl, Alt, Maj, Win) est obligatoire, sauf pour F13 à F24. Si une autre application a déjà ce raccourci, un message le dit."/>
+            </StackPanel>
+          </Border>
+
           <ui:Button Content="Supprimer ce bouton" Icon="{ui:SymbolIcon Delete24}" Command="{Binding DeleteCommand}" Appearance="Danger"
                      Style="{StaticResource EditorChip}" HorizontalAlignment="Left"/>
           </StackPanel>

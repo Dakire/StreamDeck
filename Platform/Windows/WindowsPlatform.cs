@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using StreamDak.Actions;
+using StreamDak.Hotkeys;
 
 namespace StreamDak.Platform.Windows;
 
@@ -115,6 +116,9 @@ public sealed class WindowsPlatform : IKeyboardService, IAppLauncher, IWindowSer
         add => ForegroundWatcher.Changed += value;
         remove => ForegroundWatcher.Changed -= value;
     }
+
+    /// <summary>Raccourcis clavier globaux (<c>RegisterHotKey</c>) sur un thread dédié ; à libérer à la fermeture.</summary>
+    public static IHotkeyService CreateHotkeyService() => new GlobalHotkeys();
 
     /// <summary>Nombre et mémoire des processus <paramref name="exeName"/> (sans .exe) lancés par StreamDak : pour le diagnostic (processus WebView2).</summary>
     public static ProcessUsage MeasureChildProcesses(string exeName) => ProcessTree.Measure(exeName);

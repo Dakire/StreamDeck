@@ -208,7 +208,7 @@ flowchart LR
 flowchart LR
     G["Clic droit · appui long<br/>sur une case"] --> M["Menu de la case<br/>(MenuItemSpec, feuille du deck)"]
     M -- "modèle · catégorie" --> A["DeckDocument.AddButton<br/>(une écriture)"]
-    M -- "Nouveau bouton…" --> P["Mode édition du deck<br/>panneau d'actions à gauche"]
+    M -- "Nouveau bouton…" --> P["Mode édition du deck<br/>panneau d'actions à droite"]
     P -- "toucher une action" --> A
     D["Glisser-déposer<br/>fichier · .lnk · adresse"] --> DP["DropPayload · DroppedItem"] --> B["DeckDocument.AddButtons<br/>(lot, une annulation)"]
     A --> N["Notifier : bandeau + Annuler"]
@@ -223,10 +223,23 @@ intégrations) classées par `QuickCreate.Rank`.
 ## Édition intégrée au deck
 
 En mode édition, `MainViewModel` crée un `EditorViewModel` (fabrique injectée `Func<IEditorShell, EditorViewModel>`) et le libère à la sortie.
-`MainWindow` sert de « shell » (dialogues, focus) et affiche `CatalogPanel` (gauche) et `PropertiesPanel` (droite) autour de la grille ;
+`MainWindow` sert de « shell » (dialogues, focus) et affiche `CatalogPanel` (droite) et `PropertiesPanel` (sous la grille) autour de la grille, séparés d'elle par des poignées (`MainWindow.Panels.cs`) ;
 les ressources des panneaux sont dans `Themes/EditorShared.xaml`, partagées avec l'éditeur séparé. La grille garde ses colonnes et lignes
 (`LayoutMetrics.GridSize` sur la taille complète) et rétrécit. `MainWindow.SetEditing` retire `WS_EX_NOACTIVATE` et suspend le filtre
 d'activation et du toucher pendant l'édition, puis les rétablit et rend le focus (ADR 0015).
+
+## Fluidité du thread d'interface
+
+| Mécanisme | Où | Rôle |
+|---|---|---|
+| Chien de garde | `Services/UiWatchdog.cs` | Sonde le dispatcher dix fois par seconde (une par seconde deck masqué), consigne les pauses de 200 ms ou plus avec la tâche en cours et la priorité de la dernière opération |
+| Tâches longues | `Core/Diagnostics.cs` (`LongTask`, `UiPauses`) | Chronomètre les minuteries, `OnDocumentChanged`, `Rebuild` ; compteur lu par Paramètres › Diagnostic |
+| Écriture de la configuration | `Services/ConfigPersistence.cs` (ADR 0027) | Instantané sérialisé sur l'UI, écrivain unique hors UI |
+| Programme au premier plan | `Platform/Windows/ForegroundWatcher.cs` | `SetWinEventHook`, fusion des changements, nom résolu hors UI |
+| Appels système | `BackgroundMessageActionHandler`, `LevelWidgetViewModel` | Audio COM et saisie simulée sur le pool, jamais sur l'UI |
+| Validation de chemins | `Core/PathProbe.cs` | Existence d'un fichier avec délai de 250 ms et cache de 10 s |
+| Images | `Services/IconStore.cs` | Décodage hors UI au démarrage, plafond de 1024 px de large |
+| Arrêt | `IntegrationManager.Dispose` | Déconnexions en parallèle sous 2 s ; `ConfigPersistence.Flush` d'abord |
 
 ## Thème
 

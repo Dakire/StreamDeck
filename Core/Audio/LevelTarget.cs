@@ -167,8 +167,11 @@ public sealed class LevelSender
                 _pending = null;
             }
             try { await _send(next); }
-            catch (Exception ex) when (ex is not OperationCanceledException) { _failed(ex); }
-            await _delay(MinInterval);
+            // Un délai dépassé arrive en annulation : c'est un échec comme un autre, pas la fin silencieuse de la boucle (IsBusy resterait vrai pour toujours)
+            catch (OperationCanceledException) { _failed(new TimeoutException("Le périphérique audio ne répond pas")); }
+            catch (Exception ex) { _failed(ex); }
+            try { await _delay(MinInterval); }
+            catch (Exception ex) { _failed(ex); lock (_gate) _running = false; return; }
         }
     }
 }

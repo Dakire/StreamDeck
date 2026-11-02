@@ -116,12 +116,15 @@ public class IntegrationManagerTests
         h.Enable("fake");
         h.Manager.Start();
         await Until(() => fake.State == ConnectionState.Connected);
-        Assert.Equal(new[] { 2.0, 4.0, 8.0 }, h.Waits.Take(3).Select(w => w.TotalSeconds));
+        // Attentes croissantes, avec une gigue de 0 à 20 % (les intégrations ne se reconnectent pas toutes au même instant)
+        var waits = h.Waits.Take(3).Select(w => w.TotalSeconds).ToArray();
+        foreach (var (wait, baseSeconds) in waits.Zip(new[] { 2.0, 4.0, 8.0 }))
+            Assert.InRange(wait, baseSeconds, baseSeconds * 1.2);
 
-        fake.Lose();   // la connexion se perd : nouvelle tentative, et l'attente repart de 2 s
+        fake.Lose();   // la connexion se perd aussitôt : elle n'a pas été stable 30 s, l'attente continue de croître (16 s) au lieu de repartir de 2 s
         await Until(() => fake.Connects.Count >= 5);
         await Until(() => h.Waits.Count >= 4);
-        Assert.Equal(2.0, h.Waits.ElementAt(3).TotalSeconds);
+        Assert.InRange(h.Waits.ElementAt(3).TotalSeconds, 16.0, 16.0 * 1.2);
     }
 
     [Fact]

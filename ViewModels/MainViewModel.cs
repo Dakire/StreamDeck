@@ -126,9 +126,11 @@ public partial class MainViewModel : ObservableObject, INavigator
     /// <summary>Deck sur le document partagé ; <paramref name="shell"/> fournit le placement Win32.</summary>
     public MainViewModel(IShell shell, DeckDocument doc, ActionEngine engine, AppOptions options, StartupResult startup,
         GridState grid, IAppWindows windows, ConfigPersistence persistence, IntegrationManager integrations,
-        Func<IEditorShell, EditorViewModel> editorFactory, WidgetRegistry widgets, NotificationProviders notifications, UpdateService updates)
+        Func<IEditorShell, EditorViewModel> editorFactory, WidgetRegistry widgets, NotificationProviders notifications, UpdateService updates,
+        StreamDak.Hotkeys.IHotkeyService hotkeys)
     {
         _updates = updates;
+        _hotkeyService = hotkeys;
         updates.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(UpdateService.HasUpdate) or nameof(UpdateService.NewVersionText))
@@ -165,6 +167,8 @@ public partial class MainViewModel : ObservableObject, INavigator
         _integrations.ValuesChanged += _ => QueueIntegrationRefresh();
         _integrations.StateChanged += _ => QueueIntegrationRefresh();
         UpdateTotalUnread();
+        _hotkeyService.Pressed += OnHotkeyPressed;
+        SyncHotkeys();
         if (startup.Message != null) SetStatus(startup.Message, error: false);
     }
 
@@ -214,6 +218,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     void OnDocumentChangedCore(DocumentChange change)
     {
         var cfg = _doc.Config;
+        SyncHotkeys();
         if (_lastEconomy != cfg.EconomyMode)
         {
             _lastEconomy = cfg.EconomyMode;
@@ -958,8 +963,10 @@ public partial class MainViewModel : ObservableObject, INavigator
         var left = countdowns.Remaining(def);
         var state = def.IsFolder ? null : def.Actions.Select(_integrations.StateOf).FirstOrDefault(s => s != null);
         var badge = NotificationCount(def);
-        tile.Face = TileFaceData.From(def, left is { } t ? Countdowns.Format(t) : null, countdowns.Progress(def), _integrations.GetValue, state, badge);
+        bool unavailable = !def.IsFolder && def.Actions.Any(_integrations.IsUnavailable);
+        tile.Face = TileFaceData.From(def, left is { } t ? Countdowns.Format(t) : null, countdowns.Progress(def), _integrations.GetValue, state, badge, unavailable);
         tile.AccessibleName = def.IsFolder ? $"Dossier {tile.Face.Label}"
+            : unavailable ? $"{tile.Face.Label}, indisponible"
             : state is { } on ? $"{tile.Face.Label}, {(on ? "actif" : "inactif")}" : tile.Face.Label;
         if (badge != null) tile.AccessibleName += $", {NotificationBadge.Describe(badge)}";
     }

@@ -864,6 +864,14 @@ public sealed partial class EditorViewModel : ObservableObject, IDisposable
         if (wasEdited) { _profile = newName.Trim(); RefreshAll(); }
     }
 
+    /// <summary>Déplace le profil d'un rang dans la liste (annulable).</summary>
+    public void MoveProfile(string name, int delta)
+    {
+        var r = _doc.MoveProfile(name, delta);
+        if (!r.Ok) { Notifier.Error(r.Message ?? "Déplacement impossible"); return; }
+        Notifier.Success("Profil déplacé", "Annuler", () => _doc.Undo());
+    }
+
     /// <summary>Duplique le profil.</summary>
     public void DuplicateProfile(string name)
     {

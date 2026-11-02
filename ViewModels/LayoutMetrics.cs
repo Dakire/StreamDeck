@@ -169,7 +169,7 @@ public sealed class LayoutMetrics
         double radius = Math.Clamp(cellMin * 0.17, 16, 30);   // MD3 : formes « large » à « extra large »
         double rowH = Math.Clamp(H * 0.045, 36, 52);
         double fs = Math.Max(14, rowH * 0.36);
-        double pillH = Math.Max(34, topH * 0.74);
+        double pillH = Math.Max(36, topH * 0.74);
 
         return new LayoutMetrics
         {
@@ -178,7 +178,7 @@ public sealed class LayoutMetrics
             TopMargin = new Thickness(gap * 1.2, 0, gap * 0.6, 0), LogoSize = topH * 0.52, TopFont = Math.Max(14, topH * 0.34),
             BrandTextMargin = new Thickness(topH * 0.22, 0, topH * 0.3, 0),
             GripW = Math.Max(60, topH * 1.6), GripH = Math.Max(4, topH * 0.1),
-            MinW = Math.Max(48, topH * 1.15), MinH = Math.Max(36, topH * 0.8), MinFont = Math.Max(14, topH * 0.34),
+            MinW = Math.Max(48, topH * 1.15), MinH = Math.Max(48, topH * 0.8), MinFont = Math.Max(14, topH * 0.34),
             PillH = pillH, PillRadius = new CornerRadius(pillH / 2), PillFont = Math.Max(14, pillH * 0.44),
 
             GridMargin = new Thickness(gap, 0, gap, 0), GridW = cellW * cols, GridH = cellH * rows,

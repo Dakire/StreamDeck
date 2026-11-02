@@ -148,6 +148,19 @@ public sealed partial class DeckDocument
 
     // ---------- profils ----------
 
+    /// <summary>Déplace un profil de <paramref name="delta"/> rangs dans la liste (annulable). L'ordre est celui du sélecteur de profil du deck.</summary>
+    public OpResult MoveProfile(string name, int delta) =>
+        Edit("Déplacer le profil", cfg =>
+        {
+            int from = cfg.Profiles.FindIndex(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            int to = from + delta;
+            if (from < 0 || to < 0 || to >= cfg.Profiles.Count) return OpResult.Fail("Déplacement impossible");
+            var profile = cfg.Profiles[from];
+            cfg.Profiles.RemoveAt(from);
+            cfg.Profiles.Insert(to, profile);
+            return OpResult.Success(to);
+        });
+
     /// <summary>Ajoute un profil vide (nom unique) avec une page ; format de grille facultatif (0 : réglage global).</summary>
     public OpResult AddProfile(string? name = null, int columns = 0, int rows = 0)
     {

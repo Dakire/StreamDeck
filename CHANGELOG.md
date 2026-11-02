@@ -4,6 +4,50 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+Audit 2 (voir [docs/AUDIT-2.md](docs/AUDIT-2.md)) : freezes, WebView2, fiabilité des intégrations, sécurité. Aucune clé existante n'est renommée ni supprimée ; les clés ajoutées sont facultatives.
+
+### Ajouté
+- **Paramètres › Diagnostic** : mémoire de l'application et des processus WebView2 qu'elle a lancés, pauses de l'interface (nombre, plus longue, dernières avec leur contexte), tâches longues,
+  état des intégrations, derniers avertissements ; **Copier le diagnostic** (passé par `LogRedactor`, sans secret), actualiser, remettre à zéro, ouvrir le journal.
+- **Mode économie** (Paramètres › Apparence, clé facultative `EconomyMode`) : animations coupées, relevés des intégrations espacés par 10, widgets de données par 3, pages web en mémoire basse, vérification du chien de garde ralentie.
+- **Panneaux redimensionnables** en mode édition : poignées de 32 DIP entre la grille et le catalogue / l'inspecteur, à glisser, un toucher replie ou déploie ; largeurs mémorisées (clés facultatives
+  `CatalogWidth`, `InspectorHeight`, `CatalogCollapsed`, `InspectorCollapsed`). La fenêtre des paramètres mémorise sa taille (`SettingsWidth`, `SettingsHeight`).
+- **Plugins : liste d'autorisation** `plugins\trusted.json` (nom du dossier → empreinte SHA-256 de ses bibliothèques), vérifiée **avant** tout chargement. Les plugins déjà posés sont autorisés au
+  premier démarrage ; un plugin ajouté ou modifié ensuite est refusé tant que son empreinte (affichée dans le journal) n'est pas listée. ADR 0028.
+- **Touche d'intégration indisponible** : anneau rouge en pointillés, touche atténuée et « indisponible » dans son nom accessible, avant l'appui. Le curseur vertical indisponible écrit la raison sous lui.
+- Chien de garde de l'interface à **200 ms** (durée, tâche en cours, priorité de la dernière opération) et trace des **tâches longues** autour des minuteries, de `OnDocumentChanged` et de la reconstruction de la grille.
+- `dependabot.yml` (actions GitHub et NuGet).
+- **Raccourcis clavier globaux** : un bouton peut porter un raccourci (inspecteur › « Raccourci clavier global », clé facultative `GlobalHotkey`) qui le déclenche depuis n'importe quelle application,
+  même deck masqué (`IHotkeyService`, `RegisterHotKey` sur un thread dédié dans `Platform/Windows`). Un modificateur est obligatoire, sauf F13 à F24 ; doublons, syntaxe invalide et combinaisons déjà prises par une autre
+  application sont signalés (message et journal). Avec `--simulate`, aucun raccourci n'est réservé.
+- **Requêtes web : méthode et en-têtes personnalisés** (clés facultatives `Method` et `Headers` de l'étape) : GET, POST, PUT, PATCH, DELETE ; un `Nom: valeur` par ligne, 20 au plus ; `Host`, `Content-Length` et consorts refusés,
+  aucun saut de ligne dans une valeur. Validés en direct dans l'éditeur.
+- **Profils réordonnables** : « Monter » / « Descendre » dans le menu du profil (annulable) ; ferme l'écart noté dans la matrice de parité.
+
+### Modifié
+- **Enregistrement de `config.json` hors du thread d'interface** : l'instantané est sérialisé sur l'UI, un écrivain unique l'écrit (les instantanés successifs fusionnent) ; la relecture et le hachage de la
+  surveillance se font aussi hors UI. ADR 0027.
+- **Arrêt** : la configuration est enregistrée d'abord, puis les intégrations se déconnectent **en parallèle** sous une échéance de 2 s (jusqu'à 44 s en série auparavant).
+- **Programme au premier plan** : événement Windows (`SetWinEventHook`, `IWindowService.ForegroundChanged`) au lieu d'un relevé de 0,8 s ; le relevé de 5 s ne sert plus que de filet.
+- **Audio COM, saisie de texte et validation des chemins hors du thread d'interface** (un chemin réseau injoignable ne bloque plus l'éditeur : délai de 250 ms et cache de 10 s).
+- **Images** : décodées au démarrage hors de l'UI, plafonnées à 1024 px de large (une image de 8192 px coûtait 256 Mo), une image absente n'est plus gardée « absente » pour toujours.
+- **Journal** Serilog asynchrone (file bornée).
+- **Intégrations** : toute exception d'un relevé compte comme un échec (un JSON illisible laissait l'intégration « Connecté » avec des valeurs figées) ; l'attente de reconnexion ne repart de zéro qu'après
+  30 s de connexion stable, avec une gigue de 20 % ; les commandes s'exécutent hors de l'UI sous une échéance garantie ; Hue et Elgato espacent leurs relevés deck masqué.
+- **Paquets** : Microsoft.Extensions.DependencyInjection 10.0.14, Microsoft.Web.WebView2 1.0.4314.35, Serilog.Sinks.Async 2.1.0. Actions GitHub épinglées par empreinte de commit.
+- Cibles tactiles : poignée de redimensionnement 44 DIP, pastilles du haut 36, boutons de fenêtre 48, poignée des intégrations 36.
+
+### Corrigé
+- **Sécurité** : un `baseurl` ou `apiurl` d'une configuration importée ne peut plus rediriger le jeton d'une intégration vers un autre hôte que la machine locale.
+- **Sécurité** : le refus de permission d'une page cachée n'est plus mémorisé dans le profil WebView2 partagé (il bloquait les notifications du cadre visible du même site).
+- **`LogRedactor`** masque désormais les cookies, `X-Api-Key`, `Authorization` sans schéma, la clé d'application Hue, les webhooks Discord et Slack, les codes OAuth, les valeurs entre guillemets ; il laissait un `$2` littéral.
+- **Badges** : un service dont la page de connexion restait chargée ne rétablissait pas son badge après la connexion faite dans le deck ; l'adresse de départ est retentée (2 min, doublant jusqu'à 30 min).
+- **WebView2** : panne de processus filtrée par type (une panne GPU n'affiche plus « a cessé de répondre »), cadre mort recréé, minuterie orpheline arrêtée, environnement en échec non gardé, ouverture des
+  sessions cachées échelonnée, course veille / reprise, observateur Google Chat limité aux attributs utiles, relevé de champ borné à 2 s et coupé deck masqué.
+- **API locale** : l'écoute ne s'arrête plus définitivement au-delà de 8 clients ; un client muet est lâché après 2 min.
+- **Niveau audio** : un délai dépassé laissait la tuile « occupée » pour toujours.
+- Texte qui ne revenait pas à la ligne dans les paramètres (état d'une intégration, périphérique, résultat du test).
+
 ## [1.0.0] — 2026-10-31
 
 Première version stable : reprend toutes les évolutions des versions 0.3.x (voir ci-dessous).

@@ -111,6 +111,8 @@ public static class AppHost
         services.AddSingleton<GridState>();
 
         services.AddSingleton(_ => CreatePlatform(options));
+        // Raccourcis globaux : simulés avec --simulate (aucune touche réellement réservée), sinon RegisterHotKey sur un thread dédié
+        services.AddSingleton<StreamDak.Hotkeys.IHotkeyService>(_ => options.Simulate ? new StreamDak.Hotkeys.SimulatedHotkeyService() : WindowsPlatform.CreateHotkeyService());
         services.AddSingleton(_ =>
         {
             var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };   // le moteur gère le délai de chaque étape

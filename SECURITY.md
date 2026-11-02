@@ -70,16 +70,17 @@ polymorphisme (recherche dans tout le code : aucune occurrence).
 
 ### Réseau
 
-Aucune télémétrie, aucun suivi d'usage, aucun appel de mise à jour automatique (recherche de `telemetry`, `analytics`, `sentry`, `appcenter`,
-`ApplicationInsights` : aucune occurrence). Les seuls appels sortants sont ceux que l'utilisateur configure :
+Aucune télémétrie, aucun suivi d'usage (recherche de `telemetry`, `analytics`, `sentry`, `appcenter`, `ApplicationInsights` : aucune occurrence). Une **vérification de mise à jour**
+part seule 20 s après le démarrage, une fois par jour au plus, activée par défaut et désactivable (Paramètres › Mises à jour). Les seuls appels sortants sont ceux que l'utilisateur configure :
 
 - actions `http` du deck ;
 - **mises à jour** : `api.github.com` (releases du dépôt configuré, sans jeton), puis `github.com` et son CDN `*.githubusercontent.com` pour l'installateur (redirections contrôlées une à une) ;
   désactivable dans Paramètres › Mises à jour ;
 - widgets de données : hôtes saisis (ping, états), adresse saisie (compteur) et `geocoding-api.open-meteo.com` / `api.open-meteo.com` (météo : le nom de la ville seulement, HTTPS) ;
 - **badges de notifications** : pages WebView2 cachées vers les services dont un bouton porte l'adresse (jamais sans le connecteur activé) ;
-- intégrations : OBS, Elgato, Hue (réseau local), Teams, Notion, Twitch, Google (OAuth « application de bureau » avec le
-  projet Google Cloud de l'utilisateur) ;
+- intégrations : OBS, Elgato, Hue (réseau local), Teams, Notion, Twitch, Discord (RPC local), Sonar (local), Google (OAuth « application de bureau » avec le
+  projet Google Cloud de l'utilisateur) ; les adresses d'API qu'un réglage caché peut remplacer (`baseurl`, `apiurl`) ne sont acceptées que **vers la machine locale** : une configuration importée ne peut pas rediriger un jeton ;
+- icône d'un site (favicon) pour un bouton « lien web » ;
 - pages web affichées dans WebView2 (adresses saisies par l'utilisateur).
 
 **Certificats** : seul le pont Hue accepte un certificat non public (autorité propre à Hue), **uniquement pour l'adresse du pont configurée**.
@@ -89,11 +90,11 @@ Aucun autre `ServerCertificateCustomValidationCallback`.
 
 | Point | Constat |
 |---|---|
-| `Assembly.Load*` | seulement dans `PluginLoader` : DLL posées par l'utilisateur dans `%APPDATA%\StreamDak\plugins\<Nom>\<Nom>.dll`, un contexte de chargement par plugin, SHA-256 consigné au journal. C'est du code de confiance : ne copier que des plugins de sources connues |
-| `Process.Start` | 5 sites : `WindowsPlatform.Open`/`RunScript` (actions), `GoogleIntegration` (ouvre l'URL d'autorisation dans le navigateur), `SettingsViewModel` (ouvre le dossier ou le fichier de configuration). Aucun ne reçoit de texte venant du réseau |
-| Téléchargement puis exécution | aucun |
+| `Assembly.Load*` | seulement dans `PluginLoader` : DLL posées par l'utilisateur dans `%APPDATA%\StreamDak\plugins\<Nom>\<Nom>.dll`, un contexte de chargement par plugin. **Liste d'autorisation** `plugins\trusted.json` : l'empreinte SHA-256 du dossier est vérifiée **avant** le chargement, un plugin non listé ou modifié n'est pas chargé (ADR 0028). C'est du code de confiance : ne copier que des plugins de sources connues |
+| `Process.Start` | 8 sites : `WindowsPlatform.Open`/`RunScript` (actions), `GoogleIntegration` (ouvre l'URL d'autorisation dans le navigateur), `SettingsViewModel` (dossier, fichier de configuration, journal), mise à jour (script fixe). Aucun ne reçoit de texte venant du réseau |
+| Téléchargement puis exécution | **l'installateur d'une mise à jour**, jamais sans clic de l'utilisateur, après vérification SHA-256 et signature (voir « Mises à jour ») ; aucun autre |
 | API locale | canal nommé `PipeOptions.CurrentUserOnly` (aucun port TCP), JSON par ligne, commandes limitées (voir `docs/local-api.md`) |
-| WebView2 | profil isolé, aucun objet hôte, aucun message page → application ; micro, caméra et notifications seulement pour les pages https du même site que l'adresse saisie (ADR 0018) |
+| WebView2 | profil isolé, aucun objet hôte, **cadres visibles : aucun message page → application** (ADR 0029) ; micro, caméra et notifications seulement pour les pages https du même site que l'adresse saisie (ADR 0018). Les sessions cachées de badges n'acceptent qu'un message validé (type, hôte, entier borné), voir ci-dessous |
 
 ### Mises à jour (ADR 0021)
 
@@ -105,13 +106,14 @@ que d'un clic de l'utilisateur ; elle passe par un script PowerShell fixe (jamai
 
 ### Pages web cachées (badges)
 
-Mêmes garde-fous que les cadres visibles (ADR 0017, 0018) : profil WebView2 de StreamDak, aucun objet hôte, permissions refusées, téléchargements et nouvelles fenêtres bloqués, son coupé.
+Mêmes garde-fous que les cadres visibles (ADR 0017, 0018) : profil WebView2 de StreamDak, aucun objet hôte, permissions refusées **sans être mémorisées dans le profil** (elles ne bloquent pas le cadre visible du même site), téléchargements et nouvelles fenêtres bloqués, son coupé, mémoire basse.
+Seule différence : quand un observateur est installé (mode `selector`, Google Chat), `IsWebMessageEnabled` est actif sur cette seule session ; le message est refusé s'il ne vient pas d'un document de l'hôte du service ou s'il n'a pas la forme `{"type":"streamdak.badge","count":N}` (N entier de 0 à 999 999).
 Le script de lecture n'existe que pour les services à sélecteur CSS : lecture seule, sélecteur passé comme chaîne JSON. Une expression régulière saisie est interrompue après 100 ms.
 
 ### Chaîne de publication
 
-`.github/workflows/release.yml` utilise `actions/checkout`, `actions/setup-dotnet` (étiquettes de version `@v4`) et Inno Setup (Chocolatey). **À durcir** : épingler les actions
-par empreinte de commit et activer Dependabot pour elles.
+`.github/workflows/*.yml` utilisent `actions/checkout` et `actions/setup-dotnet`, **épinglées par empreinte de commit** (le commentaire donne la version), et Inno Setup (Chocolatey, version non épinglée : voir « Reste à traiter »).
+Dependabot propose les mises à jour des actions et des paquets NuGet (`.github/dependabot.yml`). Le nom du tag de release passe par une variable d'environnement, jamais interpolé dans le script.
 
 ### Dépendances
 
@@ -120,9 +122,9 @@ par empreinte de commit et activer Dependabot pour elles.
 | Paquet | Version | Rôle | Remarque |
 |---|---|---|---|
 | CommunityToolkit.Mvvm | 8.4.2 | MVVM | Microsoft |
-| Microsoft.Extensions.DependencyInjection | 10.0.0 | DI | Microsoft ; correctifs 10.0.x disponibles, sans CVE |
-| Serilog.Extensions.Logging, Serilog.Sinks.File | 10.0.0, 7.0.0 | journal | éditeur officiel Serilog |
-| Microsoft.Web.WebView2 | 1.0.3967.48 | cadres web | Microsoft ; le moteur (runtime) est mis à jour par Windows |
+| Microsoft.Extensions.DependencyInjection | 10.0.14 | DI | Microsoft |
+| Serilog.Extensions.Logging, Serilog.Sinks.File, Serilog.Sinks.Async | 10.0.0, 7.0.0, 2.1.0 | journal (écriture asynchrone) | éditeur officiel Serilog |
+| Microsoft.Web.WebView2 | 1.0.4314.35 | cadres web | Microsoft ; le moteur (runtime) est mis à jour par Windows |
 | WPF-UI | 4.3.0 | thème Fluent | lepoco, licence MIT |
 | System.Diagnostics.PerformanceCounter, System.Security.Cryptography.ProtectedData | 10.0.0 | relevés système, DPAPI | Microsoft |
 
@@ -137,8 +139,8 @@ CA2xxx, CA3xxx, CA5xxx en erreur, `TreatWarningsAsErrors`), style appliqué à l
 
 1. **Signature de code** : l'exécutable et l'installateur ne sont pas signés (SmartScreen avertira). Le script de signature est prêt, il faut un certificat.
 2. **Historique git** : retirer les binaires `bin/Release/net9.0-windows/` des deux anciens commits demande une réécriture d'historique.
-3. **Plugins** : pas de liste d'autorisation par empreinte ; l'empreinte SHA-256 n'est que consignée.
-4. **Épinglage des actions GitHub** par empreinte (voir ci-dessus).
-5. **Mises à jour de paquets** : Microsoft.Extensions.DependencyInjection 10.0.14 et WebView2 1.0.4314.35 existent ; à passer après essai sur machine tactile.
+3. **Plugins** : la liste d'autorisation protège d'un ajout à l'insu de l'utilisateur, pas d'un attaquant qui écrit déjà dans `%APPDATA%\StreamDak` (hors modèle de menace).
+4. **Inno Setup** installé par Chocolatey sans version épinglée ; **URL de webhook** (Discord, Slack…) en clair dans `config.json` et les exports (action `http`) : à traiter avec un champ secret, ce qui change le format.
+5. **Journal** : `LogRedactor` est un filet par motifs ; il ne couvre ni les toasts ni les réponses de l'API locale. Le diagnostic copié le traverse.
 6. **Non vérifié ici** : le comportement de DPAPI sur un profil itinérant ou après changement de mot de passe Windows (le secret devient illisible
    et est ignoré avec un avertissement, sans valeur journalisée : il faut le ressaisir).

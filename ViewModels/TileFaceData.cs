@@ -68,6 +68,8 @@ public sealed class TileFaceData
     public bool IsDisabled { get; init; }
     /// <summary>Voyant d'une commande d'intégration : vrai (actif, rond plein), faux (inactif, rond vide), null (aucun voyant).</summary>
     public bool? State { get; init; }
+    /// <summary>L'intégration visée par une étape est activée mais injoignable : anneau rouge en pointillés, touche atténuée, « indisponible » dans le nom accessible.</summary>
+    public bool Unavailable { get; init; }
     /// <summary>Variante affichage : petite légende sous la valeur (nom du minuteur), sinon vide.</summary>
     public string Caption { get; init; } = "";
     /// <summary>Progression d'un minuteur en cours (0 à 1), sinon null.</summary>
@@ -105,7 +107,8 @@ public sealed class TileFaceData
     /// <param name="values">Valeur d'état d'une intégration d'après sa clé (« obs.scene »), pour les titres dynamiques.</param>
     /// <param name="state">Voyant d'une commande d'intégration (actif, inactif), ou null s'il n'y en a pas.</param>
     /// <param name="badge">Texte du badge rouge de notifications (« 3 », « 99+ »), ou null.</param>
-    public static TileFaceData From(DeckButton b, string? timer = null, double? progress = null, Func<string, string?>? values = null, bool? state = null, string? badge = null)
+    /// <param name="unavailable">L'intégration visée est injoignable.</param>
+    public static TileFaceData From(DeckButton b, string? timer = null, double? progress = null, Func<string, string?>? values = null, bool? state = null, string? badge = null, bool unavailable = false)
     {
         if (b.Blank) return Empty;
         bool hasSymbol = IconCatalog.TryResolve(b.Icon, out var symbol);
@@ -143,7 +146,7 @@ public sealed class TileFaceData
         bool custom = Theme.TryBrush(b.TextColor, out var fgBrush);
         return new TileFaceData
         {
-            Label = DisplayLabel(b, DateTime.Now, timer, values), State = state, Icon = b.Icon, Symbol = symbol, HasSymbol = hasSymbol,
+            Label = DisplayLabel(b, DateTime.Now, timer, values), State = state, Unavailable = unavailable, Icon = b.Icon, Symbol = symbol, HasSymbol = hasSymbol,
             ShowTitle = !b.HideTitle, TitleMode = b.TitlePosition ?? "stack",
             Foreground = custom ? fgBrush : Brushes.White,
             LabelBrush = custom ? fgBrush : image != null ? Brushes.White : Theme.B(Theme.Current.Text),

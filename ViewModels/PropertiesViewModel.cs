@@ -66,6 +66,8 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsNone), nameof(IsEmpty), nameof(IsButton), nameof(IsFolder), nameof(IsEditable))] PropertiesMode _mode;
     [ObservableProperty] string _title = "";
     [ObservableProperty] bool _showTitle = true;
+    [ObservableProperty] string _globalHotkey = "";
+    [ObservableProperty] string _globalHotkeyError = "";
     [ObservableProperty] string? _titlePosition;
     [ObservableProperty] string _icon = "";
     [ObservableProperty] string _iconSearch = "";
@@ -172,6 +174,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
             if (b == null) { Preview = TileFaceData.Empty; ButtonIssues.Clear(); ButtonIssueCount = 0; StepCount = 0; return; }
 
             Title = b.Label; ShowTitle = !b.HideTitle; TitlePosition = b.TitlePosition;
+            GlobalHotkey = b.GlobalHotkey ?? ""; GlobalHotkeyError = "";
             Icon = b.Icon; Color = b.Color; TextColor = b.TextColor ?? "";
             ImageName = b.ImagePath; ImageFit = b.ImageFit ?? "cover";
             ColorError = TextColorError = "";
@@ -335,6 +338,16 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
     }
 
     partial void OnTitleChanged(string value) => Draft("title", "Modifier le titre", b => b.Label = value);
+    partial void OnGlobalHotkeyChanged(string value)
+    {
+        if (_loading) return;
+        if (string.IsNullOrWhiteSpace(value)) { GlobalHotkeyError = ""; Draft("hotkey", "Retirer le raccourci global", b => b.GlobalHotkey = null); return; }
+        if (!StreamDak.Hotkeys.GlobalHotkeyPlan.TryValidate(value, out var error)) { GlobalHotkeyError = error; DropDraft("hotkey"); return; }
+        GlobalHotkeyError = "";
+        var combo = StreamDak.Hotkeys.GlobalHotkeyPlan.Normalize(value);
+        Draft("hotkey", "Raccourci global", b => b.GlobalHotkey = combo);
+    }
+
     partial void OnShowTitleChanged(bool value) => ApplyNow(b => b.HideTitle = !value, value ? "Afficher le titre" : "Masquer le titre");
 
     void SetPosition(string? position)

@@ -30,7 +30,7 @@
       <Style TargetType="Grid">
         <Setter Property="Opacity" Value="1"/>
         <Style.Triggers>
-          <DataTrigger Binding="{Binding IsAvailable}" Value="False"><Setter Property="Opacity" Value="0.4"/></DataTrigger>
+          <DataTrigger Binding="{Binding IsAvailable}" Value="False"><Setter Property="Opacity" Value="0.6"/></DataTrigger>
         </Style.Triggers>
       </Style>
     </Grid.Style>
@@ -39,7 +39,7 @@
       <RowDefinition Height="*"/>
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
-    <Button Command="{Binding ToggleMuteCommand}" Style="{StaticResource MuteIconButton}" HorizontalAlignment="Center"
+    <Button Command="{Binding ToggleMuteCommand}" Style="{StaticResource MuteIconButton}" HorizontalAlignment="Center" IsEnabled="{Binding IsAvailable}"
             AutomationProperties.Name="{Binding MuteAccessibleName}" ToolTip="{Binding MuteAccessibleName}">
       <ui:SymbolIcon FontSize="24">
         <ui:SymbolIcon.Style>
@@ -60,7 +60,22 @@
                            ChangeCommand="{Binding ChangeCommand}" MuteCommand="{Binding ToggleMuteCommand}" IsEnabled="{Binding IsAvailable}"
                            TrackBrush="{DynamicResource DeckTileTrack}" FillBrush="{DynamicResource DeckAccent}" MutedBrush="{DynamicResource DeckDanger}"
                            TextBrush="{Binding Face.LabelBrush}" AutomationProperties.Name="{Binding Title}"/>
-    <TextBlock Grid.Row="2" Text="{Binding ShortTitle}" Foreground="{DynamicResource DeckTextSoft}" FontSize="{DynamicResource FontSizeBody}"
-               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,4,0,0"/>
+    <!-- Indisponible : la raison est écrite sous le curseur (une info-bulle ne se voit pas au doigt) -->
+    <TextBlock Grid.Row="2" Foreground="{DynamicResource DeckTextSoft}" FontSize="{DynamicResource FontSizeBody}" TextAlignment="Center"
+               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" MaxHeight="64">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Setter Property="Text" Value="{Binding ShortTitle}"/>
+          <Setter Property="TextWrapping" Value="NoWrap"/>
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding HasStatus}" Value="True">
+              <Setter Property="Text" Value="{Binding Status}"/>
+              <Setter Property="TextWrapping" Value="Wrap"/>
+              <Setter Property="Foreground" Value="{DynamicResource DeckDanger}"/>
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
   </Grid>
 </UserControl>

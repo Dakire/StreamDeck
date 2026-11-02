@@ -105,6 +105,17 @@
                        Visibility="{Binding ShowArgsHint, Converter={StaticResource BoolVis}}"/>
           </StackPanel>
 
+          <!-- Requête web : méthode et en-têtes personnalisés (facultatifs) -->
+          <StackPanel Visibility="{Binding ShowHttpExtras, Converter={StaticResource BoolVis}}">
+            <TextBlock Text="Méthode (facultatif : GET, POST, PUT, PATCH, DELETE)" Style="{StaticResource EditorCaption}"/>
+            <ui:TextBox Text="{Binding Method, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}" AutomationProperties.Name="Méthode de la requête"/>
+            <TextBlock Text="En-têtes (facultatif, un « Nom: valeur » par ligne)" Style="{StaticResource EditorCaption}"/>
+            <ui:TextBox Text="{Binding Headers, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}" AcceptsReturn="True" TextWrapping="Wrap"
+                        MinHeight="72" MaxHeight="140" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="En-têtes de la requête"/>
+            <TextBlock Style="{StaticResource EditorHint}" TextWrapping="Wrap"
+                       Text="Ils sont enregistrés dans la configuration : n'y mets pas un secret que tu ne veux pas retrouver dans un export."/>
+          </StackPanel>
+
           <!-- Validation en direct : message lisible, annoncé aux lecteurs d'écran -->
           <ItemsControl ItemsSource="{Binding Issues}" Focusable="False" AutomationProperties.LiveSetting="Polite"/>
         </StackPanel>

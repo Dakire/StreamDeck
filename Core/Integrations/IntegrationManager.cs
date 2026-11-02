@@ -272,6 +272,13 @@ public sealed class IntegrationManager : IDisposable
         return integration.Values.TryGetValue(qualifiedKey[(dot + 1)..], out var v) ? v : null;
     }
 
+    /// <summary>true si l'étape vise une intégration activée mais pas connectée (hors commandes qui marchent hors connexion) : la touche l'indique avant l'appui.</summary>
+    public bool IsUnavailable(DeckAction action)
+    {
+        if (Find(action.Type) is not { } integration || !IsEnabled(integration.Id) || integration.State == ConnectionState.Connected) return false;
+        return integration.Commands.FirstOrDefault(c => c.Name.Equals(action.Value, StringComparison.OrdinalIgnoreCase))?.Offline != true;
+    }
+
     /// <summary>
     /// État « actif » (voyant ON / OFF) d'une étape d'intégration : vrai, faux, ou null si la commande n'a pas d'état ou si
     /// l'intégration n'est pas connectée.

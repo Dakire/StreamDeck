@@ -57,7 +57,7 @@ public partial class TileFace : UserControl
         ImageLayer.CornerRadius = CornerRadius;
         ImageLayer.Background = f.ImageBrush;
         ImageLayer.Visibility = f.HasImage ? Visibility.Visible : Visibility.Collapsed;
-        FaceContent.Opacity = f.IsDisabled ? 0.45 : 1;
+        FaceContent.Opacity = f.IsDisabled ? 0.45 : f.Unavailable ? 0.7 : 1;
 
         bool hasTitle = f.HasTitle;
         // Avec une image, le titre est toujours superposé (en bas par défaut) et l'icône disparaît
@@ -112,8 +112,16 @@ public partial class TileFace : UserControl
         StepText.Text = f.Steps.ToString(CultureInfo.CurrentCulture);
 
         // Voyant d'état : plein et vert quand la commande est active, simple anneau quand elle ne l'est pas
-        StateLed.Visibility = f.State == null ? Visibility.Collapsed : Visibility.Visible;
-        if (f.State is { } on)
+        StateLed.Visibility = f.State == null && !f.Unavailable ? Visibility.Collapsed : Visibility.Visible;
+        StateLed.StrokeDashArray = f.Unavailable ? new DoubleCollection { 1.5, 1.5 } : null;   // pointillés : l'état ne tient pas qu'à la couleur
+        if (f.Unavailable)
+        {
+            StateLed.Width = StateLed.Height = Math.Max(10, badge * 0.6);
+            StateLed.Margin = new Thickness(pad, pad, 0, 0);
+            StateLed.Stroke = TryFindResource("DeckDanger") as Brush ?? Brushes.IndianRed;
+            StateLed.Fill = Brushes.Transparent;
+        }
+        else if (f.State is { } on)
         {
             StateLed.Width = StateLed.Height = Math.Max(10, badge * 0.6);
             StateLed.Margin = new Thickness(pad, pad, 0, 0);

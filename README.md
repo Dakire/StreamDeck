@@ -84,8 +84,8 @@ automatique (une fois par jour, désactivable). Rien ne s'installe sans ton acco
 - Fenêtre qui ne prend pas le focus : les raccourcis arrivent à l'application active.
 - Plein écran sur l'écran secondaire ou mode fenêtre, sans masquer la barre des tâches (le deck occupe la zone de travail) ; le deck suit le branchement et le débranchement de l'écran, et se cale exactement même entre écrans de densités différentes.
 - Profil associé à une application : il s'affiche seul quand le programme est au premier plan.
-- **Édition intégrée**, sans aucune fenêtre séparée (menu ⚙ › *Modifier le deck*, *Modifier…* ou *Nouveau bouton…* dans le menu d'une case, ou `StreamDak.exe --edit`) : un panneau d'**actions** apparaît à gauche et
-  les **propriétés** du bouton choisi à droite, la grille garde le même nombre de cases. Toucher une touche la sélectionne, toucher une action
+- **Édition intégrée**, sans aucune fenêtre séparée (menu ⚙ › *Modifier le deck*, *Modifier…* ou *Nouveau bouton…* dans le menu d'une case, ou `StreamDak.exe --edit`) : le panneau d'**actions** apparaît à droite et
+  les **propriétés** du bouton choisi sous la grille (poignées à glisser pour les redimensionner, un toucher les replie), la grille garde le même nombre de cases. Toucher une touche la sélectionne, toucher une action
   la pose dans la case choisie ; *Annuler* / *Rétablir* sont dans le dock, *Terminer* quitte le mode. La fenêtre n'est activable que pendant
   l'édition (saisie au clavier) ; en sortant elle ne prend de nouveau jamais le focus et le rend à l'application précédente.
 - Thème **Material Design 3** : palettes tonales (sombre, AMOLED, clair) générées depuis une couleur source, surfaces à élévation tonale, sans ombre portée.
@@ -103,7 +103,7 @@ automatique (une fois par jour, désactivable). Rien ne s'installe sans ton acco
 
 **Le mode édition** (il n'y a plus de fenêtre d'édition : tout se passe autour de la grille du deck)
 
-- Panneau d'**actions** à gauche (recherche instantanée, 8 catégories repliables, favoris, récentes) et **propriétés** du bouton à droite,
+- Panneau d'**actions** à droite (recherche instantanée, 8 catégories repliables, favoris, récentes) et **propriétés** du bouton sous la grille,
   comme Elgato Stream Deck ou Corsair iCUE. Les boîtes de dialogue (nom d'une page, confirmation d'une suppression) s'affichent
   elles aussi dans le deck : plus de fenêtre qui s'ouvre derrière lui ou sur un autre écran.
 - Dock en édition : annuler / rétablir (100 niveaux), *Page* (renommer, dupliquer, masquer, déplacer, supprimer la page), *Quitter* (sort en annulant tout ce qui a été fait depuis l'ouverture, après confirmation) et *Terminer* (garde les modifications).
@@ -266,6 +266,10 @@ Les tableaux ci-dessous en donnent l'essentiel.
 | `IconStyle` | `fluent` : emojis connus affichés en icônes Fluent ; `emoji` : tels quels | `fluent` |
 | `StartWithWindows` | Reflet du lancement à l'ouverture de session (le registre fait foi) | |
 | `ReduceMotion` | Supprime les animations | `false` |
+| `EconomyMode` | Mode économie : animations coupées, relevés ralentis, pages web en mémoire basse ; facultatif | absent |
+| `CatalogWidth`, `InspectorHeight` | Largeur du catalogue et hauteur de l'inspecteur en mode édition (DIP), choisies en glissant leur poignée ; facultatifs | absents |
+| `CatalogCollapsed`, `InspectorCollapsed` | Panneaux repliés en mode édition ; facultatifs | absents |
+| `SettingsWidth`, `SettingsHeight` | Taille de la fenêtre des paramètres à la dernière fermeture ; facultatifs | absents |
 | `ActiveProfile` | Profil affiché sur le deck | premier profil |
 | `Favorites`, `Recents` | Identifiants d'actions du catalogue | `[]` |
 | `Profiles` | Liste de profils : `Name`, `Columns`, `Rows`, `AppMatch`, `Pages` | |
@@ -281,6 +285,7 @@ Un profil contient des `Pages` ; une page, des `Buttons` dans l'ordre de la gril
 | `ImagePath`, `ImageFit` | Image importée (nom dans `Icons\`), `cover` ou `contain` |
 | `IsFolder`, `Children` | Dossier et son contenu |
 | `Blank` | Case vide qui garde la position de ses voisines |
+| `GlobalHotkey` | Raccourci clavier global qui déclenche le bouton depuis n'importe quelle application (`ctrl+alt+f1`, `f13`) ; un modificateur obligatoire sauf F13 à F24 ; facultatif |
 
 **Ancien format** : un `config.json` sans `Version`, avec `Pages` à la racine, se charge tel quel. Il est converti en un profil
 « Principal » et réécrit au nouveau format, après copie dans `config.v1.backup.json`. Aucune clé n'est supprimée ni renommée,
@@ -300,7 +305,7 @@ sauf `Pages` qui descend dans `Profiles[].Pages`. Les nouvelles clés sont facul
 | `profile` | Nom du profil à afficher | |
 | `delay` | Durée en millisecondes | |
 | `focus` | Titre ou processus de la fenêtre | Programme à lancer si absente |
-| `http` | Adresse `http://` ou `https://` (requête GET) | Corps facultatif : requête POST, en JSON s'il commence par `{` ou `[` |
+| `http` | Adresse `http://` ou `https://` (requête GET) | Corps facultatif : requête POST, en JSON s'il commence par `{` ou `[`. Clés facultatives de l'étape : `Method` (GET, POST, PUT, PATCH, DELETE) et `Headers` (un `Nom: valeur` par ligne) |
 | `audio` | `mic-toggle`, `mic-mute`, `mic-unmute`, `out-toggle`, `volume` | Niveau 0 à 100 pour `volume` |
 | `audiodevice` | `toggle`, `mute`, `unmute`, `volume`, `list` | Périphérique audio par son nom : `capture:Focusrite`, `render:Arctis=50`, `Focusrite=+5` (le défaut de Windows n'est jamais changé) |
 | `sonar` | `volume`, `mute`, `unmute`, `togglemute`, `diagnose` | Canal Sonar : `game=60`, `chatRender=+5`, `micro` (SteelSeries GG requis) |
@@ -354,7 +359,7 @@ animations coupées par le réglage StreamDak ou celui de Windows.
 - Pas de périphérique matériel : StreamDak n'est pas un pilote de Stream Deck Elgato. Le « périphérique » est l'écran du deck.
 - Plugins : seulement du code local posé par l'utilisateur dans `plugins\` (jamais téléchargé), exécuté avec ses droits (voir `docs/plugins.md`).
 - Pas de traduction : l'interface est en français, il n'y a pas de sélecteur de langue.
-- Les profils par application se basent sur le nom du programme au premier plan, relevé toutes les 0,8 s.
+- Les profils par application se basent sur le nom du programme au premier plan, signalé par un événement Windows (un relevé de contrôle toutes les 5 s).
 - Le glisser-déposer tactile dépend de la prise en charge de Windows ; le presse-papiers interne et `Alt+flèches` / le menu *Déplacer* offrent des alternatives.
 - La touche Menu (ou Maj+F10) n'ouvre pas le menu d'une case : le deck ne prend jamais le focus clavier. Clic droit, appui long, ou bouton **Case** du dock en mode édition.
 - Discord : le RPC n'est accordé qu'à une application dont tu es propriétaire (ou testeur) ; rejoindre un salon précis, la caméra et le partage d'écran ne sont pas pilotés.

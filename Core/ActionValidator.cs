@@ -111,6 +111,8 @@ public static class ActionValidator
                     Err("L'adresse doit commencer par http:// ou https://");
                 else if (target.Scheme == "http" && !target.IsLoopback)
                     Warn("Adresse non chiffrée (http://) : le contenu circule en clair sur le réseau");
+                if (!HttpHeaderSpec.IsValidMethod(a.Method)) Err("Méthode : GET, POST, PUT, PATCH ou DELETE");
+                if (!HttpHeaderSpec.TryParse(a.Headers, out _, out var headerError)) Err(headerError);
                 break;
             case ActionTypes.Audio:
                 if (!AudioCommands.Contains(value.ToLowerInvariant())) Err("Choisis une commande audio dans la liste");

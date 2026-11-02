@@ -8,7 +8,7 @@
   <UserControl.Resources>
     <BooleanToVisibilityConverter x:Key="BoolVis"/>
 
-    <!-- Ligne d'action : tout le rang est une cible tactile de 48 px au moins -->
+    <!-- Ligne d'action : tout le rang est une cible tactile de 36 px au moins (catalogue dense) -->
     <DataTemplate DataType="{x:Type vm:CatalogItemViewModel}">
       <Button Command="{Binding AddCommand}" MinHeight="36" Margin="0" Padding="6,3" HorizontalContentAlignment="Stretch"
               Background="Transparent" BorderThickness="0" FocusVisualStyle="{StaticResource DeckFocusVisual}"
@@ -44,7 +44,7 @@
       <Expander IsExpanded="{Binding IsExpanded, Mode=TwoWay}" Margin="0,0,0,2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
                 AutomationProperties.Name="{Binding AutomationName}" FocusVisualStyle="{StaticResource DeckFocusVisual}">
         <Expander.Header>
-          <StackPanel Orientation="Horizontal" MinHeight="34">
+          <StackPanel Orientation="Horizontal" MinHeight="36">
             <ui:SymbolIcon Symbol="{Binding Symbol}" FontSize="20" VerticalAlignment="Center" Foreground="{DynamicResource DeckDim}"/>
             <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
             <TextBlock Text="{Binding CountText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource DeckDim}"/>

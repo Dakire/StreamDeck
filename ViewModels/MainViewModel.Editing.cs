@@ -17,20 +17,91 @@ public partial class MainViewModel
     /// <summary>Hauteur de l'inspecteur de la case (sous la grille), 0 hors mode édition.</summary>
     [ObservableProperty] double inspectorHeight;
 
+    /// <summary>Épaisseur des poignées entre la grille et les panneaux (0 hors mode édition) : large pour se saisir au doigt.</summary>
+    [ObservableProperty] double handleSize;
+
     /// <summary>true pendant le mode édition (les panneaux sont affichés).</summary>
     public bool HasEditor => Editor != null;
+
+    /// <summary>Épaisseur d'une poignée de panneau (DIP).</summary>
+    public const double HandleThickness = 32;
+    /// <summary>Tailles minimales des panneaux déployés (DIP).</summary>
+    public const double MinCatalogWidth = 240, MinInspectorHeight = 200;
+
+    // Tailles en cours de glissement (avant d'être écrites dans la configuration)
+    double? _catalogLive, _inspectorLive;
+
+    /// <summary>true si le catalogue est replié (poignée seule).</summary>
+    public bool IsCatalogCollapsed => _doc.Config.CatalogCollapsed;
+    /// <summary>true si l'inspecteur est replié.</summary>
+    public bool IsInspectorCollapsed => _doc.Config.InspectorCollapsed;
+
+    /// <summary>Glisse la poignée du catalogue : <paramref name="delta"/> positif = plus large. Applique tout de suite, sans écrire la configuration.</summary>
+    public void ResizeCatalog(double delta)
+    {
+        if (!IsEdit || _rawW <= 0) return;
+        double start = _catalogLive ?? CatalogWidth;
+        _catalogLive = Math.Clamp(start + delta, MinCatalogWidth, _rawW * 0.5);
+        if (Math.Abs(_catalogLive.Value - CatalogWidth) < 6) return;   // la grille n'est reconstruite que de 6 DIP en 6
+        ApplyPanelWidths();
+        Rebuild(navigation: false);
+    }
+
+    /// <summary>Glisse la poignée de l'inspecteur : <paramref name="delta"/> positif = plus haut.</summary>
+    public void ResizeInspector(double delta)
+    {
+        if (!IsEdit || _rawH <= 0) return;
+        double start = _inspectorLive ?? InspectorHeight;
+        _inspectorLive = Math.Clamp(start + delta, MinInspectorHeight, _rawH * 0.6);
+        if (Math.Abs(_inspectorLive.Value - InspectorHeight) < 6) return;
+        ApplyPanelWidths();
+        Rebuild(navigation: false);
+    }
+
+    /// <summary>Fin du glissement : les tailles sont mémorisées (réglage, hors historique) et un déploiement remplace un repli.</summary>
+    public void CommitPanelSizes()
+    {
+        var catalog = _catalogLive;
+        var inspector = _inspectorLive;
+        _catalogLive = _inspectorLive = null;
+        if (catalog == null && inspector == null) return;
+        _doc.UpdateSettings(c =>
+        {
+            if (catalog is { } w) { c.CatalogWidth = Math.Round(w); c.CatalogCollapsed = false; }
+            if (inspector is { } h) { c.InspectorHeight = Math.Round(h); c.InspectorCollapsed = false; }
+        }, "Taille des panneaux");
+    }
+
+    /// <summary>Replie ou déploie le catalogue (un toucher sur sa poignée).</summary>
+    public void ToggleCatalog()
+    {
+        _catalogLive = null;
+        _doc.UpdateSettings(c => c.CatalogCollapsed = !c.CatalogCollapsed, "Catalogue");
+    }
+
+    /// <summary>Replie ou déploie l'inspecteur.</summary>
+    public void ToggleInspector()
+    {
+        _inspectorLive = null;
+        _doc.UpdateSettings(c => c.InspectorCollapsed = !c.InspectorCollapsed, "Inspecteur");
+    }
 
     /// <summary>Panneaux proportionnels à l'écran, bornés pour garder des cibles tactiles confortables et une grille lisible.</summary>
     void ApplyPanelWidths()
     {
+        var cfg = _doc.Config;
         if (IsEdit && _rawW > 0 && _rawH > 0)
         {
-            CatalogWidth = Math.Min(Math.Clamp(_rawW * 0.22, 300, 420), _rawW * 0.3);
-            InspectorHeight = Math.Min(Math.Clamp(_rawH * 0.4, 320, 460), _rawH * 0.5);
+            // Taille choisie en glissant la poignée (mémorisée), sinon proportionnelle à la fenêtre ; replié : seule la poignée reste
+            double proportionalW = Math.Min(Math.Clamp(_rawW * 0.22, 300, 420), _rawW * 0.3);
+            double proportionalH = Math.Min(Math.Clamp(_rawH * 0.4, 320, 460), _rawH * 0.5);
+            CatalogWidth = cfg.CatalogCollapsed && _catalogLive == null ? 0 : Math.Clamp(_catalogLive ?? cfg.CatalogWidth ?? proportionalW, MinCatalogWidth, Math.Max(MinCatalogWidth, _rawW * 0.5));
+            InspectorHeight = cfg.InspectorCollapsed && _inspectorLive == null ? 0 : Math.Clamp(_inspectorLive ?? cfg.InspectorHeight ?? proportionalH, MinInspectorHeight, Math.Max(MinInspectorHeight, _rawH * 0.6));
+            HandleSize = HandleThickness;
         }
-        else { CatalogWidth = 0; InspectorHeight = 0; }
-        _w = _rawW - CatalogWidth;
-        _h = _rawH - InspectorHeight;
+        else { CatalogWidth = 0; InspectorHeight = 0; HandleSize = 0; }
+        _w = _rawW - CatalogWidth - HandleSize;
+        _h = _rawH - InspectorHeight - HandleSize;
     }
 
     partial void OnIsEditChanged(bool value)

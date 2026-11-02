@@ -81,7 +81,7 @@ public class VerticalSliderTests
             // Sonar n'est pas activé : tuile grisée, curseur désactivé (il ne reçoit plus le doigt), raison dite, rien d'inventé
             var (offLevel, opacity) = _host.Run(() => (WpfHost.Descendants<LevelControl>(sliders[1]).First(), ((UIElement)WpfHost.Descendants<Grid>(sliders[1]).First(g => g.Name == "Root")).Opacity));
             Assert.False(_host.Run(() => offLevel.IsEnabled));
-            Assert.Equal(0.4, opacity, 2);
+            Assert.Equal(0.6, opacity, 2);   // grisée, mais assez lisible pour la raison écrite sous le curseur
             Assert.False(_host.Run(() => tiles[1].IsAvailable));
             Assert.Contains("Sonar", _host.Run(() => tiles[1].Availability));
         }

@@ -10,7 +10,7 @@ Les tests cités sont dans `tests/StreamDak.Tests`.
 | Grille configurable | Fixée par l'appareil | **Fait** : par profil (3×2 … 8×4), réglage global ou automatique selon l'écran ; touches aux proportions bornées, grille centrée | — | `MainDeckWindowRendersProfileTilesAndImages` (1080p, 16:9, portrait) |
 | Interface tactile | Matérielle | **Fait** : fenêtre sans focus (`WS_EX_NOACTIVATE`), cibles ≥ 48 px, appui instantané | Vérifier à la main avec un vrai écran tactile et le Bloc-notes | Manuel |
 | Modes configuration / contrôle | Logiciel à part | **Fait** : éditeur séparé à trois panneaux + mode « Modifier au toucher » sur le deck | — | `UiTests` (éditeur) |
-| Profils | Oui | **Fait** : créer, renommer, dupliquer, supprimer, actif | Réordonner les profils : non (aucune commande dans l'éditeur) | `DeckDocumentTests` |
+| Profils | Oui | **Fait** : créer, renommer, dupliquer, supprimer, actif | Réordonner : **fait** (menu du profil, `MoveProfile`, annulable) | `DeckDocumentTests` |
 | Personnalisation | Titre, image, couleur | **Fait** : titre et position, icône Fluent / emoji / texte, image, couleurs | — | `UiTests`, `PackageAndThemeTests` |
 | Actions de base | Raccourci, texte, ouvrir, site, multimédia | **Fait** : `hotkey`, `text`, `launch`, `url`, `script`, `media`, `focus` | — | `ActionEngineTests` |
 | Plein écran sur l'écran secondaire | Sans objet | **Fait** : zone de travail de l'écran choisi, mémorisé par identifiant (`MonitorDevice`), retour sur l'écran principal au débranchement, retour automatique au rebranchement | Test réel multi-écran à faire à la main | `DisplayTests` |
@@ -25,10 +25,10 @@ Les tests cités sont dans `tests/StreamDak.Tests`.
 | Retour d'exécution | **Fait** : anneau « en cours » après 250 ms, coche, alerte + message | — | `DeckTilesShowRunState…` |
 | Contrôle audio | **Fait** : touches média, micro (couper / rétablir / bascule), volume précis (Core Audio) | Choix du périphérique : non | `ActionEngineTests` (simulé) ; manuel sur Windows |
 | Contrôle multimédia | **Fait** (touches média) | — | `ActionEngineTests` |
-| Requêtes HTTP / webhooks | **Fait** : GET ou POST (JSON / texte), 10 s maximum, erreur HTTP signalée | En-têtes personnalisés : non | `ActionEngineTests` (serveur factice) |
+| Requêtes HTTP / webhooks | **Fait** : GET, POST, PUT, PATCH, DELETE (JSON / texte), en-têtes personnalisés, 10 s maximum, erreur HTTP signalée | — | `ActionEngineTests` (serveur factice) |
 | Infos dynamiques | **Fait** : `{time}`, `{date}`, formats .NET, minuteur avec progression | État de services, indicateurs système, API : non | `LabelTemplateTests` |
-| Profil automatique par application | **Fait** (nom du programme au premier plan, relevé toutes les 0,8 s) | — | Manuel |
-| Raccourcis globaux (déclencher une touche depuis le clavier) | Non | `RegisterHotKey` derrière une interface `IHotkeyService` | — |
+| Profil automatique par application | **Fait** (nom du programme au premier plan, par événement `SetWinEventHook`) | — | Manuel |
+| Raccourcis globaux (déclencher une touche depuis le clavier) | **Fait** : `GlobalHotkey` par bouton, `IHotkeyService` / `RegisterHotKey`, doublons et conflits signalés | Test réel à faire à la main (voir le bilan) | `AuditFixesTests` (plan, doublures) |
 | Démarrage automatique | **Fait** (clé Run de l'utilisateur) | — | Manuel |
 | Import / export | **Fait** : `.streamdak` (profil ou configuration complète), contrôles de sécurité | Import de profils Elgato : non (format non documenté) | `PackageTests` |
 

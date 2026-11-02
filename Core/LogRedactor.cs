@@ -39,7 +39,7 @@ public static partial class LogRedactor
     private static partial Regex AuthScheme();
 
     // password=hunter2, "token": "abc", secret: xyz
-    [GeneratedRegex(@"(\b(?:password|passwd|pwd|secret|client_secret|api[_-]?key|apikey|token|access_token|refresh_token)\b""?\s*[:=]\s*)(?:""[^""]*""|'[^']*'|[^\s;""'&}]+)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"(\b(?:password|passwd|pwd|mot de passe|mdp|jeton|secret|client_secret|api[_-]?key|apikey|token|access_token|refresh_token)\b""?\s*[:=]\s*)(?:""[^""]*""|'[^']*'|[^\s;""'&}]+)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex Assignment();
 
     // En-têtes dont la valeur entière est secrète, y compris sans schéma (« Authorization: pk_… ») : Cookie: a=b; c=d

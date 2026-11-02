@@ -185,6 +185,13 @@ public class DeckButton
     /// <summary>Emplacement vide (conserve les positions des cases voisines).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool Blank { get; set; }
+
+    /// <summary>
+    /// Raccourci clavier global qui déclenche ce bouton depuis n'importe quelle application (« ctrl+alt+f1 », « f13 »). Absent = aucun. Exige un modificateur,
+    /// sauf pour F13 à F24 ; voir <see cref="StreamDak.Hotkeys.GlobalHotkeyPlan"/>.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? GlobalHotkey { get; set; }
     /// <summary>Masque le titre sur le bouton.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool HideTitle { get; set; }
@@ -229,4 +236,10 @@ public class DeckAction
     public string Value { get; set; } = "";
     /// <summary>Paramètre secondaire facultatif (arguments, corps de requête, niveau de volume…).</summary>
     public string? Args { get; set; }
+    /// <summary>Requête web : en-têtes personnalisés, un « Nom: valeur » par ligne (voir <see cref="StreamDak.Actions.HttpHeaderSpec"/>). Absent = aucun.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Headers { get; set; }
+    /// <summary>Requête web : méthode (GET, POST, PUT, PATCH, DELETE). Absent = GET sans corps, POST avec un corps.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Method { get; set; }
 }

@@ -92,7 +92,7 @@ public static class LongTask
     public static T Run<T>(string name, Func<T> function)
     {
         T result = default!;
-        Run(name, () => result = function());
+        Run(name, (Action)(() => result = function()));   // (Action) : sans lui la lambda se résoudrait vers cette même surcharge et bouclerait
         return result;
     }
 

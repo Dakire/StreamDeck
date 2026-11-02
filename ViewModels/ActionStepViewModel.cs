@@ -87,10 +87,12 @@ public partial class ActionStepViewModel : ObservableObject
 
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowValue), nameof(ShowCommand), nameof(ShowMedia), nameof(ShowAudio), nameof(ShowAudioDevice), nameof(ShowPage), nameof(ShowProfile), nameof(ShowProcesses),
         nameof(ShowBrowseValue), nameof(ShowBrowseArgs), nameof(ShowArgs), nameof(ValueCaption), nameof(ValueHint),
-        nameof(ShowValueHint), nameof(ArgsCaption), nameof(ArgsHint), nameof(ShowArgsHint), nameof(TypeLabel))]
+        nameof(ShowValueHint), nameof(ArgsCaption), nameof(ArgsHint), nameof(ShowArgsHint), nameof(TypeLabel), nameof(ShowHttpExtras))]
     string _type;
     [ObservableProperty] string _value;
     [ObservableProperty] string _args;
+    [ObservableProperty] string _headers = "";
+    [ObservableProperty] string _method = "";
     [ObservableProperty] string _title = "";
     /// <summary>true : toutes les pastilles de type sont affichées ; sinon seul le type choisi (plus de place pour les réglages).</summary>
     [ObservableProperty] bool _isTypePickerOpen;
@@ -129,6 +131,8 @@ public partial class ActionStepViewModel : ObservableObject
         _type = source.Type;
         _value = source.Value;
         _args = source.Args ?? "";
+        _headers = source.Headers ?? "";
+        _method = source.Method ?? "";
 
         foreach (var integration in owner.Integrations) _types.Add((integration.Id, integration.Name));
         foreach (var t in _types) TypeChoices.Add(new ChoiceViewModel(t.Label, () => SetType(t.Key)));
@@ -241,6 +245,8 @@ public partial class ActionStepViewModel : ObservableObject
         Value = _owner.Integrations.FirstOrDefault(i => i.Id == key) is { } integration ? (integration.Commands.Count > 0 ? integration.Commands[0].Name : "")
             : key switch { ActionTypes.Delay => "500", ActionTypes.Url or ActionTypes.Http => "https://", ActionTypes.Page => PageTargets.Home, ActionTypes.Audio => AudioCommands.MicToggle, ActionTypes.AudioDevice => AudioDeviceCommands.Toggle, ActionTypes.Timer => "300", _ => "" };
         Args = "";
+        Headers = "";
+        Method = "";
         _loading = false;
         LoadProcesses();
         LoadCommands();
@@ -262,6 +268,11 @@ public partial class ActionStepViewModel : ObservableObject
     }
 
     partial void OnArgsChanged(string value) => Changed();
+    partial void OnHeadersChanged(string value) => Changed();
+    partial void OnMethodChanged(string value) => Changed();
+
+    /// <summary>Méthode et en-têtes personnalisés : seulement pour une requête web.</summary>
+    public bool ShowHttpExtras => Type == ActionTypes.Http;
 
     void Changed()
     {
@@ -321,6 +332,8 @@ public partial class ActionStepViewModel : ObservableObject
     public DeckAction ToDeckAction() => new()
     {
         Type = Type, Value = Value, Args = string.IsNullOrEmpty(Args) ? null : Args,
+        Headers = Type == ActionTypes.Http && !string.IsNullOrWhiteSpace(Headers) ? Headers : null,
+        Method = Type == ActionTypes.Http && !string.IsNullOrWhiteSpace(Method) ? Method.Trim().ToUpperInvariant() : null,
     };
 
     // ---------- commandes ----------

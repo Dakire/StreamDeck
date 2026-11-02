@@ -85,12 +85,15 @@ public sealed partial class EditorViewModel
     {
         bool active = name.Equals(_doc.Config.ActiveProfile, StringComparison.OrdinalIgnoreCase);
         bool canDelete = _doc.Config.Profiles.Count > 1;
+        int position = _doc.Config.Profiles.FindIndex(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         return new List<MenuItemSpec>
         {
             new("Définir comme profil actif", () => SetActive(name), SymbolRegular.Checkmark24, Enabled: !active, Checked: active),
             MenuItemSpec.Separator,
             new("Renommer", async () => await RenameProfileAsync(name), SymbolRegular.Rename24, "F2"),
             new("Dupliquer", () => DuplicateProfile(name), SymbolRegular.CopyAdd24),
+            new("Monter dans la liste", () => MoveProfile(name, -1), SymbolRegular.ArrowUp24, Enabled: position > 0),
+            new("Descendre dans la liste", () => MoveProfile(name, 1), SymbolRegular.ArrowDown24, Enabled: position >= 0 && position < _doc.Config.Profiles.Count - 1),
             new("Application associée…", async () => await SetAppMatchAsync(name), SymbolRegular.Window24),
             MenuItemSpec.Separator,
             new("Exporter…", () => ExportProfile(name), SymbolRegular.ArrowExportUp24),

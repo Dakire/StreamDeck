@@ -113,6 +113,23 @@ internal static class NativeInput
         throw new ArgumentException($"Touche inconnue : « {k} »");
     }
 
+    /// <summary>Modificateurs (MOD_*) et code de touche d'une combinaison, pour <c>RegisterHotKey</c>.</summary>
+    public static bool TryParseHotkey(string combo, out uint modifiers, out uint vk, out string error)
+    {
+        modifiers = 0; vk = 0; error = "";
+        try
+        {
+            foreach (var p in HotkeySyntax.Split(combo))
+            {
+                if (!HotkeySyntax.Modifiers.Contains(p)) { vk = ParseKey(p); continue; }
+                modifiers |= p.ToLowerInvariant() switch { "alt" => 0x1u, "ctrl" or "control" => 0x2u, "shift" => 0x4u, _ => 0x8u };   // MOD_ALT, CONTROL, SHIFT, WIN
+            }
+            if (vk == 0) { error = "Aucune touche"; return false; }
+            return true;
+        }
+        catch (ArgumentException ex) { error = ex.Message; return false; }
+    }
+
     /// <summary>Vérifie une combinaison sans l'envoyer : syntaxe commune, les caractères seuls doivent exister sur le clavier courant.</summary>
     public static bool TryValidateHotkey(string combo, out string error) =>
         HotkeySyntax.TryValidate(combo, out error, ch => VkKeyScan(ch) != -1);

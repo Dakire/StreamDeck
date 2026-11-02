@@ -95,6 +95,11 @@ classDiagram
 | `IconStyle` | texte | `fluent` | `fluent` : les emojis connus s'affichent en icônes Fluent ; `emoji` : tels quels. |
 | `StartWithWindows` | booléen | | Reflet du lancement à l'ouverture de session. C'est la clé Run du registre qui fait foi. |
 | `ReduceMotion` | booléen | `false` | Supprime les animations, en plus du réglage de Windows. |
+| `EconomyMode` | booléen | absent | Mode économie : animations coupées, relevés des intégrations et des widgets ralentis, pages web en mémoire basse. |
+| `CatalogWidth` | nombre | absent | Largeur du catalogue en mode édition (DIP), 200 à 1000 ; hors de cet intervalle la clé est ignorée (`ConfigNormalizer`). |
+| `InspectorHeight` | nombre | absent | Hauteur de l'inspecteur en mode édition (DIP), 160 à 900. |
+| `CatalogCollapsed`, `InspectorCollapsed` | booléen | absent | Panneau replié (seule sa poignée reste). |
+| `SettingsWidth`, `SettingsHeight` | nombre | absent | Taille de la fenêtre des paramètres (DIP), 560 à 4000 sur la largeur, 520 à 4000 sur la hauteur. |
 | `ActiveProfile` | texte | premier profil | Profil affiché sur le deck. |
 | `Favorites`, `Recents` | listes | `[]` | Identifiants d'actions du catalogue. Les récents sont limités à 12. |
 | `Profiles` | liste | | Profils, au moins un après normalisation. |
