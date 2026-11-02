@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace StreamDak.Actions;
@@ -49,6 +50,11 @@ public interface IWindowService
     bool Activate(string query);
     /// <summary>Nom du programme au premier plan (sans .exe), ou null.</summary>
     string? ForegroundProcessName();
+    /// <summary>
+    /// Le programme au premier plan a changé (nom sans .exe, ou null). Levé sur un thread quelconque, après un court délai qui fusionne les changements
+    /// rapprochés (Alt+Tab). Sans prise en charge, jamais levé : l'appelant garde alors son relevé périodique.
+    /// </summary>
+    event Action<string?>? ForegroundChanged { add { } remove { } }
     /// <summary>Programmes qui ont une fenêtre ouverte (sans doublon, une quinzaine au plus), pour les proposer dans l'éditeur.</summary>
     IReadOnlyList<string> OpenProcessNames();
 }

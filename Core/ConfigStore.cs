@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 
 namespace StreamDak;
 
@@ -126,17 +127,26 @@ public static class ConfigStore
     public static string Serialize(DeckConfig cfg) => JsonSerializer.Serialize(cfg, Options);
 
     /// <summary>Écrit dans un fichier temporaire puis le substitue : un arrêt en cours d'écriture ne corrompt jamais config.json.</summary>
-    public static void Save(DeckConfig cfg)
+    public static void Save(DeckConfig cfg) => SaveJson(Serialize(cfg));
+
+    static readonly object WriteGate = new();
+
+    /// <summary>
+    /// Écrit un JSON déjà sérialisé (instantané pris par l'appelant) : utilisable hors du thread d'interface, les écritures sont sérialisées.
+    /// </summary>
+    public static void SaveJson(string json)
     {
-        Directory.CreateDirectory(Dir);
-        var json = Serialize(cfg);
-        // Le fichier a déjà ce contenu : pas d'écriture, donc pas de remplacement de fichier ni de rechargement à chaud déclenché
-        if (HasSameContent(json)) { _lastWrittenHash = Hash(json); return; }
-        var tmp = FilePath + ".tmp";
-        File.WriteAllText(tmp, json, new UTF8Encoding(false));
-        _lastWrittenHash = Hash(json);
-        if (File.Exists(FilePath)) File.Replace(tmp, FilePath, null);
-        else File.Move(tmp, FilePath);
+        lock (WriteGate)
+        {
+            Directory.CreateDirectory(Dir);
+            // Le fichier a déjà ce contenu : pas d'écriture, donc pas de remplacement de fichier ni de rechargement à chaud déclenché
+            if (HasSameContent(json)) { Volatile.Write(ref _lastWrittenHash, Hash(json)); return; }
+            var tmp = FilePath + ".tmp";
+            File.WriteAllText(tmp, json, new UTF8Encoding(false));
+            Volatile.Write(ref _lastWrittenHash, Hash(json));
+            if (File.Exists(FilePath)) File.Replace(tmp, FilePath, null);
+            else File.Move(tmp, FilePath);
+        }
     }
 
     /// <summary>true si config.json existe déjà avec exactement ce contenu (lecture impossible : on réécrira).</summary>
@@ -149,7 +159,7 @@ public static class ConfigStore
     /// <summary>true si le fichier sur disque est exactement ce que nous venons d'écrire (le rechargement à chaud l'ignore).</summary>
     public static bool IsOwnWrite()
     {
-        try { return _lastWrittenHash != null && Hash(File.ReadAllText(FilePath)) == _lastWrittenHash; }
+        try { var written = Volatile.Read(ref _lastWrittenHash); return written != null && Hash(File.ReadAllText(FilePath)) == written; }
         // Fichier en cours de remplacement ou verrouillé par l'éditeur externe : on le relira (ce n'est pas une erreur)
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
     }

@@ -78,7 +78,8 @@ internal static class WindowFocus
             if (h == IntPtr.Zero) return null;
             _ = GetWindowThreadProcessId(h, out uint pid);
             if (pid == 0 || pid == (uint)Environment.ProcessId) return null;
-            return Process.GetProcessById((int)pid).ProcessName;
+            using var process = Process.GetProcessById((int)pid);
+            return process.ProcessName;
         }
         // Relevé toutes les 0,8 s : un processus qui vient de se terminer n'est pas une erreur, on ne journalise pas
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception) { return null; }

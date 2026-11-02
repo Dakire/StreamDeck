@@ -316,7 +316,7 @@ public class LevelSourceTests
     }
 
     static LevelWidgetViewModel Tile(FakeSource? source, Func<long>? clock = null) =>
-        new(source, LevelShape.Wheel, a => a(), clock, _ => Task.CompletedTask) { Button = new DeckButton { Widget = WidgetTypes.Level }, AccessibleName = "Niveau audio" };
+        new(source, LevelShape.Wheel, a => a(), clock, _ => Task.CompletedTask, background: a => a()) { Button = new DeckButton { Widget = WidgetTypes.Level }, AccessibleName = "Niveau audio" };
 
     [Fact]
     public void TheTileShowsTheRealLevelAndFollowsTheSourceWhenItChanges()

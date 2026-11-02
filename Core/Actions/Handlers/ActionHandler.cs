@@ -70,3 +70,20 @@ public abstract class BackgroundActionHandler : ActionHandler
         return null;
     }
 }
+
+/// <summary>
+/// Comme <see cref="BackgroundActionHandler"/>, pour une action qui rend un message (état du micro…) : appel système (COM, saisie simulée) exécuté hors du
+/// thread d'interface, avec un délai maximal.
+/// </summary>
+public abstract class BackgroundMessageActionHandler : ActionHandler
+{
+    /// <summary>Crée le gestionnaire du type <paramref name="type"/> avec le délai maximal <paramref name="timeout"/>.</summary>
+    protected BackgroundMessageActionHandler(string type, TimeSpan timeout) : base(type, timeout) { }
+
+    /// <summary>Exécute l'étape sur le pool de threads ; retourne un message à afficher ou null. Lève une exception en cas d'échec.</summary>
+    protected abstract string? Run(DeckAction action, StepContext context);
+
+    /// <inheritdoc/>
+    public override Task<string?> ExecuteAsync(DeckAction action, StepContext context, CancellationToken cancellation) =>
+        Task.Run(() => Run(action, context), cancellation).WaitAsync(cancellation);
+}

@@ -113,16 +113,19 @@ public sealed class TileFaceData
         Brush? image = null;
         if (!string.IsNullOrEmpty(b.ImagePath))
         {
-            image = ImageBrushes.GetOrAdd((b.ImagePath, contain), key =>
+            var key = (b.ImagePath, contain);
+            if (!ImageBrushes.TryGetValue(key, out image))
             {
-                var src = IconStore.Load(key.Item1);
-                if (src == null) return null;
-                var brush = new ImageBrush(src) { Stretch = key.Item2 ? Stretch.Uniform : Stretch.UniformToFill };
-                // Réduction de qualité : une image de 512 px affichée en 200 px ne doit pas créneler
-                System.Windows.Media.RenderOptions.SetBitmapScalingMode(brush, BitmapScalingMode.HighQuality);
-                brush.Freeze();
-                return brush;
-            });
+                // Une image absente n'est pas gardée : restaurée plus tard, elle réapparaît au prochain dessin
+                if (IconStore.Load(key.Item1) is { } src)
+                {
+                    var brush = new ImageBrush(src) { Stretch = contain ? Stretch.Uniform : Stretch.UniformToFill };
+                    // Réduction de qualité : une image de 512 px affichée en 200 px ne doit pas créneler
+                    System.Windows.Media.RenderOptions.SetBitmapScalingMode(brush, BitmapScalingMode.HighQuality);
+                    brush.Freeze();
+                    ImageBrushes[key] = image = brush;
+                }
+            }
         }
         var kind = KindOf(b, image != null, timer != null);
         Brush body, border, plate;

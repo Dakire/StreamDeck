@@ -45,6 +45,10 @@ public partial class App : Application
         _api.Start();
         _tray = new TrayIcon(_services.GetRequiredService<IApiShell>());
         _watchdog = new UiWatchdog(Dispatcher);
+        // Deck masqué ou réduit : une vérification par seconde au lieu de dix
+        void WatchVisibility() => _watchdog?.SetBackground(!MainWindow.IsVisible || MainWindow.WindowState == WindowState.Minimized);
+        MainWindow.IsVisibleChanged += (_, _) => WatchVisibility();
+        MainWindow.StateChanged += (_, _) => WatchVisibility();
         if (!options.Simulate) _services.GetRequiredService<UpdateService>().StartBackgroundCheck();   // une fois par jour au plus, 20 s après le démarrage, désactivable
         // « StreamDak.exe --edit » ouvre aussi l'éditeur au lancement
         if (options.OpenEditor)
@@ -58,6 +62,9 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         Log.Info("Arrêt");   // avant la libération du conteneur : celle-ci ferme le fichier du journal
+        // La configuration d'abord : elle ne doit pas attendre la déconnexion des intégrations (le conteneur libère dans l'ordre inverse de la création)
+        try { _services?.GetService<ConfigPersistence>()?.Flush(); }
+        catch (Exception ex) { Log.Error("Enregistrement à l'arrêt", ex); }
         _watchdog?.Dispose();
         _tray?.Dispose();
         _api?.Dispose();

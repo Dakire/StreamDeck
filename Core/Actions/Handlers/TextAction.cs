@@ -1,7 +1,7 @@
 namespace StreamDak.Actions;
 
 /// <summary>Saisit un texte dans l'application active.</summary>
-public sealed class TextAction : SyncActionHandler
+public sealed class TextAction : BackgroundMessageActionHandler
 {
     /// <summary>Type <see cref="ActionTypes.Text"/>.</summary>
     public TextAction() : base(ActionTypes.Text, ActionTimeouts.Quick) { }

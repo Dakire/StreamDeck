@@ -34,6 +34,29 @@ public class DeckConfig
     public bool StartWithWindows { get; set; }
     /// <summary>Supprime les animations (en plus du réglage Windows « Effets d'animation »).</summary>
     public bool ReduceMotion { get; set; }
+    /// <summary>
+    /// Mode économie : animations coupées, relevés des intégrations et des widgets ralentis, WebView2 en mémoire basse. Facultatif : absent = désactivé.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool EconomyMode { get; set; }
+    /// <summary>Largeur du catalogue en mode édition (DIP) choisie en le tirant ; absent = largeur proportionnelle à la fenêtre.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? CatalogWidth { get; set; }
+    /// <summary>Hauteur de l'inspecteur en mode édition (DIP) choisie en le tirant ; absent = proportionnelle à la fenêtre.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? InspectorHeight { get; set; }
+    /// <summary>true = catalogue replié en mode édition.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool CatalogCollapsed { get; set; }
+    /// <summary>true = inspecteur replié en mode édition.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool InspectorCollapsed { get; set; }
+    /// <summary>Taille de la fenêtre des paramètres (DIP) à la dernière fermeture ; absent = taille par défaut.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? SettingsWidth { get; set; }
+    /// <summary>Hauteur de la fenêtre des paramètres (DIP) à la dernière fermeture.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? SettingsHeight { get; set; }
     /// <summary>Nom du profil affiché sur le deck.</summary>
     public string? ActiveProfile { get; set; }
     /// <summary>Identifiants du catalogue d'actions mis en favoris.</summary>

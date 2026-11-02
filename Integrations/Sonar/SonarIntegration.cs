@@ -82,7 +82,10 @@ public sealed class SonarIntegration : PolledHttpIntegration, IBackgroundAware
     };
 
     /// <inheritdoc/>
-    public void SetBackground(bool background) => _background = background;
+    public override void SetBackground(bool background) => _background = background;
+
+    /// <inheritdoc/>
+    protected override int BackgroundFactor => 1;   // l'intervalle de Sonar change déjà tout seul en arrière-plan
 
     /// <inheritdoc/>
     protected override string Unreachable(HttpRequestException ex) => "Sonar est injoignable : SteelSeries GG est-il lancé, Sonar activé ?";

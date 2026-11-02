@@ -20,7 +20,15 @@ public sealed class SimulatedPlatform : IKeyboardService, IAppLauncher, IWindowS
     /// <summary>Programmes « ouverts » : Activate réussit pour eux.</summary>
     public HashSet<string> OpenWindows { get; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Programme supposé au premier plan (profil automatique par application).</summary>
-    public string? Foreground { get; set; }
+    public string? Foreground
+    {
+        get => _foreground;
+        set { _foreground = value; ForegroundChanged?.Invoke(value); }
+    }
+    string? _foreground;
+
+    /// <inheritdoc/>
+    public event Action<string?>? ForegroundChanged;
     /// <summary>Dernier volume réglé, en pourcentage.</summary>
     public int Volume { get; private set; } = 50;
 

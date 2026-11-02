@@ -20,12 +20,13 @@ public sealed class AppearanceService
     void Apply(bool force)
     {
         var c = _doc.Config;
-        var now = (c.Theme, c.IconStyle, c.ReduceMotion);
+        var now = (c.Theme, c.IconStyle, c.ReduceMotion || c.EconomyMode);   // le mode économie coupe les animations
         if (!force && _applied == now) return;
         bool iconsChanged = _applied == null || _applied.Value.IconStyle != c.IconStyle;
         _applied = now;
         IconCatalog.UseFluentForEmoji = c.IconStyle != "emoji";
-        Motion.Apply(c.ReduceMotion);
+        Motion.Apply(c.ReduceMotion || c.EconomyMode);
+        Controls.WebFramePool.Economy = c.EconomyMode;
         Theme.Apply(c.Theme);
         if (iconsChanged && !force) Theme.RaiseChanged();   // redessine les icônes même si le thème n'a pas bougé
     }

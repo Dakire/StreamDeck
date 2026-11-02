@@ -24,7 +24,8 @@ public sealed class IntegrationAction : ActionHandler
         bool offline = _integration.Commands.FirstOrDefault(c => c.Name.Equals(action.Value, StringComparison.OrdinalIgnoreCase))?.Offline == true;
         if (_integration.State != ConnectionState.Connected && !offline)
             throw new InvalidOperationException($"{_integration.Name} n'est pas connecté" + (_integration.Error is { } e ? $" ({e})" : ""));
-        return await _integration.ExecuteAsync(action.Value, action.Args, cancellation);
+        // Hors du thread d'interface et avec une échéance garantie, même si l'implémentation ignore le jeton d'annulation
+        return await Task.Run(() => _integration.ExecuteAsync(action.Value, action.Args, cancellation), CancellationToken.None).WaitAsync(cancellation);
     }
 
     /// <summary>Problèmes d'une étape de cette intégration (commande inconnue, argument manquant), sans rien exécuter.</summary>

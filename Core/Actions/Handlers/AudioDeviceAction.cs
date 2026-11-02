@@ -7,7 +7,7 @@ namespace StreamDak.Actions;
 /// de Windows, que cette action ne change jamais. Commande dans <see cref="DeckAction.Value"/> (<see cref="AudioDeviceCommands"/>),
 /// périphérique (et niveau) dans <see cref="DeckAction.Args"/> : « Focusrite », « capture:Focusrite », « Arctis=50 ».
 /// </summary>
-public sealed class AudioDeviceAction : SyncActionHandler
+public sealed class AudioDeviceAction : BackgroundMessageActionHandler
 {
     /// <summary>Type <see cref="ActionTypes.AudioDevice"/>.</summary>
     public AudioDeviceAction() : base(ActionTypes.AudioDevice, ActionTimeouts.Quick) { }

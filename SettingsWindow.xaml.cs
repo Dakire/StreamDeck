@@ -22,6 +22,13 @@ public partial class SettingsWindow : Wpf.Ui.Controls.FluentWindow, ISettingsShe
         InitializeComponent();
         ShortcutList.ItemsSource = SettingsViewModel.Shortcuts.Select(s => new { s.Keys, s.What }).ToList();
         Icon = Application.Current.MainWindow?.Icon;
+        if (_vm.SavedWindowSize is { } size)
+        {
+            // Jamais plus grande que la zone de travail : un écran débranché depuis ne doit pas laisser une fenêtre hors de portée
+            Width = Math.Min(size.Width, SystemParameters.WorkArea.Width);
+            Height = Math.Min(size.Height, SystemParameters.WorkArea.Height);
+        }
+        Closing += (_, _) => { if (WindowState == WindowState.Normal) _vm.RememberWindowSize(ActualWidth, ActualHeight); };
         Closed += (_, _) => OnClosed();
     }
 

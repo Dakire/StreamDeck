@@ -9,7 +9,7 @@ namespace StreamDak.Integrations;
 /// Base des intégrations qui parlent HTTP à un appareil ou un logiciel local : un client, un relevé périodique de l'état,
 /// des erreurs réseau traduites en messages lisibles, et la perte de connexion détectée quand le relevé échoue plusieurs fois.
 /// </summary>
-public abstract class PolledHttpIntegration : IntegrationBase, IDisposable
+public abstract class PolledHttpIntegration : IntegrationBase, IBackgroundAware, IDisposable
 {
     /// <summary>Nombre de relevés consécutifs en échec avant de déclarer la connexion perdue (un relevé raté isolé est toléré).</summary>
     public const int FailuresBeforeLoss = 3;
@@ -21,6 +21,13 @@ public abstract class PolledHttpIntegration : IntegrationBase, IDisposable
     protected HttpClient Http => _http ?? throw new InvalidOperationException($"{Name} n'est pas connecté");
     /// <summary>Intervalle entre deux relevés d'état.</summary>
     protected abstract TimeSpan PollInterval { get; }
+
+    volatile bool _slow;
+    /// <summary>Facteur appliqué à <see cref="PollInterval"/> quand le deck est masqué ou en mode économie ; un dérivé qui ralentit lui-même rend 1.</summary>
+    protected virtual int BackgroundFactor => 10;
+
+    /// <summary>Deck masqué ou mode économie : les relevés s'espacent (un appareil que personne ne regarde n'a pas besoin d'être interrogé toutes les 2 s).</summary>
+    public virtual void SetBackground(bool background) => _slow = background;
 
     /// <summary>Crée le client HTTP (les dérivés peuvent fournir un gestionnaire, par exemple pour un certificat auto-signé).</summary>
     protected virtual HttpClient CreateClient(IntegrationSettings settings) => new() { Timeout = TimeSpan.FromSeconds(5) };
@@ -56,9 +63,9 @@ public abstract class PolledHttpIntegration : IntegrationBase, IDisposable
         {
             while (!stop.IsCancellationRequested)
             {
-                await Task.Delay(PollInterval, stop);
+                await Task.Delay(_slow ? PollInterval * BackgroundFactor : PollInterval, stop);
                 try { await PollTranslatedAsync(settings, stop); failures = 0; }
-                catch (InvalidOperationException ex) when (!stop.IsCancellationRequested)
+                catch (Exception ex) when (!stop.IsCancellationRequested)   // JSON ou format inattendu compris : sinon la boucle mourait en laissant « Connecté »
                 {
                     if (++failures >= FailuresBeforeLoss) { ConnectionLost(ex.Message); return; }
                 }
@@ -82,7 +89,7 @@ public abstract class PolledHttpIntegration : IntegrationBase, IDisposable
     protected async Task RefreshNowAsync(IntegrationSettings settings, CancellationToken cancellation)
     {
         try { await PollTranslatedAsync(settings, cancellation); }
-        catch (InvalidOperationException) { /* le prochain relevé périodique réessaiera */ }
+        catch (Exception ex) when (!cancellation.IsCancellationRequested) { Log.Warn($"{Name} : relevé après commande en échec : {ex.Message}"); }   // le prochain relevé périodique réessaiera
     }
 
     /// <summary>Libère le client et arrête le relevé.</summary>

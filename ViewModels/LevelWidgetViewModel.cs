@@ -40,8 +40,10 @@ public sealed partial class LevelWidgetViewModel : WidgetTileViewModel, IDisposa
     /// <param name="clock">Horloge en millisecondes (tests).</param>
     /// <param name="delay">Attente entre deux envois (tests).</param>
     /// <param name="resetLevel">Niveau du bouton de réinitialisation ; null : celui de la cible.</param>
-    public LevelWidgetViewModel(ILevelSource? source, LevelShape shape, Action<Action> post, Func<long>? clock = null, Func<TimeSpan, Task>? delay = null, int? resetLevel = null)
+    /// <param name="background">Exécute un relevé hors du thread d'interface (tests : sur place).</param>
+    public LevelWidgetViewModel(ILevelSource? source, LevelShape shape, Action<Action> post, Func<long>? clock = null, Func<TimeSpan, Task>? delay = null, int? resetLevel = null, Action<Action>? background = null)
     {
+        _background = background ?? (work => _ = Task.Run(work));   // les relevés (COM, réseau local) ne tournent jamais sur le thread d'interface
         _source = source;
         Shape = shape;
         ResetLevel = Math.Clamp(resetLevel ?? source?.ResetLevel ?? 100, 0, 100);
@@ -51,6 +53,9 @@ public sealed partial class LevelWidgetViewModel : WidgetTileViewModel, IDisposa
         _sender = new LevelSender(async percent => await Required().SetLevelAsync(percent), delay, ReportError);
         _status = source == null ? "Choisis un canal Sonar ou un périphérique dans les propriétés (mode édition)" : "Lecture du niveau…";   // jamais un faux zéro en attendant le premier relevé
     }
+
+    readonly Action<Action> _background;
+    int _refreshing;
 
     ILevelSource Required() => _source ?? throw new InvalidOperationException("Aucune cible");
 
@@ -115,7 +120,8 @@ public sealed partial class LevelWidgetViewModel : WidgetTileViewModel, IDisposa
         bool muted = !IsMuted;
         Hold();
         IsMuted = muted;
-        try { await _source.SetMutedAsync(muted); }
+        var source = _source;
+        try { await Task.Run(() => source.SetMutedAsync(muted)); }   // COM sous verrou : jamais sur le thread d'interface
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or System.Runtime.InteropServices.COMException)
         {
             IsMuted = !muted;
@@ -141,7 +147,7 @@ public sealed partial class LevelWidgetViewModel : WidgetTileViewModel, IDisposa
         }
         _source.Changed += OnSourceChanged;
         if (_source.PollInterval is { } interval && !_paused) _timer = new Timer(_ => Refresh(), null, interval, interval);
-        Refresh();
+        _background(Refresh);
     }
 
     void OnSourceChanged() => Refresh();
@@ -152,7 +158,12 @@ public sealed partial class LevelWidgetViewModel : WidgetTileViewModel, IDisposa
         ILevelSource? source;
         lock (_gate) { if (_disposed || _paused) return; source = _source; }
         if (source == null) return;
-        var reading = source.Read(out var problem);
+        // Un relevé à la fois : un appel COM bloqué ne doit pas empiler des threads du pool
+        if (Interlocked.CompareExchange(ref _refreshing, 1, 0) != 0) return;
+        LevelReading? reading;
+        string problem;
+        try { reading = source.Read(out problem); }
+        finally { Volatile.Write(ref _refreshing, 0); }
         _post(() =>
         {
             lock (_gate) { if (_disposed) return; }
@@ -177,10 +188,10 @@ public sealed partial class LevelWidgetViewModel : WidgetTileViewModel, IDisposa
             if (_paused == paused) return;
             _paused = paused;
         }
-        if (_source?.PollInterval is not { } interval) { if (!paused) Refresh(); return; }
+        if (_source?.PollInterval is not { } interval) { if (!paused) _background(Refresh); return; }
         if (paused) { _timer?.Dispose(); _timer = null; return; }
         if (_started) _timer = new Timer(_ => Refresh(), null, interval, interval);
-        Refresh();
+        _background(Refresh);
     }
 
     /// <summary>true tant que les relevés sont suspendus.</summary>

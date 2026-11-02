@@ -73,6 +73,11 @@ public static class ConfigNormalizer
         cfg.Columns = Math.Clamp(cfg.Columns, 0, 20);
         cfg.Rows = Math.Clamp(cfg.Rows, 0, 20);
         cfg.Spacing = double.IsFinite(cfg.Spacing) ? Math.Clamp(cfg.Spacing, 0, 80) : 14;
+        // Tailles mémorisées : une valeur absurde (fichier édité à la main) redevient « absent » plutôt que de produire une fenêtre inutilisable
+        cfg.CatalogWidth = SaneSize(cfg.CatalogWidth, 200, 1000);
+        cfg.InspectorHeight = SaneSize(cfg.InspectorHeight, 160, 900);
+        cfg.SettingsWidth = SaneSize(cfg.SettingsWidth, 560, 4000);
+        cfg.SettingsHeight = SaneSize(cfg.SettingsHeight, 520, 4000);
         var theme = (cfg.Theme ?? "").ToLowerInvariant();
         cfg.Theme = Themes.Contains(theme) ? theme : "system";
         cfg.Background = string.IsNullOrWhiteSpace(cfg.Background) ? DefaultBackground : cfg.Background;
@@ -184,6 +189,9 @@ public static class ConfigNormalizer
     }
 
     /// <summary>Tous les boutons descendants d'un dossier, à plat ; les sous-dossiers sont gardés, vidés de leur contenu.</summary>
+    static double? SaneSize(double? value, double min, double max) =>
+        value is { } v && double.IsFinite(v) && v >= min && v <= max ? v : null;
+
     static List<DeckButton> Flatten(List<DeckButton>? children)
     {
         var result = new List<DeckButton>();

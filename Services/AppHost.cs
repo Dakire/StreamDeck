@@ -94,9 +94,10 @@ public static class AppHost
         var clock = System.Diagnostics.Stopwatch.StartNew();
         var serilog = new LoggerConfiguration()
             .MinimumLevel.Is(LogLevelFromEnvironment())
-            .WriteTo.File(new RedactingFormatter("{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3} {Message:lj}{NewLine}{Exception}"),
+            // Écriture asynchrone : un Log.* depuis le thread d'interface ne fait plus d'accès disque (file bornée, les plus anciens messages sont perdus si le disque bloque)
+            .WriteTo.Async(a => a.File(new RedactingFormatter("{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3} {Message:lj}{NewLine}{Exception}"),
                 Path.Combine(ConfigStore.Dir, LogFileName), fileSizeLimitBytes: LogMaxBytes, rollOnFileSizeLimit: true,
-                retainedFileCountLimit: LogFilesKept, shared: true)
+                retainedFileCountLimit: LogFilesKept, shared: true), bufferSize: 10_000)
             .CreateLogger();
         Log.Sink = new SerilogSink(serilog);
         long tLog = clock.ElapsedMilliseconds;
@@ -193,6 +194,10 @@ public static class AppHost
         sp.GetRequiredService<AppearanceService>();
         sp.GetRequiredService<ConfigPersistence>();
         sp.GetRequiredService<IntegrationManager>().Start();
+        // Images des boutons décodées hors du thread d'interface : la première grille les trouve prêtes
+        _ = IconStore.PreloadAsync(sp.GetRequiredService<DeckDocument>().Config.Profiles
+            .SelectMany(p => p.Pages.SelectMany(pg => DeckDocument.AllButtons(pg.Buttons)))
+            .Select(b => b.ImagePath).ToList());
         Log.Info($"Services prêts en {clock.ElapsedMilliseconds} ms (journal {tLog}, déclarations {tRegistered - tLog}, conteneur {tBuilt - tRegistered})");
         return sp;
     }
@@ -217,7 +222,7 @@ public static class AppHost
     /// <summary>Ajoute les intégrations des plugins posés dans le dossier <c>plugins</c> (code de confiance, voir <see cref="PluginLoader"/>).</summary>
     static void AddPlugins(IServiceCollection services, HashSet<string> takenIds)
     {
-        foreach (var plugin in PluginLoader.Load(Path.Combine(ConfigStore.Dir, PluginLoader.FolderName)))
+        foreach (var plugin in PluginLoader.Load(Path.Combine(ConfigStore.Dir, PluginLoader.FolderName), PluginTrust.Open(Path.Combine(ConfigStore.Dir, PluginLoader.FolderName))))
         {
             foreach (var type in plugin.Integrations)
             {
@@ -242,7 +247,8 @@ public static class AppHost
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "StreamDak", "updates");
         var environment = new UpdateEnvironment(ConfigStore.Dir, AppContext.BaseDirectory, work, current, Environment.ProcessPath ?? "", Environment.ProcessId);
         var api = new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = true, MaxAutomaticRedirections = 3 }) { Timeout = Timeout.InfiniteTimeSpan };
-        var download = new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
+        // Le téléchargement a une borne : connexion 15 s, durée totale 30 min (un flux qui se fige ne reste pas ouvert indéfiniment)
+        var download = new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false, ConnectTimeout = TimeSpan.FromSeconds(15) }) { Timeout = TimeSpan.FromMinutes(30) };
         IUpdateApplier applier = options.Simulate ? new SimulatedApplier() : new UpdateApplier();
         return new UpdateService(environment, new UpdateChecker(api, current), new UpdateDownloader(download, current), WindowsPlatform.CreateSignatureVerifier(), applier,
             () => Application.Current?.Dispatcher.BeginInvoke(() => Application.Current.Shutdown()));

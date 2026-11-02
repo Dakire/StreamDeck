@@ -26,9 +26,9 @@ public class UiWatchdogTests
 
         dog.Check();
         Assert.Empty(log);
-        now = 2_999; dog.Check();
+        now = 199; dog.Check();
         Assert.Empty(log);                                   // sous le seuil
-        now = 3_000; dog.Check();
+        now = 200; dog.Check();
         now = 9_000; dog.Check();
         Assert.Single(log);                                  // une seule fois par blocage
         Assert.Contains("sans réponse", log[0]);

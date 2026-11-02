@@ -50,7 +50,8 @@ public partial class MainViewModel : ObservableObject, INavigator
     static readonly TimeSpan StatusActionDelay = TimeSpan.FromSeconds(8);
     Action? _statusAction;
     readonly DispatcherTimer _statusTimer = new() { Interval = StatusDelay };
-    readonly DispatcherTimer _appTimer = new() { Interval = TimeSpan.FromMilliseconds(800) };
+    // Filet de sécurité seulement : le changement de programme au premier plan arrive par un événement Windows (IWindowService.ForegroundChanged)
+    readonly DispatcherTimer _appTimer = new() { Interval = TimeSpan.FromSeconds(5) };
     readonly DispatcherTimer _liveTimer = new() { Interval = TimeSpan.FromSeconds(1) };   // horloges et minuteurs visibles
     string _lastMinute = "";
     readonly List<int> _folder = new();     // chemin de dossiers ouverts
@@ -156,9 +157,10 @@ public partial class MainViewModel : ObservableObject, INavigator
         _lastActive = _doc.Config.ActiveProfile;
         _lastPlacement = (_doc.Config.Monitor, _doc.Config.MonitorDevice, _doc.Config.Fullscreen, _doc.Config.AlwaysOnTop);
         _statusTimer.Tick += (_, _) => { _statusTimer.Stop(); SetStatus(null); };
-        _appTimer.Tick += (_, _) => PollForeground();
+        _appTimer.Tick += (_, _) => LongTask.Run("Profil par application", PollForeground);
         _appTimer.Start();
-        _liveTimer.Tick += (_, _) => RefreshLive();
+        _engine.Context.Platform.Windows.ForegroundChanged += OnForegroundChanged;
+        _liveTimer.Tick += (_, _) => LongTask.Run("Rafraîchissement des valeurs", RefreshLive);
         _engine.Context.Countdowns.Finished += OnCountdownFinished;
         _integrations.ValuesChanged += _ => QueueIntegrationRefresh();
         _integrations.StateChanged += _ => QueueIntegrationRefresh();
@@ -202,9 +204,21 @@ public partial class MainViewModel : ObservableObject, INavigator
         }
     }
 
-    void OnDocumentChanged(DocumentChange change)
+    /// <summary>Mode économie : les relevés des widgets de données sont trois fois plus espacés (pris en compte à la création de la tuile).</summary>
+    TimeSpan Economize(TimeSpan interval) => _doc.Config.EconomyMode ? interval * 3 : interval;
+
+    bool _lastEconomy;
+
+    void OnDocumentChanged(DocumentChange change) => LongTask.Run("Document modifié", () => OnDocumentChangedCore(change));
+
+    void OnDocumentChangedCore(DocumentChange change)
     {
         var cfg = _doc.Config;
+        if (_lastEconomy != cfg.EconomyMode)
+        {
+            _lastEconomy = cfg.EconomyMode;
+            _integrations.SetBackground(!_active || cfg.EconomyMode);
+        }
         if (_autoProfile != null && _doc.FindProfile(_autoProfile) == null) _autoProfile = null;
         if (!string.Equals(_lastActive, cfg.ActiveProfile, StringComparison.Ordinal))
         {
@@ -264,6 +278,13 @@ public partial class MainViewModel : ObservableObject, INavigator
     }
 
     // ---------- profil lié à l'application au premier plan ----------
+
+    /// <summary>Événement du système : ramené sur le thread d'interface (levé sur le pool, nom déjà résolu hors de ce thread).</summary>
+    void OnForegroundChanged(string? name)
+    {
+        if (!_active) return;   // deck masqué : PollForeground rattrape au retour
+        _ui.BeginInvoke(DispatcherPriority.Background, () => LongTask.Run("Profil par application", PollForeground));
+    }
 
     void PollForeground()
     {
@@ -360,7 +381,9 @@ public partial class MainViewModel : ObservableObject, INavigator
     int SubPages(int itemCount) =>
         Math.Max(1, (int)Math.Ceiling((itemCount + (IsEdit ? 1 : 0)) / (double)_capacity));
 
-    void Rebuild(bool navigation = true)
+    void Rebuild(bool navigation = true) => LongTask.Run("Reconstruction de la grille", () => RebuildCore(navigation));
+
+    void RebuildCore(bool navigation)
     {
         if (_w < 50 || _h < 50 || _doc.Config.Profiles.Count == 0) return;
 
@@ -617,7 +640,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     {
         var options = new Dictionary<string, string>(def.WidgetOptions ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
         var context = new WidgetContext { Options = options, Http = _engine.Context.Http, GetValue = _integrations.GetValue };
-        var tile = new DataWidgetViewModel(widget, context, WidgetRegistry.IntervalFor(widget.Info, options), a => _ui.BeginInvoke(a))
+        var tile = new DataWidgetViewModel(widget, context, Economize(WidgetRegistry.IntervalFor(widget.Info, options)), a => _ui.BeginInvoke(a))
         {
             Button = def, Edit = edit, AccessibleName = name,
         };
@@ -1102,7 +1125,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     {
         if (_active == active) return;
         _active = active;
-        _integrations.SetBackground(!active);
+        _integrations.SetBackground(!active || _doc.Config.EconomyMode);
         foreach (var data in _dataWidgets) data.SetPaused(!active);
         foreach (var level in _levelWidgets) level.SetPaused(!active);
         foreach (var mixer in _mixers) mixer.SetPaused(!active);

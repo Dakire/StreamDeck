@@ -228,7 +228,7 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
             ButtonIssues.Add(new IssueViewModel(Severity.Warning, "Ce bouton n'a aucune action"));
         else if (!b.IsFolder)
             foreach (var warning in HotkeyConflicts.Warnings(b, _doc.Config, _target)) ButtonIssues.Add(new IssueViewModel(Severity.Warning, warning));
-        if (!string.IsNullOrEmpty(b.ImagePath) && IconStore.Resolve(b.ImagePath) is { } img && !File.Exists(img))
+        if (!string.IsNullOrEmpty(b.ImagePath) && IconStore.Resolve(b.ImagePath) is { } img && !PathProbe.Exists(img))
             ButtonIssues.Add(new IssueViewModel(Severity.Warning, "L'image du bouton est introuvable"));
         ButtonIssueCount = ButtonIssues.Count;
         foreach (var s in Steps) s.Revalidate();

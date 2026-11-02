@@ -73,12 +73,12 @@ public static class ActionValidator
                 break;
             case ActionTypes.Launch:
                 if (string.IsNullOrWhiteSpace(value)) Err("Indique un programme ou un dossier à ouvrir");
-                else if (LooksLikePath(value) && !File.Exists(value) && !Directory.Exists(value))
+                else if (LooksLikePath(value) && !PathProbe.Exists(value, orDirectory: true))
                     Warn("Ce chemin est introuvable sur cet ordinateur");
                 break;
             case ActionTypes.Script:
                 if (string.IsNullOrWhiteSpace(value)) Err("Indique une commande PowerShell ou un fichier de script");
-                else if (IsScriptFile(value) && LooksLikePath(value) && !File.Exists(value))
+                else if (IsScriptFile(value) && LooksLikePath(value) && !PathProbe.Exists(value))
                     Warn("Ce fichier de script est introuvable");
                 break;
             case ActionTypes.Url:
@@ -156,7 +156,7 @@ public static class ActionValidator
         if (b.Actions.Count == 0 && !LabelTemplate.IsDynamic(b.Label)) issues.Add(new Issue(Severity.Warning, "Ce bouton n'a aucune action"));
         foreach (var a in b.Actions) issues.AddRange(Validate(a, cfg, profile));
         foreach (var w in HotkeyConflicts.Warnings(b, cfg)) issues.Add(new Issue(Severity.Warning, w));
-        if (!string.IsNullOrEmpty(b.ImagePath) && IconNames.Resolve(b.ImagePath) is { } path && !File.Exists(path))
+        if (!string.IsNullOrEmpty(b.ImagePath) && IconNames.Resolve(b.ImagePath) is { } path && !PathProbe.Exists(path))
             issues.Add(new Issue(Severity.Warning, "L'image du bouton est introuvable"));
         return issues;
     }

@@ -135,12 +135,12 @@ public class LevelResetTests
     public async Task ResetGoesBackToTheWidgetsLevelOrTheSourcesOne()
     {
         var source = new Source();
-        var tile = new LevelWidgetViewModel(source, LevelShape.HorizontalSlider, a => a(), delay: _ => Task.CompletedTask) { Button = new DeckButton() };
+        var tile = new LevelWidgetViewModel(source, LevelShape.HorizontalSlider, a => a(), delay: _ => Task.CompletedTask, background: a => a()) { Button = new DeckButton() };
         Assert.Equal("Revenir à 80 %", tile.ResetText);
         tile.ResetCommand.Execute(null);
         Assert.Equal(80, tile.Level);
 
-        var own = new LevelWidgetViewModel(source, LevelShape.Wheel, a => a(), delay: _ => Task.CompletedTask, resetLevel: 35) { Button = new DeckButton() };
+        var own = new LevelWidgetViewModel(source, LevelShape.Wheel, a => a(), delay: _ => Task.CompletedTask, resetLevel: 35, background: a => a()) { Button = new DeckButton() };
         own.ResetCommand.Execute(null);
         for (int i = 0; i < 100 && source.Set.Count < 2; i++) await Task.Delay(10);
         Assert.Equal(new[] { 35, 80 }, source.Set.OrderBy(v => v));   // deux tuiles, deux files d'envoi : l'ordre d'arrivée n'est pas garanti

@@ -15,6 +15,10 @@ public sealed class IntegrationManager : IDisposable
 {
     /// <summary>Attente maximale d'une connexion.</summary>
     public static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(10);
+    /// <summary>Durée de connexion stable à partir de laquelle l'attente repart de zéro (sinon un service qui tombe aussitôt serait retenté toutes les 2 s).</summary>
+    public static readonly TimeSpan StableAfter = TimeSpan.FromSeconds(30);
+    /// <summary>Délai global de l'arrêt : les intégrations se déconnectent en parallèle, ce qui reste est abandonné.</summary>
+    public static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(2);
     /// <summary>Attentes successives entre deux tentatives ; la dernière se répète.</summary>
     public static readonly TimeSpan[] Backoff =
     {
@@ -183,8 +187,9 @@ public sealed class IntegrationManager : IDisposable
                 timeout.CancelAfter(ConnectTimeout);
                 await integration.ConnectAsync(settings, timeout.Token);
                 Log.Info($"{integration.Name} : connecté");
-                attempt = 0;
+                var connectedAt = Environment.TickCount64;
                 await WaitForLossAsync(integration, stop);
+                if (Environment.TickCount64 - connectedAt >= StableAfter.TotalMilliseconds) attempt = 0;
                 if (stop.IsCancellationRequested) break;
             }
             catch (OperationCanceledException) when (stop.IsCancellationRequested) { break; }
@@ -200,6 +205,7 @@ public sealed class IntegrationManager : IDisposable
 
             try { await integration.ReleaseAsync(); } catch (Exception ex) { Log.Warn($"{integration.Name} : {ex.Message}"); }
             var wait = Backoff[Math.Min(attempt++, Backoff.Length - 1)];
+            wait += TimeSpan.FromMilliseconds(wait.TotalMilliseconds * 0.2 * Random.Shared.NextDouble());   // gigue : les intégrations ne se reconnectent pas toutes ensemble
             try { await _delay(wait, stop); }
             catch (OperationCanceledException) { break; }
         }
@@ -293,10 +299,14 @@ public sealed class IntegrationManager : IDisposable
         }
         _doc.Changed -= OnDocumentChanged;
         foreach (var (_, runner) in running) runner.Cts.Cancel();
-        foreach (var (integration, runner) in running)
+        // En parallèle et sur le pool (le thread d'interface ne sert pas de contexte aux attentes), sous une échéance globale
+        var stops = running.Select(r => Task.Run(async () =>
         {
-            try { runner.Loop.Wait(TimeSpan.FromSeconds(2)); } catch (AggregateException) { /* annulé */ }
-            try { integration.DisconnectAsync().Wait(TimeSpan.FromSeconds(2)); } catch (AggregateException) { /* déjà fermée */ }
-        }
+            try { await r.Item2.Loop; } catch (Exception) { /* annulé ou déjà en échec */ }
+            try { await r.Item1.DisconnectAsync(); } catch (Exception) { /* déjà fermée */ }
+        })).ToArray();
+        try { Task.WaitAll(stops, ShutdownTimeout); } catch (AggregateException) { /* déjà consigné par chaque intégration */ }
+        var late = stops.Count(t => !t.IsCompleted);
+        if (late > 0) Log.Warn($"Arrêt : {late} intégration(s) n'ont pas fini de se déconnecter en {ShutdownTimeout.TotalSeconds:0} s");
     }
 }

@@ -4,7 +4,7 @@ using System.Globalization;
 namespace StreamDak.Actions;
 
 /// <summary>Micro et volume : coupe ou rétablit, ou règle le volume de sortie (niveau dans <see cref="DeckAction.Args"/>).</summary>
-public sealed class AudioAction : SyncActionHandler
+public sealed class AudioAction : BackgroundMessageActionHandler
 {
     /// <summary>Type <see cref="ActionTypes.Audio"/>.</summary>
     public AudioAction() : base(ActionTypes.Audio, ActionTimeouts.Quick) { }

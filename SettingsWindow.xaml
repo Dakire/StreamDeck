@@ -58,6 +58,10 @@
             <ItemsControl ItemsSource="{Binding ThemeChoices}" Style="{StaticResource ChipWrap}"/>
             <ui:ToggleSwitch Content="Réduire les animations" IsChecked="{Binding ReduceMotion, Mode=TwoWay}" Margin="0,6,0,0"
                              AutomationProperties.Name="Réduire les animations"/>
+            <ui:ToggleSwitch Content="Mode économie" IsChecked="{Binding EconomyMode, Mode=TwoWay}" Margin="0,6,0,0"
+                             AutomationProperties.Name="Mode économie"/>
+            <TextBlock Style="{StaticResource EditorHint}" TextWrapping="Wrap"
+                       Text="Animations coupées, relevés des intégrations et des widgets ralentis, pages web en mémoire basse. Pour un deck qui reste allumé toute la journée sur une petite machine."/>
             <TextBlock Style="{StaticResource EditorHint}" Text="Windows demande déjà de supprimer les animations : StreamDak en tient compte."
                        Visibility="{Binding SystemReducesMotion, Converter={StaticResource BoolVis}}"/>
             <ui:ToggleSwitch Content="Garder les emojis tels quels (au lieu des icônes Fluent)" IsChecked="{Binding EmojiIcons, Mode=TwoWay}"/>
@@ -348,6 +352,24 @@
               </ItemsControl.ItemTemplate>
             </ItemsControl>
             <TextBlock Style="{StaticResource EditorHint}" Text="Ces raccourcis ne s'appliquent jamais pendant la saisie dans un champ de texte. Dans le deck tactile, rien n'est intercepté : les raccourcis envoyés vont à l'application active."/>
+          </StackPanel>
+        </Border>
+
+        <!-- Diagnostic -->
+        <Border Style="{StaticResource SettingsCard}">
+          <StackPanel>
+            <TextBlock Text="Diagnostic" Style="{StaticResource SectionTitle}"/>
+            <TextBlock Text="{Binding ConsumptionText}" TextWrapping="Wrap" AutomationProperties.Name="Consommation de mémoire"/>
+            <TextBlock Style="{StaticResource EditorHint}" TextWrapping="Wrap" Margin="0,4,0,8"
+                       Text="Pauses de l'interface de 200 ms ou plus, tâches longues, état des intégrations et derniers avertissements. Le texte copié ne contient aucun secret."/>
+            <WrapPanel>
+              <ui:Button Content="Copier le diagnostic" Icon="{ui:SymbolIcon Copy24}" Command="{Binding CopyDiagnosticCommand}" Style="{StaticResource EditorChip}"/>
+              <ui:Button Content="Actualiser" Icon="{ui:SymbolIcon ArrowSync24}" Command="{Binding RefreshDiagnosticCommand}" Style="{StaticResource EditorChip}"/>
+              <ui:Button Content="Remettre les pauses à zéro" Icon="{ui:SymbolIcon ArrowReset24}" Command="{Binding ResetPausesCommand}" Style="{StaticResource EditorChip}"/>
+              <ui:Button Content="Ouvrir le journal" Icon="{ui:SymbolIcon DocumentText24}" Command="{Binding OpenLogCommand}" Style="{StaticResource EditorChip}"/>
+            </WrapPanel>
+            <TextBox Text="{Binding DiagnosticText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" FontFamily="Consolas, Segoe UI"
+                     MaxHeight="260" VerticalScrollBarVisibility="Auto" Margin="0,8,0,0" AutomationProperties.Name="Texte du diagnostic"/>
           </StackPanel>
         </Border>
 

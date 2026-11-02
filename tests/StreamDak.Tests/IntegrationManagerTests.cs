@@ -25,6 +25,7 @@ sealed class FakeIntegration : IntegrationBase
     public ConcurrentQueue<IntegrationSettings> Connects { get; } = new();
     public int Disconnects;
     public Func<int, Task>? OnConnect;
+    public Func<Task>? OnDisconnect;
     int _attempts;
 
     public override string Id => _id;
@@ -49,7 +50,7 @@ sealed class FakeIntegration : IntegrationBase
         SetValue("scene", "Jeu");
     }
 
-    protected override Task DisconnectCoreAsync() { Interlocked.Increment(ref Disconnects); return Task.CompletedTask; }
+    protected override Task DisconnectCoreAsync() { Interlocked.Increment(ref Disconnects); return OnDisconnect?.Invoke() ?? Task.CompletedTask; }
     public override Task<string?> ExecuteAsync(string command, string? argument, CancellationToken cancellation) => Task.FromResult<string?>("fait " + command);
     public void Lose() => ConnectionLost("coupée");
     public void Publish(string key, string value) => SetValue(key, value);

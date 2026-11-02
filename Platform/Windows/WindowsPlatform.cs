@@ -109,6 +109,15 @@ public sealed class WindowsPlatform : IKeyboardService, IAppLauncher, IWindowSer
     public string? ForegroundProcessName() => WindowFocus.ForegroundProcessName();
     /// <inheritdoc/>
     public IReadOnlyList<string> OpenProcessNames() => WindowFocus.OpenProcessNames();
+    /// <inheritdoc/>
+    public event Action<string?>? ForegroundChanged
+    {
+        add => ForegroundWatcher.Changed += value;
+        remove => ForegroundWatcher.Changed -= value;
+    }
+
+    /// <summary>Nombre et mémoire des processus <paramref name="exeName"/> (sans .exe) lancés par StreamDak : pour le diagnostic (processus WebView2).</summary>
+    public static ProcessUsage MeasureChildProcesses(string exeName) => ProcessTree.Measure(exeName);
 
     /// <inheritdoc/>
     public bool IsMuted(AudioDevice device) => NativeAudio.IsMuted(device);

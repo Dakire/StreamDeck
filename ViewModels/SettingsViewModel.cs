@@ -35,6 +35,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     readonly DisplayService _displays;
     readonly ConfigPersistence _persistence;
     readonly ISettingsShell _shell;
+    readonly IntegrationManager _integrationManager;
     bool _loading;
 
     [ObservableProperty] bool _fullscreen;
@@ -52,6 +53,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] string _deviceText = "";
     [ObservableProperty] bool _deviceConnected;
     [ObservableProperty] bool _systemReducesMotion;
+    [ObservableProperty] bool _economyMode;
+    [ObservableProperty] string _diagnosticText = "";
+    [ObservableProperty] string _consumptionText = "";
 
     /// <summary>Mises à jour par les releases GitHub : version, recherche, notes, installation.</summary>
     public UpdateService Updates { get; }
@@ -110,6 +114,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         IntegrationManager integrations, ISecretStore secrets, UpdateService updates)
     {
         Updates = updates;
+        _integrationManager = integrations;
         foreach (var integration in IntegrationOrder.Sort(integrations.Integrations, doc.Config.IntegrationOrder, i => i.Id)) Integrations.Add(new IntegrationCardViewModel(integration, integrations, doc, secrets));
         _shell = shell;
         _doc = doc;
@@ -121,6 +126,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             ThemeChoices.Add(new ChoiceViewModel(label, () => SetTheme(k)));
         }
         Load();
+        RefreshDiagnostic();
         _doc.Changed += OnChanged;
         _displays.Changed += RefreshDevices;
     }
@@ -150,6 +156,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             AlwaysOnTop = c.AlwaysOnTop;
             StartWithWindows = c.StartWithWindows;
             ReduceMotion = c.ReduceMotion;
+            EconomyMode = c.EconomyMode;
             EmojiIcons = c.IconStyle == "emoji";
             CustomBackground = !string.Equals(c.Background, Theme.DefaultBackground, StringComparison.OrdinalIgnoreCase);
             Background = c.Background;
@@ -207,6 +214,83 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnFullscreenChanged(bool value) => Set(c => c.Fullscreen = value, "Plein écran");
     partial void OnAlwaysOnTopChanged(bool value) => Set(c => c.AlwaysOnTop = value, "Toujours au premier plan");
     partial void OnReduceMotionChanged(bool value) => Set(c => c.ReduceMotion = value, "Animations");
+    partial void OnEconomyModeChanged(bool value) => Set(c => c.EconomyMode = value, "Mode économie");
+
+    /// <summary>Taille mémorisée de la fenêtre des paramètres, ou null.</summary>
+    public (double Width, double Height)? SavedWindowSize =>
+        _doc.Config is { SettingsWidth: { } w, SettingsHeight: { } h } ? (w, h) : null;
+
+    /// <summary>Mémorise la taille de la fenêtre (réglage, hors historique).</summary>
+    public void RememberWindowSize(double width, double height)
+    {
+        if (!double.IsFinite(width) || !double.IsFinite(height) || width < 560 || height < 520) return;
+        if (_doc.Config.SettingsWidth is { } w && _doc.Config.SettingsHeight is { } h && Math.Abs(w - width) < 1 && Math.Abs(h - height) < 1) return;
+        _doc.UpdateSettings(c => { c.SettingsWidth = Math.Round(width); c.SettingsHeight = Math.Round(height); }, "Taille des paramètres");
+    }
+
+    // ---------- diagnostic ----------
+
+    static readonly DateTime Started = Process.GetCurrentProcess().StartTime;
+
+    /// <summary>Texte de diagnostic : version, mémoire (application et WebView2), pauses de l'interface, intégrations, derniers avertissements. Sans secret.</summary>
+    public string BuildDiagnostic()
+    {
+        using var self = Process.GetCurrentProcess();
+        var content = (_doc.Config.Profiles.Count,
+            _doc.Config.Profiles.Sum(p => p.Pages.Count),
+            _doc.Config.Profiles.Sum(p => p.Pages.Sum(pg => DeckDocument.AllButtons(pg.Buttons).Count())));
+        var input = new DiagnosticInput
+        {
+            Version = VersionText,
+            WorkingSetBytes = self.WorkingSet64,
+            WebView = WindowsPlatform.MeasureChildProcesses("msedgewebview2"),
+            Uptime = DateTime.Now - Started,
+            EconomyMode = _doc.Config.EconomyMode,
+            Pauses = UiPauses.Snapshot(),
+            Integrations = _integrationManager.Integrations
+                .Select(i => new IntegrationStatus(i.Name, _integrationManager.IsEnabled(i.Id), i.State.ToString(), i.Error)).ToList(),
+            RecentLog = Log.Recent(),
+            Content = content,
+        };
+        return DiagnosticReport.Build(input);
+    }
+
+    /// <summary>Relit l'état (mémoire, pauses, intégrations) et l'affiche.</summary>
+    [RelayCommand]
+    void RefreshDiagnostic()
+    {
+        var text = BuildDiagnostic();
+        DiagnosticText = text;
+        ConsumptionText = text.Split('\n').FirstOrDefault(l => l.StartsWith("Mémoire", StringComparison.Ordinal)) ?? "";
+    }
+
+    /// <summary>Copie le diagnostic dans le presse-papiers.</summary>
+    [RelayCommand]
+    void CopyDiagnostic()
+    {
+        try
+        {
+            Clipboard.SetText(BuildDiagnostic());
+            Notifier.Info("Diagnostic copié");
+        }
+        catch (System.Runtime.InteropServices.COMException ex) { Notifier.Error("Presse-papiers occupé : " + ex.Message); }
+    }
+
+    /// <summary>Remet à zéro le compteur de pauses.</summary>
+    [RelayCommand]
+    void ResetPauses()
+    {
+        UiPauses.Reset();
+        RefreshDiagnostic();
+    }
+
+    /// <summary>Ouvre le journal.</summary>
+    [RelayCommand]
+    void OpenLog()
+    {
+        try { Process.Start(new ProcessStartInfo(System.IO.Path.Combine(ConfigStore.Dir, AppHost.LogFileName)) { UseShellExecute = true }); }
+        catch (Exception ex) { Notifier.Error("Impossible d'ouvrir le journal : " + ex.Message); }
+    }
     partial void OnEmojiIconsChanged(bool value) => Set(c => c.IconStyle = value ? "emoji" : "fluent", "Style des icônes");
 
     partial void OnStartWithWindowsChanged(bool value)

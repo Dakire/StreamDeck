@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -112,36 +114,59 @@ public static class IconStore
         return name;
     }
 
+    /// <summary>Largeur au-delà de laquelle une image est décodée réduite : 8192 px décodés coûteraient 256 Mo pour une touche de quelques centaines de pixels.</summary>
+    public const int MaxDecodedWidth = 1024;
+    // Image absente ou illisible : retentée au plus une fois toutes les 30 s (une image restaurée plus tard réapparaît), consignée une fois
+    static readonly ConcurrentDictionary<string, long> Failed = new();
+    static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(30);
+
     /// <summary>Image prête à afficher (figée, mise en cache), ou null si absente ou illisible.</summary>
     public static ImageSource? Load(string? name)
     {
         if (!IsValidName(name)) return null;
-        return Cache.GetOrAdd(name!, n =>
+        if (Cache.TryGetValue(name!, out var cached) && cached != null) return cached;
+        if (Failed.TryGetValue(name!, out var at) && Environment.TickCount64 - at < RetryAfter.TotalMilliseconds) return null;
+        try
         {
-            try
-            {
-                var path = Path.Combine(ConfigStore.IconsDir, n);
-                if (!File.Exists(path)) return null;
-                var bmp = new BitmapImage();
-                bmp.BeginInit();
-                bmp.CacheOption = BitmapCacheOption.OnLoad;
-                // Profil colorimétrique appliqué (pas d'IgnoreColorProfile) : une photo avec profil ICC garde ses couleurs d'origine
-                bmp.UriSource = new Uri(path);
-                bmp.EndInit();
-                bmp.Freeze();
-                return bmp;
-            }
-            // Image effacée, tronquée ou format inconnu : le bouton s'affiche sans image (résultat mis en cache, consigné une fois)
-            // (WIC signale aussi les fichiers corrompus par COMException, d'où ExternalException)
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or FormatException
-                                       or ArgumentException or InvalidOperationException or System.Runtime.InteropServices.ExternalException)
-            {
-                Log.Warn($"Image de bouton illisible ({n}) : {ex.Message}");
-                return null;
-            }
-        });
+            var path = Path.Combine(ConfigStore.IconsDir, name!);
+            if (!File.Exists(path)) { Failed[name!] = Environment.TickCount64; return null; }
+            var bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.CacheOption = BitmapCacheOption.OnLoad;
+            // Profil colorimétrique appliqué (pas d'IgnoreColorProfile) : une photo avec profil ICC garde ses couleurs d'origine
+            bmp.UriSource = new Uri(path);
+            if (PixelWidth(path) > MaxDecodedWidth) bmp.DecodePixelWidth = MaxDecodedWidth;
+            bmp.EndInit();
+            bmp.Freeze();
+            Cache[name!] = bmp;
+            Failed.TryRemove(name!, out _);
+            return bmp;
+        }
+        // Image effacée, tronquée ou format inconnu : le bouton s'affiche sans image (consigné une fois)
+        // (WIC signale aussi les fichiers corrompus par COMException, d'où ExternalException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or FormatException
+                                   or ArgumentException or InvalidOperationException or System.Runtime.InteropServices.ExternalException)
+        {
+            if (Failed.TryAdd(name!, Environment.TickCount64)) Log.Warn($"Image de bouton illisible ({name}) : {ex.Message}");
+            else Failed[name!] = Environment.TickCount64;
+            return null;
+        }
     }
 
+    static int PixelWidth(string path)
+    {
+        var decoder = BitmapDecoder.Create(new Uri(path), BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
+        return decoder.Frames[0].PixelWidth;
+    }
+
+    /// <summary>Décode des images sur le pool de threads pour que la première construction de la grille les trouve en cache (le décodage sur l'UI saccadait).</summary>
+    public static Task PreloadAsync(IEnumerable<string?> names) =>
+        Task.Run(() =>
+        {
+            foreach (var name in names.Where(n => n != null).Distinct())
+                Load(name);
+        });
+
     /// <summary>Vide le cache des images chargées (changement de dossier de configuration dans les tests).</summary>
-    public static void ClearCache() => Cache.Clear();
+    public static void ClearCache() { Cache.Clear(); Failed.Clear(); }
 }

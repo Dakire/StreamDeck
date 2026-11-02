@@ -42,8 +42,23 @@ public static class Log
     /// <summary>Erreur, avec l'exception complète si elle est fournie.</summary>
     public static void Error(string message, Exception? ex = null) => Write(LogSeverity.Error, message, ex);
 
+    const int RecentMax = 30;
+    static readonly System.Collections.Generic.Queue<string> RecentLines = new();
+
+    /// <summary>Derniers avertissements et erreurs (30 au plus, du plus ancien au plus récent), pour le diagnostic copiable. Passés par <see cref="LogRedactor"/>.</summary>
+    public static System.Collections.Generic.IReadOnlyList<string> Recent()
+    {
+        lock (RecentLines) return RecentLines.ToArray();
+    }
+
     static void Write(LogSeverity severity, string message, Exception? exception)
     {
+        if (severity != LogSeverity.Info)
+            lock (RecentLines)
+            {
+                RecentLines.Enqueue($"{DateTime.Now:HH:mm:ss} {(severity == LogSeverity.Error ? "ERR" : "WRN")} {LogRedactor.Redact(message)}{(exception != null ? " (" + exception.GetType().Name + ")" : "")}");
+                while (RecentLines.Count > RecentMax) RecentLines.Dequeue();
+            }
         try { Sink.Write(severity, message, exception); }
         catch (Exception) { /* un journal en échec ne doit jamais faire tomber l'application */ }
     }
