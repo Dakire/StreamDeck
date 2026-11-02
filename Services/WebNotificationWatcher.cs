@@ -44,11 +44,18 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         public bool Closed { get; set; }
         public bool Suspended { get; set; }
         public int Generation { get; set; }
+        /// <summary>Prochaine renavigation vers l'adresse de départ quand la page est restée hors du service (connexion faite depuis ailleurs).</summary>
+        public long NextRenavigateAt { get; set; }
+        public TimeSpan RenavigateDelay { get; set; } = FirstRenavigateDelay;
     }
+
+    /// <summary>Attente avant de retenter l'adresse de départ d'un service dont le compteur reste inconnu ; elle double jusqu'à <see cref="MaxRenavigateDelay"/>.</summary>
+    internal static readonly TimeSpan FirstRenavigateDelay = TimeSpan.FromMinutes(2), MaxRenavigateDelay = TimeSpan.FromMinutes(30);
 
     readonly DeckDocument _doc;
     readonly NotificationProviders _providers;
     readonly Dispatcher _ui;
+    DispatcherTimer? _renavigateTimer;
     readonly Dictionary<string, Session> _sessions = new(StringComparer.OrdinalIgnoreCase);
     IReadOnlySet<string> _only = new HashSet<string>();
     HwndSource? _host;
@@ -78,7 +85,12 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         _ui.InvokeAsync(() =>
         {
             _only = only;
-            if (!_running) { _running = true; _doc.Changed += OnDocumentChanged; }
+            if (!_running)
+            {
+                _running = true;
+                _doc.Changed += OnDocumentChanged;
+                _renavigateTimer = new DispatcherTimer(TimeSpan.FromMinutes(1), DispatcherPriority.Background, (_, _) => RenavigateLoggedOut(), _ui);
+            }
             Sync();
         });
     }
@@ -92,6 +104,8 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
     void StopCore()
     {
         if (_running) { _doc.Changed -= OnDocumentChanged; _running = false; }
+        _renavigateTimer?.Stop();
+        _renavigateTimer = null;
         foreach (var session in _sessions.Values.ToList()) Close(session, report: true);
         _sessions.Clear();
         _host?.Dispose();
@@ -129,12 +143,13 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
             Close(gone, report: true);
             _sessions.Remove(gone.Provider.Id);
         }
+        int opened = 0;
         foreach (var provider in wanted)
             if (!_sessions.ContainsKey(provider.Id))
             {
                 var session = new Session { Provider = provider };
                 _sessions[provider.Id] = session;
-                _ = OpenAsync(session);
+                _ = OpenStaggeredAsync(session, TimeSpan.FromMilliseconds(400 * opened++));   // les pages ne se chargent pas toutes en même temps au démarrage
             }
     }
 
@@ -145,6 +160,13 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         WindowStyle = unchecked((int)0x80000000),            // WS_POPUP, sans WS_VISIBLE
         ExtendedWindowStyle = 0x00000080 | 0x08000000,       // WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE
     });
+
+    async Task OpenStaggeredAsync(Session session, TimeSpan delay)
+    {
+        if (delay > TimeSpan.Zero) await Task.Delay(delay);
+        if (session.Closed) return;
+        await OpenAsync(session);
+    }
 
     async Task OpenAsync(Session session)
     {
@@ -166,6 +188,7 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
             if (_background) _ = ApplyBackgroundAsync(session);
             if (session.Provider.ScriptInterval is { } interval && !session.ObserverInstalled)
             {
+                session.Timer?.Stop();
                 session.Timer = new DispatcherTimer(interval, DispatcherPriority.Background, (_, _) => _ = EvaluateAsync(session), _ui);
                 if (_background) session.Timer.Stop();
             }
@@ -209,11 +232,13 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         settings.IsGeneralAutofillEnabled = false;
         settings.IsPasswordAutosaveEnabled = false;
         core.IsMuted = true;                                           // une page cachée ne fait aucun bruit
+        core.MemoryUsageTargetLevel = CoreWebView2MemoryUsageTargetLevel.Low;   // personne ne la regarde : elle rend sa mémoire au système
         // Gestionnaires nommés pour pouvoir s'en désabonner à la fermeture (aucune fuite si la page est rouverte).
         EventHandler<CoreWebView2NewWindowRequestedEventArgs> newWindow = (_, a) => a.Handled = true;
         EventHandler<CoreWebView2DownloadStartingEventArgs> download = (_, a) => a.Cancel = true;
         // Permissions toujours refusées : ni micro, ni caméra, ni notifications système (donc pas de NotificationReceived) ; le badge suffit.
-        EventHandler<CoreWebView2PermissionRequestedEventArgs> permission = (_, a) => a.State = CoreWebView2PermissionState.Deny;
+        // SavesInProfile = false : ce refus ne doit pas être mémorisé dans le profil partagé, sinon il bloquerait aussi les notifications du cadre visible du même site
+        EventHandler<CoreWebView2PermissionRequestedEventArgs> permission = (_, a) => { a.State = CoreWebView2PermissionState.Deny; a.SavesInProfile = false; };
         EventHandler<CoreWebView2NavigationStartingEventArgs> navigation = (_, a) => { if (!WidgetTypes.IsWebAddress(a.Uri, out Uri _)) a.Cancel = true; };
         EventHandler<object> title = (_, _) => _ = EvaluateAsync(session);
         EventHandler<CoreWebView2NavigationCompletedEventArgs> completed = (_, _) => _ = EvaluateAsync(session);
@@ -222,8 +247,11 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         EventHandler<CoreWebView2WebMessageReceivedEventArgs> message = (_, a) => OnWebMessage(session, a);
         EventHandler<CoreWebView2ProcessFailedEventArgs> failed = (_, a) =>
         {
-            Log.Warn($"Notifications : la page de {session.Provider.Name} a cessé de répondre ({a.ProcessFailedKind})");   // la dernière valeur connue reste affichée
-            _ = ReopenLaterAsync(session);
+            Log.Warn($"Notifications : processus de la page de {session.Provider.Name} en panne ({a.ProcessFailedKind})");   // la dernière valeur connue reste affichée
+            // Une panne du processus graphique ou d'un utilitaire se répare seule : seules celles du navigateur et du rendu demandent une nouvelle page
+            if (a.ProcessFailedKind is CoreWebView2ProcessFailedKind.BrowserProcessExited or CoreWebView2ProcessFailedKind.RenderProcessExited
+                or CoreWebView2ProcessFailedKind.RenderProcessUnresponsive or CoreWebView2ProcessFailedKind.FrameRenderProcessExited)
+                _ = ReopenLaterAsync(session);
         };
         core.NewWindowRequested += newWindow;
         core.DownloadStarting += download;
@@ -289,6 +317,28 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         catch (Exception ex) when (ex is COMException or InvalidOperationException or ObjectDisposedException) { /* page libérée */ }
     }
 
+    /// <summary>
+    /// Un service dont le compteur reste inconnu (page de connexion, session expirée) n'était jamais rechargé : se connecter ensuite depuis le deck ne
+    /// rétablissait pas le badge. L'adresse de départ est donc retentée avec une attente croissante, et seulement deck visible.
+    /// </summary>
+    void RenavigateLoggedOut()
+    {
+        if (_background) return;
+        long now = Environment.TickCount64;
+        foreach (var s in _sessions.Values.ToList())
+        {
+            if (s.Closed || s.Suspended || s.Controller?.CoreWebView2 is not { } core) continue;
+            if (s.Last != null) { s.RenavigateDelay = FirstRenavigateDelay; s.NextRenavigateAt = 0; continue; }
+            if (!s.Reported) continue;
+            if (s.NextRenavigateAt == 0) { s.NextRenavigateAt = now + (long)s.RenavigateDelay.TotalMilliseconds; continue; }
+            if (now < s.NextRenavigateAt) continue;
+            s.RenavigateDelay = TimeSpan.FromTicks(Math.Min(s.RenavigateDelay.Ticks * 2, MaxRenavigateDelay.Ticks));
+            s.NextRenavigateAt = now + (long)s.RenavigateDelay.TotalMilliseconds;
+            try { core.Navigate(s.Provider.StartUrl.AbsoluteUri); Log.Info($"Notifications : {s.Provider.Name} : compteur inconnu, retour à la page de départ"); }
+            catch (Exception ex) when (ex is COMException or InvalidOperationException or ObjectDisposedException) { /* page libérée */ }
+        }
+    }
+
     async Task ReopenLaterAsync(Session session)
     {
         int generation = session.Generation;
@@ -296,9 +346,12 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
         await _ui.InvokeAsync(() =>
         {
             if (session.Closed || generation != session.Generation || !_sessions.ContainsKey(session.Provider.Id)) return;
+            session.Timer?.Stop();   // sinon la minuterie de l'ancienne page resterait orpheline à chaque panne
+            session.Timer = null;
             session.Detach?.Invoke();
             session.Detach = null;
-            session.Controller?.Close();
+            try { session.Controller?.Close(); }
+            catch (Exception ex) when (ex is COMException or InvalidOperationException or ObjectDisposedException) { /* déjà fermée : on rouvre quand même */ }
             session.Controller = null;
             _ = OpenAsync(session);
         });
@@ -415,7 +468,9 @@ public sealed class WebNotificationWatcher : INotificationWatcher, IDisposable
             if (_background)
             {
                 session.Timer?.Stop();
-                session.Suspended = await core.TrySuspendAsync();   // la page dort : plus de minuteries ni de réseau pour un deck que personne ne voit
+                var suspended = await core.TrySuspendAsync();   // la page dort : plus de minuteries ni de réseau pour un deck que personne ne voit
+                if (!_background && suspended) { core.Resume(); suspended = false; session.Timer?.Start(); }   // le deck est revenu pendant l'attente : ne pas rester endormi
+                session.Suspended = suspended;
             }
             else
             {

@@ -17,6 +17,10 @@ sealed class WebFrame
     public required Uri Source { get; init; }
     /// <summary>Tuile qui affiche le cadre, ou null s'il est rangé.</summary>
     public WebWidgetViewModel? Vm { get; set; }
+    /// <summary>Le processus du navigateur ou du rendu s'est arrêté : le cadre ne se répare pas, il sera recréé à la prochaine reprise ou au prochain « Recharger ».</summary>
+    public bool Dead { get; set; }
+    /// <summary>Le contrôle a été libéré : plus rien ne doit y toucher.</summary>
+    public bool Disposed { get; set; }
 }
 
 /// <summary>
@@ -31,6 +35,9 @@ static class WebFramePool
 
     static readonly LinkedList<(string Key, WebFrame Frame)> Parked = new();
 
+    /// <summary>Mode économie : les cadres affichés eux-mêmes visent une mémoire basse (appliqué à leur création et à chaque reprise).</summary>
+    public static bool Economy { get; set; }
+
     /// <summary>Nombre de cadres rangés (tests).</summary>
     public static int Count => Parked.Count;
 
@@ -41,7 +48,10 @@ static class WebFramePool
             if (node.Value.Key == key)
             {
                 Parked.Remove(node);
-                return node.Value.Frame;
+                var frame = node.Value.Frame;
+                if (frame.Dead) { Release(frame); return null; }   // un cadre mort n'est pas repris : la tuile en recrée un
+                SetMemoryLevel(frame, low: Economy);
+                return frame;
             }
         return null;
     }
@@ -50,6 +60,7 @@ static class WebFramePool
     public static void Park(string key, WebFrame frame)
     {
         if (Take(key) is { } previous && !ReferenceEquals(previous, frame)) Release(previous);
+        SetMemoryLevel(frame, low: true);   // personne ne le regarde : il rend sa mémoire au système (ses notifications continuent d'arriver)
         Parked.AddLast((key, frame));
         while (Parked.Count > MaxParked)
         {
@@ -66,9 +77,24 @@ static class WebFramePool
         Parked.Clear();
     }
 
+    /// <summary>Niveau de mémoire visé par le navigateur d'un cadre : bas quand il est rangé, normal quand il est affiché.</summary>
+    internal static void SetMemoryLevel(WebFrame frame, bool low)
+    {
+        try
+        {
+            if (frame.Web.CoreWebView2 is { } core)
+                core.MemoryUsageTargetLevel = low ? Microsoft.Web.WebView2.Core.CoreWebView2MemoryUsageTargetLevel.Low : Microsoft.Web.WebView2.Core.CoreWebView2MemoryUsageTargetLevel.Normal;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException or System.Runtime.InteropServices.COMException)
+        {
+            Log.Warn("Niveau de mémoire d'un cadre web : " + ex.Message);
+        }
+    }
+
     /// <summary>Libère les processus du navigateur d'un cadre.</summary>
     public static void Release(WebFrame frame)
     {
+        frame.Disposed = true;
         // Le contrôle peut être déjà libéré ou encore en cours d'initialisation : libérer un cadre ne doit jamais faire échouer l'interface
         try { frame.Web.Dispose(); }
         catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException or System.Runtime.InteropServices.COMException)

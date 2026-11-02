@@ -253,7 +253,7 @@ public sealed class NotificationProvider : INotificationProvider
         "(function(){if(window.__streamdakBadge)return;window.__streamdakBadge=1;try{" + LabelReader(pattern) + "var last=-1,lastC=-1,t=null;" +
         "function send(){try{var r=read();if((r.count!==last||r.found!==lastC)&&window.chrome&&window.chrome.webview){last=r.count;lastC=r.found;window.chrome.webview.postMessage({type:'" + MessageType + "',count:r.count,candidates:r.found})}}catch(x){}}" +
         "function later(){if(t)return;t=setTimeout(function(){t=null;send()},500)}" +
-        "function start(){new MutationObserver(later).observe(document.documentElement,{childList:true,subtree:true,characterData:true,attributes:true});later()}" +
+        "function start(){new MutationObserver(later).observe(document.documentElement,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['aria-label','title']});later()}" +
         "if(document.documentElement)start();else document.addEventListener('DOMContentLoaded',start)}catch(x){}})()";
 
     /// <summary>Type du message envoyé par <see cref="BuildObserverScript"/>.</summary>

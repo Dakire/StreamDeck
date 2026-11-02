@@ -62,7 +62,11 @@ public partial class WebWidgetView : UserControl
         InitializeComponent();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
-        _fieldTimer.Tick += async (_, _) => { ApplyInput(); SyncZoom(); await PollFocusedFieldAsync(); };
+        _fieldTimer.Tick += async (_, _) =>
+        {
+            if (!IsVisible || Window.GetWindow(this) is not { WindowState: not WindowState.Minimized }) return;   // deck masqué ou réduit : rien à relever
+            ApplyInput(); SyncZoom(); await PollFocusedFieldAsync();
+        };
         DataContextChanged += OnDataContextChanged;
     }
 
@@ -83,7 +87,7 @@ public partial class WebWidgetView : UserControl
         if (_vm != null)
         {
             _vm.PropertyChanged += OnViewModelChanged;
-            _vm.ReloadRequested = () => Web?.CoreWebView2?.Reload();
+            _vm.ReloadRequested = ReloadFrame;
             _vm.BackRequested = GoBack;
         }
     }
@@ -110,6 +114,25 @@ public partial class WebWidgetView : UserControl
         if (Web is { } web && _vm != null) StreamDak.Platform.Windows.WindowsPlatform.SetHostedWindowInput(web.Handle, _vm.IsInteracting);
     }
 
+    /// <summary>Recharge la page ; si le processus du navigateur est mort, le cadre est recréé (le recharger lèverait une exception).</summary>
+    void ReloadFrame()
+    {
+        try
+        {
+            if (_frame is { Dead: true })
+            {
+                Unmount();   // le cadre mort est rangé puis écarté par Take
+                Attach();
+                if (IsLoaded) Mount();
+            }
+            else Web?.CoreWebView2?.Reload();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or COMException or ObjectDisposedException)
+        {
+            Log.Warn($"Widget page web : rechargement impossible ({ex.Message})");
+        }
+    }
+
     /// <summary>Retour : page précédente du cadre, sinon l'adresse saisie (on n'est jamais bloqué sur une page sans issue).</summary>
     void GoBack()
     {
@@ -119,8 +142,13 @@ public partial class WebWidgetView : UserControl
     }
 
     /// <summary>Profil de navigation propre à StreamDak, créé une fois : le dossier de configuration (ou STREAMDAK_DATA_DIR) contient WebView2.</summary>
-    internal static Task<CoreWebView2Environment> GetEnvironment() =>
-        _environment ??= CoreWebView2Environment.CreateAsync(null, Path.Combine(ConfigStore.Dir, "WebView2"));
+    internal static Task<CoreWebView2Environment> GetEnvironment()
+    {
+        // Un échec n'est pas gardé : le prochain cadre réessaie (WebView2 installé entre-temps, dossier momentanément verrouillé)
+        if (_environment is not { IsFaulted: false, IsCanceled: false })
+            _environment = CoreWebView2Environment.CreateAsync(null, Path.Combine(ConfigStore.Dir, "WebView2"));
+        return _environment;
+    }
 
     void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -153,14 +181,18 @@ public partial class WebWidgetView : UserControl
         try
         {
             await frame.Web.EnsureCoreWebView2Async(await GetEnvironment());
+            if (frame.Disposed || frame.Web.CoreWebView2 == null) return;   // évincé pendant l'initialisation
             Configure(frame);
+            if (WebFramePool.Economy) WebFramePool.SetMemoryLevel(frame, low: true);
             ApplyInput();
             await ResetStoredDenialsAsync(frame.Web.CoreWebView2);   // avant la navigation : la page doit voir « à demander », pas « bloqué »
+            if (frame.Disposed || frame.Web.CoreWebView2 == null) return;
             await frame.Web.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(InputTrackerScript);
+            if (frame.Disposed || frame.Web.CoreWebView2 == null) return;
             Log.Info($"Widget page web : WebView2 {frame.Web.CoreWebView2.Environment.BrowserVersionString} prêt, ouverture de {source.Host}");
             frame.Web.CoreWebView2.Navigate(source.AbsoluteUri);
         }
-        catch (Exception ex) when (ex is WebView2RuntimeNotFoundException or COMException or InvalidOperationException or ArgumentException or IOException or UnauthorizedAccessException or ObjectDisposedException)
+        catch (Exception ex) when (ex is WebView2RuntimeNotFoundException or COMException or InvalidOperationException or ArgumentException or IOException or UnauthorizedAccessException or ObjectDisposedException or NullReferenceException)
         {
             Log.Warn($"Widget page web : WebView2 indisponible ({ex.Message})");
             frame.Vm?.Fail("Le composant WebView2 de Microsoft est introuvable ou ne démarre pas : installe-le depuis microsoft.com/edge/webview2.");
@@ -205,7 +237,15 @@ public partial class WebWidgetView : UserControl
                 frame.Vm?.Fail(EmbeddedBrowserRefusal.Message);
             }
         };
-        core.ProcessFailed += (_, _) => frame.Vm?.Fail("La page a cessé de répondre : touche « Recharger ».");
+        core.ProcessFailed += (_, a) =>
+        {
+            Log.Warn($"Widget page web : processus en panne ({a.ProcessFailedKind})");
+            // Panne du processus graphique ou d'un utilitaire : WebView2 la répare seul. Navigateur ou rendu : le cadre est mort
+            if (a.ProcessFailedKind is not (CoreWebView2ProcessFailedKind.BrowserProcessExited or CoreWebView2ProcessFailedKind.RenderProcessExited
+                or CoreWebView2ProcessFailedKind.RenderProcessUnresponsive or CoreWebView2ProcessFailedKind.FrameRenderProcessExited)) return;
+            if (a.ProcessFailedKind == CoreWebView2ProcessFailedKind.BrowserProcessExited) frame.Dead = true;
+            frame.Vm?.Fail("La page a cessé de répondre : touche « Recharger ».");
+        };
         core.NavigationCompleted += (_, a) =>
         {
             Log.Info($"Widget page web : chargement terminé succès={a.IsSuccess} erreur={a.WebErrorStatus} http={a.HttpStatusCode}");
@@ -281,7 +321,8 @@ public partial class WebWidgetView : UserControl
         _polling = true;
         try
         {
-            var (inField, idleMs) = ParsePoll(await core.ExecuteScriptAsync(FocusedFieldScript));
+            // Délai maximal : une page figée ne doit pas garder le relevé « en cours » pour toujours (la fin d'interaction ne se déclencherait plus)
+            var (inField, idleMs) = ParsePoll(await core.ExecuteScriptAsync(FocusedFieldScript).WaitAsync(TimeSpan.FromSeconds(2)));
             if (idleMs is { } idle && idle < Environment.TickCount64 - _lastGesture) _lastGesture = Environment.TickCount64 - idle;
             if (!vm.IsAlwaysInteractive && !vm.IsTyping && Environment.TickCount64 - _lastGesture > WebInputModes.IdleExit.TotalMilliseconds)
             {
@@ -301,7 +342,7 @@ public partial class WebWidgetView : UserControl
                 vm.TypingRequested?.Invoke(false);
             }
         }
-        catch (Exception ex) when (ex is InvalidOperationException or COMException or ObjectDisposedException) { /* page en cours de navigation ou cadre fermé */ }
+        catch (Exception ex) when (ex is InvalidOperationException or COMException or ObjectDisposedException or TimeoutException) { /* page en cours de navigation, figée ou cadre fermé */ }
         finally { _polling = false; }
     }
 
