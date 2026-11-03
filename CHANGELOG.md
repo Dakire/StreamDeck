@@ -4,7 +4,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
-## [1.1.0] — 2026-11-02
+## [1.1.1] — 2026-11-03
+
+La 1.1.0 n'a pas été publiée (un test de la barre des tâches a dépassé son délai sur le serveur de construction) : cette version reprend son contenu.
 
 Audit 2 (voir [docs/AUDIT-2.md](docs/AUDIT-2.md)) : freezes, WebView2, fiabilité des intégrations, sécurité. Aucune clé existante n'est renommée ni supprimée ; les clés ajoutées sont facultatives.
 
