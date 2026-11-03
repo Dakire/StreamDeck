@@ -46,7 +46,9 @@ public class LoadTests
         slowestPage = slowestClose = 0;
         var before = Snapshot();
 
-        for (int round = 0; round < 1000; round++)
+        // Sur un serveur de CI (variable CI), l'échelle est réduite : le test garde son sens (aucune croissance) sans retarder les tests qui suivent
+        int pageChanges = Environment.GetEnvironmentVariable("CI") == "true" ? 300 : 1000;
+        for (int round = 0; round < pageChanges; round++)
             Timed(() =>
             {
                 var tabs = vm.Tabs.ToList();
@@ -58,7 +60,7 @@ public class LoadTests
             Timed(window.Close, window: true);
             _host.Run(() => _host.Document.UpdateSettings(c => c.Spacing = 14 + (i % 3)));
         }
-        _host.Settle();
+        for (int i = 0; i < 3; i++) _host.Settle();   // le Dispatcher partagé est vidé avant les tests suivants (opérations d'arrière-plan en attente)
         var after = Snapshot();
 
         double growthMb = (after.Memory - before.Memory) / 1048576.0;

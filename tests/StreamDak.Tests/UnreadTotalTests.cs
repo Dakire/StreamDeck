@@ -53,7 +53,8 @@ public class UnreadTotalTests
         public void RaiseActivity(string id, bool on) => ActivityChanged?.Invoke(id, on);
     }
 
-    async Task WaitFor(Func<bool> condition, int seconds = 8)
+    // 30 s : sur un serveur de CI chargé, une mise à jour en priorité d'arrière-plan du Dispatcher a mis plus de 8 s à passer (échec de la release 1.1.0)
+    async Task WaitFor(Func<bool> condition, int seconds = 30)
     {
         var limit = DateTime.UtcNow.AddSeconds(seconds);
         while (!condition() && DateTime.UtcNow < limit) { _host.Settle(); await Task.Delay(50); }
@@ -255,7 +256,7 @@ public class TaskbarBadgeServiceTests
         finally { _host.Run(win.Close); }
     }
 
-    async Task WaitFor(Func<bool> condition, int seconds = 8)
+    async Task WaitFor(Func<bool> condition, int seconds = 30)
     {
         var limit = DateTime.UtcNow.AddSeconds(seconds);
         while (!condition() && DateTime.UtcNow < limit) { _host.Settle(); await Task.Delay(50); }
