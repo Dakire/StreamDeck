@@ -40,26 +40,18 @@ Le projet s'appelle `StreamDak` (assembly et namespace), le dépôt `StreamDeck`
 - Tests : `tests/StreamDak.Tests` (xUnit). `UiHarness` démarre une vraie application WPF sur un thread STA et rend les fenêtres hors écran
   (aucune fenêtre affichée, dossier de config temporaire) ; il capte aussi les erreurs de liaison de données. Définir `STREAMDAK_SHOTS` pour garder les PNG.
 
-## Chantier : modernisation Fluent / Windows 11
+## État de la modernisation Fluent / Material
 
-Décisions prises avec l'utilisateur : refonte complète, look moderne et simple d'usage, .NET 10.
+Fait : WPF-UI (`ThemesDictionary` / `ControlsDictionary`), `ui:FluentWindow` avec Mica (fond uni en repli hors Windows 11), thème clair, sombre ou AMOLED
+(palettes Material Design 3 générées depuis `Theme.Seed`, ADR 0026), interface en XAML + MVVM, ressources `DynamicResource`, icônes Fluent.
+Non retenu : `NavigationView` (la navigation se fait par onglets de pages et dock, adaptés au tactile).
 
-Cible technique :
+Contraintes à ne pas casser :
 
-1. Ajouter le package **WPF-UI** (lepoco, `Wpf.Ui`) et ses `ThemesDictionary` / `ControlsDictionary` dans `App.xaml`.
-2. Passer `MainWindow` en `ui:FluentWindow` avec `WindowBackdropType="Mica"` et thème clair, sombre ou système.
-3. ~~Migrer l'interface (principale et éditeurs) en XAML + MVVM~~ (fait).
-4. Remplacer les couleurs en dur par des ressources de thème (`DynamicResource`).
-5. Remplacer les emojis des chrome UI par `Segoe Fluent Icons` (les icônes **des boutons utilisateur** restent libres : emoji ou texte).
-6. Navigation par pages : `NavigationView` à gauche, ou barre d'onglets en bas pour le mode tactile.
-
-Contraintes spécifiques à ne pas casser pendant la migration :
-
-- `ui:FluentWindow` : vérifier que `WS_EX_NOACTIVATE` et le hook `WM_MOUSEACTIVATE` fonctionnent toujours
-  (c'est le cœur du produit). Tester avec un raccourci envoyé vers le Bloc-notes.
-- Le plein écran multi-écran se fait par `SetWindowPos` en pixels physiques ; garder cette logique (les agrandissements demandés par Windows 11, `SC_MAXIMIZE`, y passent : ADR 0018).
-- Le mode édition, les sous-pages et le rechargement à chaud doivent rester équivalents.
-- Mica exige Windows 11 : prévoir un fond uni en repli.
+- `WS_EX_NOACTIVATE` et le hook `WM_MOUSEACTIVATE` : cœur du produit. Tester avec un raccourci envoyé vers le Bloc-notes (seul le mode édition les suspend, ADR 0015).
+- Plein écran multi-écran par `SetWindowPos` en pixels physiques (les agrandissements demandés par Windows 11, `SC_MAXIMIZE`, y passent : ADR 0018).
+- Le mode édition, les sous-pages et le rechargement à chaud restent équivalents.
+- Le toucher est traité par le deck lui-même (`MainWindow.Touch.cs`) : pas de déplacement du curseur système ni de clic synthétique.
 
 ## Conventions
 
