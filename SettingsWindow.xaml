@@ -301,7 +301,19 @@
           <StackPanel>
             <TextBlock Text="Sauvegardes" Style="{StaticResource SectionTitle}"/>
             <TextBlock Style="{StaticResource EditorHint}" Margin="0,0,0,8"
-                       Text="Une sauvegarde automatique est faite à chaque lancement quand la configuration a changé (15 conservées), et avant tout import ou restauration."/>
+                       Text="Une sauvegarde automatique est faite à chaque lancement quand la configuration a changé, et avant tout import ou restauration. Les plus anciennes sont supprimées au-delà de la limite ci-dessous."/>
+            <TextBlock Text="Sauvegardes conservées (1 à 100)" Style="{StaticResource EditorCaption}" Margin="0,0,0,6"/>
+            <ui:NumberBox Value="{Binding BackupLimit, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="1" Maximum="100" MaxDecimalPlaces="0" SpinButtonPlacementMode="Inline"
+                          HorizontalAlignment="Left" Width="160" Margin="0,0,0,8" AutomationProperties.Name="Nombre maximal de sauvegardes conservées"/>
+            <StackPanel Margin="0,0,0,8">
+              <StackPanel.Style>
+                <Style TargetType="StackPanel">
+                  <Style.Triggers><DataTrigger Binding="{Binding BackupLimitHint}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
+                </Style>
+              </StackPanel.Style>
+              <TextBlock Text="{Binding BackupLimitHint}" Style="{StaticResource EditorHint}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+              <ui:Button Content="Supprimer l'excédent" Icon="{ui:SymbolIcon Delete24}" Command="{Binding PruneExcessBackupsCommand}" Style="{StaticResource EditorChip}"/>
+            </StackPanel>
             <WrapPanel>
               <ui:Button Content="Exporter la configuration…" Icon="{ui:SymbolIcon ArrowExportUp24}" Command="{Binding ExportConfigCommand}" Style="{StaticResource EditorChip}"/>
               <ui:Button Content="Importer une configuration…" Icon="{ui:SymbolIcon ArrowImport24}" Command="{Binding ImportConfigCommand}" Style="{StaticResource EditorChip}"/>
@@ -322,15 +334,19 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type vm:BackupItemViewModel}">
                   <Grid MinHeight="36">
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                     <TextBlock Text="{Binding Display}" VerticalAlignment="Center"/>
                     <ui:Button Grid.Column="1" Content="Restaurer" MinHeight="36" Padding="16,0" Command="{Binding RestoreCommand}"
                                FocusVisualStyle="{StaticResource DeckFocusVisual}" AutomationProperties.Name="{Binding Display, StringFormat='Restaurer la sauvegarde du {0}'}"/>
+                    <ui:Button Grid.Column="2" Icon="{ui:SymbolIcon Delete24}" MinHeight="36" MinWidth="36" Margin="6,0,0,0" Command="{Binding DeleteCommand}"
+                               FocusVisualStyle="{StaticResource DeckFocusVisual}" ToolTip="Supprimer cette sauvegarde"
+                               AutomationProperties.Name="{Binding Display, StringFormat='Supprimer la sauvegarde du {0}'}"/>
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
             <WrapPanel Margin="0,10,0,0">
+              <ui:Button Content="Tout supprimer" Icon="{ui:SymbolIcon Delete24}" Command="{Binding DeleteAllBackupsCommand}" Style="{StaticResource EditorChip}"/>
               <ui:Button Content="Ouvrir le dossier de configuration" Icon="{ui:SymbolIcon FolderOpen24}" Command="{Binding OpenFolderCommand}" Style="{StaticResource EditorChip}"/>
               <ui:Button Content="Ouvrir config.json" Icon="{ui:SymbolIcon Document24}" Command="{Binding OpenConfigFileCommand}" Style="{StaticResource EditorChip}"/>
               <ui:Button Content="Recharger depuis le disque" Icon="{ui:SymbolIcon ArrowSync24}" Command="{Binding ReloadCommand}" Style="{StaticResource EditorChip}"/>

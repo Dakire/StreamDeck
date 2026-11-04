@@ -96,6 +96,7 @@ classDiagram
 | `StartWithWindows` | booléen | | Reflet du lancement à l'ouverture de session. C'est la clé Run du registre qui fait foi. |
 | `ReduceMotion` | booléen | `false` | Supprime les animations, en plus du réglage de Windows. |
 | `EconomyMode` | booléen | absent | Mode économie : animations coupées, relevés des intégrations et des widgets ralentis, pages web en mémoire basse. |
+| `BackupLimit` | entier 1 à 100 | absent (= 15) | Nombre de sauvegardes automatiques conservées ; les plus anciennes sont supprimées à la sauvegarde suivante. |
 | `CatalogWidth` | nombre | absent | Largeur du catalogue en mode édition (DIP), 200 à 1000 ; hors de cet intervalle la clé est ignorée (`ConfigNormalizer`). |
 | `InspectorHeight` | nombre | absent | Hauteur de l'inspecteur en mode édition (DIP), 160 à 900. |
 | `CatalogCollapsed`, `InspectorCollapsed` | booléen | absent | Panneau replié (seule sa poignée reste). |

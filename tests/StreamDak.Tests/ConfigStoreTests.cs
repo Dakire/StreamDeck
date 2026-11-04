@@ -251,6 +251,41 @@ public class ConfigStoreTests
     }
 
     [Fact]
+    public void BackupLimitIsConfigurableClampedAndOmittedWhenDefault()
+    {
+        using var dir = new TempConfigDir();
+        var cfg = ConfigStore.DefaultConfig();
+        Assert.Equal(ConfigStore.MaxBackups, ConfigStore.LimitOf(cfg));
+        Assert.DoesNotContain("BackupLimit", ConfigStore.Serialize(cfg));   // clé facultative : absente par défaut
+        cfg.BackupLimit = 0; Assert.Equal(ConfigStore.MinBackupLimit, ConfigStore.LimitOf(cfg));
+        cfg.BackupLimit = 5000; Assert.Equal(ConfigStore.MaxBackupLimit, ConfigStore.LimitOf(cfg));
+
+        cfg.BackupLimit = 3;
+        for (int i = 0; i < 8; i++) { cfg.Profiles[0].Name = "P" + i; ConfigStore.CreateBackup(cfg); }
+        Assert.Equal(3, ConfigStore.ListBackups().Count);
+        Assert.Contains("\"BackupLimit\": 3", ConfigStore.Serialize(cfg).Replace("\r", ""));
+    }
+
+    [Fact]
+    public void BackupsCanBeDeletedOneByOneOrPrunedButNeverOutsideTheFolder()
+    {
+        using var dir = new TempConfigDir();
+        var cfg = ConfigStore.DefaultConfig();
+        for (int i = 0; i < 4; i++) { cfg.Profiles[0].Name = "P" + i; ConfigStore.CreateBackup(cfg); }
+        var list = ConfigStore.ListBackups();
+        Assert.True(ConfigStore.DeleteBackup(list[1].Path));
+        Assert.Equal(3, ConfigStore.ListBackups().Count);
+        Assert.Equal(2, ConfigStore.PruneBackups(1));
+        Assert.Equal(list[0].Path, Assert.Single(ConfigStore.ListBackups()).Path);   // la plus récente est gardée
+        Assert.Equal(1, ConfigStore.PruneBackups(0));
+        Assert.Empty(ConfigStore.ListBackups());
+
+        File.WriteAllText(ConfigStore.FilePath, Samples.LegacyJson);
+        Assert.Throws<InvalidDataException>(() => ConfigStore.DeleteBackup(ConfigStore.FilePath));
+        Assert.True(File.Exists(ConfigStore.FilePath));
+    }
+
+    [Fact]
     public void BackupLoadingRefusesFilesOutsideTheBackupFolder()
     {
         using var dir = new TempConfigDir();

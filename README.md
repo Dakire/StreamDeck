@@ -267,6 +267,7 @@ Les tableaux ci-dessous en donnent l'essentiel.
 | `StartWithWindows` | Reflet du lancement à l'ouverture de session (le registre fait foi) | |
 | `ReduceMotion` | Supprime les animations | `false` |
 | `EconomyMode` | Mode économie : animations coupées, relevés ralentis, pages web en mémoire basse ; facultatif | absent |
+| `BackupLimit` | Nombre de sauvegardes automatiques conservées (1 à 100) ; facultatif | absent (15) |
 | `CatalogWidth`, `InspectorHeight` | Largeur du catalogue et hauteur de l'inspecteur en mode édition (DIP), choisies en glissant leur poignée ; facultatifs | absents |
 | `CatalogCollapsed`, `InspectorCollapsed` | Panneaux repliés en mode édition ; facultatifs | absents |
 | `SettingsWidth`, `SettingsHeight` | Taille de la fenêtre des paramètres à la dernière fermeture ; facultatifs | absents |

@@ -196,15 +196,44 @@ public static class ConfigStore
             do { path = Path.Combine(BackupsDir, $"config-{DateTime.Now:yyyyMMdd-HHmmss-fff}-{n++:00}.json"); }
             while (File.Exists(path));
             File.WriteAllText(path, json, new UTF8Encoding(false));
-            foreach (var old in ListBackups().Skip(MaxBackups))
-            {
-                try { File.Delete(old.Path); }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Log.Warn($"Ancienne sauvegarde non supprimée ({old.Name}) : {ex.Message}"); }
-            }
+            PruneBackups(LimitOf(cfg));
             return path;
         }
         // La sauvegarde ne doit jamais empêcher l'opération qu'elle précède (import, démarrage) : on consigne et on continue
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Log.Error("Sauvegarde de la configuration impossible", ex); return null; }
+    }
+
+    /// <summary>Plus petite et plus grande limite de sauvegardes acceptées.</summary>
+    public const int MinBackupLimit = 1, MaxBackupLimit = 100;
+
+    /// <summary>Nombre de sauvegardes à conserver : <see cref="DeckConfig.BackupLimit"/> borné, ou <see cref="MaxBackups"/> par défaut.</summary>
+    public static int LimitOf(DeckConfig cfg) => Math.Clamp(cfg.BackupLimit ?? MaxBackups, MinBackupLimit, MaxBackupLimit);
+
+    /// <summary>Supprime les sauvegardes les plus anciennes au-delà de <paramref name="keep"/>. Retourne le nombre supprimé.</summary>
+    public static int PruneBackups(int keep)
+    {
+        int deleted = 0;
+        foreach (var old in ListBackups().Skip(Math.Max(0, keep)))
+            if (TryDelete(old.Path)) deleted++;
+        return deleted;
+    }
+
+    /// <summary>Supprime une sauvegarde ; refuse tout fichier hors du dossier Backups (le chemin peut venir de l'interface).</summary>
+    public static bool DeleteBackup(string path)
+    {
+        if (!string.Equals(Path.GetDirectoryName(Path.GetFullPath(path)), Path.GetFullPath(BackupsDir), StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Sauvegarde hors du dossier prévu");
+        return TryDelete(path);
+    }
+
+    static bool TryDelete(string path)
+    {
+        try { File.Delete(path); return true; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Warn($"Sauvegarde non supprimée ({System.IO.Path.GetFileName(path)}) : {ex.Message}");
+            return false;
+        }
     }
 
     /// <summary>Sauvegardes, de la plus récente à la plus ancienne.</summary>

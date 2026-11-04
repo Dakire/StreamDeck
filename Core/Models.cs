@@ -39,6 +39,9 @@ public class DeckConfig
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool EconomyMode { get; set; }
+    /// <summary>Nombre maximal de sauvegardes automatiques conservées (1 à 100) ; absent = 15. Voir <see cref="ConfigStore.LimitOf"/>.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? BackupLimit { get; set; }
     /// <summary>Largeur du catalogue en mode édition (DIP) choisie en le tirant ; absent = largeur proportionnelle à la fenêtre.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? CatalogWidth { get; set; }

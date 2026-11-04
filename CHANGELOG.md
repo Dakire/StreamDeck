@@ -4,6 +4,15 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Ajouté
+- **Sauvegardes** (Paramètres › Sauvegardes) : nombre de sauvegardes conservées réglable de 1 à 100 (clé facultative `BackupLimit`, 15 par défaut), bouton **Supprimer** par sauvegarde,
+  **Supprimer l'excédent** et **Tout supprimer** (avec confirmation). La limite ne supprime rien pendant la saisie : elle s'applique à la sauvegarde suivante.
+
+### Corrigé
+- Appui long fantôme sur le deck quand Windows annule un toucher (l'éditeur s'ouvrait doigt levé).
+- Échec au démarrage : le processus ne reste plus vivant avec le verrou d'instance ; un message d'erreur s'affiche et l'erreur est journalisée.
+- Import de profil : la confirmation signale aussi les actions `text`, `hotkey` avec la touche Windows et `url` hors http, https et mailto (elles permettent d'exécuter du code).
+
 ## [1.1.1] — 2026-11-03
 
 La 1.1.0 n'a pas été publiée (un test de la barre des tâches a dépassé son délai sur le serveur de construction) : cette version reprend son contenu.

@@ -17,7 +17,8 @@ namespace StreamDak.ViewModels;
 /// <param name="Path">Chemin du fichier.</param>
 /// <param name="Display">Date et taille affichées.</param>
 /// <param name="RestoreCommand">Restaure cette sauvegarde (après confirmation).</param>
-public sealed record BackupItemViewModel(string Path, string Display, ICommand RestoreCommand);
+/// <param name="DeleteCommand">Supprime cette sauvegarde (après confirmation).</param>
+public sealed record BackupItemViewModel(string Path, string Display, ICommand RestoreCommand, ICommand DeleteCommand);
 
 /// <summary>Ce que les paramètres demandent à leur fenêtre : confirmations et sélecteurs de fichiers.</summary>
 public interface ISettingsShell : IConfirm
@@ -54,6 +55,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] bool _deviceConnected;
     [ObservableProperty] bool _systemReducesMotion;
     [ObservableProperty] bool _economyMode;
+    [ObservableProperty] double? _backupLimit = ConfigStore.MaxBackups;
+    [ObservableProperty] string _backupLimitHint = "";
     [ObservableProperty] string _diagnosticText = "";
     [ObservableProperty] string _consumptionText = "";
 
@@ -157,6 +160,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             StartWithWindows = c.StartWithWindows;
             ReduceMotion = c.ReduceMotion;
             EconomyMode = c.EconomyMode;
+            BackupLimit = ConfigStore.LimitOf(c);
             EmojiIcons = c.IconStyle == "emoji";
             CustomBackground = !string.Equals(c.Background, Theme.DefaultBackground, StringComparison.OrdinalIgnoreCase);
             Background = c.Background;
@@ -193,8 +197,49 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         {
             var path = b.Path;
             Backups.Add(new BackupItemViewModel(path, $"{b.Time:d MMM yyyy à HH:mm:ss}  ·  {Math.Max(1, b.Size / 1024)} Ko",
-                new RelayCommand(() => _ = RestoreAsync(path, b.Time))));
+                new RelayCommand(() => _ = RestoreAsync(path, b.Time)),
+                new RelayCommand(() => _ = DeleteBackupAsync(path, b.Time))));
         }
+        UpdateBackupHint();
+    }
+
+    /// <summary>Prévient quand des sauvegardes dépassent la limite : elles ne sont supprimées qu'à la prochaine sauvegarde (jamais pendant la saisie).</summary>
+    void UpdateBackupHint()
+    {
+        int excess = Backups.Count - ConfigStore.LimitOf(_doc.Config);
+        BackupLimitHint = excess > 0
+            ? $"{excess} sauvegarde(s) dépassent la limite : les plus anciennes seront supprimées à la prochaine sauvegarde, ou tout de suite avec « Supprimer l'excédent »."
+            : "";
+    }
+
+    async Task DeleteBackupAsync(string path, DateTime time)
+    {
+        if (!await _shell.ConfirmAsync("Supprimer une sauvegarde", $"Supprimer définitivement la sauvegarde du {time:d MMMM yyyy à HH:mm} ?", "Supprimer", danger: true)) return;
+        try
+        {
+            if (!ConfigStore.DeleteBackup(path)) Notifier.Error("Sauvegarde non supprimée (fichier utilisé ?)");
+        }
+        catch (System.IO.InvalidDataException ex) { Notifier.Error(ex.Message); }
+        RefreshBackups();
+    }
+
+    [RelayCommand]
+    async Task DeleteAllBackups()
+    {
+        if (Backups.Count == 0) return;
+        if (!await _shell.ConfirmAsync("Supprimer toutes les sauvegardes",
+                $"Supprimer définitivement les {Backups.Count} sauvegardes ? La configuration actuelle n'est pas touchée.", "Tout supprimer", danger: true)) return;
+        int n = ConfigStore.PruneBackups(0);
+        Notifier.Info($"{n} sauvegarde(s) supprimée(s)");
+        RefreshBackups();
+    }
+
+    [RelayCommand]
+    void PruneExcessBackups()
+    {
+        int n = ConfigStore.PruneBackups(ConfigStore.LimitOf(_doc.Config));
+        Notifier.Info($"{n} sauvegarde(s) supprimée(s)");
+        RefreshBackups();
     }
 
     void Set(Action<DeckConfig> change, string label)
@@ -215,6 +260,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnAlwaysOnTopChanged(bool value) => Set(c => c.AlwaysOnTop = value, "Toujours au premier plan");
     partial void OnReduceMotionChanged(bool value) => Set(c => c.ReduceMotion = value, "Animations");
     partial void OnEconomyModeChanged(bool value) => Set(c => c.EconomyMode = value, "Mode économie");
+    partial void OnBackupLimitChanged(double? value)
+    {
+        if (_loading) return;
+        int limit = (int)Math.Clamp(value ?? ConfigStore.MaxBackups, ConfigStore.MinBackupLimit, ConfigStore.MaxBackupLimit);
+        Set(c => c.BackupLimit = limit == ConfigStore.MaxBackups ? null : limit, "Nombre de sauvegardes");   // la valeur par défaut n'est pas écrite
+        UpdateBackupHint();
+    }
 
     /// <summary>Taille mémorisée de la fenêtre des paramètres, ou null.</summary>
     public (double Width, double Height)? SavedWindowSize =>
