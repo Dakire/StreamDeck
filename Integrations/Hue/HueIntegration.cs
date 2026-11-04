@@ -64,7 +64,15 @@ public sealed class HueIntegration : PolledHttpIntegration, IPairableIntegration
     /// <inheritdoc/>
     public string PairedSecretField => "appkey";
 
-    static string Origin(IntegrationSettings settings) => $"{settings.Get("scheme", "https")}://{settings.Get("host")}{(settings.Get("port").Length > 0 ? ":" + settings.Get("port") : "")}";
+    /// <summary>https toujours, sauf « http » demandé pour la machine locale (essais) : la clé d'application ne circule jamais en clair sur le réseau.</summary>
+    internal static string SchemeFor(IntegrationSettings settings)
+    {
+        var host = settings.Get("host");
+        bool local = host.Equals("localhost", StringComparison.OrdinalIgnoreCase) || (System.Net.IPAddress.TryParse(host, out var ip) && System.Net.IPAddress.IsLoopback(ip));
+        return local && settings.Get("scheme").Equals("http", StringComparison.OrdinalIgnoreCase) ? "http" : "https";
+    }
+
+    static string Origin(IntegrationSettings settings) => $"{SchemeFor(settings)}://{settings.Get("host")}{(settings.Get("port").Length > 0 ? ":" + settings.Get("port") : "")}";
 
     /// <inheritdoc/>
     protected override HttpClient CreateClient(IntegrationSettings settings)

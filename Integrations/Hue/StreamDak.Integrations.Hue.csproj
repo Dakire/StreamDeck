@@ -10,4 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Core\StreamDak.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="StreamDak.Tests" />
+  </ItemGroup>
 </Project>

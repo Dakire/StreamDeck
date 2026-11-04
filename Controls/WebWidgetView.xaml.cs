@@ -283,9 +283,11 @@ public partial class WebWidgetView : UserControl
     {
         bool device = a.PermissionKind is CoreWebView2PermissionKind.Notifications or CoreWebView2PermissionKind.Microphone or CoreWebView2PermissionKind.Camera;
         bool allowed = device && Uri.TryCreate(a.Uri, UriKind.Absolute, out var requester) && WebPermissions.MayUseDevices(requester, frame.Source);
-        a.State = allowed ? CoreWebView2PermissionState.Allow : CoreWebView2PermissionState.Deny;
-        if (!allowed) a.SavesInProfile = false;   // un refus n'est jamais mémorisé : la page ne doit pas croire que l'utilisateur a bloqué ce droit
-        Log.Info($"Widget page web : autorisation {a.PermissionKind} demandée par {HostOf(a.Uri)} : {(allowed ? "accordée" : "refusée")}");
+        // Page venue d'un import non confirmé (ADR 0030) : jamais accordée d'office, WebView2 interroge l'utilisateur
+        bool ask = allowed && ImportedWebHosts.IsPending(frame.Source.Host);
+        a.State = ask ? CoreWebView2PermissionState.Default : allowed ? CoreWebView2PermissionState.Allow : CoreWebView2PermissionState.Deny;
+        if (!allowed || ask) a.SavesInProfile = false;   // un refus n'est jamais mémorisé : la page ne doit pas croire que l'utilisateur a bloqué ce droit
+        Log.Info($"Widget page web : autorisation {a.PermissionKind} demandée par {HostOf(a.Uri)} : {(ask ? "demandée à l'utilisateur (page importée)" : allowed ? "accordée" : "refusée")}");
     }
 
     /// <summary>

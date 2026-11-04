@@ -7,7 +7,6 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Media.Imaging;
 
 namespace StreamDak;
 
@@ -102,10 +101,7 @@ public static partial class SiteIcon
             {
                 var bytes = await ReadAsync(client, candidate, MaxIconBytes, cancellation);
                 using var stream = new MemoryStream(bytes);
-                var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
-                var frame = IconStore.LargestFrame(decoder);
-                if (frame == null) continue;
-                return IconStore.Store(frame);
+                return IconStore.Store(IconStore.DecodeLargest(stream));
             }
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidDataException or NotSupportedException or FileFormatException
                                            or ArgumentException or InvalidOperationException or System.Runtime.InteropServices.ExternalException)

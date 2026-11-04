@@ -118,9 +118,7 @@ public static class AppHost
         services.AddSingleton<StreamDak.Hotkeys.IHotkeyService>(_ => options.Simulate ? new StreamDak.Hotkeys.SimulatedHotkeyService() : WindowsPlatform.CreateHotkeyService());
         services.AddSingleton(_ =>
         {
-            var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };   // le moteur gère le délai de chaque étape
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("StreamDak/1.0");
-            return http;
+            return StreamDak.Actions.ActionHttp.CreateClient();   // sans redirections automatiques ; le moteur gère le délai de chaque étape
         });
         // Un gestionnaire par type d'action ; les intégrations en ajoutent d'autres de la même façon
         foreach (var handler in BuiltInActions.All) services.AddSingleton(handler);

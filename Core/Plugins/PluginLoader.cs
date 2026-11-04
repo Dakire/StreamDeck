@@ -31,10 +31,21 @@ public static class PluginLoader
     sealed class PluginContext : AssemblyLoadContext
     {
         readonly AssemblyDependencyResolver _resolver;
+        readonly PluginSnapshot _snapshot;
 
-        public PluginContext(string mainDll) : base("plugin:" + Path.GetFileNameWithoutExtension(mainDll), isCollectible: false)
+        public PluginContext(string mainDll, PluginSnapshot snapshot) : base("plugin:" + Path.GetFileNameWithoutExtension(mainDll), isCollectible: false)
         {
             _resolver = new AssemblyDependencyResolver(mainDll);
+            _snapshot = snapshot;
+        }
+
+        /// <summary>Charge une bibliothèque depuis les octets déjà lus et vérifiés (jamais une seconde lecture du disque).</summary>
+        public Assembly LoadVerified(string path)
+        {
+            if (!_snapshot.Files.TryGetValue(Path.GetFullPath(path), out var bytes))
+                throw new InvalidOperationException("bibliothèque absente du contenu vérifié : " + Path.GetFileName(path));
+            using var stream = new MemoryStream(bytes, writable: false);
+            return LoadFromStream(stream);
         }
 
         protected override Assembly? Load(AssemblyName name)
@@ -42,7 +53,9 @@ public static class PluginLoader
             // Le contrat (StreamDak.Core) vient de l'application : ainsi un IIntegration du plugin est bien un IIntegration de StreamDak
             if (name.Name == typeof(IIntegration).Assembly.GetName().Name) return null;
             var path = _resolver.ResolveAssemblyToPath(name);
-            return path == null ? null : LoadFromAssemblyPath(path);
+            if (path == null) return null;
+            try { return LoadVerified(path); }
+            catch (InvalidOperationException ex) { Log.Warn($"Plugin : dépendance « {name.Name} » refusée ({ex.Message})"); return null; }
         }
     }
 
@@ -67,21 +80,20 @@ public static class PluginLoader
             if (!File.Exists(dll)) { Log.Warn($"Plugin « {name} » ignoré : {name}.dll est introuvable dans son dossier"); continue; }
             try
             {
-                if (trust != null)
+                // Contenu lu une seule fois : les octets vérifiés ci-dessous sont ceux qui sont chargés (LoadFromStream), jamais relus sur le disque
+                var snapshot = PluginSnapshot.Read(folder);
+                if (trust != null && !trust.IsTrusted(name, snapshot))
                 {
                     // Vérifié avant le chargement : le code d'un plugin non autorisé ne s'exécute jamais
-                    var folderHash = PluginTrust.FolderHash(folder);
-                    if (!trust.IsTrusted(name, folderHash))
-                    {
-                        Log.Warn($"Plugin « {name} » refusé : son empreinte n'est pas dans {PluginTrust.FileName}. Si tu fais confiance à ce code, ajoute \"{name}\": \"{folderHash}\" au fichier {FolderName}/{PluginTrust.FileName}.");
-                        continue;
-                    }
+                    Log.Warn($"Plugin « {name} » refusé : son empreinte n'est pas dans {PluginTrust.FileName}. Si tu fais confiance à ce code, ajoute \"{name}\": \"{snapshot.Hash}\" au fichier {FolderName}/{PluginTrust.FileName}.");
+                    continue;
                 }
-                var assembly = new PluginContext(dll).LoadFromAssemblyPath(dll);
+                var assembly = new PluginContext(dll, snapshot).LoadVerified(dll);
                 var types = FindIntegrations(assembly);
-                var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dll)));
+                // Empreinte journalisée = empreinte vérifiée (celle du dossier) ; celle du fichier principal vient des mêmes octets
+                var hash = Convert.ToHexString(SHA256.HashData(snapshot.Files[Path.GetFullPath(dll)]));
                 if (types.Count == 0) { Log.Warn($"Plugin « {name} » ignoré : aucune intégration (classe IIntegration publique avec un constructeur sans paramètre)"); continue; }
-                Log.Info($"Plugin « {name} » chargé : {string.Join(", ", types.Select(t => t.Name))} (SHA-256 {hash[..16]}…)");
+                Log.Info($"Plugin « {name} » chargé : {string.Join(", ", types.Select(t => t.Name))} (empreinte vérifiée {snapshot.Hash[..16]}…, {name}.dll SHA-256 {hash[..16]}…)");
                 loaded.Add(new LoadedPlugin(name, dll, hash, types));
             }
             catch (Exception ex) when (ex is BadImageFormatException or FileLoadException or ReflectionTypeLoadException or IOException or InvalidOperationException or TypeLoadException or UnauthorizedAccessException)
