@@ -29,26 +29,31 @@ public class WebPermissionsTests
         Assert.True(WebLinks.OpensInFrame(new Uri("https://workspace.google.com/b"), new Uri("https://calendar.google.com/"), new Uri("https://workspace.google.com/a")));
 
     [Theory]
-    [InlineData("calendar.google.com", "google.com")]
-    [InlineData("meet.google.com", "google.com")]
-    [InlineData("a.b.example.org", "example.org")]
-    [InlineData("example.org", "example.org")]
-    [InlineData("www.bbc.co.uk", "bbc.co.uk")]
-    [InlineData("localhost", "localhost")]
-    [InlineData("127.0.0.1", "127.0.0.1")]
-    [InlineData("Chat.Google.COM.", "google.com")]
-    public void TheSiteIsTheRegistrableDomain(string host, string site) => Assert.Equal(site, WebPermissions.Site(host));
+    [InlineData("calendar.google.com", "calendar.google.com", true)]
+    [InlineData("Calendar.Google.COM.", "calendar.google.com", true)]
+    [InlineData("a.calendar.google.com", "calendar.google.com", true)]    // sous-domaine de l'hôte saisi
+    [InlineData("meet.google.com", "calendar.google.com", false)]         // frère, pas sous-domaine : plus de « même site »
+    [InlineData("google.com", "calendar.google.com", false)]              // parent
+    [InlineData("evilcalendar.google.com", "calendar.google.com", false)] // simple suffixe de texte
+    [InlineData("attacker.github.io", "victim.github.io", false)]         // hôtes distincts d'un domaine d'hébergement partagé
+    [InlineData("attacker.co.uk", "bbc.co.uk", false)]
+    [InlineData("1.2.3.4", "3.4", false)]
+    [InlineData("10.0.0.1", "0.0.1", false)]                              // une adresse IP n'a pas de sous-domaines
+    public void OnlyTheTypedHostOrItsSubdomainsMatch(string requester, string configured, bool match) =>
+        Assert.Equal(match, WebPermissions.IsHostOrSubdomain(requester, configured));
 
     [Theory]
-    [InlineData("https://meet.google.com/abc", "https://calendar.google.com/", true)]
     [InlineData("https://calendar.google.com/", "https://calendar.google.com/", true)]
+    [InlineData("https://a.calendar.google.com/", "https://calendar.google.com/", true)]
+    [InlineData("https://meet.google.com/abc", "https://calendar.google.com/", false)]
     [InlineData("http://localhost:8080/", "http://localhost:8080/", true)]           // la machine locale est un contexte sûr
     [InlineData("http://calendar.google.com/", "https://calendar.google.com/", false)] // http : jamais, hors machine locale
     [InlineData("https://evil.com/", "https://calendar.google.com/", false)]           // une page vers laquelle un lien a mené ailleurs
     [InlineData("https://google.com.evil.com/", "https://calendar.google.com/", false)]
-    [InlineData("https://other.co.uk/", "https://bbc.co.uk/", false)]                  // deux sites distincts sous un même « co.uk »
+    [InlineData("https://other.co.uk/", "https://bbc.co.uk/", false)]                  // deux hôtes distincts sous un même « co.uk »
+    [InlineData("https://attacker.github.io/", "https://victim.github.io/", false)]     // domaine d'hébergement partagé
     [InlineData("http://127.0.0.1:8080/", "http://localhost:8080/", false)]
-    public void OnlyASecurePageOfTheConfiguredSiteMayUseDevices(string requester, string configured, bool allowed) =>
+    public void OnlyASecurePageOfTheConfiguredHostMayUseDevices(string requester, string configured, bool allowed) =>
         Assert.Equal(allowed, WebPermissions.MayUseDevices(new Uri(requester), new Uri(configured)));
 }
 

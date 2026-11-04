@@ -185,35 +185,114 @@ public static class WebLinks
     static bool SameHost(Uri a, Uri b) => string.Equals(a.Host, b.Host, StringComparison.OrdinalIgnoreCase);
 }
 
-/// <summary>Qui a le droit d'utiliser la caméra, le micro et les notifications dans un cadre web (décision de l'utilisateur, ADR 0018).</summary>
+/// <summary>Qui a le droit d'utiliser la caméra, le micro et les notifications dans un cadre web (décision de l'utilisateur, ADR 0018 et 0030).</summary>
 public static class WebPermissions
 {
-    /// <summary>Domaines publics à deux niveaux les plus courants (« co.uk ») : le « site » est alors l'hôte à trois étiquettes.</summary>
-    static readonly HashSet<string> TwoLevelSuffixes = new(StringComparer.OrdinalIgnoreCase)
+    /// <summary>true si <paramref name="requesterHost"/> est <paramref name="configuredHost"/> ou un de ses sous-domaines (jamais un simple suffixe de texte, jamais une adresse IP voisine).</summary>
+    public static bool IsHostOrSubdomain(string requesterHost, string configuredHost)
     {
-        "co.uk", "org.uk", "ac.uk", "gov.uk", "com.au", "net.au", "org.au", "co.jp", "co.nz", "co.za", "co.in", "com.br", "com.mx", "com.cn", "com.tr",
-    };
-
-    /// <summary>« Site » d'un hôte : les deux dernières étiquettes (trois pour « co.uk » et consorts) ; une adresse IP ou un nom simple vaut lui-même.</summary>
-    public static string Site(string host)
-    {
-        host = host.Trim().TrimEnd('.').ToLowerInvariant();
-        if (System.Net.IPAddress.TryParse(host.Trim('[', ']'), out _)) return host;
-        var labels = host.Split('.');
-        if (labels.Length <= 2) return host;
-        int keep = TwoLevelSuffixes.Contains(string.Join('.', labels[^2..])) ? 3 : 2;
-        return string.Join('.', labels[^Math.Min(keep, labels.Length)..]);
+        var requester = requesterHost.Trim().TrimEnd('.').ToLowerInvariant();
+        var configured = configuredHost.Trim().TrimEnd('.').ToLowerInvariant();
+        if (requester.Length == 0 || configured.Length == 0) return false;
+        if (requester == configured) return true;
+        if (System.Net.IPAddress.TryParse(configured.Trim('[', ']'), out _)) return false;   // une adresse IP n'a pas de sous-domaines
+        return requester.EndsWith("." + configured, StringComparison.Ordinal);
     }
-
-    /// <summary>true si les deux hôtes sont du même site (<c>calendar.google.com</c> et <c>meet.google.com</c>).</summary>
-    public static bool SameSite(string hostA, string hostB) => Site(hostA) == Site(hostB);
 
     /// <summary>
     /// true si la page demandeuse peut obtenir la caméra, le micro ou les notifications : connexion sécurisée (https, ou la machine locale) et
-    /// même site que l'adresse saisie par l'utilisateur pour ce cadre. Une page vers laquelle un lien a mené ailleurs n'obtient rien.
+    /// hôte saisi par l'utilisateur pour ce cadre, ou sous-domaine de celui-ci. Une page vers laquelle un lien a mené ailleurs n'obtient rien.
     /// </summary>
     public static bool MayUseDevices(Uri requester, Uri configured) =>
-        (requester.Scheme == Uri.UriSchemeHttps || requester.IsLoopback) && SameSite(requester.Host, configured.Host);
+        (requester.Scheme == Uri.UriSchemeHttps || requester.IsLoopback) && IsHostOrSubdomain(requester.Host, configured.Host);
+}
+
+/// <summary>
+/// Hôtes de pages web venues d'un import (profil ou configuration) que l'utilisateur n'a pas encore confirmés. Pour eux, les droits caméra, micro
+/// et notifications ne sont pas accordés d'office : le cadre laisse WebView2 demander à l'utilisateur (ADR 0030). La liste est un petit fichier à part
+/// (<c>imported-web-hosts.json</c>), hors de <c>config.json</c> : elle survit au redémarrage sans toucher au format de la configuration.
+/// </summary>
+public static class ImportedWebHosts
+{
+    /// <summary>Nom du fichier, dans le dossier de configuration.</summary>
+    public const string FileName = "imported-web-hosts.json";
+    static readonly object Gate = new();
+
+    static string FilePath => System.IO.Path.Combine(ConfigStore.Dir, FileName);
+
+    /// <summary>Hôtes des pages et widgets web d'un profil.</summary>
+    public static IEnumerable<string> HostsOf(DeckProfile profile)
+    {
+        foreach (var page in profile.Pages)
+        {
+            if (page.Kind == PageKinds.Web && WidgetTypes.IsWebAddress(page.Url, out var pageUri)) yield return pageUri.Host;
+            foreach (var b in DeckDocument.AllButtons(page.Buttons))
+                if (b.Widget == WidgetTypes.Web && WidgetTypes.IsWebAddress(b.Option(WidgetOptionKeys.Url), out var widgetUri)) yield return widgetUri.Host;
+        }
+    }
+
+    /// <summary>
+    /// Marque les hôtes web de <paramref name="imported"/> qui n'apparaissent pas déjà dans <paramref name="current"/> (l'utilisateur les a déjà
+    /// choisis lui-même dans ce cas). Retourne les hôtes marqués.
+    /// </summary>
+    public static IReadOnlyList<string> Mark(IEnumerable<DeckProfile> imported, IEnumerable<DeckProfile> current)
+    {
+        var known = current.SelectMany(HostsOf).Select(Normalize).ToHashSet();
+        var added = imported.SelectMany(HostsOf).Select(Normalize).Where(h => !known.Contains(h)).Distinct().ToList();
+        if (added.Count == 0) return added;
+        lock (Gate)
+        {
+            var all = Read();
+            foreach (var h in added) all.Add(h);
+            Write(all);
+        }
+        return added;
+    }
+
+    /// <summary>true si cet hôte vient d'un import non confirmé.</summary>
+    public static bool IsPending(string host)
+    {
+        lock (Gate) return Read().Contains(Normalize(host));
+    }
+
+    /// <summary>Lève la marque d'un hôte (l'utilisateur l'a confirmé).</summary>
+    public static void Confirm(string host)
+    {
+        lock (Gate)
+        {
+            var all = Read();
+            if (all.Remove(Normalize(host))) Write(all);
+        }
+    }
+
+    static string Normalize(string host) => host.Trim().TrimEnd('.').ToLowerInvariant();
+
+    static HashSet<string> Read()
+    {
+        try
+        {
+            if (System.IO.File.Exists(FilePath))
+                return (System.Text.Json.JsonSerializer.Deserialize<List<string>>(System.IO.File.ReadAllText(FilePath)) ?? new()).Select(Normalize).ToHashSet();
+        }
+        catch (Exception ex) when (ex is System.Text.Json.JsonException or System.IO.IOException or UnauthorizedAccessException)
+        {
+            Log.Warn($"Pages web importées : {FileName} illisible ({ex.Message})");
+        }
+        return new HashSet<string>();
+    }
+
+    static void Write(HashSet<string> hosts)
+    {
+        try
+        {
+            System.IO.Directory.CreateDirectory(ConfigStore.Dir);
+            System.IO.File.WriteAllText(FilePath, System.Text.Json.JsonSerializer.Serialize(hosts.OrderBy(h => h, StringComparer.Ordinal).ToList()));
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+        {
+            Log.Warn($"Pages web importées : {FileName} impossible à écrire ({ex.Message})");
+        }
+    }
 }
 
 /// <summary>Reconnaît la page par laquelle Google refuse la connexion dans un navigateur intégré (cadre d'une application).</summary>

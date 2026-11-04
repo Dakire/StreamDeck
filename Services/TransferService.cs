@@ -74,6 +74,7 @@ public static class TransferService
         catch (InvalidDataException ex) { Notifier.Error("Import impossible : " + ex.Message); return null; }
 
         ConfigStore.CreateBackup(doc.Config);
+        ImportedWebHosts.Mark([profile], doc.Config.Profiles);   // pages web importées : caméra, micro et notifications demandés, pas accordés d'office
         var r = doc.AddImportedProfile(profile);
         if (!r.Ok) { Notifier.Error(r.Message ?? "Import impossible"); return null; }
         Notifier.Success($"Profil « {profile.Name} » importé", "Annuler", () => doc.Undo());
@@ -103,6 +104,9 @@ public static class TransferService
         if (pkg.RiskyActions > 0)
             msg.AppendLine().AppendLine(CultureInfo.CurrentCulture, $"Le fichier contient {pkg.RiskyActions} action(s) qui lancent des programmes ou des scripts avec tes droits. N'importe que des fichiers de confiance.");
         foreach (var w in pkg.Warnings.Take(5)) msg.AppendLine("• " + w);
+        var neutralized = ImportedIntegrations.Neutralize(cfg, doc.Config);
+        if (neutralized.Count > 0)
+            msg.AppendLine().AppendLine(CultureInfo.CurrentCulture, $"Le fichier change l'adresse de : {string.Join(", ", neutralized)}. Ces intégrations gardent ton adresse actuelle et sont désactivées : tes identifiants enregistrés ne sont jamais envoyés à une adresse venue d'un fichier. Réactive-les dans Paramètres › Intégrations après les avoir vérifiées.");
         if (!await ui.ConfirmAsync("Importer une configuration", msg.ToString().TrimEnd(), "Remplacer", danger: true)) return false;
 
         try { ProfilePackage.InstallIcons(pkg); }
@@ -110,6 +114,7 @@ public static class TransferService
 
         ConfigStore.CreateBackup(doc.Config);
         cfg.StartWithWindows = doc.Config.StartWithWindows;   // réglage de la machine, pas du fichier
+        ImportedWebHosts.Mark(cfg.Profiles, doc.Config.Profiles);
         doc.ReplaceAll(cfg, "Importer une configuration");
         Notifier.Success("Configuration importée", "Annuler", () => doc.Undo());
         return true;
