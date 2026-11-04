@@ -57,7 +57,34 @@ public static class Theme
     /// <summary>true si le thème sombre est appliqué.</summary>
     public static bool Dark { get; private set; } = true;
     /// <summary>Palette du thème appliqué.</summary>
-    public static Palette Current => Amoled ? AmoledPalette : Dark ? DarkPalette : LightPalette;
+    public static Palette Current => HighContrastPalette ?? (Amoled ? AmoledPalette : Dark ? DarkPalette : LightPalette);
+
+    /// <summary>true si Windows est en mode contraste élevé : les brushes <c>Deck*</c> viennent alors de <see cref="System.Windows.SystemColors"/> (ADR 0031).</summary>
+    public static bool HighContrast => HighContrastPalette != null;
+
+    /// <summary>Palette tirée des couleurs système du contraste élevé (null hors contraste élevé).</summary>
+    public static Palette? HighContrastPalette { get; private set; }
+
+    /// <summary>Surcharge pour les tests : force le contraste élevé avec cette palette (null pour suivre le réglage de Windows).</summary>
+    public static Palette? ForcedHighContrast { get; set; }
+
+    static string _mode = "system";
+    static bool _watching;
+
+    static string Hex(Color c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+
+    /// <summary>Palette de contraste élevé à partir des couleurs système (texte, fond, sélection, texte désactivé, lien).</summary>
+    public static Palette BuildHighContrast(string windowText, string window, string highlight, string highlightText, string grayText, string hotTrack) => new(
+        Window: window, Bar: window, TopBar: window, Panel: window, Surface: window, SurfaceHi: window,
+        Line: windowText, Grip: windowText, Dim: windowText, Text: windowText, TextSoft: windowText, Placeholder: grayText,
+        Accent: highlight, AccentText: hotTrack, Danger: windowText, Scrim: "#CC000000",
+        Input: window, EditorBg: window, Focus: windowText, Success: hotTrack, StatusBg: window, StatusLine: windowText, StatusText: windowText,
+        OnAccent: highlightText, AccentContainer: highlight, OnAccentContainer: highlightText, SecondaryContainer: highlight, OnSecondaryContainer: highlightText,
+        TileTop: window, TileBottom: window, Badge: highlight, OnBadge: highlightText);
+
+    static Palette SystemHighContrast() => BuildHighContrast(Hex(System.Windows.SystemColors.WindowTextColor), Hex(System.Windows.SystemColors.WindowColor),
+        Hex(System.Windows.SystemColors.HighlightColor), Hex(System.Windows.SystemColors.HighlightTextColor), Hex(System.Windows.SystemColors.GrayTextColor),
+        Hex(System.Windows.SystemColors.HotTrackColor));
     /// <summary>true pour le thème AMOLED (sombre à fond noir).</summary>
     public static bool Amoled { get; private set; }
 
@@ -81,14 +108,27 @@ public static class Theme
     /// <summary>mode : "system" | "dark" | "light" | "amoled".</summary>
     public static void Apply(string mode)
     {
+        _mode = mode;
+        if (!_watching)
+        {
+            _watching = true;
+            // Windows entre en contraste élevé (ou en sort) pendant l'exécution : les brushes suivent sans redémarrage
+            System.Windows.SystemParameters.StaticPropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName is nameof(System.Windows.SystemParameters.HighContrast) or null)
+                    System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => Apply(_mode));
+            };
+        }
+        HighContrastPalette = ForcedHighContrast ?? (System.Windows.SystemParameters.HighContrast ? SystemHighContrast() : null);
         bool dark = mode.ToLowerInvariant() switch
         {
             "dark" or "amoled" => true,
             "light" => false,
             _ => SystemUsesDark(),
         };
+        if (HighContrastPalette != null) dark = Luminance(HighContrastPalette.Window) < 0.5;
         Dark = dark;
-        Amoled = dark && mode.Equals("amoled", StringComparison.OrdinalIgnoreCase);
+        Amoled = !HighContrast && dark && mode.Equals("amoled", StringComparison.OrdinalIgnoreCase);
         var accent = (Color)ColorConverter.ConvertFromString(Current.Accent);
         ApplicationThemeManager.Apply(dark ? ApplicationTheme.Dark : ApplicationTheme.Light);
         // Notre accent en clair comme en sombre (WPF-UI l'éclaircit en sombre par défaut)
