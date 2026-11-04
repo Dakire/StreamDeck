@@ -4,6 +4,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+## [1.2.0] — 2026-11-04
+
+Audit 3 : sauvegardes réglables, accessibilité, durcissement des imports, fiabilité au démarrage. Voir `SECURITY.md` (« Audit 3 ») et les ADR 0030 et 0031. Les clés ajoutées sont facultatives ; aucune clé existante n'est renommée ni supprimée.
+
 ### Ajouté
 - **Sauvegardes** (Paramètres › Sauvegardes) : nombre de sauvegardes conservées réglable de 1 à 100 (clé facultative `BackupLimit`, 15 par défaut), bouton **Supprimer** par sauvegarde,
   **Supprimer l'excédent** et **Tout supprimer** (avec confirmation). La limite ne supprime rien pendant la saisie : elle s'applique à la sauvegarde suivante.
