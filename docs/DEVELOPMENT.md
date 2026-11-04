@@ -61,9 +61,9 @@ Ne jamais piloter le vrai bureau (captures, clics simulés) : utiliser le harnai
 
 | Jeton | Où | Valeur |
 |---|---|---|
-| Fond | `DeckBackdrop` (Theme.cs) | Dégradé radial `#161B2D` → `#0B0E17`, lueur en haut ; opaque |
-| Surfaces | `DeckWindow`, `DeckPanel`, `DeckSurface`, `DeckSurfaceHi`, `DeckDock` | Thème sombre : application `#0B0E17`, panneaux `#121624`, cartes `#1A1F30`, cartes surélevées `#252B40` ; dock translucide |
-| Accent | `DeckAccent` / `DeckAccentText` | Indigo `#6C5CE7` (texte blanc ≥ 4,5:1) |
+| Fond | `DeckBackdrop` (Theme.cs) | Uni, dérivé de la palette Material Design 3 ; opaque |
+| Surfaces | `DeckWindow`, `DeckPanel`, `DeckSurface`, `DeckSurfaceHi`, `DeckDock` | Palettes `DarkPalette`, `LightPalette` et `AmoledPalette` générées par `MaterialScheme.Create(Seed)` (`Core/MaterialColor.cs`, ADR 0026) |
+| Accent | `DeckAccent` / `DeckAccentText` | Dérivé de `Theme.Seed` (`#2F7DF6`) ; contrastes ≥ 4,5:1 vérifiés par les tests (`PackageAndThemeTests`, `MaterialColorTests`) |
 | Touche | `Theme.TileFill` / `TileBorder` / `TileGradient` | Corps teinté à 26 % puis 16 %, liseré 40 %, pastille pleine |
 | Espacement | `LayoutMetrics.Gap` | `Spacing` × échelle d'écran, 6 px minimum |
 | Cible tactile | `LayoutMetrics.BarH` | 52 à 84 DIP (≥ 48) |

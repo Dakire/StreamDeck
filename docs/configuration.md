@@ -104,6 +104,8 @@ classDiagram
 | `ActiveProfile` | texte | premier profil | Profil affiché sur le deck. |
 | `Favorites`, `Recents` | listes | `[]` | Identifiants d'actions du catalogue. Les récents sont limités à 12. |
 | `Profiles` | liste | | Profils, au moins un après normalisation. |
+| `IntegrationOrder` | liste de textes | absent | Ordre des intégrations (identifiants) dans les paramètres et le catalogue ; les absentes suivent dans leur ordre d'origine, un identifiant inconnu est ignoré. |
+| `Integrations` | dictionnaire | absent | Réglages **non secrets** par identifiant d'intégration : `{ "Enabled": bool, "Values": { clé: texte } }`. Les secrets sont dans `secrets.dat` (DPAPI), jamais ici. |
 
 ### Profil (`DeckProfile`)
 
@@ -125,6 +127,8 @@ classDiagram
 | `Url` | absent | Adresse `http` ou `https` d'une page `web`. Ignorée pour une grille. |
 | `Zoom` | absent (`100 %`) | Zoom d'une page `web`, en % (25 à 500). Absent à 100 %. |
 | `WebInput` | absent (`touch`) | Interaction d'une page `web` avec la souris et le doigt : `passive` (affichage seul), `touch` (toucher pour interagir, défaut, non écrit), `interactive` (la page reçoit tout). |
+| `BadgeEnabled` | `true` | Affiche le badge de notifications de la page ; seul `false` est écrit (ADR 0022). |
+| `BadgeExcludeFromTotal` | absent | Exclut le badge de cette page du total de la pastille de la barre des tâches. |
 
 ### Bouton (`DeckButton`)
 
@@ -144,6 +148,7 @@ classDiagram
 | `Widget` | absent | `clock`, `agenda`, `web`, `cpu` ou `ram` : le bouton est un widget (affichage, pas d'action). Identifiant inconnu : ignoré. |
 | `WidgetOptions` | absent | Réglages du widget : `seconds`, `hour12`, `date` (horloge), `count`, `days` (agenda), `url` (page web, http ou https), `zoom` (page web, 25 à 500), `source` (niveau audio : `sonar:game`, `windows:capture:Focusrite`, `discord:input`, `discord:output`), `shape` (niveau audio : `vertical` ou `horizontal`, absent = roue), `input` (page web : `passive`, `interactive` ; absent = toucher pour interagir), `sources` (mélangeur : cibles séparées par une virgule, absent = cinq canaux Sonar), `reset` (niveau audio et mélangeur : niveau de réinitialisation 0 à 100), et les réglages des widgets de données (`url`, `count`…). |
 | `ColSpan`, `RowSpan` | absents (une case) | Largeur et hauteur d'un widget en cases (1 à 8). Les cases recouvertes doivent être vides. |
+| `GlobalHotkey` | absent | Raccourci clavier global qui déclenche le bouton depuis n'importe quelle application (un modificateur obligatoire, sauf F13 à F24). |
 
 Les clés marquées « absent » ne sont écrites que si elles ont une valeur (`JsonIgnore(WhenWritingDefault/Null)`) : le
 fichier reste léger et lisible.
@@ -151,7 +156,7 @@ fichier reste léger et lisible.
 ### Étape (`DeckAction`)
 
 `Type` est une clé stable : l'une des valeurs de `ActionTypes` (`Core/ActionTypes.cs`). Le tableau des types, avec le
-sens de `Value` et `Args`, est dans le [README](../README.md#types-dactions).
+sens de `Value` et `Args`, est dans le [README](../README.md#types-dactions). Clés facultatives des requêtes web : `Method` (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`) et `Headers` (un `Nom: valeur` par ligne, 20 au plus ; `Host`, `Content-Length` et consorts refusés).
 
 ## Cycle de vie
 

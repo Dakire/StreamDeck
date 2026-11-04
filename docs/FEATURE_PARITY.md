@@ -1,6 +1,6 @@
 # Matrice de parité fonctionnelle
 
-État au 19 octobre 2026. **Fait** = implémenté et couvert par un test automatisé (sauf mention).
+État au 4 novembre 2026 (disposition du mode édition corrigée). **Fait** = implémenté et couvert par un test automatisé (sauf mention).
 Les tests cités sont dans `tests/StreamDak.Tests`.
 
 ## P0 — Version opérationnelle
@@ -9,7 +9,7 @@ Les tests cités sont dans `tests/StreamDak.Tests`.
 |---|---|---|---|---|
 | Grille configurable | Fixée par l'appareil | **Fait** : par profil (3×2 … 8×4), réglage global ou automatique selon l'écran ; touches aux proportions bornées, grille centrée | — | `MainDeckWindowRendersProfileTilesAndImages` (1080p, 16:9, portrait) |
 | Interface tactile | Matérielle | **Fait** : fenêtre sans focus (`WS_EX_NOACTIVATE`), cibles ≥ 48 px, appui instantané | Vérifier à la main avec un vrai écran tactile et le Bloc-notes | Manuel |
-| Modes configuration / contrôle | Logiciel à part | **Fait** : éditeur séparé à trois panneaux + mode « Modifier au toucher » sur le deck | — | `UiTests` (éditeur) |
+| Modes configuration / contrôle | Logiciel à part | **Fait** : mode édition intégré au deck (catalogue à droite, inspecteur en bas, ADR 0016 et 0026) | — | `UiTests` (mode édition) |
 | Profils | Oui | **Fait** : créer, renommer, dupliquer, supprimer, actif | Réordonner : **fait** (menu du profil, `MoveProfile`, annulable) | `DeckDocumentTests` |
 | Personnalisation | Titre, image, couleur | **Fait** : titre et position, icône Fluent / emoji / texte, image, couleurs | — | `UiTests`, `PackageAndThemeTests` |
 | Actions de base | Raccourci, texte, ouvrir, site, multimédia | **Fait** : `hotkey`, `text`, `launch`, `url`, `script`, `media`, `focus` | — | `ActionEngineTests` |

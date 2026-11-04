@@ -50,6 +50,6 @@ Aucun binaire Elgato n'a été décompilé ni analysé.
 
 1. **États multiples** (touche à bascule avec deux apparences) : pas encore de modèle `States` dans `config.json`.
    Il demande un changement de format, donc une décision explicite. Aujourd'hui, l'action `audio` affiche l'état obtenu (« Micro coupé ») sans changer l'apparence de la touche.
-2. **Plugins** : pas de système d'extensions. Voir `FEATURE_PARITY.md` (P2) pour l'approche envisagée.
+2. **Plugins** : disponibles (`Core/Plugins`, liste d'autorisation par empreinte). Voir [plugins.md](plugins.md) et l'ADR 0012 et 0028.
 3. **Molettes / écran tactile horizontal** (Stream Deck +) : sans objet pour un écran tactile classique ; le geste de balayage
    pourrait jouer ce rôle (non implémenté).

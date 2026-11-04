@@ -11,7 +11,7 @@ L'exemple complet est dans [`samples/HelloPlugin`](../samples/HelloPlugin).
    `ConnectCoreAsync`, `DisconnectCoreAsync`, `ExecuteAsync`.
 3. Compiler, puis copier `NomDuPlugin.dll` (et son `.deps.json`) dans `%APPDATA%\StreamDak\plugins\NomDuPlugin\` : **le dossier et la
    bibliothèque portent le même nom**.
-4. Relancer StreamDak. Le journal (`streamdak.log`) indique « Plugin … chargé » ou la raison du refus.
+4. Relancer StreamDak. **Un plugin ajouté après le premier démarrage est refusé** tant que l'empreinte SHA-256 de ses bibliothèques n'est pas dans `plugins	rusted.json` (nom du dossier → empreinte) : le journal (`streamdak.log`) affiche l'empreinte à y copier (ADR 0028). Sinon il indique « Plugin … chargé » ou la raison du refus.
 5. Activer l'intégration dans **Paramètres › Intégrations**. Ses commandes apparaissent dans le catalogue.
 
 ## Règles

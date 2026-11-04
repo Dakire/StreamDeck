@@ -3,7 +3,7 @@
 Phase 0 de la mission « fiabiliser, optimiser, polir, enrichir ». Branche `mission/fiabilisation-audit-2`, 2 novembre 2026.
 Quatre relectures du code indépendantes, **sans modification ni mesure** : les gravités sont déduites de la lecture.
 Tout ce qui est marqué *à mesurer* sera chiffré en phase 1 avant d'être corrigé. Ce qui est déjà écarté par
-`phase-ux-perf-report.md` (connecteurs paresseux, `TieredPGO`, debounce du catalogue, etc.) n'est pas rouvert.
+l'ancien rapport de performance (retiré, voir l'historique git) (connecteurs paresseux, `TieredPGO`, debounce du catalogue, etc.) n'est pas rouvert.
 
 Gravité : **C** critique, **H** haute, **M** moyenne, **B** basse.
 

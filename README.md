@@ -61,11 +61,8 @@ automatique (une fois par jour, désactivable). Rien ne s'installe sans ton acco
 | [Décisions d'architecture](docs/adr/README.md) | Pourquoi WPF, le document unique, la plateforme abstraite… |
 | [Journal des modifications](CHANGELOG.md) | Ce qui a changé, version par version |
 | [Parité avec Stream Deck](docs/FEATURE_PARITY.md), [rétro-ingénierie](docs/REVERSE_ENGINEERING.md) | Fonctions couvertes et écarts |
-| [Étude des intégrations](docs/integrations-research.md) | OBS, Twitch, Discord, Hue… : faisabilité et ordre de réalisation |
-| [Bilan du nettoyage](docs/cleanup-report.md) | Corrections, mesures avant / après, risques restants (phase 1) |
-| [Bilan de l'architecture](docs/phase2-report.md) | Trois projets, injection de dépendances, Serilog, gestionnaires d'action (phase 2) |
-| [Bilan des intégrations, plugins et API](docs/phase8-9-report.md) | Ce qui est fait, mesures, écarts avec la demande, décisions à prendre (phases 8 et 9) |
-| [Intégrations](docs/integrations/) | OBS, Elgato, Hue, Windows, Teams, Twitch, Notion, Sonar (et audio par périphérique), raccourcis d'applications |
+| [Étude des intégrations](docs/integrations-research.md) | Étude d'octobre 2026 (archive de décision) : faisabilité et ordre de réalisation |
+| [Intégrations](docs/integrations/) | OBS, Elgato, Hue, Windows, Teams, Twitch, Notion, Discord, Google, Notifications, Sonar (et audio par périphérique), raccourcis d'applications |
 | [Tests manuels Sonar](docs/tests-manuels-sonar.md) | À dérouler sur le PC avec SteelSeries GG : découverte, diagnostic, canaux, roue au doigt |
 | [Discord](docs/integrations/discord.md), [tests manuels Discord, web, menus](docs/tests-manuels-discord-web-menus.md) | RPC local, raccourcis et leurs limites ; validation en arrière-plan, pages web passives, mélangeur, nouveaux widgets |
 | [Plugins](docs/plugins.md), [API locale](docs/local-api.md) | Ajouter une intégration sans modifier StreamDak ; piloter le deck depuis un script |
@@ -181,7 +178,7 @@ Ces raccourcis ne s'appliquent jamais pendant la saisie dans un champ de texte.
 
 ## Prérequis
 
-- Windows 10 ou 11 (Windows 11 recommandé : effet Mica dans l'éditeur et les paramètres ; le deck a son propre fond, opaque)
+- Windows 10 ou 11 (Windows 11 recommandé : effet Mica dans les paramètres ; le deck a son propre fond, opaque)
 - Runtime Desktop .NET 10 pour exécuter
 - Pour les curseurs et actions **Sonar** : [SteelSeries GG](https://steelseries.com/gg) installé et lancé, avec le module **Sonar** activé (mode classic ; le mode streamer
   est pris en charge pour la lecture, son écriture n'est pas vérifiée). StreamDak lit `%ProgramData%\SteelSeries\SteelSeries Engine 3\coreProps.json`, n'envoie rien en dehors de ce PC,
@@ -336,7 +333,7 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 | `Core/Actions/` | Moteur d'actions (`ActionEngine`, `ActionRegistry`), un gestionnaire par type dans `Handlers/`, interfaces de plateforme, plateforme simulée |
 | `Platform/Windows/` (projet `StreamDak.Platform.Windows`) | Implémentation Windows des interfaces de plateforme : `SendInput`, fenêtres Win32, Core Audio, registre. Seul `WindowsPlatform` est public |
 | `Core/Integrations/`, `Core/Api/`, `Core/Plugins/` | Cadre d'intégrations (`IIntegration`, `IntegrationManager`, bases HTTP et REST), API locale, chargeur de plugins |
-| `Integrations/<Nom>/` | Un projet par connecteur : Obs, ElgatoLight, Hue, WindowsSystem, Teams, Twitch, Notion, Sonar |
+| `Integrations/<Nom>/` | Un projet par connecteur : Obs, ElgatoLight, Hue, WindowsSystem, Teams, Twitch, Notion, Sonar, Discord, Google, Notifications |
 | `samples/HelloPlugin` | Exemple de plugin |
 | `Services/` | `AppHost` (racine de composition, journal Serilog), `ConfigPersistence` (sauvegarde auto, rechargement à chaud), `AppearanceService`, `AppWindows`, `DisplayService`, `IconStore`, `DropPayload` (lecture d'un glisser-déposer), `ProfilePackage`, `TransferService`, `Notifier`, `Motion` |
 | `ViewModels/` | `MainViewModel` (deck ; menu des cases, glisser-déposer et mode édition en classes partielles), `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `DeckDialogViewModel`, `SettingsViewModel`, `MenuSpec`, `CatalogMenu` |
@@ -366,7 +363,7 @@ animations coupées par le réglage StreamDak ou celui de Windows.
 - Discord : le RPC n'est accordé qu'à une application dont tu es propriétaire (ou testeur) ; rejoindre un salon précis, la caméra et le partage d'écran ne sont pas pilotés.
 - Audio : le périphérique par défaut de Windows ne se change pas depuis StreamDak (pas d'API publique) : le bouton *Son : périphériques* ouvre le panneau de Windows. Le volume par
   application et le gain matériel d'une carte son ne sont pas pilotés.
-- Le panneau de création rapide est une petite fenêtre (le deck n'accepte pas la saisie) : la recherche demande un clavier ou le clavier tactile de Windows ; les modèles et *Parcourir les actions* se font sans clavier.
+- La recherche du catalogue (mode édition) demande un clavier ou le clavier tactile de Windows ; les modèles et *Parcourir les actions* se font sans clavier.
 - Les images importées ne sont jamais supprimées automatiquement (les sauvegardes peuvent encore les référencer).
 
 ## FAQ

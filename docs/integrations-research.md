@@ -1,6 +1,6 @@
 # Étude des intégrations
 
-Étude du 19 octobre 2026, avec l'état de réalisation du 20 octobre 2026 (section 0). Ce document recense, pour chaque logiciel cible, comment StreamDak (WPF / .NET 9, Windows)
+Étude du 19 octobre 2026, avec l'état de réalisation du 20 octobre 2026 (section 0). Ce document recense, pour chaque logiciel cible, comment StreamDak (WPF / .NET 10, Windows)
 peut s'y connecter. Il a servi à choisir les intégrations à réaliser ; la section 0 dit lesquelles le sont.
 
 Règles de rédaction :
