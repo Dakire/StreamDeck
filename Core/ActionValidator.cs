@@ -49,7 +49,23 @@ public static class ActionValidator
     public static readonly string[] BlockedSchemes = { "javascript", "vbscript", "data", "file" };
 
     /// <summary>Types qui exécutent du code ou lancent des programmes : à signaler avant d'importer un profil.</summary>
-    public static bool IsRisky(DeckAction a) => a.Type.ToLowerInvariant() is ActionTypes.Launch or ActionTypes.Script;
+    public static bool IsRisky(DeckAction a)
+    {
+        switch (a.Type.ToLowerInvariant())
+        {
+            case ActionTypes.Launch or ActionTypes.Script:
+                return true;
+            case ActionTypes.Text:   // injection de frappes (Win+R puis une commande)
+                return true;
+            case ActionTypes.Hotkey:   // la touche Windows ouvre « Exécuter »
+                return a.Value.Split('+', ' ').Any(t => t.Trim().ToLowerInvariant() is "win" or "windows" or "meta" or "lwin" or "rwin");
+            case ActionTypes.Url:   // un nom de programme ou un protocole hors web passe par ShellExecute : c'est un lanceur
+                var v = a.Value.Trim();
+                return !(Uri.TryCreate(v, UriKind.Absolute, out var uri) && uri.Scheme.ToLowerInvariant() is "http" or "https" or "mailto");
+            default:
+                return false;
+        }
+    }
 
     /// <summary>Problèmes d'une étape, sans rien exécuter ; <paramref name="profile"/> sert à vérifier les noms de page (null : non vérifiés).</summary>
     public static List<Issue> Validate(DeckAction a, DeckConfig cfg, DeckProfile? profile)

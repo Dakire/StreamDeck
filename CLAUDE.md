@@ -24,8 +24,8 @@ Le projet s'appelle `StreamDak` (assembly et namespace), le dépôt `StreamDeck`
 - **Journal** : façade `Log` (Core) branchée sur Serilog (`streamdak.log`) ; `ILogger<T>` pour les services injectés.
 - Deck : `MainWindow.xaml` + `MainViewModel` (profil, page, dossier, sous-page, menu) + `LayoutMetrics`. `MainWindow.xaml.cs` ne garde que
   Win32 et le placement (NOACTIVATE, plein écran multi-écran) et implémente `IShell`.
-- Édition : plus de fenêtre d'édition (ADR 0016). Le mode édition du deck (`MainWindow.Edit.cs`, `MainViewModel.Editing.cs`) affiche `CatalogPanel` à gauche et
-  `PropertiesPanel` à droite de la grille ; moteur : `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `ActionStepViewModel`. Dialogues :
+- Édition : plus de fenêtre d'édition (ADR 0016). Le mode édition du deck (`MainWindow.Edit.cs`, `MainViewModel.Editing.cs`) affiche `CatalogPanel` à droite et
+  `PropertiesPanel` sous la grille (ADR 0026) ; moteur : `EditorViewModel`, `PropertiesViewModel`, `CatalogViewModel`, `ActionStepViewModel`. Dialogues :
   `DeckDialogViewModel` (dans le deck, jamais de fenêtre modale). Les menus contextuels sont décrits en `MenuSpec` par les ViewModels
   et affichés dans la feuille du deck. `Controls/TileFace` dessine un bouton partout (deck, grille, aperçu).
 - Format de config : `Version` 2, `Profiles[].Pages[].Buttons[]` ; l'ancien format (`Pages` racine) est migré par `ConfigNormalizer`.

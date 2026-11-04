@@ -36,11 +36,22 @@ public partial class App : Application
         // Avant l'instance unique (sa clé dépend du dossier) : reprend le dossier de l'ancien nom du produit (TouchDeck)
         if (ConfigStore.MigrateLegacyDirectory()) Log.Info("Dossier de configuration repris de l'ancien nom du produit");
         if (!TakeSingleInstance(options)) { Shutdown(); return; }
-        _services = AppHost.Build(options);   // configuration, thème et sauvegarde automatique avant la création des fenêtres
-        base.OnStartup(e);
-        // Fenêtre créée ici plutôt que par StartupUri : StartupUri s'appliquerait aussi dans l'hôte de tests
-        MainWindow = new MainWindow(_services);
-        MainWindow.Show();
+        try
+        {
+            _services = AppHost.Build(options);   // configuration, thème et sauvegarde automatique avant la création des fenêtres
+            base.OnStartup(e);
+            // Fenêtre créée ici plutôt que par StartupUri : StartupUri s'appliquerait aussi dans l'hôte de tests
+            MainWindow = new MainWindow(_services);
+            MainWindow.Show();
+        }
+        catch (Exception ex)
+        {
+            // Sans fenêtre, WPF ne s'arrêterait pas : le processus resterait vivant avec le verrou d'instance et bloquerait tout relancement
+            Log.Error("Échec du démarrage", ex);
+            MessageBox.Show("StreamDak n'a pas pu démarrer : " + ex.Message + "\nDétails dans streamdak.log.", "StreamDak", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
+            return;
+        }
         _api = new LocalApiServer(_services.GetRequiredService<LocalApi>());
         _api.Start();
         _tray = new TrayIcon(_services.GetRequiredService<IApiShell>());

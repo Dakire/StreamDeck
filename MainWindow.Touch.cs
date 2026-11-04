@@ -233,6 +233,12 @@ public partial class MainWindow
     void OnLongPressTick()
     {
         if (!_tap.Tracking) { _longPressTimer.Stop(); return; }
+        // Toucher annulé par Windows (geste système, rejet de paume) : aucun relâchement n'arrive, l'appui long ne doit pas se déclencher doigt levé
+        if (_tap.TrackedId is { } held && !(GetPointerInfo(held, out var heldInfo) && (heldInfo.pointerFlags & POINTER_FLAG_INCONTACT) != 0))
+        {
+            ResetTouchTracking();
+            return;
+        }
         if (!_tap.TryLongPress(Environment.TickCount64)) return;
         _longPressTimer.Stop();
         var edit = _pressEdit;

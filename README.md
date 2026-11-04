@@ -90,7 +90,7 @@ automatique (une fois par jour, désactivable). Rien ne s'installe sans ton acco
   l'édition (saisie au clavier) ; en sortant elle ne prend de nouveau jamais le focus et le rend à l'application précédente.
 - Thème **Material Design 3** : palettes tonales (sombre, AMOLED, clair) générées depuis une couleur source, surfaces à élévation tonale, sans ombre portée.
 - **Création rapide**, sans ouvrir l'éditeur : **clic droit** ou **appui long** (environ 0,55 s, doigt immobile) sur une **case vide**
-  ouvre un menu : *Nouveau bouton…* (le panneau d'actions s'ouvre à gauche, avec sa recherche : « chrome » ou « vol »), *Parcourir les actions*
+  ouvre un menu : *Nouveau bouton…* (le panneau d'actions s'ouvre à droite, avec sa recherche : « chrome » ou « vol »), *Parcourir les actions*
   (catégories, au toucher), des **modèles en un clic** (raccourci clavier, lancer une application, ouvrir un site, volume / muet,
   média, script, dossier, page) et *Coller*. Chaque création est une seule modification annulable, avec un bouton
   *Annuler* dans le bandeau d'état. Une page ou un dossier vide propose *Ajouter un bouton* sur sa première case.

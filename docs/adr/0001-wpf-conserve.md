@@ -13,7 +13,7 @@ elle, les raccourcis envoyés partiraient vers le deck au lieu de l'application 
 
 ## Décision
 
-Garder WPF (.NET 9) avec WPF-UI (licence MIT) pour les contrôles Fluent et Mica.
+Garder WPF (.NET 10) avec WPF-UI (licence MIT) pour les contrôles Fluent et Mica.
 
 | Critère | WPF | Avalonia | WinUI 3 |
 |---|---|---|---|

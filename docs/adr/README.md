@@ -31,7 +31,6 @@ effacée : elle passe au statut « Remplacée par … ».
 | [0024](0024-sonar-audio-par-peripherique-et-controles-de-niveau.md) | SteelSeries Sonar, audio Windows par périphérique et contrôles de niveau tactiles (roue, curseurs) | Acceptée |
 | [0025](0025-discord-rpc-pages-web-passives-et-melangeur.md) | Discord par RPC local, pages web passives, menus sans rechargement, mélangeur audio, nouveaux widgets | Acceptée |
 | [0026](0026-disposition-style-stream-deck-et-palette-sobre.md) | Disposition du mode édition style Stream Deck (catalogue à droite, inspecteur en bas), palette sobre, curseur vertical, IAudioMixerProvider | Acceptée |
-
 | [0027](0027-ecriture-de-configuration-hors-interface.md) | Écriture de config.json hors du thread d'interface (instantané, écrivain unique) | Acceptée |
 | [0028](0028-liste-d-autorisation-des-plugins.md) | Liste d'autorisation des plugins par empreinte | Acceptée |
 | [0029](0029-webview2-sans-pont-de-messages.md) | WebView2 : aucun pont page → application dans les cadres visibles, coût réduit autrement | Acceptée |
