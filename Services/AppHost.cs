@@ -46,6 +46,9 @@ sealed class SerilogSink : ILogSink
 
     public SerilogSink(Serilog.ILogger logger) { _logger = logger; }
 
+    /// <summary>Libère le journal Serilog : la file asynchrone est vidée dans le fichier (idempotent avec la libération du conteneur).</summary>
+    public void Flush() => (_logger as IDisposable)?.Dispose();
+
     /// <inheritdoc/>
     public void Write(LogSeverity severity, string message, Exception? exception)
     {

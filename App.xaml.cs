@@ -29,7 +29,11 @@ public partial class App : Application
     {
         if (Headless) return;
         DispatcherUnhandledException += OnUnhandled;
-        AppDomain.CurrentDomain.UnhandledException += (_, a) => Log.Error("Erreur fatale", a.ExceptionObject as Exception);
+        AppDomain.CurrentDomain.UnhandledException += (_, a) =>
+        {
+            Log.Error("Erreur fatale", a.ExceptionObject as Exception);
+            Log.Flush();   // le processus va mourir : sans cela la file asynchrone perd justement les lignes qui expliquent le plantage
+        };
         TaskScheduler.UnobservedTaskException += (_, a) => { Log.Error("Tâche en échec non observée", a.Exception); a.SetObserved(); };
         // « --simulate » : les actions sont affichées au lieu d'être exécutées (essai de la grille sans risque)
         var options = AppOptions.FromArgs(e.Args);
@@ -107,8 +111,29 @@ public partial class App : Application
     /// <summary>Une erreur d'interface ne doit pas faire perdre le deck : on la consigne et on continue.</summary>
     static void OnUnhandled(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        Log.Error("Erreur inattendue de l'interface", e.Exception);
-        Notifier.Error("Erreur inattendue : " + e.Exception.Message);
         e.Handled = true;
+        try
+        {
+            Log.Error("Erreur inattendue de l'interface", e.Exception);
+            // Une erreur qui se répète à chaque tick d'une minuterie ne doit pas inonder l'écran de messages identiques
+            if (ShouldNotify(e.Exception.GetType().FullName + e.Exception.Message, Environment.TickCount64))
+                Notifier.Error("Erreur inattendue : " + e.Exception.Message);
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Le gestionnaire d'erreurs de l'interface a lui-même échoué", ex);   // jamais d'exception hors de ce gestionnaire : ce serait fatal
+        }
+    }
+
+    static string? _lastErrorKey;
+    static long _lastErrorTick;
+
+    /// <summary>Vrai si ce message d'erreur n'a pas déjà été affiché dans les 5 dernières secondes.</summary>
+    static bool ShouldNotify(string key, long nowTick)
+    {
+        if (key == _lastErrorKey && nowTick - _lastErrorTick < 5000) return false;
+        _lastErrorKey = key;
+        _lastErrorTick = nowTick;
+        return true;
     }
 }

@@ -18,6 +18,9 @@ public interface ILogSink
 {
     /// <summary>Consigne un message. Ne doit jamais lever d'exception : un journal en échec ne doit pas faire tomber le deck.</summary>
     void Write(LogSeverity severity, string message, Exception? exception);
+
+    /// <summary>Écrit sur disque les messages en attente (arrêt brutal). Sans effet pour une destination synchrone.</summary>
+    void Flush() { }
 }
 
 /// <summary>
@@ -41,6 +44,13 @@ public static class Log
     public static void Warn(string message) => Write(LogSeverity.Warning, message, null);
     /// <summary>Erreur, avec l'exception complète si elle est fournie.</summary>
     public static void Error(string message, Exception? ex = null) => Write(LogSeverity.Error, message, ex);
+
+    /// <summary>Vide la file d'écriture : à appeler quand le processus va mourir (erreur fatale), sinon les dernières lignes sont perdues.</summary>
+    public static void Flush()
+    {
+        try { Sink.Flush(); }
+        catch (Exception) { /* un journal en échec ne doit jamais faire tomber l'application */ }
+    }
 
     const int RecentMax = 30;
     static readonly System.Collections.Generic.Queue<string> RecentLines = new();

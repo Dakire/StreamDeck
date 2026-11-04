@@ -10,6 +10,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ### Corrigé
 - Appui long fantôme sur le deck quand Windows annule un toucher (l'éditeur s'ouvrait doigt levé).
+- **Configuration invalide au démarrage** : reprise sur la dernière sauvegarde valide (au lieu d'un deck vide), les copies `config.invalide-*` ne s'accumulent plus (5 au plus, sans doublon).
+- **Erreur fatale** : le journal est vidé avant la fin du processus (les dernières lignes étaient perdues avec l'écriture asynchrone).
+- **Erreurs de l'interface** : un message identique n'est plus affiché plus d'une fois toutes les 5 s, et le gestionnaire ne peut plus lui-même faire tomber l'application.
 - Échec au démarrage : le processus ne reste plus vivant avec le verrou d'instance ; un message d'erreur s'affiche et l'erreur est journalisée.
 - Import de profil : la confirmation signale aussi les actions `text`, `hotkey` avec la touche Windows et `url` hors http, https et mailto (elles permettent d'exécuter du code).
 
