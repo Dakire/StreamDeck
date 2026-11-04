@@ -58,14 +58,33 @@ public static class IconStore
         try
         {
             using var stream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
-            return Store(LargestFrame(decoder) ?? throw new InvalidDataException("Image vide"));
+            return Store(DecodeLargest(stream));
         }
         catch (InvalidDataException) { throw; }
         catch (Exception ex) when (ex is NotSupportedException or FileFormatException or IOException or ArgumentException or InvalidOperationException)
         {
             throw new InvalidDataException("Impossible de lire cette image : fichier corrompu ou format non pris en charge", ex);
         }
+    }
+
+    /// <summary>
+    /// Décode la plus grande image d'un flux, après avoir lu ses dimensions SANS la décoder (en-têtes seulement) : une image déclarée plus grande que
+    /// <see cref="MaxPixels"/> est refusée avant que le moindre pixel soit alloué (« bombe de décompression »). Le flux doit permettre le repositionnement.
+    /// </summary>
+    public static BitmapFrame DecodeLargest(Stream stream)
+    {
+        try
+        {
+            var probe = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
+            if (probe.Frames.Count == 0) throw new InvalidDataException("Image vide");
+            foreach (var f in probe.Frames)
+                if (f.PixelWidth <= 0 || f.PixelHeight <= 0 || f.PixelWidth > MaxPixels || f.PixelHeight > MaxPixels)
+                    throw new InvalidDataException($"Dimensions non acceptées (maximum {MaxPixels} px)");
+            stream.Seek(0, SeekOrigin.Begin);
+            var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+            return LargestFrame(decoder) ?? throw new InvalidDataException("Image vide");
+        }
+        catch (OutOfMemoryException ex) { throw new InvalidDataException("Image trop grande pour être décodée", ex); }
     }
 
     /// <summary>Plus grande image d'un fichier (un .ico en contient plusieurs tailles : 16, 32, 256 px) ; null s'il n'en a aucune.</summary>
@@ -99,12 +118,12 @@ public static class IconStore
         try
         {
             using var check = new MemoryStream(png);
-            var decoder = BitmapDecoder.Create(check, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
-            var f = decoder.Frames[0];
-            if (f.PixelWidth > MaxPixels || f.PixelHeight > MaxPixels) throw new InvalidDataException("Dimensions non acceptées");
+            DecodeLargest(check);
         }
         catch (InvalidDataException) { throw; }
-        catch (Exception ex) { throw new InvalidDataException("Image PNG corrompue", ex); }
+        catch (Exception ex) when (ex is NotSupportedException or FileFormatException or IOException or ArgumentException or InvalidOperationException
+                                       or OutOfMemoryException or System.Runtime.InteropServices.ExternalException)
+        { throw new InvalidDataException("Image PNG corrompue", ex); }
 
         var name = Convert.ToHexString(SHA256.HashData(png))[..32].ToLowerInvariant() + ".png";
         Directory.CreateDirectory(ConfigStore.IconsDir);
