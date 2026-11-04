@@ -42,6 +42,8 @@ public sealed class HttpAction : ActionHandler
                 request.Content.Headers.TryAddWithoutValidation(name, value);
         }
         using var response = await context.Services.Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation);
+        if ((int)response.StatusCode is >= 300 and < 400)
+            throw new InvalidOperationException($"Le serveur a répondu {(int)response.StatusCode} (redirection) : StreamDak ne suit pas les redirections. Indique directement l'adresse finale.");
         if (!response.IsSuccessStatusCode)
             throw new InvalidOperationException($"Le serveur a répondu {(int)response.StatusCode} {response.ReasonPhrase}");
         return null;
