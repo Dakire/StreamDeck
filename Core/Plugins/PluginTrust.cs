@@ -68,15 +68,73 @@ public sealed class PluginTrust
         FileExists = true;
     }
 
-    /// <summary>Empreinte SHA-256 d'un dossier de plugin : noms et contenus de toutes ses bibliothèques (.dll), dans l'ordre des noms.</summary>
-    public static string FolderHash(string folder)
+    /// <summary>
+    /// true si ce plugin est autorisé pour ce contenu. Une empreinte enregistrée avec l'ancien calcul (bibliothèques seules, avant l'ajout de
+    /// <c>*.deps.json</c>) est acceptée UNE fois et remplacée aussitôt par la nouvelle : les autorisations des utilisateurs existants restent valables.
+    /// </summary>
+    public bool IsTrusted(string name, PluginSnapshot snapshot)
     {
-        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        foreach (var file in Directory.EnumerateFiles(folder, "*.dll", SearchOption.AllDirectories).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+        if (!IsValid || !_trusted.TryGetValue(name, out var stored)) return false;
+        if (string.Equals(stored, snapshot.Hash, StringComparison.OrdinalIgnoreCase)) return true;
+        if (!string.Equals(stored, snapshot.LegacyHash, StringComparison.OrdinalIgnoreCase)) return false;
+        try
         {
-            hash.AppendData(Encoding.UTF8.GetBytes(Path.GetRelativePath(folder, file).ToUpperInvariant() + "\n"));
-            hash.AppendData(File.ReadAllBytes(file));
+            TrustAndSave([(name, snapshot.Hash)]);
+            Log.Info($"Plugins : autorisation de « {name} » migrée vers l'empreinte qui couvre aussi les fichiers .deps.json");
         }
-        return Convert.ToHexString(hash.GetHashAndReset());
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Warn($"Plugins : migration de l'autorisation de « {name} » impossible à écrire ({ex.Message}) ; l'ancienne empreinte reste acceptée");
+        }
+        return true;
+    }
+
+    /// <summary>Empreinte SHA-256 d'un dossier de plugin : noms et contenus de toutes ses bibliothèques (.dll) et fichiers .deps.json, dans l'ordre des noms.</summary>
+    public static string FolderHash(string folder) => PluginSnapshot.Read(folder).Hash;
+}
+
+/// <summary>
+/// Contenu d'un dossier de plugin lu UNE seule fois : les octets hachés sont les octets chargés (pas de fenêtre entre la vérification et le
+/// chargement pendant laquelle un fichier pourrait être remplacé).
+/// </summary>
+public sealed class PluginSnapshot
+{
+    PluginSnapshot(Dictionary<string, byte[]> files, string hash, string legacyHash)
+    {
+        Files = files;
+        Hash = hash;
+        LegacyHash = legacyHash;
+    }
+
+    /// <summary>Octets des bibliothèques et des fichiers .deps.json, par chemin complet.</summary>
+    public IReadOnlyDictionary<string, byte[]> Files { get; }
+    /// <summary>Empreinte actuelle (bibliothèques et .deps.json).</summary>
+    public string Hash { get; }
+    /// <summary>Empreinte de l'ancien calcul (bibliothèques seules), pour reconnaître les autorisations déjà enregistrées.</summary>
+    public string LegacyHash { get; }
+
+    /// <summary>Lit les fichiers du dossier et calcule les empreintes sur ces octets.</summary>
+    public static PluginSnapshot Read(string folder)
+    {
+        var paths = Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories)
+            .Where(f => f.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToList();
+        var files = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+        using var current = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        using var legacy = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        foreach (var file in paths)
+        {
+            var bytes = File.ReadAllBytes(file);
+            files[Path.GetFullPath(file)] = bytes;
+            var header = Encoding.UTF8.GetBytes(Path.GetRelativePath(folder, file).ToUpperInvariant() + "\n");
+            current.AppendData(header);
+            current.AppendData(bytes);
+            if (file.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+            {
+                legacy.AppendData(header);
+                legacy.AppendData(bytes);
+            }
+        }
+        return new PluginSnapshot(files, Convert.ToHexString(current.GetHashAndReset()), Convert.ToHexString(legacy.GetHashAndReset()));
     }
 }
