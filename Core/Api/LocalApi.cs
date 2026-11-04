@@ -21,6 +21,11 @@ public interface IApiShell
     void OpenEditor();
     /// <summary>Ouvre les paramètres.</summary>
     void OpenSettings();
+    /// <summary>
+    /// Lit le document sur le thread qui le modifie (l'API répond depuis le pool : lire les listes pendant une modification donnerait une erreur ou une lecture incohérente).
+    /// Par défaut, lecture directe (tests, hôte sans interface).
+    /// </summary>
+    T Read<T>(Func<T> read) => read();
 }
 
 /// <summary>
@@ -81,12 +86,12 @@ public sealed class LocalApi
         switch (cmd)
         {
             case "ping": return Ok(new JsonObject { ["protocol"] = ProtocolVersion });
-            case "status": return Ok(Status());
+            case "status": return Ok(_shell.Read(Status));
             case "values": return Ok(Values());
             case "profile":
-                if (_doc.FindProfile(Arg("name")) is not { } profile || !profile.Name.Equals(Arg("name"), StringComparison.OrdinalIgnoreCase))
-                    return Fail($"Profil introuvable : {Arg("name")}");
-                _shell.Navigator.SwitchProfile(profile.Name);
+                var profileName = _shell.Read(() => _doc.FindProfile(Arg("name")) is { } found && found.Name.Equals(Arg("name"), StringComparison.OrdinalIgnoreCase) ? found.Name : null);
+                if (profileName == null) return Fail($"Profil introuvable : {Arg("name")}");
+                _shell.Navigator.SwitchProfile(profileName);
                 return Ok();
             case "page":
                 if (Arg("name").Length == 0) return Fail("Indique le nom de la page");
@@ -130,7 +135,7 @@ public sealed class LocalApi
         if (steps.Count == 0 || steps.Count > 20) return Fail("Entre 1 et 20 actions");
 
         var button = new DeckButton { Label = "API locale", Actions = steps };
-        var issues = ActionValidator.Validate(button, _doc.Config, _doc.ActiveProfile).Where(i => i.Severity == Severity.Error).ToList();
+        var issues = _shell.Read(() => ActionValidator.Validate(button, _doc.Config, _doc.ActiveProfile).Where(i => i.Severity == Severity.Error).ToList());
         if (issues.Count > 0) return Fail(issues[0].Message);
 
         var result = await _engine.RunAsync(button, _shell.Navigator, cancellation);

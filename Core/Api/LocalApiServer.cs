@@ -60,15 +60,16 @@ public sealed class LocalApiServer : IDisposable
                     PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
             }
             // Toutes les instances occupées (plus de MaxClients clients) : l'écoute ne doit pas s'arrêter pour autant, on réessaie
-            catch (IOException ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                // Une autre erreur (droits, ressource système) ne doit pas tuer l'écoute en silence : on réessaie, plus lentement (le journal reste lisible)
                 Log.Warn($"API locale : canal indisponible, nouvel essai ({ex.Message})");
-                try { await Task.Delay(250, _stop.Token); } catch (OperationCanceledException) { return; }
+                try { await Task.Delay(ex is IOException ? 250 : 5000, _stop.Token); } catch (OperationCanceledException) { return; }
                 continue;
             }
             try { await pipe.WaitForConnectionAsync(_stop.Token); }
             catch (OperationCanceledException) { await pipe.DisposeAsync(); return; }
-            catch (IOException ex) { Log.Warn($"API locale : connexion refusée : {ex.Message}"); await pipe.DisposeAsync(); continue; }
+            catch (Exception ex) { Log.Warn($"API locale : connexion refusée : {ex.Message}"); await pipe.DisposeAsync(); continue; }
             _ = Task.Run(() => ServeAsync(pipe), CancellationToken.None);
         }
     }

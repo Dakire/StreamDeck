@@ -145,18 +145,19 @@ CA2xxx, CA3xxx, CA5xxx en erreur, `TreatWarningsAsErrors`), style appliqué à l
 Corrigé : confirmation d'import étendue, hôtes Hue et OBS à l'import, droits des pages web par hôte exact, images décodées après contrôle de taille, redirections HTTP non suivies
 (les en-têtes personnalisés et le corps ne partent plus vers un autre hôte), empreinte des plugins unique et couvrant `deps.json`. Détail : ADR 0030.
 
+Corrigé ensuite (même jour) :
+- **Installateur de mise à jour** : l'applicateur recontrôle son SHA-256 juste avant de le lancer et refuse un fichier remplacé depuis la vérification.
+- **`.deps.json` des plugins** : refusé s'il n'a pas la forme produite par le SDK (`runtimeTarget` et `targets`) ou s'il diffère des octets vérifiés ; le résolveur natif, qui plante sur un fichier incomplet, ne le voit jamais.
+- **API locale** : le document est lu sur le thread d'interface (`IApiShell.Read`), et la boucle d'acceptation survit à toute erreur (nouvel essai, journal).
+- **Inno Setup** épinglé à la version 6.7.1 dans `release.yml`.
+
 ## Reste à traiter
 
 1. **Signature de code** : l'exécutable et l'installateur ne sont pas signés (SmartScreen avertira). Le script de signature est prêt, il faut un certificat.
 2. **Historique git** : retirer les binaires `bin/Release/net9.0-windows/` des deux anciens commits demande une réécriture d'historique.
 3. **Plugins** : la liste d'autorisation protège d'un ajout à l'insu de l'utilisateur, pas d'un attaquant qui écrit déjà dans `%APPDATA%\StreamDak` (hors modèle de menace).
-4. **Inno Setup** installé par Chocolatey sans version épinglée ; **URL de webhook** (Discord, Slack…) en clair dans `config.json` et les exports (action `http`) : à traiter avec un champ secret, ce qui change le format.
+4. **URL de webhook** (Discord, Slack…) en clair dans `config.json` et les exports (action `http`) : à traiter avec un champ secret, ce qui change le format.
 5. **Journal** : `LogRedactor` est un filet par motifs ; il ne couvre ni les toasts ni les réponses de l'API locale. Le diagnostic copié le traverse.
 6. **Non vérifié ici** : le comportement de DPAPI sur un profil itinérant ou après changement de mot de passe Windows (le secret devient illisible
    et est ignoré avec un avertissement, sans valeur journalisée : il faut le ressaisir).
-
-7. **Installateur de mise à jour** : le SHA-256 et la signature sont vérifiés, puis le script PowerShell lance le fichier après la fermeture de l'application sans le revérifier. Un processus qui tourne déjà avec les droits
-   de l'utilisateur pourrait le remplacer entre-temps ; l'élévation (UAC, installation pour tous les utilisateurs) reste visible. À traiter : passer le SHA-256 attendu au script et le revérifier juste avant `Start-Process`.
-8. **`.deps.json` des plugins** : le résolveur natif du runtime le relit sur le disque ; un plugin déjà autorisé dont ce fichier serait corrompu n'a pas été éprouvé (un plantage a été vu une fois en test avant un JSON valide, non isolé).
-9. **Pages Google** : l'hôte exact est exigé ; `calendar.google.com` n'accorde plus ses droits à `meet.google.com` (saisir `google.com` pour couvrir les deux). Les hôtes importés restent marqués sans bouton de confirmation.
-10. **API locale** : le document y est lu depuis un thread du pool sans synchronisation (erreur intermittente possible sous modification simultanée), et la boucle d'acceptation ne rattrape que `IOException`.
+7. **Pages Google** : l'hôte exact est exigé ; `calendar.google.com` n'accorde plus ses droits à `meet.google.com` (saisir `google.com` pour couvrir les deux). Les hôtes importés restent marqués sans bouton de confirmation.

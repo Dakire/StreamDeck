@@ -4,6 +4,16 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+## [1.2.1] — 2026-11-04
+
+Correctifs de sécurité et de fiabilité issus de `SECURITY.md` (« Audit 3 »). Aucune clé de configuration ajoutée, renommée ni supprimée.
+
+### Corrigé
+- **Mise à jour** : l'applicateur recontrôle le SHA-256 de l'installateur juste avant de le lancer (un fichier remplacé après la vérification est refusé et l'ancienne version est relancée).
+- **Plugins** : un `.deps.json` incomplet ou modifié après vérification est refusé avant d'atteindre le résolveur natif (qui plante sur un fichier incomplet).
+- **API locale** : lecture du document sur le thread d'interface (plus d'erreur intermittente pendant une modification) ; la boucle d'écoute survit à toute erreur au lieu de s'arrêter en silence.
+- **Publication** : Inno Setup épinglé à la version 6.7.1 dans le workflow de release.
+
 ## [1.2.0] — 2026-11-04
 
 Audit 3 : sauvegardes réglables, accessibilité, durcissement des imports, fiabilité au démarrage. Voir `SECURITY.md` (« Audit 3 ») et les ADR 0030 et 0031. Les clés ajoutées sont facultatives ; aucune clé existante n'est renommée ni supprimée.

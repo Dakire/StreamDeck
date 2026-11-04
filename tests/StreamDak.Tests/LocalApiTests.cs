@@ -36,6 +36,33 @@ public class LocalApiTests
         return (api, shell);
     }
 
+    [Fact]
+    public async Task TheRealShellReadsTheDocumentOnTheUiThread()
+    {
+        var shell = _host.Services.GetRequiredService<IApiShell>();
+        int ui = _host.Run(() => Environment.CurrentManagedThreadId);
+        int seen = await Task.Run(() => shell.Read(() => Environment.CurrentManagedThreadId));
+        Assert.Equal(ui, seen);
+    }
+
+    [Fact]
+    public async Task StatusWhileTheDocumentIsBeingModifiedNeverFails()
+    {
+        var api = new LocalApi(_host.Services.GetRequiredService<DeckDocument>(), _host.Services.GetRequiredService<ActionEngine>(),
+            _host.Services.GetRequiredService<IntegrationManager>(), _host.Services.GetRequiredService<IApiShell>());
+        var stop = false;
+        var writer = Task.Run(() =>
+        {
+            while (!stop) _host.Run(() => _host.Document.UpdateSettings(c => c.Spacing = c.Spacing > 20 ? 14 : 15, "Essai"));
+        });
+        try
+        {
+            for (int i = 0; i < 100; i++)
+                Assert.True((await Ask(api, "{\"cmd\":\"status\"}"))["ok"]!.GetValue<bool>());
+        }
+        finally { stop = true; await writer; }
+    }
+
     static async Task<JsonObject> Ask(LocalApi api, string request) => JsonNode.Parse(await api.HandleAsync(request))!.AsObject();
 
     [Fact]

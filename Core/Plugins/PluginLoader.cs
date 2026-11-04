@@ -35,8 +35,31 @@ public static class PluginLoader
 
         public PluginContext(string mainDll, PluginSnapshot snapshot) : base("plugin:" + Path.GetFileNameWithoutExtension(mainDll), isCollectible: false)
         {
-            _resolver = new AssemblyDependencyResolver(mainDll);
             _snapshot = snapshot;
+            // Le résolveur natif lit le .deps.json sur le disque : il ne doit voir que les octets vérifiés, et un JSON mal formé ne doit jamais atteindre le code natif
+            var deps = Path.ChangeExtension(mainDll, ".deps.json");
+            if (File.Exists(deps))
+            {
+                if (!snapshot.Files.TryGetValue(Path.GetFullPath(deps), out var verified))
+                    throw new InvalidOperationException("fichier .deps.json absent du contenu vérifié");
+                if (!HasSdkShape(verified)) throw new InvalidOperationException("fichier .deps.json illisible ou incomplet");
+                if (!File.ReadAllBytes(deps).AsSpan().SequenceEqual(verified))
+                    throw new InvalidOperationException("fichier .deps.json modifié depuis sa vérification");
+            }
+            _resolver = new AssemblyDependencyResolver(mainDll);
+        }
+
+        /// <summary>Un .deps.json produit par le SDK a toujours un objet « runtimeTarget » et un objet « targets » ; le résolveur natif plante sur un fichier qui ne les a pas.</summary>
+        internal static bool HasSdkShape(byte[] json)
+        {
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                return doc.RootElement is { ValueKind: System.Text.Json.JsonValueKind.Object } root
+                    && root.TryGetProperty("runtimeTarget", out var rt) && rt.ValueKind == System.Text.Json.JsonValueKind.Object
+                    && root.TryGetProperty("targets", out var targets) && targets.ValueKind == System.Text.Json.JsonValueKind.Object;
+            }
+            catch (System.Text.Json.JsonException) { return false; }
         }
 
         /// <summary>Charge une bibliothèque depuis les octets déjà lus et vérifiés (jamais une seconde lecture du disque).</summary>

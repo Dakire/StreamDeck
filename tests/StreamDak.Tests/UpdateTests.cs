@@ -1275,6 +1275,37 @@ public sealed class UpdateApplierTests : IDisposable
         Assert.Contains("update.log", string.Join(" ", Directory.GetFiles(plan.WorkDir).Select(Path.GetFileName)));
     }
 
+    static string Sha256Of(string path) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path)));
+
+    [Fact]
+    public async Task AnInstallerWithTheVerifiedHashIsLaunched()
+    {
+        var (plan, app, relaunched) = Arrange(0);
+        using var process = UpdateApplier.Start(plan with { ExpectedSha256 = Sha256Of(plan.Installer) });
+        Assert.True(process.WaitForExit(60_000));
+        await WaitForFile(relaunched);
+
+        Assert.Equal("nouvelle version", (await File.ReadAllTextAsync(app)).Trim());
+        Assert.False(File.Exists(Path.Combine(plan.WorkDir, UpdateApplier.FailedMarker)));
+    }
+
+    [Fact]
+    public async Task AnInstallerReplacedAfterVerificationIsNeverLaunched()
+    {
+        var (plan, app, relaunched) = Arrange(0);
+        var verified = Sha256Of(plan.Installer);
+        File.WriteAllText(plan.Installer, "@echo off\r\necho piégé> \"" + app + "\"\r\nexit /b 0\r\n");   // remplacé entre la vérification et le lancement
+        using var process = UpdateApplier.Start(plan with { ExpectedSha256 = verified });
+        Assert.True(process.WaitForExit(60_000));
+        await WaitForFile(relaunched);
+
+        Assert.Equal("ancienne version", (await File.ReadAllTextAsync(app)).Trim());            // le faux installateur n'a pas tourné
+        var marker = Path.Combine(plan.WorkDir, UpdateApplier.FailedMarker);
+        Assert.True(File.Exists(marker));
+        Assert.Contains("a changé", await File.ReadAllTextAsync(marker));
+        Assert.True(File.Exists(relaunched), "l'ancienne version doit être relancée");
+    }
+
     [Fact]
     public async Task AFailedInstallRestoresTheOldVersionRelaunchesItAndLeavesAFailureMarker()
     {

@@ -31,7 +31,7 @@ jobs:
 
       - name: Inno Setup
         shell: pwsh
-        run: choco install innosetup --yes --no-progress
+        run: choco install innosetup --version=6.7.1 --yes --no-progress
 
       - name: Version du tag
         id: version

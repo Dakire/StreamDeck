@@ -30,6 +30,14 @@ public sealed class ApiShell : IApiShell
     /// <inheritdoc/>
     public void OpenSettings() => OnUi(_windows.OpenSettings);
 
+    /// <inheritdoc/>
+    public T Read<T>(Func<T> read)
+    {
+        T? result = default;
+        OnUi(() => result = read());
+        return result!;
+    }
+
     static void OnUi(Action action)
     {
         var dispatcher = Application.Current?.Dispatcher;

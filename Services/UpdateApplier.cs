@@ -11,7 +11,8 @@ namespace StreamDak;
 /// <param name="Exe">Exécutable à relancer ensuite.</param>
 /// <param name="ProcessId">Processus de l'application en cours : l'applicateur attend qu'il se termine.</param>
 /// <param name="WorkDir">Dossier du journal, de la sauvegarde et du marqueur d'échec.</param>
-public sealed record UpdatePlan(string Installer, string InstallDir, string Exe, int ProcessId, string WorkDir);
+/// <param name="ExpectedSha256">Empreinte SHA-256 (hexadécimale) de l'installateur vérifié : le script la recontrôle juste avant de le lancer (null : pas de recontrôle).</param>
+public sealed record UpdatePlan(string Installer, string InstallDir, string Exe, int ProcessId, string WorkDir, string? ExpectedSha256 = null);
 
 /// <summary>Lance l'installation d'une mise à jour hors de l'application (qui doit se fermer pour que ses fichiers soient remplacés).</summary>
 public interface IUpdateApplier
@@ -40,7 +41,8 @@ public sealed class UpdateApplier : IUpdateApplier
             [Parameter(Mandatory)][string]$Installer,
             [Parameter(Mandatory)][string]$InstallDir,
             [Parameter(Mandatory)][string]$Exe,
-            [Parameter(Mandatory)][string]$WorkDir
+            [Parameter(Mandatory)][string]$WorkDir,
+            [string]$ExpectedSha256 = ''
         )
         $ErrorActionPreference = 'Stop'
         $log = Join-Path $WorkDir 'update.log'
@@ -58,6 +60,11 @@ public sealed class UpdateApplier : IUpdateApplier
             if ($app -and -not $app.WaitForExit(60000)) { throw "L'application ne s'est pas fermée dans la minute" }
             Log 'Sauvegarde du dossier d''installation'
             Copy-Tree $InstallDir $backup
+            # Le fichier a pu être remplacé depuis sa vérification : il doit toujours avoir l'empreinte vérifiée (l'installateur peut s'élever par UAC)
+            if ($ExpectedSha256) {
+                $actual = (Get-FileHash -LiteralPath $Installer -Algorithm SHA256).Hash
+                if ($actual -ne $ExpectedSha256) { throw 'L''installateur a changé depuis sa vérification : installation refusée' }
+            }
             Log 'Lancement de l''installateur'
             $setup = Start-Process -FilePath $Installer -ArgumentList @('/SILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS', ('/DIR="{0}"' -f $InstallDir), ('/LOG="{0}"' -f (Join-Path $WorkDir 'installer.log'))) -Wait -PassThru
             if ($setup.ExitCode -ne 0) { throw "L'installateur a échoué (code $($setup.ExitCode))" }
@@ -91,6 +98,7 @@ public sealed class UpdateApplier : IUpdateApplier
             "-ProcessId", plan.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "-Installer", plan.Installer, "-InstallDir", plan.InstallDir.TrimEnd('\\'), "-Exe", plan.Exe, "-WorkDir", plan.WorkDir.TrimEnd('\\'),
         }) psi.ArgumentList.Add(argument);
+        if (!string.IsNullOrEmpty(plan.ExpectedSha256)) { psi.ArgumentList.Add("-ExpectedSha256"); psi.ArgumentList.Add(plan.ExpectedSha256); }
         return Process.Start(psi) ?? throw new InvalidOperationException("PowerShell n'a pas démarré");
     }
 }

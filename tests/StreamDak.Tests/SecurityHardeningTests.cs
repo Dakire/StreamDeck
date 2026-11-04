@@ -322,6 +322,23 @@ public class SecurityHardeningTests
         Assert.Empty(PluginLoader.Load(dir.Path, PluginTrust.Open(dir.Path)));
     }
 
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("pas du json")]
+    [InlineData("[]")]
+    [InlineData("{\"runtimeTarget\":{}}")]
+    public void ATrustedPluginWithAMalformedDepsJsonIsIgnoredBeforeTheNativeResolverSeesIt(string deps)
+    {
+        using var dir = new TempConfigDir();
+        var folder = InstallPlugin(dir.Path, "Abime");
+        File.WriteAllText(Path.Combine(folder, "Abime.deps.json"), deps);
+        PluginTrust.Open(dir.Path).TrustAndSave([("Abime", PluginTrust.FolderHash(folder))]);   // même autorisé, le fichier doit être refusé
+        using var log = new MemoryLogSink();
+
+        Assert.Empty(PluginLoader.Load(dir.Path, PluginTrust.Open(dir.Path)));
+        Assert.True(log.Contains(".deps.json"));
+    }
+
     [Fact]
     public void ThePluginIsLoadedFromTheVerifiedBytesAndTheLoggedHashIsTheVerifiedOne()
     {

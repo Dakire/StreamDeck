@@ -258,6 +258,7 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
             });
             var installer = await _downloader.DownloadAsync(repo, release, flavor, folder, reporter, _download.Token);
 
+            var sha256 = await Task.Run(() => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(installer))));   // recontrôlée par l'applicateur avant le lancement
             ProgressText = "Vérification de la signature…";
             Progress = null;
             var refusal = await Task.Run(() => SignaturePolicy.Refusal(_verifier.Verify(installer), _verifier.Verify(_env.ExePath)));
@@ -268,7 +269,7 @@ public sealed partial class UpdateService : ObservableObject, IDisposable
             }
 
             ProgressText = "Installation : l'application va se fermer puis se relancer…";
-            _applier.Launch(new UpdatePlan(installer, _env.AppDir.TrimEnd('\\'), _env.ExePath, _env.ProcessId, _env.WorkDir));
+            _applier.Launch(new UpdatePlan(installer, _env.AppDir.TrimEnd('\\'), _env.ExePath, _env.ProcessId, _env.WorkDir, sha256));
             launched = true;
         }
         catch (OperationCanceledException) { ErrorText = "Téléchargement annulé : il reprendra où il en était."; }
