@@ -231,10 +231,30 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
             ButtonIssues.Add(new IssueViewModel(Severity.Warning, "Ce bouton n'a aucune action"));
         else if (!b.IsFolder)
             foreach (var warning in HotkeyConflicts.Warnings(b, _doc.Config, _target)) ButtonIssues.Add(new IssueViewModel(Severity.Warning, warning));
+        if (TextContrastWarning(b) is { } contrast) ButtonIssues.Add(new IssueViewModel(Severity.Warning, contrast));
         if (!string.IsNullOrEmpty(b.ImagePath) && IconStore.Resolve(b.ImagePath) is { } img && !PathProbe.Exists(img))
             ButtonIssues.Add(new IssueViewModel(Severity.Warning, "L'image du bouton est introuvable"));
         ButtonIssueCount = ButtonIssues.Count;
         foreach (var s in Steps) s.Revalidate();
+    }
+
+    /// <summary>Contraste minimal du texte d'une touche (WCAG 1.4.3, texte normal).</summary>
+    public const double MinTextContrast = 4.5;
+
+    /// <summary>
+    /// Avertissement si la couleur de texte choisie librement est trop peu contrastée avec le corps de la touche (le plus défavorable de son haut et de son bas),
+    /// ou null. Une touche à image, un widget ou un texte laissé par défaut (géré par le thème) n'est pas concerné.
+    /// </summary>
+    public static string? TextContrastWarning(DeckButton b)
+    {
+        if (b.Widget != null || !string.IsNullOrEmpty(b.ImagePath) || !Theme.TryBrush(b.TextColor, out _)) return null;
+        try
+        {
+            var (top, bottom) = Theme.TileFillColors(string.IsNullOrWhiteSpace(b.Color) ? Theme.Accent : b.Color);
+            var ratio = Math.Min(Theme.Contrast(b.TextColor!.Trim(), top), Theme.Contrast(b.TextColor.Trim(), bottom));
+            return ratio < MinTextContrast ? $"Le texte est peu lisible sur cette couleur (contraste {ratio:0.0} : 1, au moins {MinTextContrast:0.0} : 1 recommandé)" : null;
+        }
+        catch (FormatException) { return null; }   // couleur de fond invalide : signalée par ailleurs
     }
 
     static string TypeName(string type) => type switch

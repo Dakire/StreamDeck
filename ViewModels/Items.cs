@@ -147,7 +147,7 @@ public sealed class TabViewModel
     /// <summary>Nom accessible du badge seul (« 3 notifications non lues »), ou vide.</summary>
     public string BadgeAutomationName => Badge == null ? "" : NotificationBadge.Describe(Badge);
     /// <summary>Nom accessible de l'onglet.</summary>
-    public string AutomationName => Badge == null ? $"Page {Text}" : $"Page {Text}, {NotificationBadge.Describe(Badge)}";
+    public string AutomationName => (Badge == null ? $"Page {Text}" : $"Page {Text}, {NotificationBadge.Describe(Badge)}") + (IsActive ? ", page courante" : "");
 }
 
 /// <summary>Entrée du menu du deck.</summary>

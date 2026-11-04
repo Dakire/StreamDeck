@@ -248,12 +248,15 @@
                       <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <!-- Poignée : glisser pour réordonner (Alt + flèches au clavier) -->
-                        <Border x:Name="IntegrationGrip" Width="36" Height="36" Background="Transparent" Cursor="SizeAll" Focusable="True" KeyboardNavigation.IsTabStop="True" Margin="0,0,4,0"
-                                ToolTip="Glisser pour changer l'ordre (Alt + flèches au clavier)" AutomationProperties.Name="{Binding Name, StringFormat='Déplacer {0} : glisser ou Alt et flèches'}"
+                        <!-- Button (et non Border) : un Border focusable n'a pas de peer UI Automation, donc ni nom ni rôle pour un lecteur d'écran -->
+                        <Button x:Name="IntegrationGrip" Style="{StaticResource FlatButton}" Width="36" Height="36" Padding="0" Background="Transparent" Cursor="SizeAll"
+                                Focusable="True" IsTabStop="True" Margin="0,0,4,0"
+                                ToolTip="Glisser pour changer l'ordre (Alt + flèches au clavier)" AutomationProperties.Name="{Binding Name, StringFormat='Déplacer {0}'}"
+                                AutomationProperties.HelpText="Glisser, ou Alt avec les flèches haut et bas, pour changer l'ordre des intégrations"
                                 PreviewMouseLeftButtonDown="OnIntegrationGripDown" PreviewMouseMove="OnIntegrationGripMove" PreviewKeyDown="OnIntegrationGripKey"
                                 FocusVisualStyle="{StaticResource DeckFocusVisual}">
                           <ui:SymbolIcon Symbol="ReOrderDotsVertical24" FontSize="18" Foreground="{DynamicResource DeckDim}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        </Button>
                         <ui:SymbolIcon Grid.Column="1" Symbol="{Binding Symbol}" FontSize="22" Margin="0,0,10,0" VerticalAlignment="Center"/>
                         <StackPanel Grid.Column="2" VerticalAlignment="Center">
                           <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>

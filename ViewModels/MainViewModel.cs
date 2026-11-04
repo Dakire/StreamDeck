@@ -81,7 +81,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     [ObservableProperty] int totalUnread;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasStatus))] string? status;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasStatusAction))] string? statusActionText;
-    [ObservableProperty] bool statusIsError = true;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasStatusButtons))] bool statusIsError = true;
     [ObservableProperty] Brush rootBackground = Brushes.Transparent;
     [ObservableProperty] bool isFullscreen;
     [ObservableProperty] bool hasSubs;
@@ -93,6 +93,17 @@ public partial class MainViewModel : ObservableObject, INavigator
     public bool HasStatus => Status != null;
     /// <summary>true si le message propose un bouton (« Annuler » après une création).</summary>
     public bool HasStatusAction => StatusActionText != null;
+    /// <summary>true si la barre d'état porte au moins un bouton touchable : l'action proposée, ou « Fermer » (une erreur reste affichée jusqu'à ce qu'on la ferme).</summary>
+    public bool HasStatusButtons => HasStatusAction || StatusIsError;
+
+    /// <summary>
+    /// Annonce un état aux lecteurs d'écran (message de la barre d'état, résultat d'une action) : MainWindow la transmet à UI Automation
+    /// (<c>RaiseNotificationEvent</c>), car un simple <c>LiveSetting</c> sur un Border sans peer n'est jamais annoncé. Le texte est annoncé, pas affiché.
+    /// </summary>
+    public event Action<string, bool>? Announced;
+
+    /// <summary>Annonce <paramref name="text"/> ; <paramref name="urgent"/> pour une erreur (interrompt l'annonce en cours).</summary>
+    public void Announce(string text, bool urgent = false) => Announced?.Invoke(text, urgent);
     /// <summary>Texte de la barre du haut : mode, profil et chemin des dossiers ouverts.</summary>
     public string BrandText => (IsEdit ? "StreamDak  ·  Mode édition" : "StreamDak")
         + (ProfileCount > 1 ? "  ·  " + CurrentProfile.Name : "") + (PathText.Length > 0 ? "  ›  " + PathText : "");
@@ -265,8 +276,14 @@ public partial class MainViewModel : ObservableObject, INavigator
         Status = text;
         _statusTimer.Stop();
         _statusTimer.Interval = _statusAction == null ? StatusDelay : StatusActionDelay;
-        if (text != null) _statusTimer.Start();
+        // Une erreur ne disparaît pas toute seule (WCAG 2.2.1) : elle reste jusqu'à « Fermer » ou jusqu'au message suivant ; une information s'efface
+        if (text != null && !error) _statusTimer.Start();
+        OnPropertyChanged(nameof(HasStatusButtons));
+        if (text != null) Announce(text, urgent: error);
     }
+
+    [RelayCommand]
+    void DismissStatus() => SetStatus(null);
 
     [RelayCommand]
     void RunStatusAction()
@@ -895,6 +912,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             Log.Warn($"Bouton « {def.Label} »{step} : {result.Outcome} — {result.Message}");
         }
         else if (result.Message != null) SetStatus(result.Message, error: false);
+        else Announce($"{def.Label} : action réussie");
 
         await Task.Delay(result.Ok ? 600 : 1800);
         if (tile.RunState == state) tile.RunState = TileRunState.Idle;

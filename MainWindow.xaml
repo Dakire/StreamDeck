@@ -33,6 +33,7 @@
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Foreground" Value="{DynamicResource DeckTextSoft}"/>
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Style.Triggers><DataTrigger Binding="{Binding DataContext.IsEdit, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Focusable" Value="True"/><Setter Property="FocusVisualStyle" Value="{DynamicResource DeckFocusVisual}"/></DataTrigger></Style.Triggers>
     </Style>
 
     <Style x:Key="DockAccentButton" TargetType="Button" BasedOn="{StaticResource DockButton}">
@@ -94,6 +95,7 @@
       <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
       <Setter Property="Tag"><Setter.Value><CornerRadius>14</CornerRadius></Setter.Value></Setter>
       <Style.Triggers>
+        <DataTrigger Binding="{Binding DataContext.IsEdit, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Focusable" Value="True"/><Setter Property="FocusVisualStyle" Value="{DynamicResource DeckFocusVisual}"/></DataTrigger>
         <DataTrigger Binding="{Binding IsDanger}" Value="True">
           <Setter Property="Foreground" Value="{DynamicResource DeckDanger}"/>
         </DataTrigger>
@@ -192,11 +194,19 @@
             </Border.Style>
           </Border>
           <!-- Widget sélectionné : poignée de coin, à glisser sur la grille pour le redimensionner -->
-          <Border Tag="ResizeHandle" Width="44" Height="44" CornerRadius="12" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8" Cursor="SizeNWSE"
-                  Background="{DynamicResource DeckAccent}" Visibility="{Binding CanResize, Converter={StaticResource BoolVis}}"
-                  ToolTip="Glisser pour redimensionner" AutomationProperties.Name="Redimensionner le widget">
-            <ui:SymbolIcon Symbol="ArrowMaximize24" FontSize="16" Foreground="{DynamicResource DeckOnAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-          </Border>
+          <!-- AccessibleContent (peer UI Automation) et non Border : un Border n'a pas de peer, son nom accessible n'atteindrait jamais un lecteur d'écran -->
+          <controls:AccessibleContent ControlType="Thumb" Tag="ResizeHandle" Width="44" Height="44" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8" Cursor="SizeNWSE"
+                  Focusable="False" IsTabStop="False" Visibility="{Binding CanResize, Converter={StaticResource BoolVis}}"
+                  ToolTip="Glisser pour redimensionner" AutomationProperties.Name="Redimensionner le widget"
+                  AutomationProperties.HelpText="Glisser la poignée pour agrandir ou réduire le widget sur la grille">
+            <controls:AccessibleContent.Template>
+              <ControlTemplate TargetType="ContentControl">
+                <Border CornerRadius="12" Background="{DynamicResource DeckAccent}">
+                  <ui:SymbolIcon Symbol="ArrowMaximize24" FontSize="16" Foreground="{DynamicResource DeckOnAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+              </ControlTemplate>
+            </controls:AccessibleContent.Template>
+          </controls:AccessibleContent>
           <!-- Mode édition au toucher : chaque touche s'ouvre dans l'éditeur -->
           <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="8,4" CornerRadius="10"
                   Background="{DynamicResource DeckAccent}" Visibility="{Binding IsEdit, Converter={StaticResource BoolVis}}">
@@ -772,7 +782,7 @@
     </Border>
 
     <!-- ===== Grille : centrée, à la taille exacte des touches (aucune touche étirée) ===== -->
-    <Grid Grid.Row="1">
+    <Grid x:Name="MainArea" Grid.Row="1">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*"/>
         <ColumnDefinition Width="{Binding HandleSize}"/>
@@ -830,7 +840,7 @@
     </Grid>
 
     <!-- ===== Dock : pages (à gauche), sous-pages (au centre), édition et menu (à droite) ===== -->
-    <Border Grid.Row="2" Margin="{Binding L.BarMargin}" VerticalAlignment="Bottom" Padding="6"
+    <Border x:Name="Dock" Grid.Row="2" Margin="{Binding L.BarMargin}" VerticalAlignment="Bottom" Padding="6"
             Background="{DynamicResource DeckDock}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1"
             CornerRadius="{Binding L.DockRadius}">
       <Grid>
@@ -944,8 +954,8 @@
     <!-- ===== Message (erreur ou information) : au-dessus du dock, sans masquer la navigation ===== -->
     <Border Grid.Row="1" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="{Binding L.ToastMargin}"
             BorderThickness="1" CornerRadius="{Binding L.BarRadius}" Padding="{Binding L.StatusPadding}" MaxWidth="900"
-            Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}" AutomationProperties.LiveSetting="Polite"
-            IsHitTestVisible="{Binding HasStatusAction}">
+            Visibility="{Binding HasStatus, Converter={StaticResource BoolVis}}"
+            IsHitTestVisible="{Binding HasStatusButtons}">
       <Border.Style>
         <Style TargetType="Border">
           <Setter Property="Background" Value="{DynamicResource DeckStatusBg}"/>
@@ -989,11 +999,18 @@
         <Button Style="{StaticResource DockAccentButton}" Command="{Binding RunStatusActionCommand}" Content="{Binding StatusActionText}"
                 AutomationProperties.Name="{Binding StatusActionText, TargetNullValue=''}" Margin="16,0,0,0"
                 Visibility="{Binding HasStatusAction, Converter={StaticResource BoolVis}}"/>
+        <!-- Une erreur reste affichée jusqu'à ce qu'on la ferme (pas de disparition au bout de quelques secondes) : cible tactile pleine hauteur de la barre -->
+        <Button Style="{StaticResource DockButton}" Command="{Binding DismissStatusCommand}" Content="Fermer" Margin="12,0,0,0" Foreground="{DynamicResource DeckStatusText}"
+                AutomationProperties.Name="Fermer le message" Visibility="{Binding StatusIsError, Converter={StaticResource BoolVis}}"/>
       </StackPanel>
     </Border>
 
     <!-- ===== Menu : feuille tactile au-dessus du dock ; toucher en dehors la ferme ===== -->
-    <Grid Grid.RowSpan="3" Visibility="{Binding MenuOpen, Converter={StaticResource BoolVis}}">
+    <Grid x:Name="MenuSheet" Grid.RowSpan="3" Visibility="{Binding MenuOpen, Converter={StaticResource BoolVis}}"
+          AutomationProperties.Name="Menu" KeyboardNavigation.TabNavigation="Cycle">
+      <Grid.InputBindings>
+        <KeyBinding Key="Escape" Command="{Binding CloseMenuCommand}"/>
+      </Grid.InputBindings>
       <Border Background="{DynamicResource DeckScrim}">
         <Border.InputBindings>
           <MouseBinding MouseAction="LeftClick" Command="{Binding CloseMenuCommand}"/>
@@ -1028,14 +1045,24 @@
     </Border>
 
     <!-- ===== Boîte de dialogue (nom, confirmation, information) : par-dessus le deck, jamais une fenêtre séparée ===== -->
-    <Grid Grid.RowSpan="3" Visibility="{Binding HasDialog, Converter={StaticResource BoolVis}}">
+    <Grid x:Name="DialogLayer" Grid.RowSpan="3" Visibility="{Binding HasDialog, Converter={StaticResource BoolVis}}">
       <Border Background="{DynamicResource DeckScrim}"/>
-      <Border x:Name="DialogCard" DataContext="{Binding Dialog}" Background="{DynamicResource DeckPanel}" BorderBrush="{DynamicResource DeckLine}"
-              BorderThickness="1" CornerRadius="28" Padding="28,24,28,22" HorizontalAlignment="Center" VerticalAlignment="Center"
+      <!-- AccessibleContent et non Border : seul un contrôle à peer UI Automation porte le nom et le rôle de la boîte -->
+      <controls:AccessibleContent x:Name="DialogCard" ControlType="Window" DataContext="{Binding Dialog}" IsTabStop="False" Focusable="False"
+              AutomationProperties.Name="{Binding Title}" AutomationProperties.HelpText="{Binding Message}"
+              KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle"
+              HorizontalAlignment="Center" VerticalAlignment="Center"
               Width="520" MaxWidth="900">
-        <Border.InputBindings>
+        <controls:AccessibleContent.InputBindings>
           <KeyBinding Key="Escape" Command="{Binding CancelCommand}"/>
-        </Border.InputBindings>
+        </controls:AccessibleContent.InputBindings>
+        <controls:AccessibleContent.Template>
+          <ControlTemplate TargetType="ContentControl">
+            <Border Background="{DynamicResource DeckPanel}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1" CornerRadius="28" Padding="28,24,28,22">
+              <ContentPresenter/>
+            </Border>
+          </ControlTemplate>
+        </controls:AccessibleContent.Template>
         <StackPanel>
           <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource DeckText}" TextWrapping="Wrap"
                      AutomationProperties.HeadingLevel="Level1"/>
@@ -1057,7 +1084,7 @@
             <ui:Button x:Name="DialogOk" Content="{Binding ConfirmText}" Command="{Binding ConfirmCommand}" Appearance="Primary" MinHeight="52" MinWidth="120" Padding="24,0"/>
           </StackPanel>
         </StackPanel>
-      </Border>
+      </controls:AccessibleContent>
     </Grid>
   </Grid>
 </ui:FluentWindow>

@@ -100,7 +100,7 @@ public partial class TileFace : UserControl
         NotifyBadge.Margin = new Thickness(0, pad * 0.6, pad * 0.6, 0);
         NotifyText.FontSize = notifyHeight * 0.55;
         NotifyText.Text = f.Badge ?? "";
-        NotifyBadge.SetValue(System.Windows.Automation.AutomationProperties.NameProperty, notify ? f.Badge + " notifications" : string.Empty);
+        NotifyText.SetValue(System.Windows.Automation.AutomationProperties.NameProperty, notify ? f.Badge + " notifications" : string.Empty);
 
         StepBadge.Visibility = f.Steps > 1 ? Visibility.Visible : Visibility.Collapsed;
         StepBadge.Height = badge;

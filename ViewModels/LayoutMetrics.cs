@@ -193,7 +193,7 @@ public sealed class LayoutMetrics
             TabMinW = barH * 1.9, TabMargin = new Thickness(0, 0, 4, 0), TabPadding = new Thickness(barH * 0.45, 0, barH * 0.45, 0),
             ChipMargin = new Thickness(0, 0, 4, 0), ChipPadding = new Thickness(barH * 0.35, 0, barH * 0.35, 0),
             StatusPadding = new Thickness(barH * 0.35, barH * 0.18, barH * 0.4, barH * 0.18), SubTextMargin = new Thickness(0, 0, barH * 0.2, 0),
-            DotSize = Math.Max(8, barH * 0.14), DotActiveW = Math.Max(22, barH * 0.4),
+            DotSize = Math.Max(8, barH * 0.14), DotActiveW = Math.Max(28, barH * 0.4),
             ToastMargin = new Thickness(gap, 0, gap, barH + DockInset * 2 + gap * 2),
 
             MenuRowH = rowH, MenuFont = fs, MenuIconFont = fs * 1.15, MenuIconW = rowH * 0.9,
