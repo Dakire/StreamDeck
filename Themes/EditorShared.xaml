@@ -28,13 +28,13 @@
             <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
               <ui:Button Style="{StaticResource IconButton}" Icon="{ui:SymbolIcon ArrowUp24}" Command="{Binding MoveUpCommand}"
-                         AutomationProperties.Name="Monter l'étape" ToolTip="Monter l'étape"
+                         AutomationProperties.Name="{Binding Title, StringFormat='{}{0} : monter'}" ToolTip="Monter l'étape"
                          Visibility="{Binding CanMoveUp, Converter={StaticResource BoolVis}}"/>
               <ui:Button Style="{StaticResource IconButton}" Icon="{ui:SymbolIcon ArrowDown24}" Command="{Binding MoveDownCommand}"
-                         AutomationProperties.Name="Descendre l'étape" ToolTip="Descendre l'étape"
+                         AutomationProperties.Name="{Binding Title, StringFormat='{}{0} : descendre'}" ToolTip="Descendre l'étape"
                          Visibility="{Binding CanMoveDown, Converter={StaticResource BoolVis}}"/>
               <ui:Button Style="{StaticResource IconButton}" Icon="{ui:SymbolIcon Delete24}" Command="{Binding RemoveCommand}"
-                         AutomationProperties.Name="Supprimer l'étape" ToolTip="Supprimer l'étape"
+                         AutomationProperties.Name="{Binding Title, StringFormat='{}{0} : supprimer'}" ToolTip="Supprimer l'étape"
                          Visibility="{Binding CanRemove, Converter={StaticResource BoolVis}}"/>
             </StackPanel>
           </Grid>

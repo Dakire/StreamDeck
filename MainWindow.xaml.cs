@@ -73,7 +73,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         LocationChanged += (_, _) => SyncFullFlag();
         StateChanged += (_, _) => { _vm.NotifyWindowState(); _vm.SetActive(IsVisible && WindowState != WindowState.Minimized); };
         IsVisibleChanged += (_, _) => _vm.SetActive(IsVisible && WindowState != WindowState.Minimized);
-        _vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MainViewModel.Dialog)) FocusDialog(); };
+        _vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MainViewModel.Dialog)) OnDialogChanged(); };
+        _vm.Announced += Announce;
         Closed += (_, _) =>
         {
             _vm.StopWidgets();
@@ -81,6 +82,31 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
             // Les cadres web rangés vivent plus longtemps que leurs vues : fermer le deck les libère (après le déchargement des vues)
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, Controls.WebFramePool.Clear);
         };   // une fenêtre fermée en pleine édition ne laisse pas le toucher détourné
+    }
+
+    /// <summary>
+    /// Annonce un état aux lecteurs d'écran par une notification UI Automation de la fenêtre (le <c>LiveSetting</c> d'un Border sans peer n'est jamais lu).
+    /// Sans client d'accessibilité à l'écoute, l'appel ne coûte rien.
+    /// </summary>
+    void Announce(string text, bool urgent)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return;
+        System.Windows.Automation.Peers.UIElementAutomationPeer.CreatePeerForElement(this)?.RaiseNotificationEvent(
+            System.Windows.Automation.AutomationNotificationKind.ActionCompleted,
+            urgent ? System.Windows.Automation.AutomationNotificationProcessing.ImportantMostRecent : System.Windows.Automation.AutomationNotificationProcessing.MostRecent,
+            text, "StreamDak.Status");
+    }
+
+    /// <summary>
+    /// Une boîte de dialogue s'ouvre ou se ferme : tant qu'elle est ouverte, le reste du deck (barre, grille, panneaux d'édition, dock) n'est atteignable
+    /// ni au clavier ni par un lecteur d'écran ; l'ouverture est annoncée (titre et message).
+    /// </summary>
+    void OnDialogChanged()
+    {
+        bool open = _vm.Dialog != null;
+        DragBar.IsEnabled = MainArea.IsEnabled = Dock.IsEnabled = !open;
+        if (_vm.Dialog is { } box) Announce($"{box.Title}. {box.Message}", urgent: true);
+        FocusDialog();
     }
 
     /// <summary>Boîte de dialogue ouverte : le champ de saisie (texte sélectionné) ou le bouton de validation reçoit le focus.</summary>

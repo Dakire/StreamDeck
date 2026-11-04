@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using StreamDak.Controls;
 using StreamDak.ViewModels;
 using Xunit;
 
@@ -525,7 +524,7 @@ ulle\part.exe" } } });
         _host.Run(() =>
         {
             vm.SelectIndex(0);
-            var occupied = Headers(ContextMenuFactory.Build(vm.BuildSlotMenu(vm.Slots[0])));
+            var occupied = Headers(vm.BuildSlotMenu(vm.Slots[0]));
             foreach (var h in new[] { "Modifier le titre", "Copier", "Couper", "Coller", "Dupliquer", "Réinitialiser", "Supprimer" })
                 Assert.Contains(h, occupied.Keys);
             foreach (var h in new[] { "Configurer l'action", "Modifier l'icône", "Déplacer le bouton", "Ajouter une action", "Créer un dossier", "Afficher les propriétés" })
@@ -534,29 +533,29 @@ ulle\part.exe" } } });
             Assert.False(occupied["Coller"]);                           // presse-papiers vide
 
             vm.CopyCommand.Execute(null);
-            Assert.True(Headers(ContextMenuFactory.Build(vm.BuildSlotMenu(vm.Slots[0])))["Coller"]);
+            Assert.True(Headers(vm.BuildSlotMenu(vm.Slots[0]))["Coller"]);
 
             vm.SelectIndex(12);
-            var empty = Headers(ContextMenuFactory.Build(vm.BuildSlotMenu(vm.Slots[12])));
+            var empty = Headers(vm.BuildSlotMenu(vm.Slots[12]));
             Assert.Equal(new[] { "Coller", "Créer un dossier" }, empty.Keys.OrderBy(k => k));   // case vide : seulement ce qui a un sens
             Assert.True(empty["Créer un dossier"]);
             Assert.True(empty["Coller"]);
 
-            var profile = Headers(ContextMenuFactory.Build(vm.BuildProfileMenu("Principal")));
+            var profile = Headers(vm.BuildProfileMenu("Principal"));
             foreach (var h in new[] { "Renommer", "Dupliquer", "Exporter…", "Importer…", "Supprimer", "Définir comme profil actif" })
                 Assert.Contains(h, profile.Keys);
             Assert.False(profile["Supprimer"]);                          // dernier profil
             Assert.False(profile["Définir comme profil actif"]);         // déjà actif
 
             var cat = vm.Catalog.Sections.SelectMany(s => s.Items).First();
-            var catMenu = Headers(ContextMenuFactory.Build(vm.BuildCatalogMenu(cat)));
+            var catMenu = Headers(vm.BuildCatalogMenu(cat));
             foreach (var h in new[] { "Ajouter aux favoris", "Afficher les informations", "Configurer" })
                 Assert.Contains(h, catMenu.Keys);
         });
     }
 
-    static Dictionary<string, bool> Headers(ContextMenu m) =>
-        m.Items.OfType<MenuItem>().ToDictionary(i => (string)i.Header, i => i.IsEnabled);
+    static Dictionary<string, bool> Headers(IEnumerable<MenuItemSpec> specs) =>
+        specs.Where(s => !s.IsSeparator).ToDictionary(s => s.Header, s => s.Enabled);
 
     [Fact]
     public async Task ProfileAndPageManagementThroughTheViewModel()

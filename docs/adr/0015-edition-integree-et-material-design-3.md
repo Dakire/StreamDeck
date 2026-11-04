@@ -38,3 +38,4 @@ le focus clavier et un toucher traité par WPF.
 - La couleur source est fixe : choisir une couleur d'accent demanderait une clé de `config.json` (non ajoutée, voir le rapport).
 - Gain mesuré par la suppression des ombres : rendu complet de 32 touches 177 → 17 ms hors écran, mémoire privée de l'application 105 → 94 Mo.
 - La typographie MD3 (échelle de tailles) n'est pas appliquée : `DesignSystemTests` fige l'échelle actuelle.
+- **Focus clavier en mode édition (note, ADR 0031)** : hors édition, les touches, le dock et les lignes de menu restent non focusables (`Focusable=False`) : le deck ne prend jamais le focus. En mode édition seulement, un `DataTrigger` sur `IsEdit` les rend focusables, avec l'anneau `DeckFocusVisual`, pour qu'un clavier ou un lecteur d'écran les atteigne ; `WS_EX_NOACTIVATE` et `WM_MOUSEACTIVATE` ne sont pas touchés (ils sont déjà suspendus pendant l'édition). Échap ferme la feuille de menu quand le focus y est.

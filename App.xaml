@@ -68,6 +68,7 @@
           </ControlTemplate>
         </Setter.Value>
       </Setter>
+      <Style.Triggers><DataTrigger Binding="{Binding DataContext.IsEdit, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Focusable" Value="True"/><Setter Property="FocusVisualStyle" Value="{DynamicResource DeckFocusVisual}"/></DataTrigger></Style.Triggers>
     </Style>
 
     <!-- Même touche sans animation (réduction des animations) : l'appui est indiqué par un voile et un contour épais -->
@@ -100,6 +101,7 @@
           </ControlTemplate>
         </Setter.Value>
       </Setter>
+      <Style.Triggers><DataTrigger Binding="{Binding DataContext.IsEdit, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Focusable" Value="True"/><Setter Property="FocusVisualStyle" Value="{DynamicResource DeckFocusVisual}"/></DataTrigger></Style.Triggers>
     </Style>
 
     <!-- Style effectif des boutons du deck : Motion le remplace par la variante statique si les animations sont coupées -->
@@ -157,6 +159,7 @@
           </ControlTemplate>
         </Setter.Value>
       </Setter>
+      <Style.Triggers><DataTrigger Binding="{Binding DataContext.IsEdit, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"><Setter Property="Focusable" Value="True"/><Setter Property="FocusVisualStyle" Value="{DynamicResource DeckFocusVisual}"/></DataTrigger></Style.Triggers>
     </Style>
 
     <!-- ===== Éditeur : styles partagés ===== -->

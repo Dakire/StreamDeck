@@ -6,7 +6,7 @@ namespace StreamDak.ViewModels;
 
 /// <summary>
 /// Description d'un menu contextuel, indépendante de WPF : les ViewModels décrivent le menu selon l'état courant,
-/// <c>ContextMenuFactory</c> le transforme en vrai menu. Un seul composant pour les cases, profils, pages et catalogue.
+/// la feuille de menu du deck l'affiche. Un seul composant pour les cases, profils, pages et catalogue.
 /// </summary>
 public sealed record MenuItemSpec(
     string Header,

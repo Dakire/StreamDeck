@@ -35,5 +35,6 @@ effacée : elle passe au statut « Remplacée par … ».
 | [0028](0028-liste-d-autorisation-des-plugins.md) | Liste d'autorisation des plugins par empreinte | Acceptée |
 | [0029](0029-webview2-sans-pont-de-messages.md) | WebView2 : aucun pont page → application dans les cadres visibles, coût réduit autrement | Acceptée |
 | [0030](0030-durcissement-import-web-http-et-plugins.md) | Durcissement : droits des pages web importées, import d'intégrations, images, redirections HTTP, empreintes des plugins | Acceptée |
+| [0031](0031-accessibilite-lecteurs-d-ecran-et-contraste-eleve.md) | Accessibilité : annonces pour lecteurs d'écran, contraste élevé, erreurs persistantes | Acceptée |
 
 Modèle d'une nouvelle décision : contexte, décision, conséquences, statut et date.
