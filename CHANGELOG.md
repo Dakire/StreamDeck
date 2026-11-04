@@ -7,8 +7,14 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 ### Ajouté
 - **Sauvegardes** (Paramètres › Sauvegardes) : nombre de sauvegardes conservées réglable de 1 à 100 (clé facultative `BackupLimit`, 15 par défaut), bouton **Supprimer** par sauvegarde,
   **Supprimer l'excédent** et **Tout supprimer** (avec confirmation). La limite ne supprime rien pendant la saisie : elle s'applique à la sauvegarde suivante.
+- **Accessibilité** (ADR 0031) : annonces pour lecteurs d'écran (statut, succès ou échec d'une action, ouverture d'un dialogue), thème **contraste élevé** de Windows suivi en direct, dialogue nommé avec focus cyclique
+  et deck désactivé derrière lui, échap ferme le menu, poignée de réordonnancement des intégrations en vrai bouton, noms d'étapes indexés, erreurs de saisie liées à leur champ, avertissement de contraste sur les couleurs libres d'un bouton.
+  En mode édition seulement, touches, dock et menus prennent le focus clavier (le deck hors édition reste sans focus).
+- **Sécurité** (ADR 0030) : droits caméra, micro et notifications par hôte exact ; un widget ou une page web importés sont interrogés par WebView2 sans mémorisation ; import de configuration : les adresses Hue et OBS modifiées
+  désactivent l'intégration ; images contrôlées avant décodage ; les actions HTTP ne suivent plus les redirections ; empreinte des plugins unique, `deps.json` inclus.
 
 ### Corrigé
+- Une erreur d'action reste affichée jusqu'à « Fermer » (elle disparaissait en 5 s).
 - Appui long fantôme sur le deck quand Windows annule un toucher (l'éditeur s'ouvrait doigt levé).
 - **Configuration invalide au démarrage** : reprise sur la dernière sauvegarde valide (au lieu d'un deck vide), les copies `config.invalide-*` ne s'accumulent plus (5 au plus, sans doublon).
 - **Erreur fatale** : le journal est vidé avant la fin du processus (les dernières lignes étaient perdues avec l'écriture asynchrone).

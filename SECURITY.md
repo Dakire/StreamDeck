@@ -1,6 +1,6 @@
 # Sécurité
 
-Audit du 26 octobre 2026 (branche `main`, 662 tests au départ, 1 002 à l'arrivée). Ce document décrit le modèle de menace, les résultats de l'audit,
+Audit du 26 octobre 2026, complété le 4 novembre 2026 (voir « Audit 3 »). Les chiffres de tests des audits sont datés : la suite compte aujourd'hui plus de 1 400 tests. Ce document décrit le modèle de menace, les résultats de l'audit,
 ce qui a été corrigé et ce qui reste à surveiller. Pour signaler une faille : ouvrir une alerte de sécurité privée sur le dépôt GitHub
 (Security › Report a vulnerability), pas une issue publique.
 
@@ -68,6 +68,11 @@ seulement avec un nom de hachage valide et une signature PNG. Types d'action inc
 **Désérialisation** : uniquement `System.Text.Json` sur des types concrets ; aucun `BinaryFormatter`, `TypeNameHandling`, `$type` ni
 polymorphisme (recherche dans tout le code : aucune occurrence).
 
+**Confirmation d'import** : elle compte comme « à risque » les actions `launch`, `script`, `text` (injection de frappes), `hotkey` avec la touche Windows (Win+R) et `url` hors http, https et mailto
+(un nom de programme ou un protocole passe par `ShellExecute`). Un profil piégé ne peut donc plus exécuter du code sans alerte (`ActionValidator.IsRisky`).
+**Intégrations à secret** : un import de configuration qui change l'adresse de Hue ou d'OBS désactive l'intégration et la remet à l'adresse actuelle (la clé Hue ou le défi OBS ne partent pas vers un hôte choisi par le fichier), et la confirmation le signale (ADR 0030).
+**Images** : les dimensions sont lues sans décoder et refusées au-delà de `MaxPixels` avant toute allocation (`IconStore.DecodeLargest`).
+
 ### Réseau
 
 Aucune télémétrie, aucun suivi d'usage (recherche de `telemetry`, `analytics`, `sentry`, `appcenter`, `ApplicationInsights` : aucune occurrence). Une **vérification de mise à jour**
@@ -90,11 +95,11 @@ Aucun autre `ServerCertificateCustomValidationCallback`.
 
 | Point | Constat |
 |---|---|
-| `Assembly.Load*` | seulement dans `PluginLoader` : DLL posées par l'utilisateur dans `%APPDATA%\StreamDak\plugins\<Nom>\<Nom>.dll`, un contexte de chargement par plugin. **Liste d'autorisation** `plugins\trusted.json` : l'empreinte SHA-256 du dossier est vérifiée **avant** le chargement, un plugin non listé ou modifié n'est pas chargé (ADR 0028). C'est du code de confiance : ne copier que des plugins de sources connues |
+| `Assembly.Load*` | seulement dans `PluginLoader` : DLL posées par l'utilisateur dans `%APPDATA%\StreamDak\plugins\<Nom>\<Nom>.dll`, un contexte de chargement par plugin. **Liste d'autorisation** `plugins\trusted.json` : l'empreinte SHA-256 des `*.dll` et du `.deps.json` est vérifiée **avant** le chargement, un plugin non listé ou modifié n'est pas chargé (ADR 0028) ; les octets hachés sont ceux qui sont chargés (`LoadFromStream`, ADR 0030). C'est du code de confiance : ne copier que des plugins de sources connues |
 | `Process.Start` | 8 sites : `WindowsPlatform.Open`/`RunScript` (actions), `GoogleIntegration` (ouvre l'URL d'autorisation dans le navigateur), `SettingsViewModel` (dossier, fichier de configuration, journal), mise à jour (script fixe). Aucun ne reçoit de texte venant du réseau |
 | Téléchargement puis exécution | **l'installateur d'une mise à jour**, jamais sans clic de l'utilisateur, après vérification SHA-256 et signature (voir « Mises à jour ») ; aucun autre |
 | API locale | canal nommé `PipeOptions.CurrentUserOnly` (aucun port TCP), JSON par ligne, commandes limitées (voir `docs/local-api.md`) |
-| WebView2 | profil isolé, aucun objet hôte, **cadres visibles : aucun message page → application** (ADR 0029) ; micro, caméra et notifications seulement pour les pages https du même site que l'adresse saisie (ADR 0018). Les sessions cachées de badges n'acceptent qu'un message validé (type, hôte, entier borné), voir ci-dessous |
+| WebView2 | profil isolé, aucun objet hôte, **cadres visibles : aucun message page → application** (ADR 0029) ; micro, caméra et notifications seulement pour l'hôte saisi (ou un sous-domaine), en https (ADR 0018 et 0030) ; une page venue d'un import n'obtient rien sans que WebView2 interroge l'utilisateur. Les sessions cachées de badges n'acceptent qu'un message validé (type, hôte, entier borné), voir ci-dessous |
 
 ### Mises à jour (ADR 0021)
 
@@ -135,6 +140,11 @@ Aucun paquet suspect (pas de nom approchant d'un paquet connu, pas de paquet inu
 `Directory.Build.props` : `Nullable` activé, `AnalysisLevel=latest-recommended`, **`AnalysisModeSecurity=All`** (toutes les règles de sécurité
 CA2xxx, CA3xxx, CA5xxx en erreur, `TreatWarningsAsErrors`), style appliqué à la compilation. Résultat : 0 avertissement.
 
+### Audit 3 (4 novembre 2026)
+
+Corrigé : confirmation d'import étendue, hôtes Hue et OBS à l'import, droits des pages web par hôte exact, images décodées après contrôle de taille, redirections HTTP non suivies
+(les en-têtes personnalisés et le corps ne partent plus vers un autre hôte), empreinte des plugins unique et couvrant `deps.json`. Détail : ADR 0030.
+
 ## Reste à traiter
 
 1. **Signature de code** : l'exécutable et l'installateur ne sont pas signés (SmartScreen avertira). Le script de signature est prêt, il faut un certificat.
@@ -144,3 +154,9 @@ CA2xxx, CA3xxx, CA5xxx en erreur, `TreatWarningsAsErrors`), style appliqué à l
 5. **Journal** : `LogRedactor` est un filet par motifs ; il ne couvre ni les toasts ni les réponses de l'API locale. Le diagnostic copié le traverse.
 6. **Non vérifié ici** : le comportement de DPAPI sur un profil itinérant ou après changement de mot de passe Windows (le secret devient illisible
    et est ignoré avec un avertissement, sans valeur journalisée : il faut le ressaisir).
+
+7. **Installateur de mise à jour** : le SHA-256 et la signature sont vérifiés, puis le script PowerShell lance le fichier après la fermeture de l'application sans le revérifier. Un processus qui tourne déjà avec les droits
+   de l'utilisateur pourrait le remplacer entre-temps ; l'élévation (UAC, installation pour tous les utilisateurs) reste visible. À traiter : passer le SHA-256 attendu au script et le revérifier juste avant `Start-Process`.
+8. **`.deps.json` des plugins** : le résolveur natif du runtime le relit sur le disque ; un plugin déjà autorisé dont ce fichier serait corrompu n'a pas été éprouvé (un plantage a été vu une fois en test avant un JSON valide, non isolé).
+9. **Pages Google** : l'hôte exact est exigé ; `calendar.google.com` n'accorde plus ses droits à `meet.google.com` (saisir `google.com` pour couvrir les deux). Les hôtes importés restent marqués sans bouton de confirmation.
+10. **API locale** : le document y est lu depuis un thread du pool sans synchronisation (erreur intermittente possible sous modification simultanée), et la boucle d'acceptation ne rattrape que `IOException`.
