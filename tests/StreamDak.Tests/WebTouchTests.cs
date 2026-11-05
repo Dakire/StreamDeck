@@ -79,7 +79,8 @@ public class WebTouchTests
         limit = DateTime.UtcNow.AddSeconds(10);
         while (await Eval(web, "typeof window.L") != "\"object\"" && DateTime.UtcNow < limit) await Task.Delay(100);
         // Le compositeur de la page doit avoir rendu au moins deux images avant le premier doigt : sinon le geste est lu avant que le défilement existe
-        await Eval(web, "window.__frames=0;(function f(){window.__frames++;requestAnimationFrame(f)})()");
+        // (la boucle s'arrête d'elle-même après 3 images : le cadre est rangé vivant par le pool, une boucle infinie userait le processeur des tests suivants)
+        await Eval(web, "window.__frames=0;(function f(){if(++window.__frames<3)requestAnimationFrame(f)})()");
         limit = DateTime.UtcNow.AddSeconds(10);
         while (int.Parse(await Eval(web, "window.__frames")) < 3 && DateTime.UtcNow < limit) await Task.Delay(50);
         return (window, vm, web, listener);
