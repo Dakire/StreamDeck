@@ -11,7 +11,8 @@ public sealed record Palette(
     string Dim, string Text, string TextSoft, string Placeholder, string Accent, string AccentText, string Danger, string Scrim,
     string Input, string EditorBg, string Focus, string Success, string StatusBg, string StatusLine, string StatusText,
     string OnAccent, string AccentContainer, string OnAccentContainer, string SecondaryContainer, string OnSecondaryContainer,
-    string TileTop, string TileBottom, string Badge, string OnBadge);
+    string TileTop, string TileBottom, string Badge, string OnBadge,
+    string Hover = "#14FFFFFF", string Pressed = "#24FFFFFF", string SuccessContainer = "#173D2E");
 
 /// <summary>Palette claire / sombre de l'application ; sombre par défaut pour les nouvelles configurations, « système » suit Windows.</summary>
 public static class Theme
@@ -26,13 +27,13 @@ public static class Theme
     // avec la couleur à poser dessus (OnAccent), conteneurs primaire et secondaire pour les éléments sélectionnés.
     // AccentText : l'accent utilisé comme texte ou contour sur un fond de panneau.
     /// <summary>Palette sombre (thème par défaut des nouvelles configurations).</summary>
-    public static readonly Palette DarkPalette = Build(MaterialScheme.Create(Seed, dark: true), dark: true, amoled: false);
+    public static readonly Palette DarkPalette = Layered(Build(MaterialScheme.Create(Seed, dark: true), dark: true, amoled: false), dark: true, amoled: false);
 
     /// <summary>Palette AMOLED : fond noir pur (pixels éteints sur un écran OLED), surfaces à peine plus claires.</summary>
-    public static readonly Palette AmoledPalette = Build(MaterialScheme.Create(Seed, dark: true, amoled: true), dark: true, amoled: true);
+    public static readonly Palette AmoledPalette = Layered(Build(MaterialScheme.Create(Seed, dark: true, amoled: true), dark: true, amoled: true), dark: true, amoled: true);
 
     /// <summary>Palette claire.</summary>
-    public static readonly Palette LightPalette = Build(MaterialScheme.Create(Seed, dark: false), dark: false, amoled: false);
+    public static readonly Palette LightPalette = Layered(Build(MaterialScheme.Create(Seed, dark: false), dark: false, amoled: false), dark: false, amoled: false);
 
     /// <summary>
     /// Palette « TIXIA » : orange en accent, fonds sombres chauds (bruns), texte crème. Le texte posé sur l'orange est brun presque noir (contraste 7 : 1).
@@ -44,7 +45,8 @@ public static class Theme
         Accent: "#FF7A1A", AccentText: "#FF8F3D", Danger: "#FF8A80", Scrim: "#B3000000",
         Input: "#140D08", EditorBg: "#1A120C", Focus: "#FFF3E8", Success: "#5CD6A0", StatusBg: "#4A1F1A", StatusLine: "#8A4A40", StatusText: "#FFDAD4",
         OnAccent: "#2B1100", AccentContainer: "#5A2A0A", OnAccentContainer: "#FFDCC2", SecondaryContainer: "#4A3426", OnSecondaryContainer: "#F5DCC8",
-        TileTop: "#382A21", TileBottom: "#2D211A", Badge: "#D13438", OnBadge: "#FFFFFF");
+        TileTop: "#382A21", TileBottom: "#2D211A", Badge: "#D13438", OnBadge: "#FFFFFF",
+        Hover: "#14F7EDE4", Pressed: "#24F7EDE4", SuccessContainer: "#1F3A2E");
 
     /// <summary>Associe les rôles Material Design 3 aux couleurs nommées de l'application.</summary>
     static Palette Build(MaterialScheme m, bool dark, bool amoled) => new(
@@ -61,6 +63,31 @@ public static class Theme
         TileTop: dark ? m.SurfaceContainerHighest : m.SurfaceContainerLowest, TileBottom: dark ? m.SurfaceContainerHigh : m.SurfaceContainerLow,
         // Pastille de notifications : un rouge franc dans les deux thèmes (l'erreur Material est rose en sombre) avec du blanc dessus, contraste testé
         Badge: dark ? "#D13438" : "#B42318", OnBadge: "#FFFFFF");
+
+    /// <summary>
+    /// Hiérarchie des surfaces : fond, panneau, surface, surface haute, séparés par des marches régulières (≥ 1,08 : 1 de contraste) pour que chaque niveau se distingue
+    /// à l'écran, même en clair et en AMOLED où les tons Material sont presque confondus. Les touches se détachent du fond d'au moins 1,10 : 1. Couches d'état :
+    /// survol et appui sont des voiles de la couleur du texte (clair sur sombre, sombre sur clair) ; le conteneur de succès est un vert très atténué.
+    /// </summary>
+    static Palette Layered(Palette p, bool dark, bool amoled)
+    {
+        var text = p.Text;
+        var window = dark ? p.Window : Mix(p.Window, text, 0.025);
+        var (a, b, c) = amoled ? (0.075, 0.13, 0.185) : dark ? (0.055, 0.105, 0.155) : (0.05, 0.095, 0.14);
+        var panel = Mix(window, text, a);
+        var surface = Mix(window, text, b);
+        var hi = Mix(window, text, c);
+        string veil(int alpha) => $"#{alpha:X2}{text[1..]}";
+        return p with
+        {
+            Danger = dark ? p.Danger : Mix(p.Danger, "#000000", 0.22),   // en clair, les surfaces plus marquées demandent un rouge plus profond pour garder 4,5 : 1
+            Window = window, EditorBg = window, Bar = panel, Panel = panel, Surface = surface, SurfaceHi = hi,
+            Input = dark ? Mix(window, "#000000", 0.35) : "#FFFFFF",
+            TileTop = dark ? hi : "#FFFFFF", TileBottom = dark ? surface : Mix("#FFFFFF", window, 0.5),
+            Hover = veil(dark ? 0x14 : 0x0F), Pressed = veil(dark ? 0x24 : 0x1C),
+            SuccessContainer = Mix(window, p.Success, dark ? 0.2 : 0.14),
+        };
+    }
 
     /// <summary>Fond des touches avant teinte (haut, bas) : un cran au-dessus des surfaces pour détacher la grille du fond.</summary>
     static (string Top, string Bottom) TileBase => (Current.TileTop, Current.TileBottom);
@@ -206,6 +233,9 @@ public static class Theme
         r["DeckInput"] = B(p.Input);
         r["DeckFocus"] = B(p.Focus);
         r["DeckSuccess"] = B(p.Success);
+        r["DeckSuccessContainer"] = B(p.SuccessContainer);
+        r["DeckHover"] = B(p.Hover);
+        r["DeckPressed"] = B(p.Pressed);
         r["DeckStatusBg"] = B(p.StatusBg);
         r["DeckStatusLine"] = B(p.StatusLine);
         r["DeckStatusText"] = B(p.StatusText);

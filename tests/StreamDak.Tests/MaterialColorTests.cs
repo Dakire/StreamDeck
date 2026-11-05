@@ -84,7 +84,7 @@ public class MaterialColorTests
         Assert.Equal("#000000", Theme.AmoledPalette.Window);
         Assert.NotEqual("#000000", Theme.DarkPalette.Window);
         Assert.True(Theme.Luminance(Theme.DarkPalette.Window) < 0.02);   // reste très sombre
-        Assert.True(Theme.Luminance(Theme.LightPalette.Window) > 0.9);
+        Assert.True(Theme.Luminance(Theme.LightPalette.Window) > 0.85);   // un cran sous le blanc : les touches blanches s'en détachent
     }
 
     [Fact]
