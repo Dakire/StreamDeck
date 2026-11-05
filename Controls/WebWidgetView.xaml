@@ -9,9 +9,22 @@
     Hors interaction (modes passif et tactile), le cadre est désactivé : la souris et le doigt arrivent aux éléments WPF posés au-dessus (invisibles, car le
     cadre est dessiné par-dessus), le bouton transparent du mode tactile ou la surface inerte du mode passif.
   -->
-  <Border Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}" BorderThickness="1" AutomationProperties.Name="{Binding AccessibleName}"
+  <Border Background="{Binding Face.Background}" AutomationProperties.Name="{Binding AccessibleName}"
           Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
           CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+    <Border.Style>
+      <Style TargetType="Border">
+        <Setter Property="BorderBrush" Value="{Binding Face.Border}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Style.Triggers>
+          <!-- Page active : liseré d'accent autour de la tuile (hors de la fenêtre du cadre, que rien ne peut recouvrir) -->
+          <DataTrigger Binding="{Binding ShowActiveRim}" Value="True">
+            <Setter Property="BorderBrush" Value="{DynamicResource DeckAccent}"/>
+            <Setter Property="BorderThickness" Value="3"/>
+          </DataTrigger>
+        </Style.Triggers>
+      </Style>
+    </Border.Style>
     <Grid>
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>

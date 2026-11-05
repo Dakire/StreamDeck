@@ -417,6 +417,10 @@ public partial class MainViewModel : ObservableObject, INavigator
         _grid.Auto = LayoutMetrics.GridSize(_rawW, _rawH, _doc.Config);
         L = m;
 
+        // Changement de profil, de page, de dossier ou de sous-page : aucune page web ne reste active (ADR 0032)
+        string navPlace = $"{CurrentProfile.Name}|{_page}|{string.Join('/', _folder)}|{_sub}";
+        if (navPlace != _lastWhere) { _lastWhere = navPlace; EndWebInteractions(); }
+
         var view = BuildView();
         int subs = _folder.Count == 0 && CurrentPage.IsWeb ? 1 : SubPages(view.Count);   // une page web n'a ni sous-pages ni grille
         _sub = Math.Clamp(_sub, 0, subs - 1);
@@ -800,6 +804,15 @@ public partial class MainViewModel : ObservableObject, INavigator
     void StopTyping()
     {
         if (_typing) SetTyping(null, false);
+    }
+
+    string _lastWhere = "";
+
+    /// <summary>Remet toutes les pages web au repos (toucher hors de la page, changement de page ou de dossier). Sans effet sur les pages toujours interactives.</summary>
+    public void EndWebInteractions(WebWidgetViewModel? except = null)
+    {
+        foreach (var w in Tiles.OfType<WebWidgetViewModel>())
+            if (!ReferenceEquals(w, except) && w.IsInteracting) w.EndInteraction();
     }
 
     /// <summary>Le cadre d'une page web est une fenêtre Win32 : un menu ou une boîte de dialogue ouvert le masque (la page garde son état).</summary>

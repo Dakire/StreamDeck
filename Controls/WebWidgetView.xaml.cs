@@ -326,9 +326,9 @@ public partial class WebWidgetView : UserControl
             // Délai maximal : une page figée ne doit pas garder le relevé « en cours » pour toujours (la fin d'interaction ne se déclencherait plus)
             var (inField, idleMs) = ParsePoll(await core.ExecuteScriptAsync(FocusedFieldScript).WaitAsync(TimeSpan.FromSeconds(2)));
             if (idleMs is { } idle && idle < Environment.TickCount64 - _lastGesture) _lastGesture = Environment.TickCount64 - idle;
-            if (!vm.IsAlwaysInteractive && !vm.IsTyping && Environment.TickCount64 - _lastGesture > WebInputModes.IdleExit.TotalMilliseconds)
+            if (!vm.IsAlwaysInteractive && !vm.IsTyping && Environment.TickCount64 - _lastGesture > vm.IdleExit.TotalMilliseconds)
             {
-                Log.Info("Widget page web : interaction terminée (30 s sans geste)");
+                Log.Info($"Widget page web : interaction terminée ({vm.IdleExit.TotalSeconds:0} s sans geste)");
                 vm.EndInteraction();
                 return;
             }

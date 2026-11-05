@@ -62,6 +62,30 @@ public class WebInputModeCoreTests
     }
 
     [Fact]
+    public void AnActivatedPageShowsTheAccentRimAndAnInteractiveOneNever()
+    {
+        var vm = Tile(WebInputModes.Touch);
+        Assert.False(vm.ShowActiveRim);
+        var changed = new System.Collections.Generic.List<string?>();
+        vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        vm.InteractCommand.Execute(null);
+        Assert.True(vm.ShowActiveRim);
+        Assert.Contains(nameof(WebWidgetViewModel.ShowActiveRim), changed);
+        vm.Suspended = true;                 // un menu ouvert masque le cadre : pas de liseré sans page
+        Assert.False(vm.ShowActiveRim);
+        Assert.False(Tile(WebInputModes.Interactive).ShowActiveRim);
+    }
+
+    [Fact]
+    public void TheIdleDelayIsPerTileAndThirtySecondsByDefault()
+    {
+        var vm = Tile(WebInputModes.Touch);
+        Assert.Equal(TimeSpan.FromSeconds(30), vm.IdleExit);
+        vm.IdleExit = TimeSpan.FromSeconds(10);
+        Assert.Equal(TimeSpan.FromSeconds(10), vm.IdleExit);
+    }
+
+    [Fact]
     public void EndingTheInteractionGivesTheKeyboardBack()
     {
         var vm = Tile(WebInputModes.Passive);
