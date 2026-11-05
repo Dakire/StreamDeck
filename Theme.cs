@@ -33,6 +33,18 @@ public static class Theme
     /// <summary>Palette claire.</summary>
     public static readonly Palette LightPalette = Build(MaterialScheme.Create(Seed, dark: false), dark: false, amoled: false);
 
+    /// <summary>
+    /// Palette « TIXIA » : orange en accent, fonds sombres chauds (bruns), texte crème. Le texte posé sur l'orange est brun presque noir (contraste 7 : 1).
+    /// Valeurs écrites à la main (pas dérivées d'une couleur source) ; contrastes vérifiés par les tests de thème.
+    /// </summary>
+    public static readonly Palette TixiaPalette = new(
+        Window: "#1A120C", Bar: "#231913", TopBar: "#00000000", Panel: "#231913", Surface: "#2D211A", SurfaceHi: "#382A21",
+        Line: "#4A3A2F", Grip: "#6B584A", Dim: "#C9B5A3", Text: "#F7EDE4", TextSoft: "#E0D0C2", Placeholder: "#99826F",
+        Accent: "#FF7A1A", AccentText: "#FF8F3D", Danger: "#FF8A80", Scrim: "#B3000000",
+        Input: "#140D08", EditorBg: "#1A120C", Focus: "#FFF3E8", Success: "#5CD6A0", StatusBg: "#4A1F1A", StatusLine: "#8A4A40", StatusText: "#FFDAD4",
+        OnAccent: "#2B1100", AccentContainer: "#5A2A0A", OnAccentContainer: "#FFDCC2", SecondaryContainer: "#4A3426", OnSecondaryContainer: "#F5DCC8",
+        TileTop: "#382A21", TileBottom: "#2D211A", Badge: "#D13438", OnBadge: "#FFFFFF");
+
     /// <summary>Associe les rôles Material Design 3 aux couleurs nommées de l'application.</summary>
     static Palette Build(MaterialScheme m, bool dark, bool amoled) => new(
         Window: m.Surface, Bar: m.SurfaceContainer, TopBar: dark ? "#00000000" : "#00FFFFFF", Panel: m.SurfaceContainer,
@@ -57,7 +69,10 @@ public static class Theme
     /// <summary>true si le thème sombre est appliqué.</summary>
     public static bool Dark { get; private set; } = true;
     /// <summary>Palette du thème appliqué.</summary>
-    public static Palette Current => HighContrastPalette ?? (Amoled ? AmoledPalette : Dark ? DarkPalette : LightPalette);
+    public static Palette Current => HighContrastPalette ?? (Tixia ? TixiaPalette : Amoled ? AmoledPalette : Dark ? DarkPalette : LightPalette);
+
+    /// <summary>true pour le thème TIXIA (sombre, accent orange). Applicable par <c>Apply("tixia")</c> ; non proposé dans les paramètres tant que le schéma de thème n'est pas validé.</summary>
+    public static bool Tixia { get; private set; }
 
     /// <summary>true si Windows est en mode contraste élevé : les brushes <c>Deck*</c> viennent alors de <see cref="System.Windows.SystemColors"/> (ADR 0031).</summary>
     public static bool HighContrast => HighContrastPalette != null;
@@ -122,13 +137,14 @@ public static class Theme
         HighContrastPalette = ForcedHighContrast ?? (System.Windows.SystemParameters.HighContrast ? SystemHighContrast() : null);
         bool dark = mode.ToLowerInvariant() switch
         {
-            "dark" or "amoled" => true,
+            "dark" or "amoled" or "tixia" => true,
             "light" => false,
             _ => SystemUsesDark(),
         };
         if (HighContrastPalette != null) dark = Luminance(HighContrastPalette.Window) < 0.5;
         Dark = dark;
         Amoled = !HighContrast && dark && mode.Equals("amoled", StringComparison.OrdinalIgnoreCase);
+        Tixia = !HighContrast && mode.Equals("tixia", StringComparison.OrdinalIgnoreCase);
         var accent = (Color)ColorConverter.ConvertFromString(Current.Accent);
         ApplicationThemeManager.Apply(dark ? ApplicationTheme.Dark : ApplicationTheme.Light);
         // Notre accent en clair comme en sombre (WPF-UI l'éclaircit en sombre par défaut)
