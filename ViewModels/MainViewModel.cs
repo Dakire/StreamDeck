@@ -410,6 +410,10 @@ public partial class MainViewModel : ObservableObject, INavigator
         if (_w < 50 || _h < 50 || _doc.Config.Profiles.Count == 0) return;
 
         var profile = CurrentProfile;
+        // Réglages du déplacement au toucher et du délai des pages web (ADR 0033, 0034)
+        LiftDragEnabled = !_doc.Config.LiftDragDisabled;
+        LiftDelayMs = ThemeOverrideKeys.LiftDelay(_doc.Config);
+        foreach (var web in Tiles.OfType<WebWidgetViewModel>()) web.IdleExit = ThemeOverrideKeys.WebIdle(_doc.Config);
         // Mode édition : les panneaux prennent de la largeur, mais la grille garde le nombre de cases qu'elle a en usage normal
         var (cols, rows) = LayoutMetrics.GridSize(_rawW, _rawH, _doc.Config, profile.Columns, profile.Rows);
         var m = LayoutMetrics.Compute(_w, _h, _doc.Config, cols, rows);
@@ -516,6 +520,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             MissingAddressMessage = "Cette page web n'a pas d'adresse valide : mode édition › Page › Adresse de la page web",
             Cell = 0, ColSpan = WholeGrid, RowSpan = WholeGrid,
             ZoomPercent = page.Zoom == 0 ? WebZoom.Normal : WebZoom.Clamp(page.Zoom),
+            IdleExit = ThemeOverrideKeys.WebIdle(_doc.Config),
             InputMode = IsEdit ? WebInputModes.Passive : WebInputModes.Normalize(page.WebInput),   // en édition, le cadre ne capte jamais la souris
         };
         string profileName = CurrentProfile.Name;
@@ -761,6 +766,7 @@ public partial class MainViewModel : ObservableObject, INavigator
             Button = def, Edit = edit, AccessibleName = name, Source = uri, Suspended = MenuOpen || HasDialog,
             FrameKey = uri == null ? null : $"widget|{place.Profile}|{place.Page}|{string.Join('.', place.Path)}|{index}|{uri.AbsoluteUri}",
             ZoomPercent = def.OptionInt(WidgetOptionKeys.Zoom, WebZoom.Normal, WebZoom.Min, WebZoom.Max),
+            IdleExit = ThemeOverrideKeys.WebIdle(_doc.Config),
             InputMode = IsEdit ? WebInputModes.Passive : WebInputModes.Normalize(def.Option(WidgetOptionKeys.Input)),
         };
         web.ZoomChanged = z => _doc.UpdateSettings(c =>

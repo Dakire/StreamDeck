@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Windows.Media;
 using Wpf.Ui.Appearance;
 
@@ -69,7 +70,13 @@ public static class Theme
     /// <summary>true si le thème sombre est appliqué.</summary>
     public static bool Dark { get; private set; } = true;
     /// <summary>Palette du thème appliqué.</summary>
-    public static Palette Current => HighContrastPalette ?? (Tixia ? TixiaPalette : Amoled ? AmoledPalette : Dark ? DarkPalette : LightPalette);
+    public static Palette Current => HighContrastPalette ?? _custom ?? BasePalette;
+
+    /// <summary>Palette du thème choisi, sans les couleurs personnalisées.</summary>
+    public static Palette BasePalette => Tixia ? TixiaPalette : Amoled ? AmoledPalette : Dark ? DarkPalette : LightPalette;
+
+    static Palette? _custom;
+    static IReadOnlyDictionary<string, string>? _overrides;
 
     /// <summary>true pour le thème TIXIA (sombre, accent orange). Applicable par <c>Apply("tixia")</c> ; non proposé dans les paramètres tant que le schéma de thème n'est pas validé.</summary>
     public static bool Tixia { get; private set; }
@@ -121,9 +128,10 @@ public static class Theme
     public static void RaiseChanged() => Changed?.Invoke();
 
     /// <summary>mode : "system" | "dark" | "light" | "amoled".</summary>
-    public static void Apply(string mode)
+    public static void Apply(string mode, IReadOnlyDictionary<string, string>? overrides = null)
     {
         _mode = mode;
+        _overrides = overrides;
         if (!_watching)
         {
             _watching = true;
@@ -131,7 +139,7 @@ public static class Theme
             System.Windows.SystemParameters.StaticPropertyChanged += (_, e) =>
             {
                 if (e.PropertyName is nameof(System.Windows.SystemParameters.HighContrast) or null)
-                    System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => Apply(_mode));
+                    System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => Apply(_mode, _overrides));
             };
         }
         HighContrastPalette = ForcedHighContrast ?? (System.Windows.SystemParameters.HighContrast ? SystemHighContrast() : null);
@@ -145,6 +153,7 @@ public static class Theme
         Dark = dark;
         Amoled = !HighContrast && dark && mode.Equals("amoled", StringComparison.OrdinalIgnoreCase);
         Tixia = !HighContrast && mode.Equals("tixia", StringComparison.OrdinalIgnoreCase);
+        _custom = HighContrast ? null : ThemeCustom.Apply(BasePalette, overrides) is var custom && !ReferenceEquals(custom, BasePalette) ? custom : null;
         var accent = (Color)ColorConverter.ConvertFromString(Current.Accent);
         ApplicationThemeManager.Apply(dark ? ApplicationTheme.Dark : ApplicationTheme.Light);
         // Notre accent en clair comme en sombre (WPF-UI l'éclaircit en sombre par défaut)

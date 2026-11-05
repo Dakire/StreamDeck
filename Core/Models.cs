@@ -28,6 +28,18 @@ public class DeckConfig
     public string Background { get; set; } = "#0E1015";
     /// <summary>Thème : "system" (suit Windows), "dark", "light" ou "amoled" (sombre à fond noir).</summary>
     public string Theme { get; set; } = "system";
+    /// <summary>Couleurs choisies par l'utilisateur par-dessus le thème (clés de <see cref="ThemeOverrideKeys"/>, valeurs #RRGGBB) ; absent = couleurs du thème (ADR 0034).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, string>? ThemeOverrides { get; set; }
+    /// <summary>Délai (s) sans geste avant qu'une page web activée redevienne passive, de 5 à 300 ; 0 ou absent = 30 s.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int WebIdleExitSeconds { get; set; }
+    /// <summary>true = le déplacement de boutons par appui long hors édition est désactivé (activé par défaut).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool LiftDragDisabled { get; set; }
+    /// <summary>Durée de l'appui long qui soulève un bouton (ms), de 300 à 1500 ; 0 ou absent = 500.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int LiftDelayMs { get; set; }
     /// <summary>"fluent" : les emojis connus sont affichés avec l'icône Fluent équivalente ; "emoji" : tels quels.</summary>
     public string IconStyle { get; set; } = "fluent";
     /// <summary>Lance StreamDak à l'ouverture de session Windows (clé Run de l'utilisateur).</summary>

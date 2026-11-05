@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace StreamDak;
 
 /// <summary>
@@ -7,7 +9,7 @@ namespace StreamDak;
 public sealed class AppearanceService
 {
     readonly DeckDocument _doc;
-    (string Theme, string IconStyle, bool Motion)? _applied;
+    (string Theme, string IconStyle, bool Motion, string Overrides)? _applied;
 
     /// <summary>Applique l'apparence courante tout de suite, puis suit les modifications du document.</summary>
     public AppearanceService(DeckDocument doc)
@@ -17,17 +19,19 @@ public sealed class AppearanceService
         _doc.Changed += _ => Apply(force: false);
     }
 
+    static string OverridesKey(DeckConfig c) => c.ThemeOverrides == null ? "" : string.Join(';', c.ThemeOverrides.OrderBy(p => p.Key).Select(p => p.Key + '=' + p.Value));
+
     void Apply(bool force)
     {
         var c = _doc.Config;
-        var now = (c.Theme, c.IconStyle, c.ReduceMotion || c.EconomyMode);   // le mode économie coupe les animations
+        var now = (c.Theme, c.IconStyle, c.ReduceMotion || c.EconomyMode, OverridesKey(c));   // le mode économie coupe les animations
         if (!force && _applied == now) return;
         bool iconsChanged = _applied == null || _applied.Value.IconStyle != c.IconStyle;
         _applied = now;
         IconCatalog.UseFluentForEmoji = c.IconStyle != "emoji";
         Motion.Apply(c.ReduceMotion || c.EconomyMode);
         Controls.WebFramePool.Economy = c.EconomyMode;
-        Theme.Apply(c.Theme);
+        Theme.Apply(c.Theme, c.ThemeOverrides);
         if (iconsChanged && !force) Theme.RaiseChanged();   // redessine les icônes même si le thème n'a pas bougé
     }
 }

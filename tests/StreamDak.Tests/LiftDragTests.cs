@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using StreamDak.ViewModels;
 using Xunit;
@@ -32,8 +33,10 @@ public class LiftDragTests
 
     MainViewModel NewDeck(bool enabled)
     {
-        _host.Reset(Config());
-        var vm = _host.Run(() => { var v = _host.Create<MainViewModel>(new FakeDeckShell(), new FakeAppWindows()); v.Resize(1600, 900); v.LiftDragEnabled = enabled; return v; });
+        var cfg = Config();
+        cfg.LiftDragDisabled = !enabled;
+        _host.Reset(cfg);
+        var vm = _host.Run(() => { var v = _host.Create<MainViewModel>(new FakeDeckShell(), new FakeAppWindows()); v.Resize(1600, 900); return v; });
         _host.Settle();
         return vm;
     }
@@ -41,7 +44,7 @@ public class LiftDragTests
     static DeckTileViewModel Tile(MainViewModel vm, string label) => vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == label);
 
     [Fact]
-    public void TheGestureIsOffByDefaultAndNothingCanBeLifted()
+    public void ADisabledGestureLiftsNothingAndChangesNothing()
     {
         var vm = NewDeck(enabled: false);
         _host.Run(() =>
@@ -148,6 +151,19 @@ public class LiftDragTests
         });
     }
 
+    [Fact]
+    public void TheGestureIsOnByDefaultAndTheConfiguredDelayIsUsed()
+    {
+        var cfg = Config();
+        cfg.LiftDelayMs = 800;
+        _host.Reset(cfg);
+        var vm = _host.Run(() => { var v = _host.Create<MainViewModel>(new FakeDeckShell(), new FakeAppWindows()); v.Resize(1600, 900); return v; });
+        _host.Settle();
+        Assert.True(vm.LiftDragEnabled);
+        Assert.Equal(800, vm.LiftDelayMs);
+        Assert.True(_host.Run(() => vm.CanLift(Tile(vm, "Un"))));
+    }
+
     [Theory]
     [InlineData(100, 300)] [InlineData(500, 500)] [InlineData(5000, 1500)]
     public void TheLongPressDelayIsKeptInItsRange(int asked, int expected)
@@ -167,5 +183,34 @@ public class LiftDragTests
         Assert.False(tap.TryLongPress(700));
         Assert.True(tap.TryLongPress(800));
         Assert.False(tap.Up(1, 0, 0));                                                    // un appui long consommé n'est pas un appui
+    }
+}
+
+/// <summary>Le délai d'inactivité réglé dans la configuration arrive sur la tuile d'une page web.</summary>
+[Collection("ui")]
+public class WebIdleSettingTests
+{
+    readonly WpfHost _host;
+    public WebIdleSettingTests(WpfHost host) { _host = host; }
+
+    [Theory]
+    [InlineData(0, 30)] [InlineData(90, 90)]
+    public void TheConfiguredDelayReachesTheWebPageTile(int configured, int expectedSeconds)
+    {
+        var cfg = ConfigStore.DefaultConfig();
+        cfg.WebIdleExitSeconds = configured;
+        cfg.Profiles[0].Pages.Add(new DeckPage { Name = "Web", Kind = PageKinds.Web, Url = "https://example.org/" });
+        cfg.Profiles[0].Pages[^1].Buttons.Clear();
+        _host.Reset(cfg);
+        var vm = _host.Run(() => { var v = _host.Create<MainViewModel>(new FakeDeckShell(), new FakeAppWindows()); v.Resize(1600, 900); return v; });
+        _host.Settle();
+        _host.Run(() =>
+        {
+            ((StreamDak.Actions.INavigator)vm).GoToPage("Web");
+        });
+        _host.Settle();
+        var web = _host.Run(() => vm.Tiles.OfType<WebWidgetViewModel>().FirstOrDefault());
+        Assert.NotNull(web);
+        Assert.Equal(TimeSpan.FromSeconds(expectedSeconds), web!.IdleExit);
     }
 }

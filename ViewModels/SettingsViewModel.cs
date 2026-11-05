@@ -55,6 +55,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] bool _deviceConnected;
     [ObservableProperty] bool _systemReducesMotion;
     [ObservableProperty] bool _economyMode;
+    [ObservableProperty] double? _webIdleSeconds = ThemeOverrideKeys.DefaultWebIdleSeconds;
+    [ObservableProperty] bool _liftDragEnabled = true;
+    [ObservableProperty] double? _liftDelayMs = ThemeOverrideKeys.DefaultLiftDelayMs;
+
+    /// <summary>Éditeur de thème : thèmes prédéfinis, couleurs, aperçu, avertissements.</summary>
+    public ThemeEditorViewModel ThemeEditor { get; }
     [ObservableProperty] double? _backupLimit = ConfigStore.MaxBackups;
     [ObservableProperty] string _backupLimitHint = "";
     [ObservableProperty] string _diagnosticText = "";
@@ -92,7 +98,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Dossier de configuration (affiché, ouvrable).</summary>
     public string ConfigDirectory => ConfigStore.Dir;
 
-    static readonly (string Key, string Label)[] Themes = { ("system", "Suivre Windows"), ("dark", "Sombre"), ("amoled", "AMOLED"), ("light", "Clair") };
+    static readonly (string Key, string Label)[] Themes = { ("system", "Suivre Windows"), ("dark", "Sombre"), ("amoled", "AMOLED"), ("light", "Clair"), ("tixia", "TIXIA") };
 
     /// <summary>Raccourcis clavier de l'éditeur, affichés dans les paramètres.</summary>
     public static readonly (string Keys, string What)[] Shortcuts =
@@ -123,6 +129,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _doc = doc;
         _displays = displays;
         _persistence = persistence;
+        ThemeEditor = new ThemeEditorViewModel(doc);
         foreach (var (key, label) in Themes)
         {
             var k = key;
@@ -139,6 +146,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     {
         _doc.Changed -= OnChanged;
         _displays.Changed -= RefreshDevices;
+        ThemeEditor.Dispose();
         foreach (var card in Integrations) card.Dispose();
     }
 
@@ -161,6 +169,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             ReduceMotion = c.ReduceMotion;
             EconomyMode = c.EconomyMode;
             BackupLimit = ConfigStore.LimitOf(c);
+            WebIdleSeconds = (int)ThemeOverrideKeys.WebIdle(c).TotalSeconds;
+            LiftDragEnabled = !c.LiftDragDisabled;
+            LiftDelayMs = ThemeOverrideKeys.LiftDelay(c);
             EmojiIcons = c.IconStyle == "emoji";
             CustomBackground = !string.Equals(c.Background, Theme.DefaultBackground, StringComparison.OrdinalIgnoreCase);
             Background = c.Background;
@@ -260,6 +271,22 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnAlwaysOnTopChanged(bool value) => Set(c => c.AlwaysOnTop = value, "Toujours au premier plan");
     partial void OnReduceMotionChanged(bool value) => Set(c => c.ReduceMotion = value, "Animations");
     partial void OnEconomyModeChanged(bool value) => Set(c => c.EconomyMode = value, "Mode économie");
+    partial void OnWebIdleSecondsChanged(double? value)
+    {
+        if (_loading) return;
+        int s = (int)Math.Clamp(value ?? ThemeOverrideKeys.DefaultWebIdleSeconds, ThemeOverrideKeys.MinWebIdleSeconds, ThemeOverrideKeys.MaxWebIdleSeconds);
+        Set(c => c.WebIdleExitSeconds = s == ThemeOverrideKeys.DefaultWebIdleSeconds ? 0 : s, "Délai des pages web");   // la valeur par défaut n'est pas écrite
+    }
+
+    partial void OnLiftDragEnabledChanged(bool value) => Set(c => c.LiftDragDisabled = !value, "Déplacement par appui long");
+
+    partial void OnLiftDelayMsChanged(double? value)
+    {
+        if (_loading) return;
+        int ms = (int)Math.Clamp(value ?? ThemeOverrideKeys.DefaultLiftDelayMs, ThemeOverrideKeys.MinLiftDelayMs, ThemeOverrideKeys.MaxLiftDelayMs);
+        Set(c => c.LiftDelayMs = ms == ThemeOverrideKeys.DefaultLiftDelayMs ? 0 : ms, "Seuil de l'appui long");
+    }
+
     partial void OnBackupLimitChanged(double? value)
     {
         if (_loading) return;

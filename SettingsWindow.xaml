@@ -55,7 +55,84 @@
           <StackPanel>
             <TextBlock Text="Apparence" Style="{StaticResource SectionTitle}"/>
             <TextBlock Text="Thème" Style="{StaticResource EditorCaption}" Margin="0,8,0,6"/>
-            <ItemsControl ItemsSource="{Binding ThemeChoices}" Style="{StaticResource ChipWrap}"/>
+            <ItemsControl ItemsSource="{Binding ThemeEditor.Cards}" Style="{StaticResource ChipWrap}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:ThemeCardViewModel}">
+                  <!-- Carte de thème : aperçu (fond, surface, accent, texte) ; la carte choisie porte un liseré d'accent et une coche -->
+                  <Button Command="{Binding Command}" Width="136" Height="84" Padding="0" Margin="0,0,8,8" AutomationProperties.Name="{Binding Label}"
+                          BorderThickness="2" Background="{Binding Window}">
+                    <Button.Style>
+                      <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                        <Setter Property="BorderBrush" Value="{DynamicResource DeckLine}"/>
+                        <Style.Triggers><DataTrigger Binding="{Binding IsSelected}" Value="True"><Setter Property="BorderBrush" Value="{DynamicResource DeckAccent}"/></DataTrigger></Style.Triggers>
+                      </Style>
+                    </Button.Style>
+                    <Grid Width="130" Height="78">
+                      <Border Background="{Binding Surface}" CornerRadius="6" Margin="8,8,8,30"/>
+                      <Border Background="{Binding Accent}" CornerRadius="6" Width="34" Height="12" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,16,0,0"/>
+                      <TextBlock Text="{Binding Label}" Foreground="{Binding Text}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="10,0,0,8"/>
+                      <ui:SymbolIcon Symbol="Checkmark24" Foreground="{Binding Accent}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8"
+                                     Visibility="{Binding IsSelected, Converter={StaticResource BoolVis}}"/>
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Text="Couleurs" Style="{StaticResource EditorCaption}" Margin="0,10,0,6"/>
+            <ItemsControl ItemsSource="{Binding ThemeEditor.Colors}" Focusable="False">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:ThemeColorViewModel}">
+                  <Expander Margin="0,0,0,4" AutomationProperties.Name="{Binding Label}">
+                    <Expander.Header>
+                      <StackPanel Orientation="Horizontal" MinHeight="40">
+                        <Border Width="28" Height="28" CornerRadius="14" Background="{Binding Swatch}" BorderThickness="2" BorderBrush="{DynamicResource DeckLine}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding Label}" FontWeight="SemiBold" Margin="10,0,10,0" VerticalAlignment="Center" MinWidth="70"/>
+                        <TextBlock Text="{Binding Hex}" Foreground="{DynamicResource DeckDim}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding Status}" Foreground="{DynamicResource DeckDim}" FontSize="12" VerticalAlignment="Center"/>
+                      </StackPanel>
+                    </Expander.Header>
+                    <StackPanel Margin="4,6,0,6">
+                      <ItemsControl ItemsSource="{Binding Swatches}" Style="{StaticResource ChipWrap}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Button Width="48" Height="48" Margin="0,0,6,6" Padding="0" Background="{Binding}" BorderThickness="2" BorderBrush="{DynamicResource DeckLine}"
+                                    Command="{Binding DataContext.PickCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"
+                                    AutomationProperties.Name="{Binding}"/>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                      <StackPanel Orientation="Horizontal">
+                        <ui:TextBox Text="{Binding Hex, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource EditorInput}" PlaceholderText="#RRGGBB" Width="150" MinHeight="40"
+                                    AutomationProperties.Name="{Binding Label, StringFormat=Couleur {0} en hexadécimal}"/>
+                        <ui:Button Content="Réinitialiser" Icon="{ui:SymbolIcon ArrowUndo24}" Command="{Binding ResetCommand}" Style="{StaticResource EditorChip}" MinHeight="40" Margin="10,0,0,0"
+                                   Visibility="{Binding IsCustom, Converter={StaticResource BoolVis}}"/>
+                      </StackPanel>
+                      <TextBlock Text="{Binding Error}" Foreground="{DynamicResource DeckDanger}" FontSize="12" Margin="2,4,0,0" AutomationProperties.LiveSetting="Assertive"/>
+                    </StackPanel>
+                  </Expander>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <ui:Button Content="Tout réinitialiser" Icon="{ui:SymbolIcon ArrowReset24}" Command="{Binding ThemeEditor.ResetAllCommand}" Style="{StaticResource EditorChip}" MinHeight="40"
+                       Visibility="{Binding ThemeEditor.AnyCustom, Converter={StaticResource BoolVis}}"/>
+
+            <TextBlock Text="Aperçu en direct" Style="{StaticResource EditorCaption}" Margin="0,10,0,6"/>
+            <Border Background="{DynamicResource DeckWindow}" CornerRadius="10" Padding="8">
+              <ItemsControl ItemsSource="{Binding ThemeEditor.Preview}" Focusable="False" IsHitTestVisible="False">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate><controls:TileFace Face="{Binding}" CornerRadius="12" Height="104" Margin="4"/></DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Border>
+            <Border Background="{DynamicResource DeckStatusBg}" BorderBrush="{DynamicResource DeckStatusLine}" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,8,0,0"
+                    Visibility="{Binding ThemeEditor.HasWarnings, Converter={StaticResource BoolVis}}" AutomationProperties.LiveSetting="Polite">
+              <StackPanel>
+                <TextBlock Text="Contraste insuffisant" FontWeight="SemiBold" Foreground="{DynamicResource DeckStatusText}"/>
+                <TextBlock Text="{Binding ThemeEditor.Warnings}" TextWrapping="Wrap" Foreground="{DynamicResource DeckStatusText}" FontSize="12"/>
+              </StackPanel>
+            </Border>
             <ui:ToggleSwitch Content="Réduire les animations" IsChecked="{Binding ReduceMotion, Mode=TwoWay}" Margin="0,6,0,0"
                              AutomationProperties.Name="Réduire les animations"/>
             <ui:ToggleSwitch Content="Mode économie" IsChecked="{Binding EconomyMode, Mode=TwoWay}" Margin="0,6,0,0"
@@ -296,6 +373,27 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <!-- Toucher -->
+        <Border Style="{StaticResource SettingsCard}">
+          <StackPanel>
+            <TextBlock Text="Toucher" Style="{StaticResource SectionTitle}"/>
+            <TextBlock Text="Pages web : fin d'interaction après (secondes, 5 à 300)" Style="{StaticResource EditorCaption}" Margin="0,8,0,6"/>
+            <ui:NumberBox Value="{Binding WebIdleSeconds, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="5" Maximum="300" MaxDecimalPlaces="0" SpinButtonPlacementMode="Inline"
+                          HorizontalAlignment="Left" Width="160" AutomationProperties.Name="Délai sans geste avant que la page web redevienne passive, en secondes"/>
+            <TextBlock Style="{StaticResource EditorHint}" TextWrapping="Wrap"
+                       Text="Une page web activée par un toucher redevient passive après ce délai sans geste, par un toucher hors de la page, ou au changement de page. Pour qu'un site reste actif en permanence sans premier toucher, choisis « Toujours active (24 h/24) » dans les propriétés du widget ou de la page."/>
+            <ui:ToggleSwitch Content="Déplacer un bouton par appui long (hors mode édition)" IsChecked="{Binding LiftDragEnabled, Mode=TwoWay}" Margin="0,8,0,0"
+                             AutomationProperties.Name="Déplacer un bouton par appui long"/>
+            <StackPanel Visibility="{Binding LiftDragEnabled, Converter={StaticResource BoolVis}}">
+              <TextBlock Text="Durée de l'appui long (millisecondes, 300 à 1500)" Style="{StaticResource EditorCaption}" Margin="0,8,0,6"/>
+              <ui:NumberBox Value="{Binding LiftDelayMs, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="300" Maximum="1500" MaxDecimalPlaces="0" SpinButtonPlacementMode="Inline"
+                            HorizontalAlignment="Left" Width="160" AutomationProperties.Name="Durée de l'appui long qui soulève un bouton, en millisecondes"/>
+              <TextBlock Style="{StaticResource EditorHint}" TextWrapping="Wrap"
+                         Text="Appui long sur un bouton : il se soulève, puis glisse-le vers une case, un dossier, un onglet de page ou la corbeille. Relâché sans glisser, il ouvre l'éditeur de la case. Un appui court exécute l'action."/>
+            </StackPanel>
           </StackPanel>
         </Border>
 

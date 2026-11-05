@@ -9,11 +9,8 @@ public partial class MainViewModel
     /// <summary>Plage du seuil d'appui long (ms) : assez long pour ne pas gêner un appui, assez court pour rester naturel.</summary>
     public const int MinLiftDelayMs = 300, MaxLiftDelayMs = 1500, DefaultLiftDelayMs = 500;
 
-    /// <summary>
-    /// Déplacement au toucher hors édition. Désactivé tant que le réglage n'est pas branché à la configuration (clé de <c>config.json</c> soumise à validation) :
-    /// l'appui long ouvre alors l'éditeur de la case, comme avant.
-    /// </summary>
-    public bool LiftDragEnabled { get; set; }
+    /// <summary>Déplacement au toucher hors édition : activé par défaut, désactivable (<see cref="DeckConfig.LiftDragDisabled" />, relu à chaque reconstruction de la grille).</summary>
+    public bool LiftDragEnabled { get; set; } = true;
 
     int _liftDelayMs = DefaultLiftDelayMs;
 

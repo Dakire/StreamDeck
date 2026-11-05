@@ -103,7 +103,7 @@ public static class WebInputModes
     {
         (Passive, "Passive", "Affichage seul : la page ne capte ni la souris ni le doigt. Bouton « Interagir » du cadre pour s'en servir."),
         (Touch, "Toucher pour interagir", "Affichage seul ; un toucher ou un clic sur la page l'ouvre à l'interaction, qui se termine seule après 30 s sans geste."),
-        (Interactive, "Interactive", "La page reçoit toujours la souris et le doigt : liens, défilement, saisie."),
+        (Interactive, "Toujours active (24 h/24)", "La page reste active en permanence, sans premier toucher et sans délai : liens, défilement, saisie."),
     };
 
     /// <summary>Mode connu, ou <see cref="Default"/> pour une valeur absente ou inconnue.</summary>

@@ -22,7 +22,7 @@ public static class ConfigNormalizer
     /// <summary>Nombre d'actions récentes conservées dans le catalogue.</summary>
     public const int MaxRecents = 12;
     /// <summary>Valeurs acceptées pour <see cref="DeckConfig.Theme"/>.</summary>
-    public static readonly string[] Themes = { "system", "dark", "light", "amoled" };
+    public static readonly string[] Themes = { "system", "dark", "light", "amoled", "tixia" };
 
     /// <summary>Migre l'ancien format et répare une configuration lue sur disque, sans rien supprimer de valide ; décrit ce qui a changé.</summary>
     public static NormalizeResult Normalize(DeckConfig cfg)
@@ -80,6 +80,9 @@ public static class ConfigNormalizer
         cfg.SettingsHeight = SaneSize(cfg.SettingsHeight, 520, 4000);
         var theme = (cfg.Theme ?? "").ToLowerInvariant();
         cfg.Theme = Themes.Contains(theme) ? theme : "system";
+        cfg.ThemeOverrides = ThemeOverrideKeys.Sanitize(cfg.ThemeOverrides);
+        cfg.WebIdleExitSeconds = cfg.WebIdleExitSeconds == 0 ? 0 : Math.Clamp(cfg.WebIdleExitSeconds, ThemeOverrideKeys.MinWebIdleSeconds, ThemeOverrideKeys.MaxWebIdleSeconds);
+        cfg.LiftDelayMs = cfg.LiftDelayMs == 0 ? 0 : Math.Clamp(cfg.LiftDelayMs, ThemeOverrideKeys.MinLiftDelayMs, ThemeOverrideKeys.MaxLiftDelayMs);
         cfg.Background = string.IsNullOrWhiteSpace(cfg.Background) ? DefaultBackground : cfg.Background;
         cfg.IconStyle = string.Equals(cfg.IconStyle, "emoji", StringComparison.OrdinalIgnoreCase) ? "emoji" : "fluent";
 
