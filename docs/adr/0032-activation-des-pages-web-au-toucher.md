@@ -40,7 +40,7 @@ liens sont natifs, et le deck n'envoie ni clic ni déplacement de curseur.
 
 ## Conséquences
 
-- Le délai d'inactivité est **réglable côté modèle** (`IdleExit`) mais **sans réglage persistant** : l'ajouter dans `config.json` est une modification de schéma, soumise à validation
-  (proposition dans le compte rendu de livraison). Tant que ce n'est pas validé, la valeur est 30 s.
+- Le délai d'inactivité est réglable (Paramètres › Toucher, clé `WebIdleExitSeconds`, 5 à 300 s, 30 s par défaut, ADR 0034).
+- Un site qui doit rester **actif en permanence, sans premier toucher**, se règle par le mode **Toujours active (24 h/24)** (`interactive`) : pas de liseré, aucun délai, aucune fin d'interaction.
 - Un toucher sur la bande de commandes de la tuile web ne termine pas l'interaction (elle fait partie de la tuile) ; un toucher partout ailleurs la termine.
 - À vérifier sur matériel tactile : le pincement et le défilement inertiel dans le cadre actif, et l'absence de curseur système mobile.

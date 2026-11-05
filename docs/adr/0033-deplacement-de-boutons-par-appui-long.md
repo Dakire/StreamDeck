@@ -1,6 +1,6 @@
 # 0033 — Déplacer des boutons hors édition par appui long
 
-- **Statut** : acceptée pour le code ; **geste désactivé par défaut** (`MainViewModel.LiftDragEnabled`) tant que le réglage qui le commande n'est pas validé (ADR 0034). **Non vérifié sur un écran tactile réel.**
+- **Statut** : acceptée ; **geste activé par défaut**, désactivable et réglable dans les Paramètres › Toucher (`LiftDragDisabled`, `LiftDelayMs`, ADR 0034). **Non vérifié sur un écran tactile réel.**
 - **Date** : 5 novembre 2026.
 
 ## Contexte
@@ -24,9 +24,8 @@ Hors édition, un appui long sur une case ouvrait l'éditeur (`MainWindow.Touch.
 
 - Changement de page ou défilement quand le doigt approche d'un bord (le bouton déplacé doit survivre à la reconstruction de la grille : il faut garder son emplacement d'origine plutôt que la tuile).
 - Les autres tuiles qui s'écartent en animation pendant le glissement (le panneau de grille place les tuiles sans animation de décalage).
-- Réglages « seuil » et « désactiver » dans les Paramètres : dépendent du schéma de `config.json` (ADR 0034).
 
 ## Conséquences
 
-- Tant que le geste est désactivé, aucun comportement ne change.
-- Une fois activé, un appui long sur un bouton ne l'édite plus immédiatement : l'éditeur s'ouvre au relâchement s'il n'y a pas eu de glissé.
+- Le geste est actif par défaut ; `LiftDragDisabled` le coupe (alors l'appui long ouvre l'éditeur tout de suite, comme avant).
+- Un appui long sur un bouton ne l'édite plus immédiatement : l'éditeur s'ouvre au relâchement s'il n'y a pas eu de glissé.

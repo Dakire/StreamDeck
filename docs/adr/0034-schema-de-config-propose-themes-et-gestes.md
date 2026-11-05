@@ -1,7 +1,10 @@
 # 0034 — Schéma de `config.json` proposé : thèmes personnalisés, délai des pages web, déplacement au toucher
 
-- **Statut** : **PROPOSÉE — en attente de validation.** Aucune de ces clés n'est lue ni écrite par l'application à ce jour.
+- **Statut** : **acceptée le 5 novembre 2026** (schéma validé par l'utilisateur, qui a aussi demandé le déplacement par appui long **activé par défaut**) et implémentée.
 - **Date** : 5 novembre 2026.
+
+> Décisions : schéma tel que proposé ; déplacement par appui long activé par défaut (`LiftDragDisabled` à `true` pour le couper). Un site qui doit rester actif 24 h/24 sans premier toucher
+> se règle par le mode **Toujours active (24 h/24)** (`input: interactive`, ADR 0025/0032), indépendant du délai ci-dessous.
 
 ## Contexte
 

@@ -266,6 +266,10 @@ Les tableaux ci-dessous en donnent l'essentiel.
 | `ReduceMotion` | Supprime les animations | `false` |
 | `EconomyMode` | Mode économie : animations coupées, relevés ralentis, pages web en mémoire basse ; facultatif | absent |
 | `BackupLimit` | Nombre de sauvegardes automatiques conservées (1 à 100) ; facultatif | absent (15) |
+| `ThemeOverrides` | Couleurs personnalisées `{ "accent": "#RRGGBB", "background", "surface", "text", "success", "danger" }` ; facultatif | absent |
+| `WebIdleExitSeconds` | Délai (5 à 300 s) avant qu'une page web activée redevienne passive ; facultatif | absent (30) |
+| `LiftDragDisabled` | `true` coupe le déplacement de boutons par appui long hors édition ; facultatif | absent (activé) |
+| `LiftDelayMs` | Durée de l'appui long qui soulève un bouton (300 à 1500 ms) ; facultatif | absent (500) |
 | `CatalogWidth`, `InspectorHeight` | Largeur du catalogue et hauteur de l'inspecteur en mode édition (DIP), choisies en glissant leur poignée ; facultatifs | absents |
 | `CatalogCollapsed`, `InspectorCollapsed` | Panneaux repliés en mode édition ; facultatifs | absents |
 | `SettingsWidth`, `SettingsHeight` | Taille de la fenêtre des paramètres à la dernière fermeture ; facultatifs | absents |
@@ -346,7 +350,11 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 | `tests/StreamDak.Tests` | Tests xUnit : logique, migration, import, contrastes, navigation du deck, robustesse, composition (conteneur), architecture (frontières entre projets), rendu hors écran des fenêtres, mesures de performance (facultatives) |
 | `Directory.Build.props`, `.editorconfig` | Analyseurs, style vérifié à la compilation, avertissements bloquants, documentation XML obligatoire |
 
-Le thème **TIXIA** (orange, fonds bruns chauds) existe dans le code mais n'est pas encore proposé dans les Paramètres, et le **déplacement de boutons par appui long** hors édition est désactivé par défaut : tous deux attendent la validation du schéma de configuration (ADR 0033 et 0034).
+**Thèmes** (Paramètres › Apparence) : Suivre Windows, Sombre, Clair, AMOLED et **TIXIA** (orange, fonds bruns chauds), avec aperçu ; six couleurs modifiables (accent, fond, surface, texte, succès, erreur), **Réinitialiser** par couleur ou pour toutes,
+aperçu en direct et avertissement si le contraste est insuffisant (clé `ThemeOverrides`, ADR 0034).
+
+**Toucher** (Paramètres › Toucher) : délai de fin d'interaction des pages web (`WebIdleExitSeconds`, 30 s par défaut) ; **déplacement de boutons par appui long** hors édition (activé par défaut, `LiftDragDisabled` pour le couper, durée `LiftDelayMs`) :
+la touche se soulève, puis se dépose sur une case, un dossier, un onglet de page ou la corbeille ; Échap annule (ADR 0033).
 
 ## Accessibilité
 

@@ -4,14 +4,16 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
-Aucune clé de `config.json` ajoutée : le schéma proposé pour les réglages à venir est dans l'ADR 0034 (en attente de validation).
+Clés facultatives ajoutées à `config.json` (ADR 0034, validé) : `ThemeOverrides`, `WebIdleExitSeconds`, `LiftDragDisabled`, `LiftDelayMs`, et la valeur `tixia` pour `Theme`. Aucune valeur par défaut n'est écrite ;
+un ancien fichier se lit tel quel ; aucune clé existante n'est renommée ni supprimée.
 
 ### Ajouté
-- **Pages web au toucher** (ADR 0032) : liseré d'accent autour de la tuile tant que la page est activée ; la page redevient passive par un toucher hors de la tuile, au changement de profil, de page, de dossier ou de sous-page,
-  ou après le délai sans geste (30 s ; durée portée par le modèle, réglage persistant en attente). Bouton « Interagir / Terminer » toujours accessible dans la bande de commandes.
-- **Déplacer un bouton hors édition par appui long** (ADR 0033) : la touche se soulève, puis se dépose sur une case, un dossier, un onglet de page ou la corbeille ; Échap ou un relâchement hors de la grille annule.
-  **Désactivé par défaut** tant que le réglage n'est pas validé (ADR 0034) : rien ne change pour l'instant.
-- **Thème TIXIA** (orange, fonds bruns chauds, texte crème) : palette et contrastes testés ; applicable par `Theme.Apply("tixia")`, pas encore proposé dans les Paramètres (ADR 0034).
+- **Thèmes** (Paramètres › Apparence) : cartes de thèmes prédéfinis avec aperçu (Suivre Windows, Sombre, Clair, AMOLED, **TIXIA** : orange, fonds bruns chauds), éditeur de six couleurs (accent, fond, surface, texte, succès, erreur)
+  avec 22 couleurs en un toucher (48 px) et saisie hexadécimale, **Réinitialiser** par couleur et **Tout réinitialiser**, aperçu en direct sur de vraies touches, avertissement de contraste. S'applique à chaud par les brushes `Deck*`.
+- **Pages web au toucher** (ADR 0032) : liseré d'accent autour de la tuile activée ; la page redevient passive par un toucher hors de la tuile, au changement de profil, de page, de dossier ou de sous-page, ou après un délai
+  sans geste réglable (Paramètres › Toucher, 5 à 300 s, 30 s par défaut). Le mode **Toujours active (24 h/24)** garde un site actif en permanence, sans premier toucher.
+- **Déplacer un bouton hors édition par appui long** (ADR 0033), **activé par défaut** : la touche se soulève (seuil réglable de 300 à 1500 ms, 500 par défaut), puis se dépose sur une case, un dossier, un onglet de page ou la corbeille ;
+  Échap ou un relâchement hors de la grille annule. Relâchée sans glisser, la touche ouvre l'éditeur de sa case, comme l'ancien appui long. Désactivable dans Paramètres › Toucher.
 
 ### Corrigé
 - **Release 1.2.1 en échec** : l'applicateur de mise à jour utilisait `Get-FileHash`, introuvable quand `powershell.exe` 5.1 hérite du `PSModulePath` de PowerShell 7 (CI, lancement depuis `pwsh`).
