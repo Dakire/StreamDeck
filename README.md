@@ -354,7 +354,8 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 aperçu en direct et avertissement si le contraste est insuffisant (clé `ThemeOverrides`, ADR 0034).
 
 **Toucher** (Paramètres › Toucher) : délai de fin d'interaction des pages web (`WebIdleExitSeconds`, 30 s par défaut) ; **déplacement de boutons par appui long** hors édition (activé par défaut, `LiftDragDisabled` pour le couper, durée `LiftDelayMs`) :
-la touche se soulève, puis se dépose sur une case, un dossier, un onglet de page ou la corbeille ; Échap annule (ADR 0033).
+la touche se soulève, puis se dépose sur une case, un dossier, un onglet de page ou la corbeille ; tenue près d'un bord de la fenêtre, elle change de page ; Échap annule (ADR 0033 et 0035).
+La barre du haut est la poignée de déplacement de la fenêtre ; en mode édition, le catalogue et l'inspecteur se redimensionnent depuis n'importe quel point de leur arête.
 
 ## Accessibilité
 

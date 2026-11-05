@@ -39,5 +39,6 @@ effacée : elle passe au statut « Remplacée par … ».
 | [0032](0032-activation-des-pages-web-au-toucher.md) | Activation des pages web au toucher : cadre désactivé au repos, liseré, fins d'interaction | Acceptée |
 | [0033](0033-deplacement-de-boutons-par-appui-long.md) | Déplacer des boutons hors édition par appui long (soulèvement, corbeille, annulation) | Acceptée (geste activé par défaut) |
 | [0034](0034-schema-de-config-propose-themes-et-gestes.md) | Schéma de `config.json` proposé : thèmes personnalisés, délai des pages web, déplacement au toucher | Acceptée |
+| [0035](0035-palettes-en-couches-animations-et-poignees.md) | Palettes en couches, animations d'ouverture, changement de page au bord, poignées visibles | Acceptée |
 
 Modèle d'une nouvelle décision : contexte, décision, conséquences, statut et date.

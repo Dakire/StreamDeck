@@ -34,6 +34,10 @@ Correctifs de sécurité et de fiabilité issus de `SECURITY.md` (« Audit 3 »)
 Audit 3 : sauvegardes réglables, accessibilité, durcissement des imports, fiabilité au démarrage. Voir `SECURITY.md` (« Audit 3 ») et les ADR 0030 et 0031. Les clés ajoutées sont facultatives ; aucune clé existante n'est renommée ni supprimée.
 
 ### Ajouté
+- **Changement de page au bord** pendant un déplacement : un bouton soulevé tenu près d'un bord de la fenêtre passe à la page visible suivante ou précédente (500 ms, puis une page par 900 ms) ; les pages masquées et web sont sautées (ADR 0035).
+- **Animations** d'ouverture des menus et des boîtes de dialogue, et de la corbeille ; elles respectent le réglage d'animations et ne retardent jamais une action.
+- **Barre du haut** : curseur de déplacement, filet et capsule de poignée avec six points. **Poignées des panneaux** (catalogue à droite, inspecteur en bas) : rail sur toute l'arête et zone de saisie élargie, pour redimensionner de n'importe quel point de l'arête.
+- **Palettes** : hiérarchie de surfaces régulière en sombre, clair, AMOLED et TIXIA (marches ≥ 1,09 : 1 au lieu de 1,04–1,06 en clair et AMOLED), touches mieux détachées du fond, couches d'état survol et appui, conteneur de succès, rouge d'erreur plus profond en clair.
 - **Sauvegardes** (Paramètres › Sauvegardes) : nombre de sauvegardes conservées réglable de 1 à 100 (clé facultative `BackupLimit`, 15 par défaut), bouton **Supprimer** par sauvegarde,
   **Supprimer l'excédent** et **Tout supprimer** (avec confirmation). La limite ne supprime rien pendant la saisie : elle s'applique à la sauvegarde suivante.
 - **Accessibilité** (ADR 0031) : annonces pour lecteurs d'écran (statut, succès ou échec d'une action, ouverture d'un dialogue), thème **contraste élevé** de Windows suivi en direct, dialogue nommé avec focus cyclique
