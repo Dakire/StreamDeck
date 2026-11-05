@@ -4,6 +4,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+## [1.4.0] — 2026-11-05
+
 Clé facultative ajoutée à `config.json` (validée) : `SwipePagesDisabled` (absente = balayage activé). Aucune clé renommée ni supprimée.
 
 ### Ajouté
@@ -12,6 +14,7 @@ Clé facultative ajoutée à `config.json` (validée) : `SwipePagesDisabled` (ab
   Il part de n'importe où sur la grille, pas seulement du bord. Dans un dossier, un balayage vers le bas revient au dossier parent.
 
 ### Corrigé
+- **Mode édition** : la case visée pendant un glissé est entourée d'un contour en pointillés (la case entière, plus seulement le « + »).
 - **Icônes d'applications et de sites** (ADR 0036) : elles ne passent plus derrière le titre (zone bornée au-dessus ou au-dessous) et sont nettes : icône de programme en 256 px au lieu
   de 32, décodage à la taille d'affichage selon l'échelle de l'écran, petite image montrée à sa taille ou à un multiple entier plutôt qu'étirée. Les anciennes icônes de 32 px sont
   remplacées toutes seules au démarrage ; une image introuvable est remplacée par une icône du type d'action.
