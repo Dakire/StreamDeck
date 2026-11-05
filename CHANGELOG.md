@@ -4,6 +4,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+## [1.3.0] — 2026-11-05
+
 Clés facultatives ajoutées à `config.json` (ADR 0034, validé) : `ThemeOverrides`, `WebIdleExitSeconds`, `LiftDragDisabled`, `LiftDelayMs`, et la valeur `tixia` pour `Theme`. Aucune valeur par défaut n'est écrite ;
 un ancien fichier se lit tel quel ; aucune clé existante n'est renommée ni supprimée.
 
