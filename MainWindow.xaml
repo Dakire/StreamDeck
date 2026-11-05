@@ -178,11 +178,13 @@
                   CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                   Visibility="{Binding IsSelected, Converter={StaticResource BoolVis}}"/>
           <!-- Glissement : la case visée s'allume (cadre épais et voile d'accent) -->
-          <Border BorderThickness="6" BorderBrush="{DynamicResource DeckAccent}" Background="{DynamicResource DeckAccentSoft}" IsHitTestVisible="False"
-                  CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+          <!-- Contour en pointillés de la case entière (jamais seulement autour du « + ») -->
+          <Rectangle Stroke="{DynamicResource DeckAccent}" StrokeThickness="3" StrokeDashArray="3 2" StrokeDashCap="Round" Fill="{DynamicResource DeckAccentSoft}" IsHitTestVisible="False"
+                     RadiusX="{Binding DataContext.L.TileRadius.TopLeft, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                     RadiusY="{Binding DataContext.L.TileRadius.TopLeft, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                   Visibility="{Binding IsDropTarget, Converter={StaticResource BoolVis}}">
-            <Border.Style>
-              <Style TargetType="Border">
+            <Rectangle.Style>
+              <Style TargetType="Rectangle">
                 <Style.Triggers>
                   <MultiDataTrigger>
                     <MultiDataTrigger.Conditions>
@@ -202,8 +204,8 @@
                   </MultiDataTrigger>
                 </Style.Triggers>
               </Style>
-            </Border.Style>
-          </Border>
+            </Rectangle.Style>
+          </Rectangle>
           <!-- Widget sélectionné : poignée de coin, à glisser sur la grille pour le redimensionner -->
           <!-- AccessibleContent (peer UI Automation) et non Border : un Border n'a pas de peer, son nom accessible n'atteindrait jamais un lecteur d'écran -->
           <controls:AccessibleContent ControlType="Thumb" Tag="ResizeHandle" Width="44" Height="44" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8" Cursor="SizeNWSE"
@@ -273,11 +275,13 @@
           <Border BorderThickness="4" BorderBrush="{DynamicResource DeckAccent}" IsHitTestVisible="False"
                   CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                   Visibility="{Binding IsSelected, Converter={StaticResource BoolVis}}"/>
-          <Border BorderThickness="6" BorderBrush="{DynamicResource DeckAccent}" Background="{DynamicResource DeckAccentSoft}" IsHitTestVisible="False"
-                  CornerRadius="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+          <!-- Contour en pointillés de la case entière (jamais seulement autour du « + ») -->
+          <Rectangle Stroke="{DynamicResource DeckAccent}" StrokeThickness="3" StrokeDashArray="3 2" StrokeDashCap="Round" Fill="{DynamicResource DeckAccentSoft}" IsHitTestVisible="False"
+                     RadiusX="{Binding DataContext.L.TileRadius.TopLeft, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                     RadiusY="{Binding DataContext.L.TileRadius.TopLeft, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                   Visibility="{Binding IsDropTarget, Converter={StaticResource BoolVis}}">
-            <Border.Style>
-              <Style TargetType="Border">
+            <Rectangle.Style>
+              <Style TargetType="Rectangle">
                 <Style.Triggers>
                   <MultiDataTrigger>
                     <MultiDataTrigger.Conditions>
@@ -297,8 +301,8 @@
                   </MultiDataTrigger>
                 </Style.Triggers>
               </Style>
-            </Border.Style>
-          </Border>
+            </Rectangle.Style>
+          </Rectangle>
           <ui:SymbolIcon Symbol="Add24" Foreground="{DynamicResource DeckDim}" HorizontalAlignment="Center" VerticalAlignment="Center"
                      FontSize="{Binding DataContext.L.AddGlyphSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
         </Grid>
