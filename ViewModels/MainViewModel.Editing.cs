@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -260,11 +261,30 @@ public partial class MainViewModel
             : target is DeckTileViewModel ? "Échanger"
             : "Déplacer ici";
         if (IsOverTrash) DragHint = "Supprimer le bouton";
+        Spread(valid && !back ? target as PlacedTile : null);
+    }
+
+    /// <summary>Écarte les touches qui entourent la case visée (null : tout revient en place). La touche tenue et la cible ne bougent pas.</summary>
+    void Spread(PlacedTile? target)
+    {
+        var deck = Tiles.OfType<DeckTileViewModel>().ToList();
+        if (target == null || deck.Count == 0)
+        {
+            foreach (var t in deck) { if (t.SpreadX != 0) t.SpreadX = 0; if (t.SpreadY != 0) t.SpreadY = 0; }
+            return;
+        }
+        var offsets = DragSpread.Offsets(L.Columns, deck.Select(t => t.Cell).ToList(), _dragSource?.Cell ?? -1, target.Cell);
+        for (int i = 0; i < deck.Count; i++)
+        {
+            if (deck[i].SpreadX != offsets[i].X) deck[i].SpreadX = offsets[i].X;
+            if (deck[i].SpreadY != offsets[i].Y) deck[i].SpreadY = offsets[i].Y;
+        }
     }
 
     /// <summary>Fin du glissement (dépôt ou abandon) : tout redevient normal.</summary>
     public void EndDrag()
     {
+        Spread(null);
         if (_dragSource != null) _dragSource.IsDragSource = false;
         _dragSource = null;        foreach (var tile in Tiles)
         {

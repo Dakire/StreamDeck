@@ -54,6 +54,10 @@ public sealed partial class DeckTileViewModel : PlacedTile, IEditableTile
     [ObservableProperty] bool _isDropTarget;
     /// <summary>true pendant l'appui long hors édition : la touche est soulevée (échelle et ombre) avant que le glissement ne commence.</summary>
     [ObservableProperty] bool _isLifted;
+    /// <summary>Écartement horizontal (DIP) quand un glissé voisin vise une case proche : la touche s'en écarte (animé par la vue).</summary>
+    [ObservableProperty] double _spreadX;
+    /// <summary>Écartement vertical (DIP).</summary>
+    [ObservableProperty] double _spreadY;
 
     /// <summary>Bouton de la configuration représenté (null pour la case « retour »).</summary>
     public DeckButton? Button { get; init; }

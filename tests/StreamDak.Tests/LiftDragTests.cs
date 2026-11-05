@@ -124,7 +124,7 @@ public class LiftDragTests
         });
         Assert.DoesNotContain(Doc.Container(new Place("P", 0))!, b => b?.Label == "Un");
         Assert.Contains(Doc.Container(new Place("P", 3))!, b => b?.Label == "Un");
-        Doc.Undo();
+        _host.Run(() => Doc.Undo());
         Assert.Contains(Doc.Container(new Place("P", 0))!, b => b?.Label == "Un");
     }
 

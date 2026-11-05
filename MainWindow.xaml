@@ -147,17 +147,11 @@
     <!-- ===== Touches ===== -->
 
     <DataTemplate DataType="{x:Type vm:DeckTileViewModel}">
-      <Grid>
+      <!-- Appui long hors édition : la touche se soulève (échelle et ombre, animées) ; les voisines de la case visée s'écartent (b:TileMotion) -->
+      <Grid b:TileMotion.Lifted="{Binding IsLifted}">
         <Grid.Style>
           <Style TargetType="Grid">
             <Style.Triggers>
-              <!-- Appui long hors édition : la touche se soulève (échelle et ombre) -->
-              <DataTrigger Binding="{Binding IsLifted}" Value="True">
-                <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-                <Setter Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="1.08" ScaleY="1.08"/></Setter.Value></Setter>
-                <Setter Property="Effect"><Setter.Value><DropShadowEffect BlurRadius="22" ShadowDepth="8" Opacity="0.55" Color="Black"/></Setter.Value></Setter>
-                <Setter Property="Panel.ZIndex" Value="10"/>
-              </DataTrigger>
               <DataTrigger Binding="{Binding IsDragSource}" Value="True"><Setter Property="Opacity" Value="0.35"/></DataTrigger>
               <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
@@ -172,6 +166,7 @@
           </Style>
         </Grid.Style>
       <Button Style="{DynamicResource DeckTileStyle}" Command="{Binding Click}" AutomationProperties.Name="{Binding AccessibleName}"
+              b:TileMotion.SpreadX="{Binding SpreadX}" b:TileMotion.SpreadY="{Binding SpreadY}"
               Background="{Binding Face.Background}" BorderBrush="{Binding Face.Border}"
               Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
               Tag="{Binding DataContext.L.TileRadius, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
