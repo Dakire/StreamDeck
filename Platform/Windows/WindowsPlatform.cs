@@ -22,9 +22,6 @@ public sealed class WindowsPlatform : IKeyboardService, IAppLauncher, IWindowSer
     /// <summary>État de la batterie (widget Batterie), ou null si Windows ne le donne pas.</summary>
     public static BatteryState? ReadBattery() => NativePower.Read();
 
-    /// <summary>Active ou désactive une fenêtre Win32 hébergée (cadre web) : désactivée, elle ne capte plus la souris, le doigt ni le clavier.</summary>
-    public static void SetHostedWindowInput(System.IntPtr window, bool enabled) => WindowFocus.SetInputEnabled(window, enabled);
-
     /// <summary>Plus grande icône d'un fichier (256 px si Windows l'a), en HICON à libérer par <see cref="DestroyIconHandle"/> ; <see cref="System.IntPtr.Zero"/> sinon.</summary>
     public static System.IntPtr ExtractLargestIcon(string path) => NativeIcons.Largest(path);
 

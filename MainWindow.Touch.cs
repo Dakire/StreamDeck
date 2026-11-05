@@ -34,7 +34,18 @@ public partial class MainWindow
         public int buttonChangeType;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    struct POINTER_TOUCH_INFO
+    {
+        public POINTER_INFO pointerInfo;
+        public uint touchFlags, touchMask;
+        public RECT rcContact, rcContactRaw;
+        public uint orientation, pressure;
+    }
+
     [DllImport("user32.dll")] static extern bool GetPointerInfo(uint pointerId, out POINTER_INFO info);
+    [DllImport("user32.dll")] static extern bool GetPointerTouchInfo(uint pointerId, out POINTER_TOUCH_INFO info);
+    [DllImport("user32.dll")] static extern bool GetPointerDeviceRects(IntPtr device, out RECT pointerDeviceRect, out RECT displayRect);
     [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
     [StructLayout(LayoutKind.Sequential)] struct RECT { public int Left, Top, Right, Bottom; }
     const uint SWP_NOSIZE = 0x0001, SWP_NOZORDER = 0x0004;
@@ -66,6 +77,7 @@ public partial class MainWindow
     /// <summary>Oublie le doigt suivi (fin ou début du mode édition : son relâchement est traité par WPF, pas par le deck).</summary>
     internal void ResetTouchTracking()
     {
+        CancelWebTouches();
         _levelTouch?.PointerCancel();
         _levelTouch = null;
         _tap.Cancel();
@@ -100,7 +112,73 @@ public partial class MainWindow
     {
         uint id = (uint)((long)wParam & 0xFFFF);
         if (!GetPointerInfo(id, out var info)) return;
+        if (RouteToWebFrame(msg, WebTouchOf(id, info))) { _lastTouchTick = Environment.TickCount64; return; }
         HandleTouch(msg, id, info.ptPixelLocation.X, info.ptPixelLocation.Y, (info.pointerFlags & POINTER_FLAG_INCONTACT) != 0);
+    }
+
+    /// <summary>Contact du doigt tel que Windows le décrit (position, drapeaux, zone de contact, pression, surfaces du périphérique), pour la page web.</summary>
+    static Controls.WebTouchPoint WebTouchOf(uint id, POINTER_INFO info)
+    {
+        Int32Rect contact = default, device = default, display = default;
+        uint pressure = 0, orientation = 0, mask = 0;
+        if (GetPointerTouchInfo(id, out var touch))
+        {
+            contact = new Int32Rect(touch.rcContact.Left, touch.rcContact.Top, touch.rcContact.Right - touch.rcContact.Left, touch.rcContact.Bottom - touch.rcContact.Top);
+            pressure = touch.pressure;
+            orientation = touch.orientation;
+            mask = touch.touchMask;
+        }
+        if (GetPointerDeviceRects(info.sourceDevice, out var d, out var s))
+        {
+            device = new Int32Rect(d.Left, d.Top, d.Right - d.Left, d.Bottom - d.Top);
+            display = new Int32Rect(s.Left, s.Top, s.Right - s.Left, s.Bottom - s.Top);
+        }
+        return new Controls.WebTouchPoint(id, info.frameId, info.pointerFlags, new Point(info.ptPixelLocation.X, info.ptPixelLocation.Y),
+            info.ptHimetricLocation.X, info.ptHimetricLocation.Y, info.dwTime, contact, pressure, orientation, mask, device, display);
+    }
+
+    /// <summary>Doigts posés sur une page web active : chacun appartient à son cadre jusqu'au relâchement (défilement, pincement à deux doigts).</summary>
+    readonly System.Collections.Generic.Dictionary<uint, (Controls.DeckWebView Frame, Controls.WebTouchPoint Last)> _webTouches = new();
+
+    /// <summary>
+    /// Doigt sur une page web en interaction (cadre activé, bouclier retiré) : il est transmis à la page comme un vrai toucher, avec les données de Windows, et
+    /// ne passe ni par le test d'appui, ni par l'appui long, ni par le balayage des pages (la page garde son défilement). Retourne true si le message a été transmis.
+    /// Au repos, le bouclier transparent est au-dessus : le premier toucher active la page, comme avant (ADR 0032).
+    /// </summary>
+    internal bool RouteToWebFrame(int msg, Controls.WebTouchPoint p)
+    {
+        if (_webTouches.TryGetValue(p.Id, out var held))
+        {
+            held.Frame.Forward(msg, p);
+            if (msg == WM_POINTERUP) _webTouches.Remove(p.Id);
+            else _webTouches[p.Id] = (held.Frame, p);
+            return true;
+        }
+        if (msg != WM_POINTERDOWN || !Controls.DeckWebView.CanForwardTouch || _vm.IsEdit || _vm.MenuOpen || _vm.HasDialog) return false;
+        if (WebFrameAt((int)p.Screen.X, (int)p.Screen.Y) is not { } web || !web.Forward(msg, p)) return false;
+        _webTouches[p.Id] = (web, p);
+        return true;
+    }
+
+    /// <summary>Doigts encore posés sur une page web : la page reçoit un relâchement annulé (passage en édition, fenêtre fermée), rien ne reste « appuyé ».</summary>
+    void CancelWebTouches()
+    {
+        foreach (var (id, (frame, last)) in _webTouches)
+            frame.Forward(WM_POINTERUP, last with { Flags = (last.Flags & ~POINTER_FLAG_INCONTACT) | 0x8000 | 0x40000 });   // CANCELED | UP
+        _webTouches.Clear();
+    }
+
+    /// <summary>Cadre web activé (en interaction, affiché) sous le point (pixels écran), ou null.</summary>
+    Controls.DeckWebView? WebFrameAt(int x, int y)
+    {
+        for (DependencyObject? d = HitVisual(x, y); d != null; d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+        {
+            if (d is not Controls.WebWidgetView view) continue;
+            if (view.Frame is not { IsEnabled: true, IsVisible: true } web) return null;
+            var at = web.PointFromScreen(new Point(x, y));
+            return at.X >= 0 && at.Y >= 0 && at.X < web.ActualWidth && at.Y < web.ActualHeight ? web : null;
+        }
+        return null;
     }
 
     /// <summary>true si ce doigt touche encore l'écran (Windows peut annuler un toucher sans relâchement : geste système, rejet de paume).</summary>
@@ -130,7 +208,7 @@ public partial class MainWindow
                 // Un doigt suivi qui ne touche plus l'écran (relâchement jamais reçu) ne doit pas bloquer les appuis suivants
                 if (_tap.Tracking && _tap.TrackedId is { } old && (old == id || !PointerInContact(old)))
                     ResetTouchTracking();
-                // Un toucher que le deck reçoit n'est jamais sur le cadre actif (qui a sa propre fenêtre) : hors de la tuile web, la page redevient passive
+                // Un toucher sur le cadre actif lui a été transmis plus haut : celui-ci est ailleurs. Hors de la tuile web, la page redevient passive
                 if (!IsInsideWebTile(HitVisual(x, y))) _vm.EndWebInteractions();
                 bool tracked = _tap.Tracking;
                 BeginSwipe(id, x, y, now, tracked);

@@ -4,7 +4,6 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Web.WebView2.Wpf;
 using StreamDak.Controls;
 using StreamDak.ViewModels;
 using Xunit;
@@ -54,7 +53,7 @@ public class WebFrameLinksTests
         try
         {
             var view = _host.Run(() => { var v = new WebWidgetView { DataContext = vm }; window.Content = v; window.Show(); return v; });
-            WebView2 web = _host.Run(() => WpfHost.Descendants<WebView2>(view).Single());
+            DeckWebView web = _host.Run(() => WpfHost.Descendants<DeckWebView>(view).Single());
             var limit = DateTime.UtcNow.AddSeconds(20);
             while (_host.Run(() => web.CoreWebView2 == null || !web.CoreWebView2.Source.StartsWith("http://localhost", StringComparison.Ordinal)) && DateTime.UtcNow < limit)
                 await Task.Delay(100);
@@ -124,7 +123,7 @@ public class WebFrameLinksTests
         try
         {
             var view = _host.Run(() => { var v = new WebWidgetView { DataContext = vm }; window.Content = v; window.Show(); return v; });
-            WebView2 web = _host.Run(() => WpfHost.Descendants<WebView2>(view).Single());
+            DeckWebView web = _host.Run(() => WpfHost.Descendants<DeckWebView>(view).Single());
             async Task Until(Func<bool> condition)
             {
                 var end = DateTime.UtcNow.AddSeconds(15);
@@ -193,7 +192,7 @@ public class WebFrameLinksTests
         try
         {
             var view = _host.Run(() => { var v = new WebWidgetView { DataContext = vm }; window.Content = v; window.Show(); return v; });
-            WebView2 web = _host.Run(() => WpfHost.Descendants<WebView2>(view).Single());
+            DeckWebView web = _host.Run(() => WpfHost.Descendants<DeckWebView>(view).Single());
             var limit = DateTime.UtcNow.AddSeconds(20);
             while (_host.Run(() => web.CoreWebView2 == null || !web.CoreWebView2.Source.StartsWith("http://localhost", StringComparison.Ordinal)) && DateTime.UtcNow < limit)
                 await Task.Delay(100);

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Microsoft.Web.WebView2.Wpf;
 using StreamDak.ViewModels;
 
 namespace StreamDak.Controls;
@@ -11,8 +10,8 @@ namespace StreamDak.Controls;
 /// </summary>
 sealed class WebFrame
 {
-    /// <summary>Contrôle WebView2 (créé une fois, déplacé d'une vue à l'autre).</summary>
-    public required WebView2 Web { get; init; }
+    /// <summary>Contrôle WebView2 par composition (créé une fois, déplacé d'une vue à l'autre).</summary>
+    public required DeckWebView Web { get; init; }
     /// <summary>Adresse configurée : base des autorisations (caméra, micro, notifications).</summary>
     public required Uri Source { get; init; }
     /// <summary>Tuile qui affiche le cadre, ou null s'il est rangé.</summary>

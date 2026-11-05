@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
-using Microsoft.Web.WebView2.Wpf;
 using StreamDak.Controls;
 using StreamDak.ViewModels;
 using Xunit;
@@ -120,8 +119,8 @@ public class WebInputModeCoreTests
 }
 
 /// <summary>
-/// Le vrai cadre WebView2, dans une fenêtre placée hors de tout écran (jamais visible ni activée) : en mode passif, sa fenêtre Win32 est désactivée et Windows
-/// donne le point sous le pointeur à la fenêtre du deck, pas à la page.
+/// Le vrai cadre WebView2, dans une fenêtre placée hors de tout écran (jamais visible ni activée). Rendu par composition (ADR 0036) : aucune fenêtre Win32 sous
+/// la page, le point sous le pointeur appartient toujours à la fenêtre du deck ; hors interaction, le cadre est désactivé (IsEnabled) sous son bouclier.
 /// </summary>
 [Collection("ui")]
 public class WebInputModeFrameTests
@@ -129,10 +128,7 @@ public class WebInputModeFrameTests
     readonly WpfHost _host;
     public WebInputModeFrameTests(WpfHost host) { _host = host; }
 
-    [DllImport("user32.dll")] static extern bool IsWindowEnabled(IntPtr hWnd);
     [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(POINT p);
-    [DllImport("user32.dll")] static extern IntPtr GetAncestor(IntPtr hWnd, uint flags);
-    [DllImport("user32.dll")] static extern bool IsChild(IntPtr parent, IntPtr child);
     [StructLayout(LayoutKind.Sequential)] struct POINT { public int X, Y; }
 
     static (HttpListener Listener, Uri Uri) Serve()
@@ -161,7 +157,7 @@ public class WebInputModeFrameTests
     }
 
     [Fact]
-    public async Task APassivePageIsADisabledWindowAndThePointerGoesToTheDeck()
+    public async Task APassivePageIsDisabledAndThePointerAlwaysGoesToTheDeck()
     {
         var (listener, uri) = Serve();
         using var _ = listener;
@@ -172,32 +168,31 @@ public class WebInputModeFrameTests
         try
         {
             var view = _host.Run(() => { var v = new WebWidgetView { DataContext = vm }; window.Content = v; window.Show(); return v; });
-            WebView2 web = _host.Run(() => WpfHost.Descendants<WebView2>(view).Single());
+            DeckWebView web = _host.Run(() => WpfHost.Descendants<DeckWebView>(view).Single());
             var limit = DateTime.UtcNow.AddSeconds(20);
             while (_host.Run(() => web.CoreWebView2 == null || !web.CoreWebView2.Source.StartsWith("http://localhost", StringComparison.Ordinal)) && DateTime.UtcNow < limit)
                 await Task.Delay(100);
             Assert.True(_host.Run(() => web.CoreWebView2 != null), "WebView2 indisponible sur cette machine");
 
-            IntPtr frame = _host.Run(() => web.Handle), deck = _host.Run(() => new WindowInteropHelper(window).Handle);
+            IntPtr deck = _host.Run(() => new WindowInteropHelper(window).Handle);
             POINT center = _host.Run(() =>
             {
                 var p = web.PointToScreen(new Point(web.ActualWidth / 2, web.ActualHeight / 2));
                 return new POINT { X = (int)p.X, Y = (int)p.Y };
             });
 
-            Assert.False(IsWindowEnabled(frame));                           // le cadre ne reçoit plus rien…
+            Assert.False(_host.Run(() => web.IsEnabled));                   // le cadre ne reçoit plus rien…
             Assert.Equal(deck, WindowFromPoint(center));                    // …le pointeur au-dessus de la page appartient au deck
             await Task.Delay(1500);
             Assert.Equal(0, typingRequests);                                // le champ « autofocus » de la page ne vole pas le clavier
 
             _host.Run(() => vm.InteractCommand.Execute(null));
-            Assert.True(IsWindowEnabled(frame));
-            var hit = WindowFromPoint(center);
-            Assert.True(hit == frame || IsChild(frame, hit), "en interaction, la page reçoit le pointeur");
+            Assert.True(_host.Run(() => web.IsEnabled));
+            Assert.Equal(deck, WindowFromPoint(center));                    // en interaction aussi : le deck reçoit le doigt et le transmet à la page
 
             _host.Run(() => vm.EndInteraction());
-            Assert.False(IsWindowEnabled(frame));
-            Assert.Equal(deck, GetAncestor(WindowFromPoint(center), 2 /* GA_ROOT */));
+            Assert.False(_host.Run(() => web.IsEnabled));
+            Assert.Equal(deck, WindowFromPoint(center));
         }
         finally { _host.Run(() => window.Close()); }
     }

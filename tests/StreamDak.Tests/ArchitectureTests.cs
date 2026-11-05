@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Xunit;
@@ -78,6 +79,26 @@ public class ArchitectureTests
     public void TheStaticServiceLocatorIsGone()
     {
         Assert.Null(App.GetType("StreamDak.AppServices"));
+    }
+
+    /// <summary>
+    /// Le toucher ne déplace jamais le curseur système et ne fabrique aucun clic (ADR 0013, 0036) : aucune source de l'application ne l'appelle. Un test sur le
+    /// curseur réel serait aléatoire (la souris de l'utilisateur le bouge), ce garde-fou statique ne l'est pas. Le clavier simulé (<c>SendInput</c> de touches) reste permis.
+    /// </summary>
+    [Fact]
+    public void NoSourceMovesTheSystemCursorOrInjectsAMouse()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root != null && !File.Exists(Path.Combine(root.FullName, "StreamDak.csproj"))) root = root.Parent;
+        Assert.NotNull(root);
+        string[] forbidden = { "SetCursorPos", "mouse_event", "SendMouseInput", "MOUSEEVENTF_", "INPUT_MOUSE", "SetPhysicalCursorPos", "ClipCursor" };
+        var sep = Path.DirectorySeparatorChar;
+        var hits = Directory.EnumerateFiles(root!.FullName, "*.cs", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{sep}obj{sep}") && !f.Contains($"{sep}bin{sep}") && !f.Contains($"{sep}tests{sep}") && !f.Contains($"{sep}artifacts{sep}") && !f.Contains($"{sep}samples{sep}"))
+            .Select(f => (File: f, Text: File.ReadAllText(f)))
+            .SelectMany(x => forbidden.Where(w => x.Text.Contains(w, StringComparison.Ordinal)).Select(w => $"{Path.GetRelativePath(root.FullName, x.File)} : {w}"))
+            .ToList();
+        Assert.True(hits.Count == 0, "appel interdit : " + string.Join(" ; ", hits));
     }
 
     static MethodInfo[] NativeMethods(Assembly a) => a.GetTypes()

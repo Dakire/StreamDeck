@@ -24,8 +24,6 @@ internal static class WindowFocus
     [DllImport("user32.dll")] static extern bool AttachThreadInput(uint from, uint to, bool attach);
     [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int index);
     [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
-    [DllImport("user32.dll")] static extern bool EnableWindow(IntPtr h, bool enable);
-    [DllImport("user32.dll")] static extern bool IsWindowEnabled(IntPtr h);
     [DllImport("kernel32.dll", SetLastError = true)] static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);
     [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
     [DllImport("advapi32.dll", SetLastError = true)] static extern bool OpenProcessToken(IntPtr process, uint access, out IntPtr token);
@@ -119,16 +117,6 @@ internal static class WindowFocus
         return ForegroundIsElevated() ? name + " (administrateur)" : name;
     }
 
-    /// <summary>
-    /// Active ou désactive une fenêtre enfant hébergée (cadre WebView2). Désactivée, Windows ne lui donne plus ni souris ni doigt ni clavier : le point
-    /// sous le pointeur revient à la fenêtre parente. WPF ne le fait pas de lui-même (IsEnabled d'un HwndHost ne touche pas la fenêtre Win32).
-    /// Sans effet si l'état est déjà le bon ou si la fenêtre n'existe pas encore.
-    /// </summary>
-    public static void SetInputEnabled(IntPtr window, bool enabled)
-    {
-        if (window == IntPtr.Zero || IsWindowEnabled(window) == enabled) return;
-        EnableWindow(window, enabled);
-    }
 
     /// <summary>Distinct par programme, pour proposer un choix dans l'éditeur.</summary>
     public static List<string> OpenProcessNames() =>

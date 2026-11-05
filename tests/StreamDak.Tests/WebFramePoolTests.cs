@@ -5,7 +5,6 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Web.WebView2.Wpf;
 using StreamDak.Controls;
 using StreamDak.ViewModels;
 using Xunit;
@@ -107,9 +106,9 @@ public class WebFramePoolTests
         new() { Button = new DeckButton { Widget = WidgetTypes.Web }, Source = new Uri($"http://localhost:{port}/"), FrameKey = key };
 
     /// <summary>Le WebView2 d'une vue : le premier du cadre (posé par la vue au chargement).</summary>
-    WebView2 WebOf(WebWidgetView view) { _host.Settle(); return _host.Run(() => WpfHost.Descendants<WebView2>(view).Single()); }
+    DeckWebView WebOf(WebWidgetView view) { _host.Settle(); return _host.Run(() => WpfHost.Descendants<DeckWebView>(view).Single()); }
 
-    async Task WaitLoaded(WebView2 web, string startsWith = "http://")
+    async Task WaitLoaded(DeckWebView web, string startsWith = "http://")
     {
         var limit = DateTime.UtcNow.AddSeconds(20);
         while (_host.Run(() => web.CoreWebView2 == null || !web.CoreWebView2.Source.StartsWith(startsWith, StringComparison.Ordinal)) && DateTime.UtcNow < limit)
@@ -117,7 +116,7 @@ public class WebFramePoolTests
         await Task.Delay(700);
     }
 
-    async Task<string> Eval(WebView2 web, string js) =>
+    async Task<string> Eval(DeckWebView web, string js) =>
         await await _host.Dispatcher.InvokeAsync(async () => await web.CoreWebView2.ExecuteScriptAsync(js)).Task;
 
     [Fact]
@@ -210,7 +209,7 @@ public class WebFramePoolTests
         _host.Run(() =>
         {
             for (int i = 0; i < WebFramePool.MaxParked + 3; i++)
-                WebFramePool.Park("k" + i, new WebFrame { Web = new WebView2(), Source = new Uri("https://example.org/") });
+                WebFramePool.Park("k" + i, new WebFrame { Web = new DeckWebView(), Source = new Uri("https://example.org/") });
             Assert.Equal(WebFramePool.MaxParked, WebFramePool.Count);
             Assert.Null(WebFramePool.Take("k0"));                                    // le plus ancien est parti
             Assert.NotNull(WebFramePool.Take("k" + (WebFramePool.MaxParked + 2)));
@@ -272,7 +271,7 @@ public class WebFramePoolTests
         finally { _host.Run(() => { window.Content = null; window.Close(); WebFramePool.Clear(); }); }
     }
 
-    async Task<string> Until(WebView2 web, string js, string whileValue)
+    async Task<string> Until(DeckWebView web, string js, string whileValue)
     {
         var end = DateTime.UtcNow.AddSeconds(10);
         string value = whileValue;

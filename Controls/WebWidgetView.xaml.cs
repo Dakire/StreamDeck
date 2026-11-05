@@ -8,7 +8,6 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Threading;
 using Microsoft.Web.WebView2.Core;
-using Microsoft.Web.WebView2.Wpf;
 using StreamDak.ViewModels;
 
 namespace StreamDak.Controls;
@@ -20,9 +19,10 @@ namespace StreamDak.Controls;
 /// droit (position…) est refusé. La page ne peut rien faire sur StreamDak : elle s'affiche, c'est tout (ADR 0017).
 /// Le cadre est rangé (<see cref="WebFramePool"/>) quand la tuile quitte l'écran et repris au retour : la page n'est pas rechargée.
 /// <para>
-/// Interaction (<see cref="WebInputModes"/>) : hors interaction, le cadre est <b>désactivé</b> (<c>IsEnabled</c> faux, donc <c>EnableWindow</c> sur sa fenêtre
-/// Win32) : Windows ne lui envoie plus ni souris ni doigt, qui vont à la fenêtre du deck, et la page ne peut plus prendre le focus. Un bouton transparent posé
-/// au-dessus (mode tactile) ouvre l'interaction au premier toucher ; elle se termine seule après <see cref="WebInputModes.IdleExit"/> sans geste dans la page.
+/// Le cadre est rendu par composition (<see cref="DeckWebView"/>, ADR 0036) : aucune fenêtre Win32 sous le doigt, le toucher passe par le deck et arrive à la page
+/// comme un vrai toucher, sans souris synthétique ni curseur qui saute. Interaction (<see cref="WebInputModes"/>) : hors interaction, le cadre est désactivé
+/// (<c>IsEnabled</c> faux) et un bouton transparent posé au-dessus (mode tactile) ouvre l'interaction au premier toucher ; elle se termine seule après
+/// <see cref="WebInputModes.IdleExit"/> sans geste dans la page.
 /// </para>
 /// </summary>
 public partial class WebWidgetView : UserControl
@@ -65,12 +65,15 @@ public partial class WebWidgetView : UserControl
         _fieldTimer.Tick += async (_, _) =>
         {
             if (!IsVisible || Window.GetWindow(this) is not { WindowState: not WindowState.Minimized }) return;   // deck masqué ou réduit : rien à relever
-            ApplyInput(); SyncZoom(); await PollFocusedFieldAsync();
+            SyncZoom(); await PollFocusedFieldAsync();
         };
         DataContextChanged += OnDataContextChanged;
     }
 
-    WebView2? Web => _frame?.Web;
+    DeckWebView? Web => _frame?.Web;
+
+    /// <summary>Cadre affiché par la vue, ou null (le deck lui transmet le doigt pendant l'interaction).</summary>
+    internal DeckWebView? Frame => Web;
 
     void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
@@ -96,22 +99,9 @@ public partial class WebWidgetView : UserControl
     {
         // La saisie au clavier commence : le focus passe à la page (la fenêtre vient de devenir activable)
         if (e.PropertyName == nameof(WebWidgetViewModel.ZoomPercent) && Web != null && _vm != null) Web.ZoomFactor = _vm.ZoomPercent / 100.0;
-        if (e.PropertyName == nameof(WebWidgetViewModel.IsInteracting))
-        {
-            ApplyInput();
-            if (_vm is { IsInteracting: true }) _lastGesture = Environment.TickCount64;
-        }
+        if (e.PropertyName == nameof(WebWidgetViewModel.IsInteracting) && _vm is { IsInteracting: true }) _lastGesture = Environment.TickCount64;
         if (e.PropertyName == nameof(WebWidgetViewModel.IsTyping) && _vm is { IsTyping: true })
             Dispatcher.BeginInvoke(DispatcherPriority.Input, () => { if (Web?.CoreWebView2 != null) Web.Focus(); });
-    }
-
-    /// <summary>
-    /// Fenêtre Win32 du cadre activée seulement pendant l'interaction. Appelé à chaque changement et à chaque relevé : si WebView2 recrée sa fenêtre, elle
-    /// est remise dans le bon état en moins d'une demi-seconde.
-    /// </summary>
-    void ApplyInput()
-    {
-        if (Web is { } web && _vm != null) StreamDak.Platform.Windows.WindowsPlatform.SetHostedWindowInput(web.Handle, _vm.IsInteracting);
     }
 
     /// <summary>Recharge la page ; si le processus du navigateur est mort, le cadre est recréé (le recharger lèverait une exception).</summary>
@@ -164,7 +154,7 @@ public partial class WebWidgetView : UserControl
         _key = vm.FrameKey;
         var frame = _key != null ? WebFramePool.Take(_key) : null;
         bool fresh = frame == null;
-        frame ??= new WebFrame { Web = new WebView2 { DefaultBackgroundColor = System.Drawing.Color.Transparent }, Source = source };
+        frame ??= new WebFrame { Web = new DeckWebView { DefaultBackgroundColor = System.Drawing.Color.Transparent }, Source = source };
         _frame = frame;
         frame.Vm = vm;
         frame.Web.SetBinding(VisibilityProperty, new Binding(nameof(WebWidgetViewModel.ShowPage)) { Source = vm, Converter = new BooleanToVisibilityConverter() });
@@ -175,7 +165,6 @@ public partial class WebWidgetView : UserControl
         frame.Web.ZoomFactorChanged += OnZoomFactorChanged;
         _readyTicks = fresh ? 0 : FieldIdleTicks;
         _fieldTimer.Start();
-        _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, ApplyInput);   // la fenêtre du cadre existe une fois la mise en page faite
         if (!fresh) return;   // page déjà chargée : rien d'autre à faire
 
         try
@@ -184,7 +173,6 @@ public partial class WebWidgetView : UserControl
             if (frame.Disposed || frame.Web.CoreWebView2 == null) return;   // évincé pendant l'initialisation
             Configure(frame);
             if (WebFramePool.Economy) WebFramePool.SetMemoryLevel(frame, low: true);
-            ApplyInput();
             await ResetStoredDenialsAsync(frame.Web.CoreWebView2);   // avant la navigation : la page doit voir « à demander », pas « bloqué »
             if (frame.Disposed || frame.Web.CoreWebView2 == null) return;
             await frame.Web.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(InputTrackerScript);
