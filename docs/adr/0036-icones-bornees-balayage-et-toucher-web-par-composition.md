@@ -42,6 +42,9 @@ Vérifié : tests de mise en page sur de vraies `TileFace` à 100, 150 et 200 % 
 - **Animation** : la grille seule suit le doigt (barre et dock fixes), résiste au bout de la liste (30 %, 12 % de la largeur au plus) et revient avec un rebond élastique ; la page suivante entre
   depuis la distance parcourue. Sans animations (`Motion.Enabled`), rien ne bouge pendant le geste.
 - **Réglage** : *Balayer pour changer de page* (Paramètres › Toucher), clé `SwipePagesDisabled` (absente = activé).
+- **Retour au parent** (demandé le 5 novembre 2026) : dans un dossier, un balayage **vers le bas**, parti de n'importe où sur la grille (pas du bord), revient au dossier parent par le chemin du bouton
+  *Retour*. Mêmes seuils que ci-dessus (≥ 80 DIP et vif, ou ≥ 160 DIP), `dy > 1,5 × |dx|`. Hors dossier, un balayage vertical n'est pas un geste : le deck le traite comme avant. Même réglage.
+  Limite : un widget qui défile verticalement ailleurs que sur un cadre web (agenda, RSS) peut déclencher ce retour dans un dossier.
 - **Page web plein cadre** : le balayage ne s'y déclenche pas ; on change de page par les **onglets du dock**, toujours affichés hors du cadre.
 
 ## 3. Toucher d'une page web
@@ -94,8 +97,7 @@ Bloc-notes après avoir touché la page (la fenêtre ne doit pas prendre le focu
 
 ## Non retenu
 
-- **Retour au dossier parent par geste** (balayage vers le bas ou depuis le bord gauche) : le bord gauche de l'écran ouvre le panneau des widgets de Windows 11, et un
-  balayage vertical entre en conflit avec les widgets qui défilent (agenda, RSS). Le bouton *Retour* et la case « retour » restent le chemin.
+- **Retour au dossier parent depuis le bord gauche de l'écran** : ce bord ouvre le panneau des widgets de Windows 11. Le geste retenu part de n'importe où sur la grille (voir ci-dessus).
 - **Points d'indicateur de pages** sous la grille : les onglets du dock montrent déjà les pages (48 px, toujours touchables) et les points de sous-pages existent ; un troisième
   indicateur doublerait l'information.
 - **Favicons récupérés automatiquement** : la récupération reste à la demande de l'utilisateur (*Icône du site*), aucun nouveau comportement réseau.

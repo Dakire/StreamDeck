@@ -9,6 +9,7 @@ Clé facultative ajoutée à `config.json` (validée) : `SwipePagesDisabled` (ab
 ### Ajouté
 - **Balayer pour changer de page** (ADR 0036) : un balayage horizontal sur la grille passe à la page suivante (vers la gauche) ou précédente (vers la droite) ; la grille suit le doigt
   et rebondit au bout de la liste. Jamais en mode édition ni sur une page web ; un balayage n'exécute jamais la touche de départ. Désactivable dans Paramètres › Toucher.
+  Il part de n'importe où sur la grille, pas seulement du bord. Dans un dossier, un balayage vers le bas revient au dossier parent.
 
 ### Corrigé
 - **Icônes d'applications et de sites** (ADR 0036) : elles ne passent plus derrière le titre (zone bornée au-dessus ou au-dessous) et sont nettes : icône de programme en 256 px au lieu

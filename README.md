@@ -77,7 +77,7 @@ automatique (une fois par jour, désactivable). Rien ne s'installe sans ton acco
   navigation (contour + chevron), affichage (heure ou minuteur en grand), image plein cadre ; badge du nombre d'étapes.
 - Retour d'exécution sur la touche : anneau si l'action dure, coche si elle réussit, alerte et message si elle échoue (étape en cause).
 - Barre du haut : profil actif (toucher pour en changer), badges *Mode édition* et *Simulation*. Dock du bas : pages, sous-pages, menu.
-- **Balayer** la grille vers la gauche ou la droite passe à la page suivante ou précédente (pas en mode édition ni sur une page web : utilise alors les onglets du dock).
+- **Balayer** la grille vers la gauche ou la droite passe à la page suivante ou précédente, de n'importe où (pas seulement du bord) ; dans un dossier, **balayer vers le bas** revient au dossier parent (pas en mode édition ni sur une page web : utilise alors les onglets du dock).
 - Icônes d'applications et de sites nettes, dans une zone qui laisse toujours sa place au titre ; *Remplir* garde l'image en plein cadre (128 px au moins).
 - Profils, pages en onglets, dossiers et sous-dossiers ; pages masquées accessibles par une action `page`.
 - Fenêtre qui ne prend pas le focus : les raccourcis arrivent à l'application active.
