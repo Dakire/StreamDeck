@@ -36,5 +36,8 @@ effacée : elle passe au statut « Remplacée par … ».
 | [0029](0029-webview2-sans-pont-de-messages.md) | WebView2 : aucun pont page → application dans les cadres visibles, coût réduit autrement | Acceptée |
 | [0030](0030-durcissement-import-web-http-et-plugins.md) | Durcissement : droits des pages web importées, import d'intégrations, images, redirections HTTP, empreintes des plugins | Acceptée |
 | [0031](0031-accessibilite-lecteurs-d-ecran-et-contraste-eleve.md) | Accessibilité : annonces pour lecteurs d'écran, contraste élevé, erreurs persistantes | Acceptée |
+| [0032](0032-activation-des-pages-web-au-toucher.md) | Activation des pages web au toucher : cadre désactivé au repos, liseré, fins d'interaction | Acceptée |
+| [0033](0033-deplacement-de-boutons-par-appui-long.md) | Déplacer des boutons hors édition par appui long (soulèvement, corbeille, annulation) | Acceptée (geste désactivé par défaut) |
+| [0034](0034-schema-de-config-propose-themes-et-gestes.md) | Schéma de `config.json` proposé : thèmes personnalisés, délai des pages web, déplacement au toucher | **Proposée (en attente de validation)** |
 
 Modèle d'une nouvelle décision : contexte, décision, conséquences, statut et date.

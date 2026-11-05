@@ -4,6 +4,15 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+Aucune clé de `config.json` ajoutée : le schéma proposé pour les réglages à venir est dans l'ADR 0034 (en attente de validation).
+
+### Ajouté
+- **Pages web au toucher** (ADR 0032) : liseré d'accent autour de la tuile tant que la page est activée ; la page redevient passive par un toucher hors de la tuile, au changement de profil, de page, de dossier ou de sous-page,
+  ou après le délai sans geste (30 s ; durée portée par le modèle, réglage persistant en attente). Bouton « Interagir / Terminer » toujours accessible dans la bande de commandes.
+- **Déplacer un bouton hors édition par appui long** (ADR 0033) : la touche se soulève, puis se dépose sur une case, un dossier, un onglet de page ou la corbeille ; Échap ou un relâchement hors de la grille annule.
+  **Désactivé par défaut** tant que le réglage n'est pas validé (ADR 0034) : rien ne change pour l'instant.
+- **Thème TIXIA** (orange, fonds bruns chauds, texte crème) : palette et contrastes testés ; applicable par `Theme.Apply("tixia")`, pas encore proposé dans les Paramètres (ADR 0034).
+
 ### Corrigé
 - **Release 1.2.1 en échec** : l'applicateur de mise à jour utilisait `Get-FileHash`, introuvable quand `powershell.exe` 5.1 hérite du `PSModulePath` de PowerShell 7 (CI, lancement depuis `pwsh`).
   Deux tests d'`UpdateApplier` échouaient donc sur le CI, et `build.ps1` (qui lance les tests d'abord) arrêtait la release. L'empreinte est maintenant recontrôlée avec .NET, sans module ; le contrôle reste identique.

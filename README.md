@@ -137,6 +137,7 @@ Google Agenda, Meet) ; tout autre droit est refusé, et Windows doit aussi autor
 **Interaction avec la souris et le doigt** (propriétés du widget, ou *Page* › *Interaction avec la page*) : *Toucher pour interagir* (défaut : la page s'affiche sans rien capter ; un
 toucher ou un clic l'ouvre à l'interaction, qui se termine seule après 30 s sans geste ou par le bouton *Interagir*), *Passive* (affichage seul ; bouton *Interagir* pour s'en servir) ou
 *Interactive* (la page reçoit tout, en permanence). Hors interaction, appui long et clic droit sur la page ouvrent le menu de la case ; en mode édition, la page ne capte jamais rien.
+Une page activée porte un **liseré d'accent** ; elle redevient passive par un toucher hors de la tuile, au changement de page ou de dossier, ou après 30 s sans geste (ADR 0032). Le bouton *Interagir / Terminer* de la bande de commandes reste toujours touchable.
 Pendant l'interaction, la saisie au clavier démarre toute seule quand un champ de texte de la page a le focus (et rend le focus en le quittant) ; le bouton *Saisie au clavier* de la tuile la force. Le bouton *Retour* de la barre du cadre revient à
   la page précédente (ou à la page de départ) ; un lien « nouvel onglet » vers un autre site (un document reçu dans Chat) s'ouvre dans le navigateur
   par défaut. Le bouton *Ouvrir dans le navigateur* de la barre du cadre ouvre l'adresse dans le navigateur par défaut ; si Google refuse la connexion dans un cadre intégré, la tuile le dit.
@@ -344,6 +345,8 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 | `docs/` | Architecture, configuration, développement, décisions (`adr/`), parité fonctionnelle, intégrations, bilans |
 | `tests/StreamDak.Tests` | Tests xUnit : logique, migration, import, contrastes, navigation du deck, robustesse, composition (conteneur), architecture (frontières entre projets), rendu hors écran des fenêtres, mesures de performance (facultatives) |
 | `Directory.Build.props`, `.editorconfig` | Analyseurs, style vérifié à la compilation, avertissements bloquants, documentation XML obligatoire |
+
+Le thème **TIXIA** (orange, fonds bruns chauds) existe dans le code mais n'est pas encore proposé dans les Paramètres, et le **déplacement de boutons par appui long** hors édition est désactivé par défaut : tous deux attendent la validation du schéma de configuration (ADR 0033 et 0034).
 
 ## Accessibilité
 
