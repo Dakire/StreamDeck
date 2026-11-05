@@ -255,6 +255,8 @@ public partial class MainViewModel : ObservableObject, INavigator
 
     void OnNotice(Notice n)
     {
+        // Notifier est statique : un message posté depuis un autre thread (import, tâche de fond) ne doit pas toucher la barre d'état ni les annonces ailleurs que sur le thread d'interface
+        if (Application.Current?.Dispatcher is { } dispatcher && !dispatcher.CheckAccess()) { dispatcher.BeginInvoke(() => OnNotice(n)); return; }
         if (n.Kind is NoticeKind.Error or NoticeKind.Warning) SetStatus(n.Message);
         else SetStatus(n.Message, error: false, n.ActionText, n.Action);
     }
