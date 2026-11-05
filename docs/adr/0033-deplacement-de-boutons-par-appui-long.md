@@ -20,7 +20,11 @@ Hors édition, un appui long sur une case ouvrait l'éditeur (`MainWindow.Touch.
 5. **Annulation propre** : relâcher hors de la grille, Échap (`CancelTouchLift`), perte du doigt (`ResetTouchTracking`) ou menu/dialogue ouvert → `CancelLift`, rien n'est écrit.
 6. Le traitement du doigt reste dans `MainWindow.Touch.cs` ; l'état et les règles dans `MainViewModel.Lift.cs` (testés sans fenêtre : `LiftDragTests`).
 
-## Non fait (reste à faire)
+## Fait depuis (ADR 0035)
+
+Changement de page au bord de la fenêtre pendant le glissé, écartement animé des touches voisines, soulèvement animé.
+
+## Non fait à l'origine de cet ADR
 
 - Changement de page ou défilement quand le doigt approche d'un bord (le bouton déplacé doit survivre à la reconstruction de la grille : il faut garder son emplacement d'origine plutôt que la tuile).
 - Les autres tuiles qui s'écartent en animation pendant le glissement (le panneau de grille place les tuiles sans animation de décalage).

@@ -22,6 +22,10 @@ le dépôt, la corbeille et le dépôt sur un onglet partent de cette case. Un s
 - Ouverture d'un **menu** : voile en fondu (140 ms), feuille qui monte de 18 px et grossit de 94 % à 100 % (180 ms, depuis son coin).
 - Ouverture d'une **boîte de dialogue** : voile en fondu, carte de 94 % à 100 %.
 - **Corbeille** : monte de 48 px avec un léger rebond.
+- **Soulèvement** d'une touche tenue : échelle 1,08 avec léger rebond et ombre en fondu (160 ms), retour en 140 ms (`Behaviors/TileMotion`, propriété attachée `Lifted`).
+- **Écartement des voisines** : pendant un glissé (édition ou appui long), les huit voisines de la case visée s'en écartent de 10 points (diagonales : 70 %), en 160 ms, et reviennent en place à la fin ou à l'annulation.
+  Le calcul est pur (`Core/DragSpread`, testé) ; `MainViewModel` pose `SpreadX`/`SpreadY` sur les touches ; `TileMotion.SpreadX/SpreadY` les anime sur le bouton de la touche (transformation distincte de celle du soulèvement).
+  La cible et la touche tenue ne bougent pas. Sans animations, les valeurs sont posées tout de suite.
 - Déjà en place et inchangées : appui sur une touche (50 ms), transitions de page et de dossier, fantôme du glissé.
 
 **Règle** : une animation est purement visuelle. L'élément animé est déjà affiché, touchable et actif dès la première image ; aucune commande n'attend la fin d'une animation.

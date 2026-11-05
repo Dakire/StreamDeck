@@ -35,6 +35,7 @@ Audit 3 : sauvegardes réglables, accessibilité, durcissement des imports, fiab
 
 ### Ajouté
 - **Changement de page au bord** pendant un déplacement : un bouton soulevé tenu près d'un bord de la fenêtre passe à la page visible suivante ou précédente (500 ms, puis une page par 900 ms) ; les pages masquées et web sont sautées (ADR 0035).
+- **Écartement des touches voisines** de la case visée pendant un glissé (mode édition et appui long), et **soulèvement animé** de la touche tenue (échelle avec rebond, ombre en fondu).
 - **Animations** d'ouverture des menus et des boîtes de dialogue, et de la corbeille ; elles respectent le réglage d'animations et ne retardent jamais une action.
 - **Barre du haut** : curseur de déplacement, filet et capsule de poignée avec six points. **Poignées des panneaux** (catalogue à droite, inspecteur en bas) : rail sur toute l'arête et zone de saisie élargie, pour redimensionner de n'importe quel point de l'arête.
 - **Palettes** : hiérarchie de surfaces régulière en sombre, clair, AMOLED et TIXIA (marches ≥ 1,09 : 1 au lieu de 1,04–1,06 en clair et AMOLED), touches mieux détachées du fond, couches d'état survol et appui, conteneur de succès, rouge d'erreur plus profond en clair.
