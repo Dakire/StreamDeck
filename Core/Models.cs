@@ -40,6 +40,9 @@ public class DeckConfig
     /// <summary>Durée de l'appui long qui soulève un bouton (ms), de 300 à 1500 ; 0 ou absent = 500.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int LiftDelayMs { get; set; }
+    /// <summary>true = le balayage horizontal de la grille ne change pas de page (activé par défaut, ADR 0036).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool SwipePagesDisabled { get; set; }
     /// <summary>"fluent" : les emojis connus sont affichés avec l'icône Fluent équivalente ; "emoji" : tels quels.</summary>
     public string IconStyle { get; set; } = "fluent";
     /// <summary>Lance StreamDak à l'ouverture de session Windows (clé Run de l'utilisateur).</summary>

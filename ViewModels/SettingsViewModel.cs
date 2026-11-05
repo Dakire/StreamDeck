@@ -57,6 +57,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty] bool _economyMode;
     [ObservableProperty] double? _webIdleSeconds = ThemeOverrideKeys.DefaultWebIdleSeconds;
     [ObservableProperty] bool _liftDragEnabled = true;
+    [ObservableProperty] bool _swipePagesEnabled = true;
     [ObservableProperty] double? _liftDelayMs = ThemeOverrideKeys.DefaultLiftDelayMs;
 
     /// <summary>Éditeur de thème : thèmes prédéfinis, couleurs, aperçu, avertissements.</summary>
@@ -171,6 +172,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             BackupLimit = ConfigStore.LimitOf(c);
             WebIdleSeconds = (int)ThemeOverrideKeys.WebIdle(c).TotalSeconds;
             LiftDragEnabled = !c.LiftDragDisabled;
+            SwipePagesEnabled = !c.SwipePagesDisabled;
             LiftDelayMs = ThemeOverrideKeys.LiftDelay(c);
             EmojiIcons = c.IconStyle == "emoji";
             CustomBackground = !string.Equals(c.Background, Theme.DefaultBackground, StringComparison.OrdinalIgnoreCase);
@@ -279,6 +281,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     }
 
     partial void OnLiftDragEnabledChanged(bool value) => Set(c => c.LiftDragDisabled = !value, "Déplacement par appui long");
+    partial void OnSwipePagesEnabledChanged(bool value) => Set(c => c.SwipePagesDisabled = !value, "Balayage des pages");
 
     partial void OnLiftDelayMsChanged(double? value)
     {

@@ -77,6 +77,7 @@ public partial class MainWindow
         _liftCandidate = _lifted = null;
         _liftFallbackEdit = null;
         StopEdgeTracking();
+        EndSwipe(0);
         _vm.CancelLift();
         _vm.EndDrag();
     }
@@ -97,6 +98,20 @@ public partial class MainWindow
     /// <summary>Un message WM_POINTER d'un doigt ou d'un stylet (déjà retiré du traitement par défaut de Windows).</summary>
     void OnTouchPointer(int msg, IntPtr wParam)
     {
+        uint id = (uint)((long)wParam & 0xFFFF);
+        if (!GetPointerInfo(id, out var info)) return;
+        HandleTouch(msg, id, info.ptPixelLocation.X, info.ptPixelLocation.Y, (info.pointerFlags & POINTER_FLAG_INCONTACT) != 0);
+    }
+
+    /// <summary>true si ce doigt touche encore l'écran (Windows peut annuler un toucher sans relâchement : geste système, rejet de paume).</summary>
+    internal Func<uint, bool> PointerInContact { get; set; } = id => GetPointerInfo(id, out var info) && (info.pointerFlags & POINTER_FLAG_INCONTACT) != 0;
+
+    /// <summary>
+    /// Traitement d'un doigt (pixels physiques, écran) : contrôles de niveau et poignées d'abord, puis balayage de la grille, appui, appui long, glissés.
+    /// Séparé de la lecture du message pour que les tests puissent rejouer un geste hors écran (<paramref name="nowMs"/> : horloge du geste, sinon celle du système).
+    /// </summary>
+    internal void HandleTouch(int msg, uint id, int x, int y, bool inContact, long? nowMs = null)
+    {
         if (!_longPressWired)
         {
             _longPressWired = true;
@@ -104,23 +119,23 @@ public partial class MainWindow
             _edgeTimer.Tick += (_, _) => OnEdgeTick();
             PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape && CancelTouchLift()) e.Handled = true; };   // Échap annule un déplacement en cours
         }
+        long now = nowMs ?? Environment.TickCount64;
         _lastTouchTick = Environment.TickCount64;
-        uint id = (uint)((long)wParam & 0xFFFF);
-        if (!GetPointerInfo(id, out var info)) return;
-        int x = info.ptPixelLocation.X, y = info.ptPixelLocation.Y;
-        if (RouteToLevelControl(msg, id, x, y, (info.pointerFlags & POINTER_FLAG_INCONTACT) != 0)) return;
+        if (RouteToLevelControl(msg, id, x, y, inContact)) return;
         if (RouteToResizeHandle(msg, x, y)) return;
+        if (RouteToSwipe(msg, id, x, y, now)) return;
         switch (msg)
         {
             case WM_POINTERDOWN:
                 // Un doigt suivi qui ne touche plus l'écran (relâchement jamais reçu) ne doit pas bloquer les appuis suivants
-                if (_tap.Tracking && _tap.TrackedId is { } old && (old == id || !(GetPointerInfo(old, out var oldInfo) && (oldInfo.pointerFlags & POINTER_FLAG_INCONTACT) != 0)))
+                if (_tap.Tracking && _tap.TrackedId is { } old && (old == id || !PointerInContact(old)))
                     ResetTouchTracking();
                 // Un toucher que le deck reçoit n'est jamais sur le cadre actif (qui a sa propre fenêtre) : hors de la tuile web, la page redevient passive
                 if (!IsInsideWebTile(HitVisual(x, y))) _vm.EndWebInteractions();
                 bool tracked = _tap.Tracking;
+                BeginSwipe(id, x, y, now, tracked);
                 _tap.Slop = (int)Math.Ceiling(12 * VisualTreeHelper.GetDpi(this).DpiScaleX);
-                _tap.Down(id, x, y, Environment.TickCount64);
+                _tap.Down(id, x, y, now);
                 _tapOnBar = Hit(x, y).bar;
                 _dragging = false;
                 _touchDragging = _touchDraggingTab = false;
@@ -216,6 +231,104 @@ public partial class MainWindow
                 });
                 break;
         }
+    }
+
+    readonly SwipeGesture _swipe = new();
+    uint _swipeId;
+
+    /// <summary>
+    /// Un doigt se pose : il peut devenir un balayage s'il est sur la grille (pas sur un cadre web, qui garde son défilement), hors édition, sans menu ni
+    /// dialogue, et si c'est le seul doigt suivi. Le geste reste « indécis » tant qu'il bouge peu : l'appui et l'appui long gardent leur comportement.
+    /// </summary>
+    void BeginSwipe(uint id, int x, int y, long now, bool tracked)
+    {
+        _swipe.Cancel();
+        if (tracked || !_vm.CanSwipe || !IsOverDeckGrid(x, y) || IsInsideWebTile(HitVisual(x, y))) return;
+        var at = Root.PointFromScreen(new Point(x, y));   // la grille elle-même est décalée pendant le geste : repère fixe de la fenêtre
+        _swipe.Begin(at.X, at.Y, now, DeckGrid.ActualWidth);
+        _swipeId = id;
+    }
+
+    /// <summary>
+    /// Doigt du balayage : tant qu'il est indécis, le reste du traitement continue ; reconnu, la page suit le doigt, et la touche d'origine ne fait rien
+    /// (ni action, ni appui long, ni menu). Retourne true si le message a été traité ici.
+    /// </summary>
+    bool RouteToSwipe(int msg, uint id, int x, int y, long now)
+    {
+        if (!_swipe.Active || id != _swipeId || msg == WM_POINTERDOWN) return false;
+        var at = Root.PointFromScreen(new Point(x, y));
+        if (msg == WM_POINTERUPDATE)
+        {
+            bool was = _swipe.State == SwipeState.Swiping;
+            if (_swipe.Move(at.X, at.Y, now) != SwipeState.Swiping) return false;
+            if (!_vm.CanSwipe) { EndSwipe(0); return false; }   // un menu s'est ouvert entre-temps
+            if (!was)
+            {
+                // Balayage reconnu : l'état « touche enfoncée » est abandonné proprement (ni action, ni appui long, ni menu)
+                _tap.Cancel();
+                _longPressTimer.Stop();
+                _pressEdit = null;
+                _liftCandidate = null;
+                _touchDragTile = null;
+                _tapOnBar = false;
+            }
+            ShowSwipeOffset(_swipe.DeltaX);
+            return true;
+        }
+        if (msg != WM_POINTERUP) return false;
+        bool swiping = _swipe.State == SwipeState.Swiping;
+        int direction = _swipe.End(at.X, at.Y, now);
+        if (!swiping) return false;
+        EndSwipe(direction);
+        return true;
+    }
+
+    /// <summary>true si le point (pixels écran) est dans le rectangle de la grille des touches (espaces entre les touches compris).</summary>
+    bool IsOverDeckGrid(int x, int y)
+    {
+        if (!DeckGrid.IsVisible || DeckGrid.ActualWidth <= 0) return false;
+        var at = Root.PointFromScreen(new Point(x, y));
+        var origin = DeckGrid.TranslatePoint(new Point(0, 0), Root);
+        var bounds = new Rect(new Point(origin.X - GridShift.X, origin.Y), new Size(DeckGrid.ActualWidth, DeckGrid.ActualHeight));
+        return bounds.Contains(at);
+    }
+
+    /// <summary>Distance d'entrée de la page après un balayage (DIP) : l'animation d'entrée part de plus loin que pour un toucher d'onglet.</summary>
+    double _swipeEntryOffset;
+
+    /// <summary>La grille suit le doigt (avec résistance s'il n'y a pas de page dans ce sens). Sans animations, la grille ne bouge pas pendant le geste.</summary>
+    void ShowSwipeOffset(double dx)
+    {
+        if (!Motion.Enabled) return;
+        GridShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, null);
+        GridShift.X = SwipeGesture.Follow(dx, DeckGrid.ActualWidth, _vm.HasSwipeTarget(-Math.Sign(dx)));
+    }
+
+    /// <summary>
+    /// Fin du balayage : change de page par la commande des onglets (la nouvelle page entre du côté où va le doigt), ou revient en place, avec un rebond élastique
+    /// au bout de la liste. <paramref name="direction"/> 0 : rien ne change.
+    /// </summary>
+    void EndSwipe(int direction)
+    {
+        _swipe.Cancel();
+        if (direction != 0)
+        {
+            _swipeEntryOffset = Math.Clamp(Math.Abs(GridShift.X), 36, 160);
+            bool moved = _vm.SwipePage(direction);
+            _swipeEntryOffset = 0;
+            if (moved) return;
+        }
+        if (GridShift.X == 0 && !GridShift.HasAnimatedProperties) return;
+        if (!Motion.Enabled) { GridShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, null); GridShift.X = 0; return; }
+        bool edge = !_vm.HasSwipeTarget(-Math.Sign(GridShift.X));
+        System.Windows.Media.Animation.IEasingFunction ease = edge
+            ? new System.Windows.Media.Animation.ElasticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut, Oscillations = 1, Springiness = 6 }
+            : new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+        double from = GridShift.X;
+        GridShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, null);
+        GridShift.X = 0;   // valeur de base à 0 : l'animation part du décalage du doigt et y revient
+        GridShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,
+            new System.Windows.Media.Animation.DoubleAnimation(from, 0, TimeSpan.FromMilliseconds(edge ? 380 : 200)) { EasingFunction = ease });
     }
 
     bool _touchResizing;
@@ -340,7 +453,7 @@ public partial class MainWindow
     {
         if (!_tap.Tracking) { _longPressTimer.Stop(); return; }
         // Toucher annulé par Windows (geste système, rejet de paume) : aucun relâchement n'arrive, l'appui long ne doit pas se déclencher doigt levé
-        if (_tap.TrackedId is { } held && !(GetPointerInfo(held, out var heldInfo) && (heldInfo.pointerFlags & POINTER_FLAG_INCONTACT) != 0))
+        if (_tap.TrackedId is { } held && !PointerInContact(held))
         {
             ResetTouchTracking();
             return;
@@ -349,6 +462,7 @@ public partial class MainWindow
         _longPressTimer.Stop();
         var edit = _pressEdit;
         _pressEdit = null;
+        _swipe.Cancel();   // doigt tenu : appui long, plus de balayage
         if (_liftCandidate != null && _vm.Lift(_liftCandidate))
         {
             // La touche se soulève ; si le doigt se relève sans glisser, l'éditeur de la case s'ouvre alors (voir le relâchement)

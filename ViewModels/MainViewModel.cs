@@ -414,6 +414,7 @@ public partial class MainViewModel : ObservableObject, INavigator
         var profile = CurrentProfile;
         // Réglages du déplacement au toucher et du délai des pages web (ADR 0033, 0034)
         LiftDragEnabled = !_doc.Config.LiftDragDisabled;
+        SwipeEnabled = !_doc.Config.SwipePagesDisabled;
         LiftDelayMs = ThemeOverrideKeys.LiftDelay(_doc.Config);
         foreach (var web in Tiles.OfType<WebWidgetViewModel>()) web.IdleExit = ThemeOverrideKeys.WebIdle(_doc.Config);
         // Mode édition : les panneaux prennent de la largeur, mais la grille garde le nombre de cases qu'elle a en usage normal

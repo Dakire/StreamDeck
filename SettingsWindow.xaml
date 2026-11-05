@@ -385,6 +385,10 @@
                           HorizontalAlignment="Left" Width="160" AutomationProperties.Name="Délai sans geste avant que la page web redevienne passive, en secondes"/>
             <TextBlock Style="{StaticResource EditorHint}" TextWrapping="Wrap"
                        Text="Une page web activée par un toucher redevient passive après ce délai sans geste, par un toucher hors de la page, ou au changement de page. Pour qu'un site reste actif en permanence sans premier toucher, choisis « Toujours active (24 h/24) » dans les propriétés du widget ou de la page."/>
+            <ui:ToggleSwitch Content="Balayer pour changer de page" IsChecked="{Binding SwipePagesEnabled, Mode=TwoWay}" Margin="0,8,0,0" MinHeight="36"
+                             AutomationProperties.Name="Balayer pour changer de page"/>
+            <TextBlock Style="{StaticResource EditorHint}" TextWrapping="Wrap"
+                       Text="Un balayage horizontal sur la grille passe à la page suivante (vers la gauche) ou précédente (vers la droite). Sans effet en mode édition et sur une page web, qui garde son propre défilement : utilise alors les onglets de pages du dock."/>
             <ui:ToggleSwitch Content="Déplacer un bouton par appui long (hors mode édition)" IsChecked="{Binding LiftDragEnabled, Mode=TwoWay}" Margin="0,8,0,0"
                              AutomationProperties.Name="Déplacer un bouton par appui long"/>
             <StackPanel Visibility="{Binding LiftDragEnabled, Converter={StaticResource BoolVis}}">

@@ -129,14 +129,18 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     /// <summary>Entrée de la nouvelle page : glissement court dans le sens de la navigation. Purement visuel, la page est déjà affichée.</summary>
     void AnimateGridIn(int direction)
     {
-        if (!Motion.Enabled) return;
+        if (!Motion.Enabled) { GridShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, null); GridShift.X = 0; return; }
         // Un cadre web est une fenêtre Win32 : il ne suit pas le glissement de la grille et resterait décalé à la fin de l'animation
         // (Navigated est levé avant la reconstruction de la grille : les tuiles sont celles de la page quittée, la page visée se lit dans le ViewModel)
         if (_vm.ShowsWebPage || _vm.Tiles.OfType<ViewModels.WebWidgetViewModel>().Any()) { GridShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, null); DeckGrid.BeginAnimation(OpacityProperty, null); return; }
         var ease = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
-        var duration = TimeSpan.FromMilliseconds(180);
+        var duration = TimeSpan.FromMilliseconds(_swipeEntryOffset > 0 ? 220 : 180);
+        // Après un balayage, la page entre de plus loin (la distance parcourue par le doigt, bornée) : le mouvement continue celui du doigt
+        double from = (_swipeEntryOffset > 0 ? _swipeEntryOffset : 36) * direction;
+        GridShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, null);
+        GridShift.X = 0;
         GridShift.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty,
-            new System.Windows.Media.Animation.DoubleAnimation(36 * direction, 0, duration) { EasingFunction = ease });
+            new System.Windows.Media.Animation.DoubleAnimation(from, 0, duration) { EasingFunction = ease });
         DeckGrid.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0.35, 1, duration) { EasingFunction = ease });
     }
 
