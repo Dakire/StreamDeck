@@ -103,6 +103,52 @@ public class LiftDragTests
     }
 
     [Fact]
+    public void HoldingTheFingerAtAnEdgeFlipsToTheNextVisiblePageAndTheButtonStillLands()
+    {
+        var cfg = Config();
+        cfg.Profiles[0].Pages.Insert(1, new DeckPage { Name = "Cachée", Hidden = true });
+        cfg.Profiles[0].Pages.Insert(2, new DeckPage { Name = "Web", Kind = PageKinds.Web, Url = "https://example.org/" });
+        _host.Reset(cfg);
+        var vm = _host.Run(() => { var v = _host.Create<MainViewModel>(new FakeDeckShell(), new FakeAppWindows()); v.Resize(1600, 900); return v; });
+        _host.Settle();
+        _host.Run(() =>
+        {
+            var one = Tile(vm, "Un");
+            Assert.True(vm.Lift(one));
+            vm.BeginDrag(one);
+            Assert.True(vm.FlipPageWhileLifting(1));                       // saute la page masquée et la page web
+            Assert.Equal("Autre", Tile(vm, "Autre").Label);                // la page « B » est affichée
+            Assert.True(vm.IsLifting);                                     // le bouton est toujours tenu
+            var free = vm.Tiles.First(t => vm.IsFreeSlot(t));
+            vm.DropLifted(null, free);                                     // la tuile d'origine n'existe plus : l'origine mémorisée sert
+        });
+        Assert.DoesNotContain(Doc.Container(new Place("P", 0))!, b => b?.Label == "Un");
+        Assert.Contains(Doc.Container(new Place("P", 3))!, b => b?.Label == "Un");
+        Doc.Undo();
+        Assert.Contains(Doc.Container(new Place("P", 0))!, b => b?.Label == "Un");
+    }
+
+    [Fact]
+    public void FlippingStopsAtTheLastPageAndNeverHappensWithoutALiftedButton()
+    {
+        var vm = NewDeck(enabled: true);
+        _host.Run(() =>
+        {
+            Assert.False(vm.FlipPageWhileLifting(1));                      // rien de soulevé
+            var one = Tile(vm, "Un");
+            vm.Lift(one);
+            Assert.False(vm.FlipPageWhileLifting(-1));                     // première page : pas de page avant
+            Assert.True(vm.FlipPageWhileLifting(1));
+            Assert.False(vm.FlipPageWhileLifting(1));                      // dernière page
+            vm.CancelLift();
+        });
+    }
+
+    [Theory]
+    [InlineData(10.0, 1600.0, -1)] [InlineData(72.0, 1600.0, -1)] [InlineData(800.0, 1600.0, 0)] [InlineData(1528.0, 1600.0, 1)] [InlineData(1599.0, 1600.0, 1)]
+    public void TheEdgeZoneIsSeventyTwoDipWide(double x, double width, int expected) => Assert.Equal(expected, MainWindow.EdgeSide(x, width));
+
+    [Fact]
     public void ALiftedTileDroppedOnAFolderIsStoredInsideIt()
     {
         var vm = NewDeck(enabled: true);

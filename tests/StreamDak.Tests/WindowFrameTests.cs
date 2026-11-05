@@ -137,3 +137,85 @@ public class WindowFrameTests
         finally { _host.Run(win.Close); }
     }
 }
+
+/// <summary>La barre du haut se présente comme la poignée de déplacement ; les poignées des panneaux se saisissent sur toute l'arête (mode édition).</summary>
+[Collection("ui")]
+public class HandleAffordanceTests
+{
+    readonly WpfHost _host;
+    public HandleAffordanceTests(WpfHost host) => _host = host;
+
+    MainWindow Deck()
+    {
+        _host.Reset(new DeckConfig
+        {
+            Version = ConfigNormalizer.CurrentVersion, ActiveProfile = "P", Theme = "dark", Fullscreen = false,
+            Profiles = { new DeckProfile { Name = "P", Pages = { new DeckPage { Name = "A" } } } },
+        });
+        var win = _host.Run(() => new MainWindow(_host.Services) { WindowStartupLocation = WindowStartupLocation.Manual, Left = -30000, Top = -30000, Width = 1400, Height = 900 });
+        _host.Run(win.Show);
+        _host.Settle();
+        return win;
+    }
+
+    [Fact]
+    public void TheTopBarShowsItIsTheDragHandle()
+    {
+        var win = Deck();
+        try
+        {
+            _host.Run(() =>
+            {
+                var bar = (System.Windows.Controls.Border)win.FindName("DragBar");
+                var grip = (System.Windows.Controls.Border)win.FindName("BarGrip");
+                Assert.Equal(System.Windows.Input.Cursors.SizeAll, bar.Cursor);                       // le curseur annonce le déplacement
+                Assert.True(grip.ActualWidth >= 120 && grip.ActualHeight >= 32, $"capsule {grip.ActualWidth}×{grip.ActualHeight}");
+                Assert.NotNull(grip.ToolTip);
+                Assert.Contains("déplacer", (string)grip.ToolTip, StringComparison.OrdinalIgnoreCase);
+                Assert.True(bar.BorderThickness.Bottom > 0, "filet sous la barre");
+            });
+        }
+        finally { _host.Run(win.Close); }
+    }
+
+    [Fact]
+    public void PanelHandlesSpanTheWholeEdgeAndOverlapThePanelForAnEasyGrab()
+    {
+        var win = Deck();
+        try
+        {
+            _host.Run(() =>
+            {
+                var vm = (ViewModels.MainViewModel)win.DataContext;
+                vm.OpenMenuCommand.Execute(null);
+                QuickEditTests.Pick(vm, "Modifier le deck");
+            });
+            _host.Settle();
+            _host.Run(() =>
+            {
+                var catalog = (System.Windows.Controls.Primitives.Thumb)win.FindName("CatalogHandle");
+                var inspector = (System.Windows.Controls.Primitives.Thumb)win.FindName("InspectorHandle");
+                var area = (FrameworkElement)win.FindName("MainArea");
+                Assert.True(catalog.IsVisible && inspector.IsVisible);
+                Assert.True(catalog.ActualHeight >= area.ActualHeight - 1, $"colonne : {catalog.ActualHeight} / {area.ActualHeight}");   // toute la hauteur
+                Assert.True(catalog.ActualWidth >= 48, $"zone de saisie de la colonne : {catalog.ActualWidth}");                          // cible tactile
+                Assert.True(inspector.ActualHeight >= 48, $"zone de saisie du panneau du bas : {inspector.ActualHeight}");
+                Assert.True(inspector.ActualWidth > 300, $"largeur de l'arête : {inspector.ActualWidth}");
+                Assert.True(System.Windows.Controls.Panel.GetZIndex(catalog) > 0 && System.Windows.Controls.Panel.GetZIndex(inspector) > 0);   // au-dessus des panneaux
+                // Un point de l'arête loin du repère central est bien saisi par la poignée (zone pleine, pas seulement le repère)
+                var top = catalog.TranslatePoint(new Point(catalog.ActualWidth / 2, 20), area);
+                var hit = System.Windows.Media.VisualTreeHelper.HitTest(area, top);
+                Assert.NotNull(hit);
+                Assert.True(IsInside(hit!.VisualHit, catalog), "le haut de l'arête saisit la poignée du catalogue");
+            });
+        }
+        finally { _host.Run(win.Close); }
+    }
+
+    static bool IsInside(DependencyObject? d, DependencyObject ancestor)
+    {
+        for (; d != null; d = d is System.Windows.Media.Visual ? System.Windows.Media.VisualTreeHelper.GetParent(d) : null)
+            if (ReferenceEquals(d, ancestor)) return true;
+        return false;
+    }
+}

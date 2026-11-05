@@ -52,6 +52,10 @@ public partial class MainWindow
     TabViewModel? _touchDragTab;   // onglet de page tenu par un doigt en mode édition : le lâcher sur un autre onglet change son rang
     Controls.LevelControl? _levelTouch;   // roue ou curseur de niveau audio tenu par un doigt (le doigt est routé vers lui, pas vers le test d'appui)
     uint _levelPointer;
+    readonly DispatcherTimer _edgeTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
+    long _edgeSince;                      // instant d'arrivée du doigt dans la zone d'un bord (0 : hors zone)
+    int _edgeSide;                        // -1 gauche, +1 droite
+    int _lastDragX;
     DeckTileViewModel? _liftCandidate;    // touche sous le doigt qui sera soulevée par l'appui long (déplacement hors édition)
     DeckTileViewModel? _lifted;           // touche soulevée, doigt encore posé
     ICommand? _liftFallbackEdit;          // relâchée sans avoir glissé, la touche soulevée ouvre l'éditeur de sa case (comportement de l'appui long d'avant)
@@ -72,6 +76,7 @@ public partial class MainWindow
         _touchDragging = _touchDraggingTab = false;
         _liftCandidate = _lifted = null;
         _liftFallbackEdit = null;
+        StopEdgeTracking();
         _vm.CancelLift();
         _vm.EndDrag();
     }
@@ -96,6 +101,7 @@ public partial class MainWindow
         {
             _longPressWired = true;
             _longPressTimer.Tick += (_, _) => OnLongPressTick();
+            _edgeTimer.Tick += (_, _) => OnEdgeTick();
             PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape && CancelTouchLift()) e.Handled = true; };   // Échap annule un déplacement en cours
         }
         _lastTouchTick = Environment.TickCount64;
@@ -141,7 +147,7 @@ public partial class MainWindow
                     {
                         var at = Root.PointFromScreen(new Point(x, y));
                         _vm.UpdateDrag(at.X, at.Y, TileAt(HitVisual(x, y)));
-                        if (_lifted != null) _vm.IsOverTrash = IsOverTrashZone(x, y);
+                        if (_lifted != null) { _vm.IsOverTrash = IsOverTrashZone(x, y); TrackEdge(x); }
                     }
                     if (_touchDragTab != null) _touchDraggingTab = true;
                 }
@@ -164,6 +170,7 @@ public partial class MainWindow
                 if (_lifted is { } lifted)
                 {
                     // Touche soulevée (appui long hors édition) : déposée sur une case, un onglet ou la corbeille ; relâchée ailleurs, le geste est annulé sans rien modifier
+                    StopEdgeTracking();
                     bool moved = _touchDragging;
                     bool trash = moved && IsOverTrashZone(x, y);
                     var dropAt = moved ? TileAt(HitVisual(x, y)) : null;
@@ -265,6 +272,44 @@ public partial class MainWindow
         }
         return true;
     }
+
+    /// <summary>Largeur (DIP) de la zone de bord qui change de page, et délais : première bascule après 500 ms, puis une page toutes les 900 ms tant que le doigt reste.</summary>
+    const double EdgeZoneDip = 72;
+    const long EdgeFirstMs = 500, EdgeRepeatMs = 900;
+
+    /// <summary>Le doigt qui tient un bouton soulevé bouge : note sa position et démarre le suivi d'un bord si besoin.</summary>
+    void TrackEdge(int x)
+    {
+        _lastDragX = x;
+        if (!_edgeTimer.IsEnabled) _edgeTimer.Start();
+    }
+
+    void StopEdgeTracking()
+    {
+        _edgeTimer.Stop();
+        _edgeSince = 0;
+        _edgeSide = 0;
+    }
+
+    /// <summary>Côté de la zone de bord où se trouve le doigt (-1, 0, +1), d'après sa position en pixels écran.</summary>
+    internal static int EdgeSide(double xDip, double widthDip) => xDip <= EdgeZoneDip ? -1 : xDip >= widthDip - EdgeZoneDip ? 1 : 0;
+
+    /// <summary>Bouton soulevé tenu près d'un bord : change de page après un court délai, puis régulièrement tant que le doigt y reste.</summary>
+    void OnEdgeTick()
+    {
+        if (_lifted == null && !_vm.IsLifting) { StopEdgeTracking(); return; }
+        double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
+        var at = Root.PointFromScreen(new Point(_lastDragX, 0));
+        int side = EdgeSide(at.X, Root.ActualWidth);
+        long now = Environment.TickCount64;
+        if (side == 0 || side != _edgeSide) { _edgeSide = side; _edgeSince = side == 0 ? 0 : now; return; }
+        if (now - _edgeSince < (_edgeFlipped ? EdgeRepeatMs : EdgeFirstMs)) return;
+        _edgeSince = now;
+        _edgeFlipped = true;
+        _vm.FlipPageWhileLifting(side);
+    }
+
+    bool _edgeFlipped;
 
     /// <summary>true si le point (pixels écran) est sur la corbeille proposée pendant un déplacement hors édition.</summary>
     bool IsOverTrashZone(int x, int y)

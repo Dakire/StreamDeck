@@ -67,7 +67,16 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         _displays.Changed += () => PlaceOnScreen(displayChanged: true);
         _vm.Navigated += AnimateGridIn;
         _vm.FolderNavigated += AnimateFolder;
-        _vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MainViewModel.IsDragging) && _vm.IsDragging) AnimateGhostIn(); };
+        _vm.PropertyChanged += (_, e) =>
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(MainViewModel.IsDragging) when _vm.IsDragging: AnimateGhostIn(); break;
+                case nameof(MainViewModel.MenuOpen) when _vm.MenuOpen: AnimateMenuIn(); break;
+                case nameof(MainViewModel.HasDialog) when _vm.HasDialog: AnimateDialogIn(); break;
+                case nameof(MainViewModel.ShowTrash) when _vm.ShowTrash: AnimateTrashIn(); break;
+            }
+        };
         // Accrochage, agrandissement par le système : l'état « plein écran » et l'icône suivent la taille réelle de la fenêtre
         SizeChanged += (_, _) => SyncFullFlag();
         LocationChanged += (_, _) => SyncFullFlag();
@@ -142,6 +151,44 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
         GridScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleXProperty, new System.Windows.Media.Animation.DoubleAnimation(from, 1, duration) { EasingFunction = ease });
         GridScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleYProperty, new System.Windows.Media.Animation.DoubleAnimation(from, 1, duration) { EasingFunction = ease });
         DeckGrid.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0.3, 1, duration) { EasingFunction = ease });
+    }
+
+    static System.Windows.Media.Animation.CubicEase EaseOut => new() { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+
+    /// <summary>
+    /// Ouverture d'un menu : le voile apparaît en fondu, la feuille monte de 18 px en grossissant depuis son coin. Purement visuel : le menu est déjà affiché et
+    /// touchable dès la première image, l'animation ne retarde jamais une commande (ADR 0035).
+    /// </summary>
+    void AnimateMenuIn()
+    {
+        if (!Motion.Enabled) return;
+        var d = TimeSpan.FromMilliseconds(180);
+        MenuScrim.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
+        MenuCard.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(120)));
+        MenuShift.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty, new System.Windows.Media.Animation.DoubleAnimation(18, 0, d) { EasingFunction = EaseOut });
+        MenuScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleXProperty, new System.Windows.Media.Animation.DoubleAnimation(0.94, 1, d) { EasingFunction = EaseOut });
+        MenuScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleYProperty, new System.Windows.Media.Animation.DoubleAnimation(0.94, 1, d) { EasingFunction = EaseOut });
+    }
+
+    /// <summary>Ouverture d'une boîte de dialogue : voile en fondu, carte qui grossit de 94 % à 100 %. Purement visuel.</summary>
+    void AnimateDialogIn()
+    {
+        if (!Motion.Enabled) return;
+        var d = TimeSpan.FromMilliseconds(180);
+        DialogScrim.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
+        DialogCard.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(120)));
+        DialogScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleXProperty, new System.Windows.Media.Animation.DoubleAnimation(0.94, 1, d) { EasingFunction = EaseOut });
+        DialogScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleYProperty, new System.Windows.Media.Animation.DoubleAnimation(0.94, 1, d) { EasingFunction = EaseOut });
+    }
+
+    /// <summary>La corbeille monte du bas de l'écran quand un bouton est soulevé puis glissé. Purement visuel.</summary>
+    void AnimateTrashIn()
+    {
+        if (!Motion.Enabled) return;
+        var d = TimeSpan.FromMilliseconds(200);
+        TrashZone.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
+        TrashShift.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty,
+            new System.Windows.Media.Animation.DoubleAnimation(48, 0, d) { EasingFunction = new System.Windows.Media.Animation.BackEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut, Amplitude = 0.4 } });
     }
 
     /// <summary>Début d'un glissement : l'étiquette qui suit le pointeur apparaît en fondu en grossissant.</summary>

@@ -165,6 +165,12 @@ public partial class MainViewModel
     public void MoveTile(object from, object to)
     {
         if (!DragAllowed || !TryGetSlot(from, out var sourcePlace, out int sourceIndex)) return;
+        MoveFrom(sourcePlace, sourceIndex, to);
+    }
+
+    /// <summary>Déplacement depuis un emplacement d'origine connu (la tuile glissée a pu disparaître avec la page quittée pendant un glissé).</summary>
+    void MoveFrom(Place sourcePlace, int sourceIndex, object to)
+    {
         if (IsBackTile(to))
         {
             var up = _doc.MoveToParent(sourcePlace, sourceIndex);
@@ -192,7 +198,13 @@ public partial class MainViewModel
     /// <summary>Touche glissée puis lâchée sur l'onglet d'une page : elle y est déplacée (première case libre) ; annulable.</summary>
     public void MoveTileToPage(DeckTileViewModel moved, int pageIndex)
     {
-        if (!DragAllowed || pageIndex == _page || !TryGetSlot(moved, out var sourcePlace, out int sourceIndex) || _doc.Get(sourcePlace, sourceIndex) == null) return;
+        if (!DragAllowed || !TryGetSlot(moved, out var sourcePlace, out int sourceIndex)) return;
+        MoveFromToPage(sourcePlace, sourceIndex, pageIndex);
+    }
+
+    void MoveFromToPage(Place sourcePlace, int sourceIndex, int pageIndex)
+    {
+        if (pageIndex == _page || _doc.Get(sourcePlace, sourceIndex) == null) return;
         var dst = new Place(CurrentProfile.Name, pageIndex);
         var result = _doc.MoveButton(sourcePlace, sourceIndex, dst, _doc.FirstEmptyIndex(dst));
         if (!result.Ok) { Notifier.Error(result.Message ?? "Déplacement impossible"); return; }

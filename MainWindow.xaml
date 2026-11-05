@@ -120,15 +120,24 @@
         <Setter.Value>
           <ControlTemplate TargetType="Thumb">
             <Border Background="{TemplateBinding Background}">
-              <Border x:Name="Grip" Background="{DynamicResource DeckDim}" CornerRadius="3" Width="6" Height="56" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.6"/>
+              <Grid>
+                <!-- Rail sur toute la longueur de l'arête : on saisit le panneau de n'importe où le long de ce bord -->
+                <Border x:Name="Rail" Background="{DynamicResource DeckLine}" CornerRadius="1" Width="2" HorizontalAlignment="Center" VerticalAlignment="Stretch" Margin="0,12" Opacity="0.7"/>
+                <Border x:Name="Grip" Background="{DynamicResource DeckDim}" CornerRadius="3" Width="6" Height="56" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.7"/>
+              </Grid>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="Tag" Value="Horizontal">
                 <Setter TargetName="Grip" Property="Width" Value="56"/>
                 <Setter TargetName="Grip" Property="Height" Value="6"/>
+                <Setter TargetName="Rail" Property="Width" Value="NaN"/>
+                <Setter TargetName="Rail" Property="Height" Value="2"/>
+                <Setter TargetName="Rail" Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter TargetName="Rail" Property="VerticalAlignment" Value="Center"/>
+                <Setter TargetName="Rail" Property="Margin" Value="12,0"/>
               </Trigger>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Grip" Property="Opacity" Value="1"/></Trigger>
-              <Trigger Property="IsDragging" Value="True"><Setter TargetName="Grip" Property="Background" Value="{DynamicResource DeckAccent}"/><Setter TargetName="Grip" Property="Opacity" Value="1"/></Trigger>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Grip" Property="Opacity" Value="1"/><Setter TargetName="Rail" Property="Background" Value="{DynamicResource DeckAccent}"/><Setter TargetName="Rail" Property="Opacity" Value="1"/></Trigger>
+              <Trigger Property="IsDragging" Value="True"><Setter TargetName="Rail" Property="Background" Value="{DynamicResource DeckAccent}"/><Setter TargetName="Rail" Property="Opacity" Value="1"/><Setter TargetName="Grip" Property="Background" Value="{DynamicResource DeckAccent}"/><Setter TargetName="Grip" Property="Opacity" Value="1"/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -704,7 +713,8 @@
     </Grid.RowDefinitions>
 
     <!-- ===== Barre du haut : marque, profil, mode ; poignée de déplacement ; commandes de fenêtre ===== -->
-    <Border x:Name="DragBar" Grid.Row="0" Background="{DynamicResource DeckTopBar}" MouseLeftButtonDown="OnDragBarDown">
+    <Border x:Name="DragBar" Grid.Row="0" Background="{DynamicResource DeckTopBar}" Cursor="SizeAll" MouseLeftButtonDown="OnDragBarDown"
+            BorderBrush="{DynamicResource DeckLine}" BorderThickness="0,0,0,1" AutomationProperties.HelpText="Glisser cette barre pour déplacer la fenêtre ; double-toucher pour le plein écran">
       <Grid Margin="{Binding L.TopMargin}">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*"/>
@@ -759,9 +769,18 @@
           </Border>
         </StackPanel>
 
-        <Border Grid.Column="1" CornerRadius="10" VerticalAlignment="Center"
-                Width="{Binding L.GripW}" Height="{Binding L.GripH}" Background="{DynamicResource DeckGrip}"
-                ToolTip="Glisser pour déplacer · double-toucher : plein écran"/>
+        <!-- Poignée de déplacement : capsule avec six points, qui s'éclaire au survol ; toute la barre se glisse, la capsule le montre -->
+        <Border x:Name="BarGrip" Grid.Column="1" CornerRadius="16" VerticalAlignment="Center" MinWidth="120" Height="32" Padding="14,0"
+                BorderThickness="1" BorderBrush="{DynamicResource DeckLine}" Cursor="SizeAll"
+                ToolTip="Glisser pour déplacer · double-toucher : plein écran">
+          <Border.Style>
+            <Style TargetType="Border">
+              <Setter Property="Background" Value="{DynamicResource DeckSurface}"/>
+              <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource DeckSurfaceHi}"/></Trigger></Style.Triggers>
+            </Style>
+          </Border.Style>
+          <ui:SymbolIcon Symbol="ReOrderDotsHorizontal24" FontSize="22" Foreground="{DynamicResource DeckDim}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
 
         <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
           <Button Style="{StaticResource TopButton}" Command="{Binding MinimizeCommand}" ToolTip="Réduire" AutomationProperties.Name="Réduire">
@@ -808,10 +827,10 @@
       </Border>
 
       <!-- Poignées : glisser pour agrandir ou réduire un panneau, toucher pour le replier ou le déployer (largeurs mémorisées) -->
-      <Thumb x:Name="CatalogHandle" Grid.Column="1" Grid.RowSpan="3" Style="{StaticResource PanelHandle}" Cursor="SizeWE"
+      <Thumb x:Name="CatalogHandle" Grid.Column="1" Grid.RowSpan="3" Style="{StaticResource PanelHandle}" Cursor="SizeWE" Margin="-8,0,-14,0" Panel.ZIndex="5"
              DragDelta="OnCatalogHandleDelta" DragCompleted="OnCatalogHandleCompleted"
              Visibility="{Binding HasEditor, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Largeur du catalogue : glisser pour redimensionner, toucher pour replier"/>
-      <Thumb x:Name="InspectorHandle" Grid.Row="1" Grid.Column="0" Style="{StaticResource PanelHandle}" Cursor="SizeNS" Tag="Horizontal"
+      <Thumb x:Name="InspectorHandle" Grid.Row="1" Grid.Column="0" Style="{StaticResource PanelHandle}" Cursor="SizeNS" Tag="Horizontal" Margin="0,-8,0,-14" Panel.ZIndex="5"
              DragDelta="OnInspectorHandleDelta" DragCompleted="OnInspectorHandleCompleted"
              Visibility="{Binding HasEditor, Converter={StaticResource BoolVis}}" AutomationProperties.Name="Hauteur de l'inspecteur : glisser pour redimensionner, toucher pour replier"/>
 
@@ -1018,14 +1037,20 @@
       <Grid.InputBindings>
         <KeyBinding Key="Escape" Command="{Binding CloseMenuCommand}"/>
       </Grid.InputBindings>
-      <Border Background="{DynamicResource DeckScrim}">
+      <Border x:Name="MenuScrim" Background="{DynamicResource DeckScrim}">
         <Border.InputBindings>
           <MouseBinding MouseAction="LeftClick" Command="{Binding CloseMenuCommand}"/>
         </Border.InputBindings>
       </Border>
-      <Border Background="{DynamicResource DeckPanel}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1"
-              CornerRadius="24" Padding="10" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+      <Border x:Name="MenuCard" Background="{DynamicResource DeckPanel}" BorderBrush="{DynamicResource DeckLine}" BorderThickness="1"
+              CornerRadius="24" Padding="10" HorizontalAlignment="Right" VerticalAlignment="Bottom" RenderTransformOrigin="1,1"
               Width="{Binding L.MenuWidth}" Margin="{Binding L.MenuMargin}">
+        <Border.RenderTransform>
+          <TransformGroup>
+            <ScaleTransform x:Name="MenuScale"/>
+            <TranslateTransform x:Name="MenuShift"/>
+          </TransformGroup>
+        </Border.RenderTransform>
         <!-- Défilement tactile : un menu de catégories ou de modèles dépasse vite la hauteur d'un petit écran -->
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly" Focusable="False">
           <ItemsControl ItemsSource="{Binding MenuEntries}" Focusable="False"/>
@@ -1037,6 +1062,7 @@
     <Border x:Name="TrashZone" Grid.RowSpan="3" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,24" Width="240" Height="64" CornerRadius="32"
             IsHitTestVisible="False" BorderThickness="2" BorderBrush="{DynamicResource DeckDanger}" Visibility="{Binding ShowTrash, Converter={StaticResource BoolVis}}"
             AutomationProperties.Name="Corbeille : déposer ici pour supprimer le bouton">
+      <Border.RenderTransform><TranslateTransform x:Name="TrashShift"/></Border.RenderTransform>
       <Border.Style>
         <Style TargetType="Border">
           <Setter Property="Background" Value="{DynamicResource DeckPanel}"/>
@@ -1071,13 +1097,14 @@
 
     <!-- ===== Boîte de dialogue (nom, confirmation, information) : par-dessus le deck, jamais une fenêtre séparée ===== -->
     <Grid x:Name="DialogLayer" Grid.RowSpan="3" Visibility="{Binding HasDialog, Converter={StaticResource BoolVis}}">
-      <Border Background="{DynamicResource DeckScrim}"/>
+      <Border x:Name="DialogScrim" Background="{DynamicResource DeckScrim}"/>
       <!-- AccessibleContent et non Border : seul un contrôle à peer UI Automation porte le nom et le rôle de la boîte -->
       <controls:AccessibleContent x:Name="DialogCard" ControlType="Window" DataContext="{Binding Dialog}" IsTabStop="False" Focusable="False"
               AutomationProperties.Name="{Binding Title}" AutomationProperties.HelpText="{Binding Message}"
               KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle"
-              HorizontalAlignment="Center" VerticalAlignment="Center"
+              HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5"
               Width="520" MaxWidth="900">
+        <controls:AccessibleContent.RenderTransform><ScaleTransform x:Name="DialogScale"/></controls:AccessibleContent.RenderTransform>
         <controls:AccessibleContent.InputBindings>
           <KeyBinding Key="Escape" Command="{Binding CancelCommand}"/>
         </controls:AccessibleContent.InputBindings>
