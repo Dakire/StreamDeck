@@ -4,7 +4,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
-## [1.4.0] — 2026-11-05
+## [1.4.1] — 2026-11-05
+
+La 1.4.0 n'a pas été publiée (test de performance en échec sur le CI, sans lien avec l'application) : la 1.4.1 contient tout ce qui suit, avec un test de la suite corrigé.
+
+## [1.4.0] — 2026-11-05 (non publiée)
 
 Clé facultative ajoutée à `config.json` (validée) : `SwipePagesDisabled` (absente = balayage activé). Aucune clé renommée ni supprimée.
 
