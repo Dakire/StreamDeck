@@ -25,6 +25,12 @@ public sealed class WindowsPlatform : IKeyboardService, IAppLauncher, IWindowSer
     /// <summary>Active ou désactive une fenêtre Win32 hébergée (cadre web) : désactivée, elle ne capte plus la souris, le doigt ni le clavier.</summary>
     public static void SetHostedWindowInput(System.IntPtr window, bool enabled) => WindowFocus.SetInputEnabled(window, enabled);
 
+    /// <summary>Plus grande icône d'un fichier (256 px si Windows l'a), en HICON à libérer par <see cref="DestroyIconHandle"/> ; <see cref="System.IntPtr.Zero"/> sinon.</summary>
+    public static System.IntPtr ExtractLargestIcon(string path) => NativeIcons.Largest(path);
+
+    /// <summary>Libère une icône rendue par <see cref="ExtractLargestIcon"/>.</summary>
+    public static void DestroyIconHandle(System.IntPtr icon) => NativeIcons.Destroy(icon);
+
     /// <inheritdoc/>
     public void SendHotkey(string combo) => NativeInput.Hotkey(combo);
     /// <inheritdoc/>

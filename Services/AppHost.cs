@@ -201,6 +201,8 @@ public static class AppHost
         _ = IconStore.PreloadAsync(sp.GetRequiredService<DeckDocument>().Config.Profiles
             .SelectMany(p => p.Pages.SelectMany(pg => DeckDocument.AllButtons(pg.Buttons)))
             .Select(b => b.ImagePath).ToList());
+        // Anciennes icônes d'applications en 32 px : remplacées par leur version 256 px, hors du thread d'interface (jamais en simulation : tests, essais)
+        if (!options.Simulate && System.Windows.Application.Current?.Dispatcher is { } ui) IconUpgrade.Start(sp.GetRequiredService<DeckDocument>(), ui);
         Log.Info($"Services prêts en {clock.ElapsedMilliseconds} ms (journal {tLog}, déclarations {tRegistered - tLog}, conteneur {tBuilt - tRegistered})");
         return sp;
     }

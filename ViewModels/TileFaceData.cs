@@ -52,8 +52,13 @@ public sealed class TileFaceData
     public Brush Border { get; init; } = Brushes.Transparent;
     /// <summary>Pastille d'icône : la couleur du bouton, pleine.</summary>
     public Brush Plate { get; init; } = Brushes.Gray;
-    /// <summary>Image importée, ou null.</summary>
+    /// <summary>Image en plein cadre (mode « Remplir » et image assez grande), ou null.</summary>
     public Brush? ImageBrush { get; init; }
+    /// <summary>
+    /// Image montrée comme une icône, dans une zone bornée qui laisse sa place au titre (nom dans <c>Icons\</c>) : icône d'application, favicon, image « entière »,
+    /// ou image trop petite pour remplir la touche. Décodée par <see cref="Controls.TileFace"/> à la taille d'affichage réelle. Null sinon.
+    /// </summary>
+    public string? IconImage { get; init; }
     /// <summary>true pour un dossier (badge chevron).</summary>
     public bool IsFolder { get; init; }
     /// <summary>true pour une case vide.</summary>
@@ -75,12 +80,14 @@ public sealed class TileFaceData
     /// <summary>Progression d'un minuteur en cours (0 à 1), sinon null.</summary>
     public double? Progress { get; init; }
 
-    /// <summary>true si une image est affichée.</summary>
+    /// <summary>true si une image remplit la touche.</summary>
     public bool HasImage => ImageBrush != null;
+    /// <summary>true si une image est montrée comme icône.</summary>
+    public bool HasIconImage => IconImage != null;
     /// <summary>true si le titre est affiché.</summary>
     public bool HasTitle => ShowTitle && Label.Length > 0;
     /// <summary>true s'il y a quelque chose à afficher dans la pastille (image, icône ou texte).</summary>
-    public bool HasVisual => HasImage || HasSymbol || HasIconText;
+    public bool HasVisual => HasImage || HasIconImage || HasSymbol || HasIconText;
 
     /// <summary>Case vide.</summary>
     public static readonly TileFaceData Empty = new() { IsBlank = true, Background = Brushes.Transparent };
@@ -112,25 +119,24 @@ public sealed class TileFaceData
     {
         if (b.Blank) return Empty;
         bool hasSymbol = IconCatalog.TryResolve(b.Icon, out var symbol);
-        bool contain = b.ImageFit == "contain";
         Brush? image = null;
+        string? iconImage = null;
         if (!string.IsNullOrEmpty(b.ImagePath))
         {
-            var key = (b.ImagePath, contain);
-            if (!ImageBrushes.TryGetValue(key, out image))
+            // « Remplir » seulement pour une image assez grande ; une image « entière » ou petite (icône de 32 px) est une icône, au-dessus du titre
+            if (IconStore.Load(b.ImagePath) is System.Windows.Media.Imaging.BitmapSource src)
             {
-                // Une image absente n'est pas gardée : restaurée plus tard, elle réapparaît au prochain dessin
-                if (IconStore.Load(key.Item1) is { } src)
-                {
-                    var brush = new ImageBrush(src) { Stretch = contain ? Stretch.Uniform : Stretch.UniformToFill };
-                    // Réduction de qualité : une image de 512 px affichée en 200 px ne doit pas créneler
-                    System.Windows.Media.RenderOptions.SetBitmapScalingMode(brush, BitmapScalingMode.HighQuality);
-                    brush.Freeze();
-                    ImageBrushes[key] = image = brush;
-                }
+                if (b.ImageFit != "contain" && Math.Max(src.PixelWidth, src.PixelHeight) >= IconLayout.MinFillPixels) image = FillBrush(b.ImagePath, src);
+                else iconImage = b.ImagePath;
+            }
+            else if (!hasSymbol && FallbackSymbol(b) is { } fallback)
+            {
+                // Image introuvable (fichier effacé, extraction ratée) : icône Fluent du type d'action plutôt qu'une touche vide (l'échec est journalisé par IconStore)
+                symbol = fallback;
+                hasSymbol = true;
             }
         }
-        var kind = KindOf(b, image != null, timer != null);
+        var kind = KindOf(b, image != null || iconImage != null, timer != null);
         Brush body, border, plate;
         try
         {
@@ -150,12 +156,34 @@ public sealed class TileFaceData
             ShowTitle = !b.HideTitle, TitleMode = b.TitlePosition ?? "stack",
             Foreground = custom ? fgBrush : Brushes.White,
             LabelBrush = custom ? fgBrush : image != null ? Brushes.White : Theme.B(Theme.Current.Text),
-            Background = body, Border = border, Plate = plate, ImageBrush = image, IsFolder = b.IsFolder,
+            Background = body, Border = border, Plate = plate, ImageBrush = image, IconImage = iconImage, IsFolder = b.IsFolder,
             Kind = kind, Steps = b.IsFolder ? 0 : b.Actions.Count,
             IsDisabled = !b.IsFolder && b.Actions.Count == 0 && kind != TileKind.Display,
             Progress = progress, Badge = badge,
             Caption = timer != null ? b.Label.Replace("{timer}", "", StringComparison.OrdinalIgnoreCase).Trim() : "",
         };
+    }
+
+    /// <summary>Pinceau d'une image en plein cadre, gardé par nom d'image (une image absente n'est jamais gardée : restaurée, elle réapparaît).</summary>
+    static Brush FillBrush(string name, ImageSource source)
+    {
+        if (ImageBrushes.TryGetValue((name, false), out var cached) && cached != null) return cached;
+        var brush = new ImageBrush(source) { Stretch = Stretch.UniformToFill };
+        brush.Freeze();
+        ImageBrushes[(name, false)] = brush;
+        return brush;
+    }
+
+    /// <summary>Icône Fluent cohérente avec la première étape (programme, lien, dossier…), affichée quand l'image du bouton est introuvable.</summary>
+    public static SymbolRegular? FallbackSymbol(DeckButton b)
+    {
+        string name = b.IsFolder ? "Folder24" : b.Actions.FirstOrDefault()?.Type switch
+        {
+            ActionTypes.Launch or ActionTypes.Focus => "Apps24",
+            ActionTypes.Url => "Globe24",
+            _ => "Image24",
+        };
+        return IconCatalog.TryResolve(name, out var symbol) ? symbol : null;
     }
 
     /// <summary>Titre affiché : modèles {time}/{date}/{timer} remplacés ; un minuteur en cours s'affiche même sans {timer}.</summary>

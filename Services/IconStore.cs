@@ -103,12 +103,21 @@ public static class IconStore
             double k = (double)StoredSize / longest;
             source = new TransformedBitmap(frame, new ScaleTransform(k, k));
         }
+        return StoreBytes(EncodePng(source));
+    }
+
+    /// <summary>Encode une image en PNG (sans la redimensionner).</summary>
+    public static byte[] EncodePng(BitmapSource source)
+    {
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(source));
         using var ms = new MemoryStream();
         encoder.Save(ms);
-        return StoreBytes(ms.ToArray());
+        return ms.ToArray();
     }
+
+    /// <summary>Nom d'enregistrement d'un PNG : dérivé de son contenu, identique d'une machine à l'autre pour les mêmes octets.</summary>
+    public static string NameOf(byte[] png) => Convert.ToHexString(SHA256.HashData(png))[..32].ToLowerInvariant() + ".png";
 
     /// <summary>Enregistre un PNG déjà encodé (import de paquet) après vérification de son contenu.</summary>
     public static string StoreBytes(byte[] png)
@@ -125,11 +134,12 @@ public static class IconStore
                                        or OutOfMemoryException or System.Runtime.InteropServices.ExternalException)
         { throw new InvalidDataException("Image PNG corrompue", ex); }
 
-        var name = Convert.ToHexString(SHA256.HashData(png))[..32].ToLowerInvariant() + ".png";
+        var name = NameOf(png);
         Directory.CreateDirectory(ConfigStore.IconsDir);
         var path = Path.Combine(ConfigStore.IconsDir, name);
         if (!File.Exists(path)) File.WriteAllBytes(path, png);
         Cache.TryRemove(name, out _);
+        foreach (var key in Sized.Keys.Where(k => k.Item1 == name)) Sized.TryRemove(key, out _);
         return name;
     }
 
@@ -172,6 +182,41 @@ public static class IconStore
         }
     }
 
+    /// <summary>Paliers de décodage (côté le plus long, pixels) : une touche redimensionnée réutilise le décodage du palier au lieu de redécoder à chaque pixel.</summary>
+    static readonly int[] DecodeSteps = { 32, 48, 64, 96, 128, 192, 256, 384, 512 };
+    static readonly ConcurrentDictionary<(string, int), ImageSource> Sized = new();
+
+    /// <summary>Palier de décodage pour un affichage de <paramref name="targetPx"/> pixels physiques : le plus petit palier qui le couvre (512 au plus).</summary>
+    public static int DecodeStep(int targetPx) => DecodeSteps.FirstOrDefault(step => step >= targetPx, DecodeSteps[^1]);
+
+    /// <summary>
+    /// Image décodée pour un affichage de <paramref name="targetPx"/> pixels physiques sur son côté le plus long (échelle de l'écran comprise) : une image de
+    /// 512 px montrée en 96 px est décodée en 96 px par WIC, plus net qu'une réduction au rendu. Jamais agrandie : une source plus petite est rendue telle quelle.
+    /// </summary>
+    public static ImageSource? LoadForDisplay(string? name, int targetPx)
+    {
+        if (Load(name) is not BitmapSource full) return null;
+        int longest = Math.Max(full.PixelWidth, full.PixelHeight), step = DecodeStep(targetPx);
+        if (step >= longest) return full;
+        if (Sized.TryGetValue((name!, step), out var cached)) return cached;
+        try
+        {
+            var bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.CacheOption = BitmapCacheOption.OnLoad;
+            bmp.UriSource = new Uri(Path.Combine(ConfigStore.IconsDir, name!));
+            if (full.PixelWidth >= full.PixelHeight) bmp.DecodePixelWidth = step; else bmp.DecodePixelHeight = step;
+            bmp.EndInit();
+            bmp.Freeze();
+            return Sized[(name!, step)] = bmp;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or FormatException
+                                   or ArgumentException or InvalidOperationException or System.Runtime.InteropServices.ExternalException)
+        {
+            return full;   // le fichier a changé entre-temps : l'image déjà décodée reste affichable
+        }
+    }
+
     static int PixelWidth(string path)
     {
         var decoder = BitmapDecoder.Create(new Uri(path), BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
@@ -187,5 +232,5 @@ public static class IconStore
         });
 
     /// <summary>Vide le cache des images chargées (changement de dossier de configuration dans les tests).</summary>
-    public static void ClearCache() { Cache.Clear(); Failed.Clear(); }
+    public static void ClearCache() { Cache.Clear(); Failed.Clear(); Sized.Clear(); }
 }

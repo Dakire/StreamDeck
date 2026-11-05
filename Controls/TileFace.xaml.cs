@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using StreamDak.ViewModels;
 
 namespace StreamDak.Controls;
@@ -64,8 +65,9 @@ public partial class TileFace : UserControl
         string mode = f.TitleMode;
         if (f.HasImage && mode == "stack") mode = "bottom";
         bool display = f.Kind == TileKind.Display;
-        bool stack = mode == "stack" && !display;
-        bool overlay = !stack && !display;
+        bool iconImage = f.HasIconImage;
+        bool stack = mode == "stack" && !display && !iconImage;
+        bool overlay = !stack && !display && !iconImage;
 
         Scrim.Visibility = f.HasImage && hasTitle && mode == "bottom" ? Visibility.Visible : Visibility.Collapsed;
         Scrim.CornerRadius = new CornerRadius(0, 0, CornerRadius.BottomRight, CornerRadius.BottomLeft);
@@ -75,7 +77,10 @@ public partial class TileFace : UserControl
         StackLayer.Visibility = stack ? Visibility.Visible : Visibility.Collapsed;
         DisplayLayer.Visibility = display ? Visibility.Visible : Visibility.Collapsed;
         OverlayLayer.Visibility = overlay ? Visibility.Visible : Visibility.Collapsed;
+        IconLayer.Visibility = iconImage ? Visibility.Visible : Visibility.Collapsed;
+        if (!iconImage) IconImage.Source = null;
 
+        if (iconImage) RenderIconImage(f, s, w, h, pad, titleSize, hasTitle, f.TitleMode);
         if (stack) RenderStack(f, s, w, pad, titleSize, hasTitle);
         if (display) RenderDisplay(f, s, w, pad, titleSize);
         if (overlay) RenderOverlay(f, s, w, h, pad, titleSize, hasTitle, mode);
@@ -175,6 +180,43 @@ public partial class TileFace : UserControl
         StackLayer.MaxWidth = Math.Max(10, w - 2 * pad);
     }
 
+    /// <summary>
+    /// Image en icône : zone carrée bornée (<see cref="IconLayout.Zones"/>) au-dessus ou au-dessous du titre mesuré, jamais derrière lui ; image décodée à la taille
+    /// d'affichage en pixels physiques (échelle de l'écran comprise), réduite avec lissage ou, si elle est trop petite, montrée à sa taille ou à un multiple entier.
+    /// </summary>
+    void RenderIconImage(TileFaceData f, double s, double w, double h, double pad, double titleSize, bool hasTitle, string mode)
+    {
+        double usefulW = Math.Max(1, w - 2 * pad);
+        IconTitle.Text = f.Label;
+        IconTitle.Foreground = f.LabelBrush;
+        IconTitle.FontSize = titleSize;
+        IconTitle.Visibility = hasTitle ? Visibility.Visible : Visibility.Collapsed;
+        double titleHeight = 0;
+        if (hasTitle)
+        {
+            IconTitle.Width = usefulW;
+            IconTitle.MaxHeight = titleSize * 2.7;    // deux lignes au plus
+            IconTitle.Measure(new Size(usefulW, IconTitle.MaxHeight));
+            titleHeight = IconTitle.DesiredSize.Height;
+        }
+        var place = !hasTitle ? TitlePlace.None : mode == "top" ? TitlePlace.Above : TitlePlace.Below;
+        var (zone, title) = IconLayout.Zones(w, h, pad, titleHeight, s * 0.06, place);
+        IconTitle.Margin = new Thickness(title.X, title.Y, 0, 0);
+
+        double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
+        if (zone.Width <= 0 || IconStore.LoadForDisplay(f.IconImage, (int)Math.Ceiling(zone.Width * dpi)) is not BitmapSource image)
+        {
+            IconImage.Source = null;
+            return;
+        }
+        var (iw, ih, pixelated) = IconLayout.ImageSize(image.PixelWidth, image.PixelHeight, zone.Width, dpi);
+        IconImage.Source = image;
+        IconImage.Width = iw;
+        IconImage.Height = ih;
+        IconImage.Margin = new Thickness(zone.X + (zone.Width - iw) / 2, zone.Y + (zone.Height - ih) / 2, 0, 0);
+        RenderOptions.SetBitmapScalingMode(IconImage, pixelated ? BitmapScalingMode.NearestNeighbor : BitmapScalingMode.HighQuality);
+    }
+
     void RenderDisplay(TileFaceData f, double s, double w, double pad, double titleSize)
     {
         DisplaySymbol.Symbol = f.Symbol;
@@ -220,5 +262,19 @@ public partial class TileFace : UserControl
         OverlayTitle.MaxHeight = Math.Max(10, h - 2 * pad);
         OverlayTitle.VerticalAlignment = mode switch { "top" => VerticalAlignment.Top, "middle" => VerticalAlignment.Center, _ => VerticalAlignment.Bottom };
         OverlayTitle.Effect = f.HasImage && hasTitle ? TitleShadow : null;
+
+        // Titre en haut ou en bas : l'icône se tient dans la place qui reste (un titre sur deux lignes ne passe jamais sur elle). Au milieu, la superposition est voulue.
+        OverlaySymbol.VerticalAlignment = OverlayIconText.VerticalAlignment = VerticalAlignment.Center;
+        OverlaySymbol.Margin = OverlayIconText.Margin = new Thickness(0);
+        if (showIcon && hasTitle && mode is "top" or "bottom")
+        {
+            OverlayTitle.Measure(new Size(OverlayTitle.MaxWidth, OverlayTitle.MaxHeight));
+            double titleHeight = OverlayTitle.DesiredSize.Height;   // marges comprises
+            double free = Math.Max(0, h - titleHeight - pad);
+            double size = Math.Min(icon, free * 0.8);
+            OverlaySymbol.FontSize = OverlayIconText.FontSize = Math.Max(1, size);
+            var room = mode == "top" ? new Thickness(0, titleHeight, 0, pad) : new Thickness(0, pad, 0, titleHeight);
+            OverlaySymbol.Margin = OverlayIconText.Margin = room;
+        }
     }
 }

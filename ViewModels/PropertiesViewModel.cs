@@ -492,7 +492,9 @@ public sealed partial class PropertiesViewModel : ObservableObject, IStepOwner
         {
             var name = IconStore.Import(path);
             ImageName = name;
-            ApplyNow(b => b.ImagePath = name, "Importer une image");
+            // Montrée comme une icône au-dessus du titre (ADR 0036) ; « Remplir » reste au choix dans l'ajustement
+            ApplyNow(b => { b.ImagePath = name; b.ImageFit = "contain"; }, "Importer une image");
+            ImageFit = "contain";
             Notifier.Success("Image importée");
         }
         catch (InvalidDataException ex) { Notifier.Error(ex.Message); }
