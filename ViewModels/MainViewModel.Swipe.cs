@@ -21,6 +21,17 @@ public partial class MainViewModel
         return active < 0 || direction == 0 || next < 0 || next >= Tabs.Count ? null : Tabs[next];
     }
 
+    /// <summary>true si un balayage vers le bas peut revenir au dossier parent (dans un dossier, balayage permis).</summary>
+    public bool CanSwipeBack => CanSwipe && InFolder;
+
+    /// <summary>Revient au dossier parent (même chemin que le bouton « Retour »). Faux hors d'un dossier ou si le balayage n'est pas permis.</summary>
+    public bool SwipeBack()
+    {
+        if (!CanSwipeBack) return false;
+        FolderUp();
+        return true;
+    }
+
     /// <summary>true s'il y a une page dans ce sens (sinon la grille résiste et revient en place : pas de bouclage).</summary>
     public bool HasSwipeTarget(int direction) => SwipeTarget(direction) != null;
 

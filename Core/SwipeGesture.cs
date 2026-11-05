@@ -10,6 +10,8 @@ public enum SwipeState
     Undecided,
     /// <summary>Balayage horizontal reconnu : la page suit le doigt, la touche d'origine ne fera rien.</summary>
     Swiping,
+    /// <summary>Balayage vers le bas reconnu (retour au dossier parent, seulement si <c>allowBack</c>) : la touche d'origine ne fera rien.</summary>
+    SwipingDown,
     /// <summary>Ce n'est pas un balayage (geste vertical ou diagonal, doigt tenu immobile, geste annulé) : le deck traite le doigt comme avant.</summary>
     Rejected,
 }
@@ -48,7 +50,13 @@ public sealed class SwipeGesture
     /// <summary>…sans dépasser cette part de la largeur.</summary>
     public const double EdgeMaxFraction = 0.12;
 
-    readonly List<(long T, double X)> _samples = new();
+    /// <summary>Résultat de <see cref="End"/> pour un balayage vers le bas abouti : retour au dossier parent.</summary>
+    public const int Back = 2;
+    /// <summary>Déplacement vertical (DIP) d'un geste lent qui revient quand même au parent.</summary>
+    public const double BackLongDip = 160;
+
+    readonly List<(long T, double X, double Y)> _samples = new();
+    bool _allowBack;
     double _x0, _y0, _width;
     long _t0;
 
@@ -62,12 +70,13 @@ public sealed class SwipeGesture
     public static double MinDistance(double width) => Math.Max(MinDistanceDip, width * MinWidthFraction);
 
     /// <summary>Un doigt se pose sur la grille (largeur de la grille en DIP).</summary>
-    public void Begin(double x, double y, long nowMs, double gridWidth)
+    public void Begin(double x, double y, long nowMs, double gridWidth, bool allowBack = false)
     {
         _x0 = x; _y0 = y; _t0 = nowMs; _width = Math.Max(1, gridWidth);
+        _allowBack = allowBack;
         DeltaX = 0;
         _samples.Clear();
-        _samples.Add((nowMs, x));
+        _samples.Add((nowMs, x, y));
         State = SwipeState.Undecided;
         Active = true;
     }
@@ -76,7 +85,7 @@ public sealed class SwipeGesture
     public SwipeState Move(double x, double y, long nowMs)
     {
         if (!Active || State == SwipeState.Rejected) return State;
-        _samples.Add((nowMs, x));
+        _samples.Add((nowMs, x, y));
         if (_samples.Count > 64) _samples.RemoveRange(0, _samples.Count - 64);
         double dx = x - _x0, dy = y - _y0;
         if (State == SwipeState.Undecided)
@@ -86,7 +95,11 @@ public sealed class SwipeGesture
                 if (nowMs - _t0 >= HoldRejectMs) State = SwipeState.Rejected;   // doigt tenu : c'est un appui long, pas un balayage
                 return State;
             }
-            State = nowMs - _t0 < HoldRejectMs && Math.Abs(dx) > DirectionRatio * Math.Abs(dy) ? SwipeState.Swiping : SwipeState.Rejected;
+            bool quick = nowMs - _t0 < HoldRejectMs;
+            State = !quick ? SwipeState.Rejected
+                : Math.Abs(dx) > DirectionRatio * Math.Abs(dy) ? SwipeState.Swiping
+                : _allowBack && dy > 0 && dy > DirectionRatio * Math.Abs(dx) ? SwipeState.SwipingDown
+                : SwipeState.Rejected;
         }
         if (State == SwipeState.Swiping) DeltaX = dx;
         return State;
@@ -100,11 +113,17 @@ public sealed class SwipeGesture
         if (!Active) return 0;
         Move(x, y, nowMs);
         Active = false;
-        if (State != SwipeState.Swiping) return 0;
         double dx = x - _x0, dy = y - _y0;
+        if (State == SwipeState.SwipingDown)
+        {
+            if (dy < MinDistanceDip || dy <= DirectionRatio * Math.Abs(dx)) return 0;
+            double vy = Velocity(nowMs, vertical: true);
+            return vy >= MinVelocity || dy >= BackLongDip ? Back : 0;
+        }
+        if (State != SwipeState.Swiping) return 0;
         if (Math.Abs(dx) < MinDistance(_width) || Math.Abs(dx) <= DirectionRatio * Math.Abs(dy)) return 0;
         bool far = Math.Abs(dx) >= _width * CommitFraction;
-        double v = Velocity(nowMs);
+        double v = Velocity(nowMs, vertical: false);
         bool quick = Math.Abs(v) >= MinVelocity && Math.Sign(v) == Math.Sign(dx);
         return far || quick ? -Math.Sign(dx) : 0;
     }
@@ -118,13 +137,13 @@ public sealed class SwipeGesture
     }
 
     /// <summary>Vitesse horizontale (DIP/ms) sur les <see cref="VelocityWindowMs"/> dernières millisecondes.</summary>
-    double Velocity(long nowMs)
+    double Velocity(long nowMs, bool vertical)
     {
-        var (t, xLast) = _samples[^1];
+        var last = _samples[^1];
         int i = _samples.Count - 1;
         while (i > 0 && nowMs - _samples[i - 1].T <= VelocityWindowMs) i--;
-        var (t0, x0) = _samples[i];
-        return t > t0 ? (xLast - x0) / (t - t0) : 0;
+        var first = _samples[i];
+        return last.T > first.T ? ((vertical ? last.Y - first.Y : last.X - first.X)) / (last.T - first.T) : 0;
     }
 
     /// <summary>

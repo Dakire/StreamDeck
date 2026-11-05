@@ -78,6 +78,30 @@ public class SwipeGestureTests
     public void ReturningToTheStartCancelsTheSwipe() =>
         Assert.Equal(0, Play(500, 300, (400, 300, 50), (300, 300, 100), (480, 300, 200), (495, 300, 220)).Direction);
 
+    static int PlayBack(double x0, double y0, bool allowBack, params (double X, double Y, long T)[] points)
+    {
+        var g = new SwipeGesture();
+        g.Begin(x0, y0, 0, Width, allowBack);
+        foreach (var (x, y, t) in points[..^1]) g.Move(x, y, t);
+        var (lx, ly, lt) = points[^1];
+        return g.End(lx, ly, lt);
+    }
+
+    [Fact]
+    public void ASwipeDownFromTheMiddleOfTheGridGoesBackOnlyWhereItIsAllowed()
+    {
+        Assert.Equal(SwipeGesture.Back, PlayBack(500, 100, true, Line(500, 100, 510, 300, 150)));    // vif
+        Assert.Equal(SwipeGesture.Back, PlayBack(500, 100, true, Line(500, 100, 500, 300, 2000, 40)));   // lent mais long (200 DIP)
+        Assert.Equal(0, PlayBack(500, 100, false, Line(500, 100, 510, 300, 150)));                    // hors dossier : rien
+        Assert.Equal(0, PlayBack(500, 300, true, Line(500, 300, 500, 100, 150)));                     // vers le haut : rien
+        Assert.Equal(0, PlayBack(500, 100, true, Line(500, 100, 540, 150, 80)));                      // trop court
+        Assert.Equal(0, PlayBack(500, 100, true, Line(500, 100, 600, 250, 150)));                     // diagonale
+    }
+
+    [Fact]
+    public void AHorizontalSwipeStillTurnsThePageWhenBackIsAllowed() =>
+        Assert.Equal(1, PlayBack(800, 300, true, Line(800, 300, 600, 305, 150)));
+
     [Fact]
     public void AtTheEndOfTheListTheGridResistsAndStaysClose()
     {
@@ -157,6 +181,27 @@ public class DeckSwipeTests
             Assert.True(vm.SwipePage(1));
             Assert.False(vm.InFolder);
             Assert.Equal(2, ActivePage(vm));
+        });
+    }
+
+    [Fact]
+    public void ASwipeDownInsideAFolderReturnsToTheParentAndDoesNothingOutsideOne()
+    {
+        var vm = NewDeck(Config());
+        _host.Run(() =>
+        {
+            Assert.False(vm.CanSwipeBack);
+            Assert.False(vm.SwipeBack());
+            vm.Tiles.OfType<DeckTileViewModel>().First(t => t.Label == "Dossier").Click.Execute(null);
+        });
+        _host.Settle();
+        _host.Run(() =>
+        {
+            Assert.True(vm.InFolder);
+            Assert.True(vm.CanSwipeBack);
+            Assert.True(vm.SwipeBack());
+            Assert.False(vm.InFolder);
+            Assert.Equal(0, ActivePage(vm));
         });
     }
 

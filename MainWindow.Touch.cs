@@ -323,7 +323,7 @@ public partial class MainWindow
         _swipe.Cancel();
         if (tracked || !_vm.CanSwipe || !IsOverDeckGrid(x, y) || IsInsideWebTile(HitVisual(x, y))) return;
         var at = Root.PointFromScreen(new Point(x, y));   // la grille elle-même est décalée pendant le geste : repère fixe de la fenêtre
-        _swipe.Begin(at.X, at.Y, now, DeckGrid.ActualWidth);
+        _swipe.Begin(at.X, at.Y, now, DeckGrid.ActualWidth, _vm.CanSwipeBack);
         _swipeId = id;
     }
 
@@ -337,8 +337,9 @@ public partial class MainWindow
         var at = Root.PointFromScreen(new Point(x, y));
         if (msg == WM_POINTERUPDATE)
         {
-            bool was = _swipe.State == SwipeState.Swiping;
-            if (_swipe.Move(at.X, at.Y, now) != SwipeState.Swiping) return false;
+            bool was = _swipe.State is SwipeState.Swiping or SwipeState.SwipingDown;
+            var state = _swipe.Move(at.X, at.Y, now);
+            if (state is not (SwipeState.Swiping or SwipeState.SwipingDown)) return false;
             if (!_vm.CanSwipe) { EndSwipe(0); return false; }   // un menu s'est ouvert entre-temps
             if (!was)
             {
@@ -350,13 +351,14 @@ public partial class MainWindow
                 _touchDragTile = null;
                 _tapOnBar = false;
             }
-            ShowSwipeOffset(_swipe.DeltaX);
+            if (state == SwipeState.Swiping) ShowSwipeOffset(_swipe.DeltaX);
             return true;
         }
         if (msg != WM_POINTERUP) return false;
-        bool swiping = _swipe.State == SwipeState.Swiping;
+        bool swiping = _swipe.State is SwipeState.Swiping or SwipeState.SwipingDown;
         int direction = _swipe.End(at.X, at.Y, now);
         if (!swiping) return false;
+        if (direction == SwipeGesture.Back) { _swipe.Cancel(); _vm.SwipeBack(); return true; }
         EndSwipe(direction);
         return true;
     }
