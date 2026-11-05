@@ -40,5 +40,6 @@ effacée : elle passe au statut « Remplacée par … ».
 | [0033](0033-deplacement-de-boutons-par-appui-long.md) | Déplacer des boutons hors édition par appui long (soulèvement, corbeille, annulation) | Acceptée (geste activé par défaut) |
 | [0034](0034-schema-de-config-propose-themes-et-gestes.md) | Schéma de `config.json` proposé : thèmes personnalisés, délai des pages web, déplacement au toucher | Acceptée |
 | [0035](0035-palettes-en-couches-animations-et-poignees.md) | Palettes en couches, animations d'ouverture, changement de page au bord, poignées visibles | Acceptée |
+| [0036](0036-icones-bornees-balayage-et-toucher-web-par-composition.md) | Icônes bornées et nettes, balayage des pages, toucher des pages web par composition | Acceptée (non vérifiée au doigt) |
 
 Modèle d'une nouvelle décision : contexte, décision, conséquences, statut et date.

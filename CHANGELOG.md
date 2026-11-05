@@ -4,6 +4,19 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+Clé facultative ajoutée à `config.json` (validée) : `SwipePagesDisabled` (absente = balayage activé). Aucune clé renommée ni supprimée.
+
+### Ajouté
+- **Balayer pour changer de page** (ADR 0036) : un balayage horizontal sur la grille passe à la page suivante (vers la gauche) ou précédente (vers la droite) ; la grille suit le doigt
+  et rebondit au bout de la liste. Jamais en mode édition ni sur une page web ; un balayage n'exécute jamais la touche de départ. Désactivable dans Paramètres › Toucher.
+
+### Corrigé
+- **Icônes d'applications et de sites** (ADR 0036) : elles ne passent plus derrière le titre (zone bornée au-dessus ou au-dessous) et sont nettes : icône de programme en 256 px au lieu
+  de 32, décodage à la taille d'affichage selon l'échelle de l'écran, petite image montrée à sa taille ou à un multiple entier plutôt qu'étirée. Les anciennes icônes de 32 px sont
+  remplacées toutes seules au démarrage ; une image introuvable est remplacée par une icône du type d'action.
+- **Toucher une page web ne déplace plus le curseur** (ADR 0036) : la page est rendue par composition, sans fenêtre Win32 sous le doigt ; le deck lui transmet le doigt comme un vrai
+  toucher (défilement, appui, pincement, appui long). La souris physique garde son comportement. Non vérifié sur un écran tactile réel.
+
 ## [1.3.0] — 2026-11-05
 
 Clés facultatives ajoutées à `config.json` (ADR 0034, validé) : `ThemeOverrides`, `WebIdleExitSeconds`, `LiftDragDisabled`, `LiftDelayMs`, et la valeur `tixia` pour `Theme`. Aucune valeur par défaut n'est écrite ;

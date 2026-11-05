@@ -77,6 +77,8 @@ automatique (une fois par jour, désactivable). Rien ne s'installe sans ton acco
   navigation (contour + chevron), affichage (heure ou minuteur en grand), image plein cadre ; badge du nombre d'étapes.
 - Retour d'exécution sur la touche : anneau si l'action dure, coche si elle réussit, alerte et message si elle échoue (étape en cause).
 - Barre du haut : profil actif (toucher pour en changer), badges *Mode édition* et *Simulation*. Dock du bas : pages, sous-pages, menu.
+- **Balayer** la grille vers la gauche ou la droite passe à la page suivante ou précédente (pas en mode édition ni sur une page web : utilise alors les onglets du dock).
+- Icônes d'applications et de sites nettes, dans une zone qui laisse toujours sa place au titre ; *Remplir* garde l'image en plein cadre (128 px au moins).
 - Profils, pages en onglets, dossiers et sous-dossiers ; pages masquées accessibles par une action `page`.
 - Fenêtre qui ne prend pas le focus : les raccourcis arrivent à l'application active.
 - Plein écran sur l'écran secondaire ou mode fenêtre, sans masquer la barre des tâches (le deck occupe la zone de travail) ; le deck suit le branchement et le débranchement de l'écran, et se cale exactement même entre écrans de densités différentes.
@@ -137,6 +139,8 @@ Google Agenda, Meet) ; tout autre droit est refusé, et Windows doit aussi autor
 **Interaction avec la souris et le doigt** (propriétés du widget, ou *Page* › *Interaction avec la page*) : *Toucher pour interagir* (défaut : la page s'affiche sans rien capter ; un
 toucher ou un clic l'ouvre à l'interaction, qui se termine seule après 30 s sans geste ou par le bouton *Interagir*), *Passive* (affichage seul ; bouton *Interagir* pour s'en servir) ou
 *Interactive* (la page reçoit tout, en permanence). Hors interaction, appui long et clic droit sur la page ouvrent le menu de la case ; en mode édition, la page ne capte jamais rien.
+Au doigt, la page se comporte comme dans Chrome (défilement, appui, pincement, appui long) **sans déplacer le curseur** : elle est rendue par composition et le deck lui transmet le
+toucher (ADR 0036). Le balayage des pages ne part jamais d'une page web : change de page par les onglets du dock.
 Une page activée porte un **liseré d'accent** ; elle redevient passive par un toucher hors de la tuile, au changement de page ou de dossier, ou après 30 s sans geste (ADR 0032). Le bouton *Interagir / Terminer* de la bande de commandes reste toujours touchable.
 Pendant l'interaction, la saisie au clavier démarre toute seule quand un champ de texte de la page a le focus (et rend le focus en le quittant) ; le bouton *Saisie au clavier* de la tuile la force. Le bouton *Retour* de la barre du cadre revient à
   la page précédente (ou à la page de départ) ; un lien « nouvel onglet » vers un autre site (un document reçu dans Chat) s'ouvre dans le navigateur
@@ -270,6 +274,7 @@ Les tableaux ci-dessous en donnent l'essentiel.
 | `WebIdleExitSeconds` | Délai (5 à 300 s) avant qu'une page web activée redevienne passive ; facultatif | absent (30) |
 | `LiftDragDisabled` | `true` coupe le déplacement de boutons par appui long hors édition ; facultatif | absent (activé) |
 | `LiftDelayMs` | Durée de l'appui long qui soulève un bouton (300 à 1500 ms) ; facultatif | absent (500) |
+| `SwipePagesDisabled` | `true` coupe le changement de page par balayage horizontal de la grille ; facultatif | absent (activé) |
 | `CatalogWidth`, `InspectorHeight` | Largeur du catalogue et hauteur de l'inspecteur en mode édition (DIP), choisies en glissant leur poignée ; facultatifs | absents |
 | `CatalogCollapsed`, `InspectorCollapsed` | Panneaux repliés en mode édition ; facultatifs | absents |
 | `SettingsWidth`, `SettingsHeight` | Taille de la fenêtre des paramètres à la dernière fermeture ; facultatifs | absents |
@@ -285,7 +290,7 @@ Un profil contient des `Pages` ; une page, des `Buttons` dans l'ordre de la gril
 | `Label`, `Icon`, `Color`, `Actions` | Titre, icône (nom Fluent, emoji ou texte), couleur, étapes |
 | `HideTitle`, `TitlePosition` | Masquer le titre ; `top` / `middle` / `bottom` (absent : sous l'icône) |
 | `TextColor` | Couleur du texte et de l'icône |
-| `ImagePath`, `ImageFit` | Image importée (nom dans `Icons\`), `cover` ou `contain` |
+| `ImagePath`, `ImageFit` | Image (nom dans `Icons\`) ; `contain` : en icône au-dessus du titre (défaut d'une image importée, d'une icône d'application ou de site), `cover` ou absent : plein cadre si l'image fait au moins 128 px |
 | `IsFolder`, `Children` | Dossier et son contenu |
 | `Blank` | Case vide qui garde la position de ses voisines |
 | `GlobalHotkey` | Raccourci clavier global qui déclenche le bouton depuis n'importe quelle application (`ctrl+alt+f1`, `f13`) ; un modificateur obligatoire sauf F13 à F24 ; facultatif |
@@ -353,7 +358,8 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 **Thèmes** (Paramètres › Apparence) : Suivre Windows, Sombre, Clair, AMOLED et **TIXIA** (orange, fonds bruns chauds), avec aperçu ; six couleurs modifiables (accent, fond, surface, texte, succès, erreur), **Réinitialiser** par couleur ou pour toutes,
 aperçu en direct et avertissement si le contraste est insuffisant (clé `ThemeOverrides`, ADR 0034).
 
-**Toucher** (Paramètres › Toucher) : délai de fin d'interaction des pages web (`WebIdleExitSeconds`, 30 s par défaut) ; **déplacement de boutons par appui long** hors édition (activé par défaut, `LiftDragDisabled` pour le couper, durée `LiftDelayMs`) :
+**Toucher** (Paramètres › Toucher) : délai de fin d'interaction des pages web (`WebIdleExitSeconds`, 30 s par défaut) ; **balayer pour changer de page** (activé par défaut,
+`SwipePagesDisabled` pour le couper, ADR 0036) ; **déplacement de boutons par appui long** hors édition (activé par défaut, `LiftDragDisabled` pour le couper, durée `LiftDelayMs`) :
 la touche se soulève, puis se dépose sur une case, un dossier, un onglet de page ou la corbeille ; tenue près d'un bord de la fenêtre, elle change de page ; Échap annule (ADR 0033 et 0035).
 La barre du haut est la poignée de déplacement de la fenêtre ; en mode édition, le catalogue et l'inspecteur se redimensionnent depuis n'importe quel point de leur arête.
 

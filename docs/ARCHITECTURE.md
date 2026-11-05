@@ -121,7 +121,8 @@ locale sont décrits dans `docs/plugins.md` et `docs/local-api.md` (ADR 0012).
 | Types d'action | `Core/Actions/Handlers/` | Une classe par type (`HotkeyAction`, `HttpAction`…) sur trois bases : synchrone, hors thread d'interface avec délai maximal, libre. L'identifiant est la clé stable de `config.json`. `ActionRegistry` refuse les doublons. |
 | Intégrations système | `Core/Actions/Platform.cs` → `Platform/Windows/` | `IKeyboardService`, `IAppLauncher`, `IWindowService`, `IAudioService`. Les ViewModels et le moteur n'appellent jamais Win32 : le compilateur l'interdit (types internes). |
 | Écrans | `Core/Displays.cs`, `Services/DisplayService.cs` | `DisplayResolver` (logique pure, testée) choisit l'écran ; `IDisplayService` fournit les écrans et signale les changements. Placement en pixels physiques dans `MainWindow.xaml.cs` (`SetWindowPos`). |
-| Rendu des touches | `ViewModels/TileFaceData.cs`, `Controls/TileFace` | Le modèle ne connaît pas le rendu ; la variante (standard, média, navigation, affichage, image) est déduite du contenu. |
+| Rendu des touches | `ViewModels/TileFaceData.cs`, `Controls/TileFace` | Le modèle ne connaît pas le rendu ; la variante (standard, média, navigation, affichage, image) est déduite du contenu. Image en icône : zone bornée par `Core/IconLayout`, décodée à la taille d'affichage (`IconStore.LoadForDisplay`, ADR 0036). |
+| Gestes | `Core/SwipeGesture.cs`, `MainWindow.Touch.cs`, `ViewModels/MainViewModel.Swipe.cs` | Balayage des pages : reconnaissance pure (seuils regroupés), suivi du doigt par la fenêtre, navigation par la commande des onglets. `MainWindow.HandleTouch` rejoue un geste dans les tests. |
 | Thème | `Theme.cs` | Palettes claire / sombre (contrastes testés), brushes `Deck*` publiées en `DynamicResource`, corps teinté des touches. |
 | Identifiants du format | `Core/ActionTypes.cs` | `ActionTypes`, `PageTargets`, `AudioCommands` : clés stables de `config.json`, figées par un test. |
 | Journal | `Core/Log.cs`, `Services/AppHost.cs` | Façade `Log` (Core) branchée sur Serilog ; `ILogger<T>` dans les services injectés. `streamdak.log` (1 Mo, 3 fichiers) : démarrage, erreurs, échecs d'action, changements d'écran. |
@@ -183,7 +184,8 @@ Un widget est un `DeckButton` avec `Widget` (horloge, agenda, web) et une empris
 `MainViewModel.BuildTiles` pose une tuile par case non recouverte et y inscrit sa place (`PlacedTile` : case, emprise) ; `TileGridPanel`
 (remplace `UniformGrid`) la lit. Hors édition, un widget est un `WidgetTileViewModel` (`ClockWidgetViewModel`, `AgendaWidgetViewModel`,
 `WebWidgetViewModel`) ; en édition c'est une touche sélectionnable. L'agenda vient des valeurs de l'intégration Google (`CalendarFeed`,
-`AgendaFormatter` dans Core) ; la page web est un `WebWidgetView` (WebView2 isolé) masqué sous les menus et boîtes de dialogue.
+`AgendaFormatter` dans Core) ; la page web est un `WebWidgetView` (WebView2 isolé) masqué sous les menus et boîtes de dialogue. Le cadre est rendu par composition
+(`Controls/DeckWebView`) : sans fenêtre Win32 sous le doigt, le deck reçoit le toucher et le transmet à la page en interaction (`MainWindow.RouteToWebFrame`, ADR 0036).
 
 ### Widgets de données (`IWidget`, ADR 0019)
 
