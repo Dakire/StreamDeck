@@ -4,6 +4,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Corrigé
+- **Release 1.2.1 en échec** : l'applicateur de mise à jour utilisait `Get-FileHash`, introuvable quand `powershell.exe` 5.1 hérite du `PSModulePath` de PowerShell 7 (CI, lancement depuis `pwsh`).
+  Deux tests d'`UpdateApplier` échouaient donc sur le CI, et `build.ps1` (qui lance les tests d'abord) arrêtait la release. L'empreinte est maintenant recontrôlée avec .NET, sans module ; le contrôle reste identique.
+
 ## [1.2.1] — 2026-11-04
 
 Correctifs de sécurité et de fiabilité issus de `SECURITY.md` (« Audit 3 »). Aucune clé de configuration ajoutée, renommée ni supprimée.

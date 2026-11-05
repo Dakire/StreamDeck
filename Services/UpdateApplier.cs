@@ -62,7 +62,10 @@ public sealed class UpdateApplier : IUpdateApplier
             Copy-Tree $InstallDir $backup
             # Le fichier a pu être remplacé depuis sa vérification : il doit toujours avoir l'empreinte vérifiée (l'installateur peut s'élever par UAC)
             if ($ExpectedSha256) {
-                $actual = (Get-FileHash -LiteralPath $Installer -Algorithm SHA256).Hash
+                # .NET plutôt que le cmdlet de hachage de fichier : il n'est plus résolu quand PowerShell 5.1 hérite du PSModulePath de PowerShell 7 (CI, lancement depuis pwsh)
+                $stream = [System.IO.File]::OpenRead($Installer)
+                try { $actual = [System.BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash($stream)).Replace('-', '') }
+                finally { $stream.Dispose() }
                 if ($actual -ne $ExpectedSha256) { throw 'L''installateur a changé depuis sa vérification : installation refusée' }
             }
             Log 'Lancement de l''installateur'

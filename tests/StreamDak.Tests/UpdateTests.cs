@@ -1285,8 +1285,14 @@ public sealed class UpdateApplierTests : IDisposable
         Assert.True(process.WaitForExit(60_000));
         await WaitForFile(relaunched);
 
-        Assert.Equal("nouvelle version", (await File.ReadAllTextAsync(app)).Trim());
+        Assert.True("nouvelle version" == (await File.ReadAllTextAsync(app)).Trim(), ApplierLog(plan));
         Assert.False(File.Exists(Path.Combine(plan.WorkDir, UpdateApplier.FailedMarker)));
+    }
+
+    static string ApplierLog(UpdatePlan plan)
+    {
+        var log = Path.Combine(plan.WorkDir, UpdateApplier.LogName);
+        return File.Exists(log) ? File.ReadAllText(log) : "(pas de journal)";
     }
 
     [Fact]
@@ -1302,7 +1308,7 @@ public sealed class UpdateApplierTests : IDisposable
         Assert.Equal("ancienne version", (await File.ReadAllTextAsync(app)).Trim());            // le faux installateur n'a pas tourné
         var marker = Path.Combine(plan.WorkDir, UpdateApplier.FailedMarker);
         Assert.True(File.Exists(marker));
-        Assert.Contains("a changé", await File.ReadAllTextAsync(marker));
+        Assert.True((await File.ReadAllTextAsync(marker)).Contains("a changé"), ApplierLog(plan));
         Assert.True(File.Exists(relaunched), "l'ancienne version doit être relancée");
     }
 
@@ -1359,6 +1365,13 @@ public sealed class UpdateApplierTests : IDisposable
         Assert.DoesNotContain("DownloadString", UpdateApplier.Script);
         Assert.DoesNotContain("Invoke-Expression", UpdateApplier.Script);
         Assert.DoesNotContain("iex ", UpdateApplier.Script);
+    }
+
+    [Fact]
+    public void TheScriptDoesNotDependOnAModuleCmdletThatBreaksUnderPowerShell7Environment()
+    {
+        // Get-FileHash n'est plus résolu par powershell.exe 5.1 lancé depuis pwsh (PSModulePath hérité) : cause de l'échec de la release 1.2.1
+        Assert.DoesNotContain("Get-FileHash", UpdateApplier.Script);
     }
 }
 
