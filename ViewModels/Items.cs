@@ -52,6 +52,8 @@ public sealed partial class DeckTileViewModel : PlacedTile, IEditableTile
     [ObservableProperty] bool _isDragSource;
     /// <summary>true pour la case sous le pointeur pendant un glissement (surbrillance).</summary>
     [ObservableProperty] bool _isDropTarget;
+    /// <summary>true pendant l'appui long hors édition : la touche est soulevée (échelle et ombre) avant que le glissement ne commence.</summary>
+    [ObservableProperty] bool _isLifted;
 
     /// <summary>Bouton de la configuration représenté (null pour la case « retour »).</summary>
     public DeckButton? Button { get; init; }

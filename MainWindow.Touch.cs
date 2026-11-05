@@ -52,6 +52,9 @@ public partial class MainWindow
     TabViewModel? _touchDragTab;   // onglet de page tenu par un doigt en mode édition : le lâcher sur un autre onglet change son rang
     Controls.LevelControl? _levelTouch;   // roue ou curseur de niveau audio tenu par un doigt (le doigt est routé vers lui, pas vers le test d'appui)
     uint _levelPointer;
+    DeckTileViewModel? _liftCandidate;    // touche sous le doigt qui sera soulevée par l'appui long (déplacement hors édition)
+    DeckTileViewModel? _lifted;           // touche soulevée, doigt encore posé
+    ICommand? _liftFallbackEdit;          // relâchée sans avoir glissé, la touche soulevée ouvre l'éditeur de sa case (comportement de l'appui long d'avant)
     ICommand? _pressEdit;                 // édition de la case sous le doigt (appui long), null si la case ne s'édite pas
     readonly DispatcherTimer _longPressTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
     bool _longPressWired;
@@ -67,7 +70,19 @@ public partial class MainWindow
         _dragging = false;
         _touchDragTile = null;
         _touchDragging = _touchDraggingTab = false;
+        _liftCandidate = _lifted = null;
+        _liftFallbackEdit = null;
+        _vm.CancelLift();
         _vm.EndDrag();
+    }
+
+    /// <summary>Échap pendant un déplacement : annulation propre, rien n'est modifié. Retourne true si un déplacement était en cours.</summary>
+    internal bool CancelTouchLift()
+    {
+        if (_lifted == null && !_vm.IsLifting) return false;
+        _tap.Cancel();
+        ResetTouchTracking();
+        return true;
     }
 
 
@@ -81,6 +96,7 @@ public partial class MainWindow
         {
             _longPressWired = true;
             _longPressTimer.Tick += (_, _) => OnLongPressTick();
+            PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape && CancelTouchLift()) e.Handled = true; };   // Échap annule un déplacement en cours
         }
         _lastTouchTick = Environment.TickCount64;
         uint id = (uint)((long)wParam & 0xFFFF);
@@ -94,6 +110,8 @@ public partial class MainWindow
                 // Un doigt suivi qui ne touche plus l'écran (relâchement jamais reçu) ne doit pas bloquer les appuis suivants
                 if (_tap.Tracking && _tap.TrackedId is { } old && (old == id || !(GetPointerInfo(old, out var oldInfo) && (oldInfo.pointerFlags & POINTER_FLAG_INCONTACT) != 0)))
                     ResetTouchTracking();
+                // Un toucher que le deck reçoit n'est jamais sur le cadre actif (qui a sa propre fenêtre) : hors de la tuile web, la page redevient passive
+                if (!IsInsideWebTile(HitVisual(x, y))) _vm.EndWebInteractions();
                 bool tracked = _tap.Tracking;
                 _tap.Slop = (int)Math.Ceiling(12 * VisualTreeHelper.GetDpi(this).DpiScaleX);
                 _tap.Down(id, x, y, Environment.TickCount64);
@@ -104,7 +122,10 @@ public partial class MainWindow
                 _touchDragTab = _vm.IsEdit && !tracked && _touchDragTile == null ? TabAt(HitVisual(x, y)) : null;
                 // Appui long : seulement pour le doigt suivi (un second doigt est ignoré), sur une case qui s'édite
                 _pressEdit = tracked ? null : EditTargetAt(HitVisual(x, y));
-                if (_pressEdit != null) _longPressTimer.Start(); else _longPressTimer.Stop();
+                // Hors édition, appui long sur un bouton : il se soulève (seuil réglable) au lieu d'ouvrir l'éditeur tout de suite
+                _liftCandidate = tracked ? null : TileAt(HitVisual(x, y)) as DeckTileViewModel;
+                if (_liftCandidate != null && _vm.CanLift(_liftCandidate)) _tap.LongPressThresholdMs = _vm.LiftDelayMs; else _liftCandidate = null;
+                if (_pressEdit != null || _liftCandidate != null) _longPressTimer.Start(); else _longPressTimer.Stop();
                 break;
             case WM_POINTERUPDATE:
                 if (_tap.Move(id, x, y))
@@ -116,7 +137,12 @@ public partial class MainWindow
                         if (!_touchDragging) _vm.BeginDrag(_touchDragTile);
                         _touchDragging = true;
                     }
-                    if (_touchDragging) { var at = Root.PointFromScreen(new Point(x, y)); _vm.UpdateDrag(at.X, at.Y, TileAt(HitVisual(x, y))); }
+                    if (_touchDragging)
+                    {
+                        var at = Root.PointFromScreen(new Point(x, y));
+                        _vm.UpdateDrag(at.X, at.Y, TileAt(HitVisual(x, y)));
+                        if (_lifted != null) _vm.IsOverTrash = IsOverTrashZone(x, y);
+                    }
                     if (_touchDragTab != null) _touchDraggingTab = true;
                 }
                 break;
@@ -135,6 +161,25 @@ public partial class MainWindow
                 _touchDragTab = null;
                 bool wasDragging = _dragging;
                 _dragging = false;
+                if (_lifted is { } lifted)
+                {
+                    // Touche soulevée (appui long hors édition) : déposée sur une case, un onglet ou la corbeille ; relâchée ailleurs, le geste est annulé sans rien modifier
+                    bool moved = _touchDragging;
+                    bool trash = moved && IsOverTrashZone(x, y);
+                    var dropAt = moved ? TileAt(HitVisual(x, y)) : null;
+                    var dropTab = moved ? TabAt(HitVisual(x, y)) : null;
+                    var fallback = _liftFallbackEdit;
+                    _tap.Up(id, x, y);
+                    _touchDragging = false;
+                    _touchDragTile = _lifted = null;
+                    _liftFallbackEdit = null;
+                    if (!moved) { _vm.CancelLift(); if (fallback != null && fallback.CanExecute(null)) Dispatcher.BeginInvoke(DispatcherPriority.Input, () => fallback.Execute(null)); }
+                    else if (trash) Dispatcher.BeginInvoke(DispatcherPriority.Input, () => _vm.DropOnTrash(lifted));
+                    else if (dropAt != null) Dispatcher.BeginInvoke(DispatcherPriority.Input, () => _vm.DropLifted(lifted, dropAt));
+                    else if (dropTab != null) Dispatcher.BeginInvoke(DispatcherPriority.Input, () => _vm.DropLiftedOnPage(lifted, dropTab.Index));
+                    else _vm.CancelLift();
+                    break;
+                }
                 if (_touchDragging && _touchDragTile is { } dragged)
                 {
                     // Doigt relâché après un glissement depuis une touche : déposée sur la case sous le doigt
@@ -221,6 +266,22 @@ public partial class MainWindow
         return true;
     }
 
+    /// <summary>true si le point (pixels écran) est sur la corbeille proposée pendant un déplacement hors édition.</summary>
+    bool IsOverTrashZone(int x, int y)
+    {
+        if (!_vm.ShowTrash || !TrashZone.IsVisible) return false;
+        var local = TrashZone.PointFromScreen(new Point(x, y));
+        return local.X >= 0 && local.Y >= 0 && local.X <= TrashZone.ActualWidth && local.Y <= TrashZone.ActualHeight;
+    }
+
+    /// <summary>true si l'élément est dans la tuile d'une page web (bande de commandes comprise).</summary>
+    internal static bool IsInsideWebTile(DependencyObject? hit)
+    {
+        for (DependencyObject? d = hit; d != null; d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+            if (d is Controls.WebWidgetView) return true;
+        return false;
+    }
+
     /// <summary>Contrôle de niveau audio qui contient cet élément, ou null.</summary>
     static Controls.LevelControl? LevelControlAt(DependencyObject? hit)
     {
@@ -243,6 +304,14 @@ public partial class MainWindow
         _longPressTimer.Stop();
         var edit = _pressEdit;
         _pressEdit = null;
+        if (_liftCandidate != null && _vm.Lift(_liftCandidate))
+        {
+            // La touche se soulève ; si le doigt se relève sans glisser, l'éditeur de la case s'ouvre alors (voir le relâchement)
+            _lifted = _touchDragTile = _liftCandidate;
+            _liftCandidate = null;
+            _liftFallbackEdit = edit;
+            return;
+        }
         if (edit != null && edit.CanExecute(null)) edit.Execute(null);
     }
 

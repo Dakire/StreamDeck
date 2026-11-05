@@ -17,6 +17,9 @@ internal sealed class TapRecognizer
     long _downAt;
     bool _longFired;
 
+    /// <summary>Seuil de l'appui long de cet appui (ms) ; <see cref="LongPressMs"/> par défaut, réglable pour le soulèvement des touches.</summary>
+    public int LongPressThresholdMs { get; set; } = LongPressMs;
+
     /// <summary>Distance maximale (pixels) entre l'appui et le relâchement pour rester un appui.</summary>
     public int Slop { get; set; } = 16;
 
@@ -40,7 +43,7 @@ internal sealed class TapRecognizer
     public void Down(uint id, int x, int y, long nowMs = 0)
     {
         if (_id != null) return;
-        _id = id; _x = x; _y = y; Moved = false; _downAt = nowMs; _longFired = false;
+        _id = id; _x = x; _y = y; Moved = false; _downAt = nowMs; _longFired = false; LongPressThresholdMs = LongPressMs;
     }
 
     /// <summary>
@@ -49,7 +52,7 @@ internal sealed class TapRecognizer
     /// </summary>
     public bool TryLongPress(long nowMs)
     {
-        if (_id == null || Moved || _longFired || nowMs - _downAt < LongPressMs) return false;
+        if (_id == null || Moved || _longFired || nowMs - _downAt < LongPressThresholdMs) return false;
         _longFired = true;
         return true;
     }

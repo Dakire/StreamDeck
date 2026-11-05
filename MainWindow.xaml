@@ -142,6 +142,13 @@
         <Grid.Style>
           <Style TargetType="Grid">
             <Style.Triggers>
+              <!-- Appui long hors édition : la touche se soulève (échelle et ombre) -->
+              <DataTrigger Binding="{Binding IsLifted}" Value="True">
+                <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                <Setter Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="1.08" ScaleY="1.08"/></Setter.Value></Setter>
+                <Setter Property="Effect"><Setter.Value><DropShadowEffect BlurRadius="22" ShadowDepth="8" Opacity="0.55" Color="Black"/></Setter.Value></Setter>
+                <Setter Property="Panel.ZIndex" Value="10"/>
+              </DataTrigger>
               <DataTrigger Binding="{Binding IsDragSource}" Value="True"><Setter Property="Opacity" Value="0.35"/></DataTrigger>
               <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
@@ -1025,6 +1032,24 @@
         </ScrollViewer>
       </Border>
     </Grid>
+
+    <!-- Corbeille : proposée seulement pendant le déplacement d'un bouton hors édition (appui long) ; 64 px de haut -->
+    <Border x:Name="TrashZone" Grid.RowSpan="3" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,24" Width="240" Height="64" CornerRadius="32"
+            IsHitTestVisible="False" BorderThickness="2" BorderBrush="{DynamicResource DeckDanger}" Visibility="{Binding ShowTrash, Converter={StaticResource BoolVis}}"
+            AutomationProperties.Name="Corbeille : déposer ici pour supprimer le bouton">
+      <Border.Style>
+        <Style TargetType="Border">
+          <Setter Property="Background" Value="{DynamicResource DeckPanel}"/>
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsOverTrash}" Value="True"><Setter Property="Background" Value="{DynamicResource DeckDanger}"/></DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </Border.Style>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <ui:SymbolIcon Symbol="Delete24" Margin="0,0,10,0" Foreground="{DynamicResource DeckText}"/>
+        <TextBlock Text="Supprimer" FontWeight="SemiBold" Foreground="{DynamicResource DeckText}" VerticalAlignment="Center"/>
+      </StackPanel>
+    </Border>
 
     <!-- ===== Glissement d'une touche : étiquette qui suit le pointeur, avec ce que ferait le dépôt ===== -->
     <Border x:Name="DragGhost" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False" Padding="14,10" CornerRadius="16"

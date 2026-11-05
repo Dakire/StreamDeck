@@ -164,7 +164,7 @@ public partial class MainViewModel
     /// </summary>
     public void MoveTile(object from, object to)
     {
-        if (!IsEdit || !TryGetSlot(from, out var sourcePlace, out int sourceIndex)) return;
+        if (!DragAllowed || !TryGetSlot(from, out var sourcePlace, out int sourceIndex)) return;
         if (IsBackTile(to))
         {
             var up = _doc.MoveToParent(sourcePlace, sourceIndex);
@@ -179,7 +179,7 @@ public partial class MainViewModel
         bool intoFolder = existing is { IsFolder: true };
         var result = intoFolder ? _doc.MoveIntoFolder(sourcePlace, sourceIndex, targetPlace, targetIndex) : _doc.MoveButton(sourcePlace, sourceIndex, targetPlace, targetIndex);
         if (!result.Ok) { Notifier.Error(result.Message ?? "Déplacement impossible"); return; }
-        if (!intoFolder) SelectTile(targetPlace, targetIndex);
+        if (!intoFolder && IsEdit) SelectTile(targetPlace, targetIndex);
         Notifier.Success(intoFolder ? "Bouton déplacé dans le dossier" : existing == null ? "Bouton déplacé" : "Boutons échangés", "Annuler", () => _doc.Undo());
     }
 
@@ -192,7 +192,7 @@ public partial class MainViewModel
     /// <summary>Touche glissée puis lâchée sur l'onglet d'une page : elle y est déplacée (première case libre) ; annulable.</summary>
     public void MoveTileToPage(DeckTileViewModel moved, int pageIndex)
     {
-        if (!IsEdit || pageIndex == _page || !TryGetSlot(moved, out var sourcePlace, out int sourceIndex) || _doc.Get(sourcePlace, sourceIndex) == null) return;
+        if (!DragAllowed || pageIndex == _page || !TryGetSlot(moved, out var sourcePlace, out int sourceIndex) || _doc.Get(sourcePlace, sourceIndex) == null) return;
         var dst = new Place(CurrentProfile.Name, pageIndex);
         var result = _doc.MoveButton(sourcePlace, sourceIndex, dst, _doc.FirstEmptyIndex(dst));
         if (!result.Ok) { Notifier.Error(result.Message ?? "Déplacement impossible"); return; }
@@ -219,7 +219,7 @@ public partial class MainViewModel
     /// <summary>Début du glissement d'une touche (souris ou doigt).</summary>
     public void BeginDrag(DeckTileViewModel tile)
     {
-        if (!IsEdit) return;
+        if (!DragAllowed) return;
         EndDrag();
         _dragSource = tile;
         tile.IsDragSource = true;
@@ -247,14 +247,14 @@ public partial class MainViewModel
             : target is DeckTileViewModel { Button: { IsFolder: true } } ? "Ranger dans le dossier"
             : target is DeckTileViewModel ? "Échanger"
             : "Déplacer ici";
+        if (IsOverTrash) DragHint = "Supprimer le bouton";
     }
 
     /// <summary>Fin du glissement (dépôt ou abandon) : tout redevient normal.</summary>
     public void EndDrag()
     {
         if (_dragSource != null) _dragSource.IsDragSource = false;
-        _dragSource = null;
-        foreach (var tile in Tiles)
+        _dragSource = null;        foreach (var tile in Tiles)
         {
             if (tile is DeckTileViewModel deck) deck.IsDropTarget = false;
             else if (tile is AddTileViewModel add) add.IsDropTarget = false;
