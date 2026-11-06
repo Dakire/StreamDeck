@@ -4,6 +4,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+## [1.5.1] — 2026-11-06
+
 ### Corrigé
 - **Souris « attrapée » par une page web (Google Sheets)** (ADR 0037) : un bouton de la souris relâché hors du cadre n'arrivait jamais à la page, qui le croyait toujours
   enfoncé (la sélection de cellules suivait la souris). Le cadre capture maintenant la souris du clic au relâchement, et la page reçoit le relâchement même si la capture est perdue.
