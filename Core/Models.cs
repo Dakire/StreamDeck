@@ -150,7 +150,7 @@ public class DeckPage
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public int Zoom { get; set; }
 
-    /// <summary>Interaction d'une page web avec la souris et le doigt (<see cref="WebInputModes"/>) ; absent = toucher pour interagir.</summary>
+    /// <summary>Interaction d'une page web avec la souris et le doigt (<see cref="WebInputModes"/>) ; absent = toucher direct (ADR 0037), « touch » = toucher pour activer.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? WebInput { get; set; }
 

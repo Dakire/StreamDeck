@@ -387,9 +387,10 @@ public class DeckWidgetTests
                 {
                     var all = WpfHost.Descendants<System.Windows.Controls.Primitives.ButtonBase>(view).ToList();
                     var shield = all.Where(b => System.Windows.Automation.AutomationProperties.GetName(b) == "Toucher pour interagir avec la page").ToList();
-                    Assert.Single(shield);                                     // surface transparente du mode « toucher pour interagir », sur la page
-                    var buttons = all.Except(shield).ToList();
-                    Assert.Equal(8, buttons.Count);                            // retour, interagir, dézoomer, zoom, zoomer, recharger, ouvrir dans le navigateur, saisie au clavier
+                    Assert.Single(shield);                                     // surface transparente du mode « toucher pour activer »…
+                    Assert.NotEqual(Visibility.Visible, shield[0].Visibility); // …absente par défaut : la page reçoit le premier toucher (ADR 0037)
+                    var buttons = all.Except(shield).Where(b => b.Visibility == Visibility.Visible).ToList();
+                    Assert.Equal(7, buttons.Count);                            // retour, dézoomer, zoom, zoomer, recharger, ouvrir dans le navigateur, saisie au clavier (pas d'« interagir » en toucher direct)
                     Assert.All(buttons, b => Assert.True(b.ActualHeight >= 48 && b.ActualWidth >= 48, $"{b.ActualWidth}×{b.ActualHeight} px"));
                 }
             });

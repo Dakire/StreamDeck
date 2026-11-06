@@ -80,9 +80,9 @@ public static class WidgetTypes
 }
 
 /// <summary>
-/// Comportement d'un cadre web face à la souris et au doigt (réglage <c>input</c> du widget page web, <see cref="DeckPage.WebInput"/> d'une page web). Le cadre
-/// WebView2 est une fenêtre Win32 enfant qui capte tout ce qui le touche : en mode passif ou tactile, il est désactivé (il ne reçoit plus rien) et ce qui le
-/// touche revient au deck (appui long, clic droit, menu de la case).
+/// Comportement d'un cadre web face à la souris et au doigt (réglage <c>input</c> du widget page web, <see cref="DeckPage.WebInput"/> d'une page web).
+/// Par défaut la page reçoit le doigt dès le premier contact (ADR 0037) ; en mode passif ou tactile, le cadre est désactivé au repos et ce qui le touche revient
+/// au deck (appui long, clic droit, menu de la case).
 /// </summary>
 public static class WebInputModes
 {
@@ -90,10 +90,10 @@ public static class WebInputModes
     public const string Passive = "passive";
     /// <summary>La page s'affiche sans rien capter ; un toucher (ou un clic) sur la page l'ouvre à l'interaction, qui se termine seule après un moment sans geste.</summary>
     public const string Touch = "touch";
-    /// <summary>La page reçoit toujours la souris et le doigt (comportement d'avant).</summary>
+    /// <summary>La page reçoit la souris et le doigt dès le premier contact (défaut depuis l'ADR 0037).</summary>
     public const string Interactive = "interactive";
-    /// <summary>Mode d'un cadre sans réglage.</summary>
-    public const string Default = Touch;
+    /// <summary>Mode d'un cadre sans réglage (clé absente de config.json) : toucher immédiat (ADR 0037 ; avant : <see cref="Touch"/>).</summary>
+    public const string Default = Interactive;
 
     /// <summary>Fin automatique de l'interaction (modes passif et tactile) après ce délai sans geste dans la page.</summary>
     public static readonly TimeSpan IdleExit = TimeSpan.FromSeconds(30);
@@ -101,15 +101,16 @@ public static class WebInputModes
     /// <summary>Modes dans l'ordre de l'éditeur : (clé, libellé, explication).</summary>
     public static readonly IReadOnlyList<(string Mode, string Label, string Hint)> All = new[]
     {
+        (Interactive, "Toucher direct (par défaut)", "La page réagit dès le premier toucher : liens, défilement, saisie. Le balayage ne change jamais de page sur elle ; on en sort par les onglets ou la bande du cadre."),
+        (Touch, "Toucher pour activer", "Protège la page du défilement accidentel : un premier toucher l'active (liseré), elle redevient inactive après un moment sans geste."),
         (Passive, "Passive", "Affichage seul : la page ne capte ni la souris ni le doigt. Bouton « Interagir » du cadre pour s'en servir."),
-        (Touch, "Toucher pour interagir", "Affichage seul ; un toucher ou un clic sur la page l'ouvre à l'interaction, qui se termine seule après 30 s sans geste."),
-        (Interactive, "Toujours active (24 h/24)", "La page reste active en permanence, sans premier toucher et sans délai : liens, défilement, saisie."),
     };
 
-    /// <summary>Mode connu, ou <see cref="Default"/> pour une valeur absente ou inconnue.</summary>
+    /// <summary>Mode connu, ou <see cref="Default"/> pour une valeur absente ou inconnue. Un « touch » écrit dans config.json est conservé.</summary>
     public static string Normalize(string? mode) => mode?.Trim().ToLowerInvariant() switch
     {
         Passive => Passive,
+        Touch => Touch,
         Interactive => Interactive,
         _ => Default,
     };
@@ -331,7 +332,7 @@ public static class WidgetOptionKeys
     public const string Url = "url";
     /// <summary>Page web : zoom en pourcentage (25 à 500), absent = 100 %.</summary>
     public const string Zoom = "zoom";
-    /// <summary>Page web : interaction avec la souris et le doigt (<see cref="WebInputModes"/>), absent = toucher pour interagir.</summary>
+    /// <summary>Page web : interaction avec la souris et le doigt (<see cref="WebInputModes"/>), absent = toucher direct (ADR 0037).</summary>
     public const string Input = "input";
     /// <summary>Widget de données : intervalle de rafraîchissement en secondes (1 à 3600) ; absent = celui du widget.</summary>
     public const string Interval = "interval";

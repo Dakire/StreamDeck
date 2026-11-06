@@ -380,11 +380,11 @@
         <Border Style="{StaticResource SettingsCard}">
           <StackPanel>
             <TextBlock Text="Toucher" Style="{StaticResource SectionTitle}"/>
-            <TextBlock Text="Pages web : fin d'interaction après (secondes, 5 à 300)" Style="{StaticResource EditorCaption}" Margin="0,8,0,6"/>
+            <TextBlock Text="Pages web « toucher pour activer » : fin d'activation après (secondes, 5 à 300)" Style="{StaticResource EditorCaption}" Margin="0,8,0,6" TextWrapping="Wrap"/>
             <ui:NumberBox Value="{Binding WebIdleSeconds, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Minimum="5" Maximum="300" MaxDecimalPlaces="0" SpinButtonPlacementMode="Inline"
-                          HorizontalAlignment="Left" Width="160" AutomationProperties.Name="Délai sans geste avant que la page web redevienne passive, en secondes"/>
+                          HorizontalAlignment="Left" Width="160" AutomationProperties.Name="Délai sans geste avant qu'une page web en mode toucher pour activer redevienne inactive, en secondes"/>
             <TextBlock Style="{StaticResource EditorHint}" TextWrapping="Wrap"
-                       Text="Une page web activée par un toucher redevient passive après ce délai sans geste, par un toucher hors de la page, ou au changement de page. Pour qu'un site reste actif en permanence sans premier toucher, choisis « Toujours active (24 h/24) » dans les propriétés du widget ou de la page."/>
+                       Text="Par défaut, une page web réagit dès le premier toucher, et le balayage ne change jamais de page sur elle (onglets du dock ou bande du cadre pour en sortir). Ce délai ne concerne que les pages réglées sur « Toucher pour activer » dans les propriétés du widget ou de la page : elles redeviennent inactives après ce délai sans geste, par un toucher hors de la page, ou au changement de page."/>
             <ui:ToggleSwitch Content="Balayer pour changer de page" IsChecked="{Binding SwipePagesEnabled, Mode=TwoWay}" Margin="0,8,0,0" MinHeight="36"
                              AutomationProperties.Name="Balayer pour changer de page"/>
             <TextBlock Style="{StaticResource EditorHint}" TextWrapping="Wrap"

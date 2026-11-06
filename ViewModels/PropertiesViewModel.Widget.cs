@@ -24,7 +24,7 @@ public sealed partial class PropertiesViewModel
     public ObservableCollection<ChoiceViewModel> AgendaCountChoices { get; } = new();
     /// <summary>Nombre de jours à venir affichés par l'agenda.</summary>
     public ObservableCollection<ChoiceViewModel> AgendaDaysChoices { get; } = new();
-    /// <summary>Interaction de la page web avec la souris et le doigt : passive, toucher pour interagir, interactive.</summary>
+    /// <summary>Interaction de la page web avec la souris et le doigt : toucher direct (défaut), toucher pour activer, passive.</summary>
     public ObservableCollection<ChoiceViewModel> WebInputChoices { get; } = new();
     /// <summary>Explication du mode d'interaction choisi.</summary>
     [ObservableProperty] string _webInputHint = "";

@@ -65,11 +65,15 @@ public class WebFrameLinksTests
                 return condition();
             }
 
+            await Script("document.getElementById('t').focus()");                       // focus donné sans geste (autofocus, script de la page) : le clavier n'est pas pris
+            await Task.Delay(1500);
+            Assert.Empty(requests);
             await Script("document.getElementById('c').focus()");                       // une case à cocher n'accepte pas de texte
+            await Script("dispatchEvent(new PointerEvent('pointerdown'))");
             await Task.Delay(1500);
             Assert.Empty(requests);
 
-            await Script("document.getElementById('t').focus()");
+            await Script("dispatchEvent(new PointerEvent('pointerdown',{pointerType:'touch'}));document.getElementById('t').focus()");   // le doigt touche le champ
             Assert.True(await Until(() => !requests.IsEmpty), "la saisie n'a pas démarré");
             Assert.True(requests.TryPeek(out var first) && first);
             Assert.True(vm.AutoTyping);

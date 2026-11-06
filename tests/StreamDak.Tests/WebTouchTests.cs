@@ -197,7 +197,7 @@ public class WebTouchTests
     }
 
     [Fact]
-    public async Task TheDeckForwardsAFingerOnAnActivePageAndNeverSwipesOverIt()
+    public async Task TheFirstTouchOnAWebPageIsForwardedAndASwipeOverItNeverChangesPage()
     {
         var (listener, uri) = Serve();
         var cfg = new DeckConfig
@@ -229,16 +229,17 @@ public class WebTouchTests
             var center = _host.Run(() => web.PointToScreen(new Point(web.ActualWidth / 2, web.ActualHeight / 2)));
             WebTouchPoint At(uint id, double dx, uint flags) => new(id, 1, flags, new Point(center.X + dx, center.Y), 0, 0, (uint)Environment.TickCount);
 
-            // Au repos (mode « toucher pour interagir ») : le bouclier reçoit le doigt, rien n'est transmis à la page
-            Assert.False(_host.Run(() => win.RouteToWebFrame(Down, At(41, 0, Primary | First | New | InRange | InContact | FlagDown))));
-            _host.Run(() => vm.Tiles.OfType<WebWidgetViewModel>().Single().InteractCommand.Execute(null));
-            _host.Settle();
+            // Mode par défaut (page sans réglage) : aucun bouclier, le tout premier toucher va à la page (ADR 0037)
+            Assert.True(_host.Run(() => web.IsEnabled));
+            Assert.True(_host.Run(() => win.RouteToWebFrame(Down, At(41, 0, Primary | First | New | InRange | InContact | FlagDown))));
+            Assert.True(_host.Run(() => win.RouteToWebFrame(Up, At(41, 0, Primary | First | FlagUp))));
+            Assert.Equal(2, _host.Run(() => web.ForwardedTouches));
 
-            // En interaction : chaque contact va à la page jusqu'au relâchement, même s'il glisse loin (balayage de 400 px)
+            // Chaque contact va à la page jusqu'au relâchement, même s'il glisse loin (balayage de 400 px)
             Assert.True(_host.Run(() => win.RouteToWebFrame(Down, At(42, 0, Primary | First | New | InRange | InContact | FlagDown))));
             for (int i = 1; i <= 8; i++) Assert.True(_host.Run(() => win.RouteToWebFrame(Update, At(42, -50 * i, Primary | First | InRange | InContact | FlagUpdate))));
             Assert.True(_host.Run(() => win.RouteToWebFrame(Up, At(42, -400, Primary | First | FlagUp))));
-            Assert.Equal(10, _host.Run(() => web.ForwardedTouches));
+            Assert.Equal(12, _host.Run(() => web.ForwardedTouches));
             Assert.Equal(0, _host.Run(() => vm.Tabs.First(t => t.IsActive).Index));   // la page web garde son défilement : pas de changement de page
 
             // Le même geste rejoué par le traitement du deck (sans transmission) ne change pas de page non plus : pas de balayage sur un cadre web
@@ -250,6 +251,15 @@ public class WebTouchTests
             });
             _host.Settle();
             Assert.Equal(0, _host.Run(() => vm.Tabs.First(t => t.IsActive).Index));
+
+            // Menu ouvert : la page ne reçoit rien (le cadre est masqué) ; refermé, elle reçoit de nouveau le premier toucher
+            _host.Run(() => vm.OpenMenuCommand.Execute(null));
+            _host.Settle();
+            Assert.False(_host.Run(() => win.RouteToWebFrame(Down, At(44, 0, Primary | First | New | InRange | InContact | FlagDown))));
+            _host.Run(() => vm.CloseMenuCommand.Execute(null));
+            _host.Settle();
+            Assert.True(_host.Run(() => win.RouteToWebFrame(Down, At(45, 0, Primary | First | New | InRange | InContact | FlagDown))));
+            Assert.True(_host.Run(() => win.RouteToWebFrame(Up, At(45, 0, Primary | First | FlagUp))));
         }
         finally { _host.Run(win.Close); listener.Close(); }
     }

@@ -17,17 +17,33 @@ namespace StreamDak.Tests;
 public class WebInputModeCoreTests
 {
     [Theory]
-    [InlineData(null, "touch")] [InlineData("", "touch")] [InlineData("PASSIVE", "passive")] [InlineData("interactive", "interactive")] [InlineData("n'importe", "touch")]
-    public void AnUnknownOrMissingModeIsTouchToInteract(string? stored, string expected) => Assert.Equal(expected, WebInputModes.Normalize(stored));
+    [InlineData(null, "interactive")] [InlineData("", "interactive")] [InlineData("PASSIVE", "passive")] [InlineData("interactive", "interactive")]
+    [InlineData("touch", "touch")] [InlineData(" Touch ", "touch")] [InlineData("n'importe", "interactive")]
+    public void AnUnknownOrMissingModeIsDirectTouchAndAnExplicitTouchIsKept(string? stored, string expected) => Assert.Equal(expected, WebInputModes.Normalize(stored));
 
     [Fact]
-    public void TheDefaultModeWritesNothingAndAnOldConfigLoadsWithIt()
+    public void TheDefaultModeWritesNothingAndTouchToActivateIsWrittenExplicitly()
     {
         Assert.DoesNotContain("WebInput", JsonSerializer.Serialize(new DeckPage { Name = "A", Kind = PageKinds.Web, Url = "https://example.org/" }, ConfigStore.Options));
         var back = JsonSerializer.Deserialize<DeckPage>(JsonSerializer.Serialize(new DeckPage { Name = "A", WebInput = "passive" }, ConfigStore.Options), ConfigStore.Options)!;
         Assert.Equal("passive", back.WebInput);
-        Assert.Null(WebInputModes.ForStorage("touch"));
-        Assert.Equal("interactive", WebInputModes.ForStorage("Interactive"));
+        Assert.Null(WebInputModes.ForStorage("Interactive"));           // défaut (ADR 0037) : rien d'écrit
+        Assert.Null(WebInputModes.ForStorage(null));
+        Assert.Equal("touch", WebInputModes.ForStorage("touch"));       // « toucher pour activer » est désormais un choix explicite, écrit dans config.json
+        // Un config.json écrit à la main avec « touch » se relit tel quel, ConfigNormalizer ne le touche pas
+        var cfg = ConfigStore.Parse("""{ "Version": 2, "Profiles": [ { "Name": "P", "Pages": [ { "Name": "Site", "Kind": "web", "Url": "https://example.org/", "WebInput": "touch" } ] } ] }""");
+        Assert.Equal("touch", cfg.Profiles[0].Pages[0].WebInput);
+    }
+
+    [Fact]
+    public void AWebTileWithoutSettingReceivesTheFirstTouch()
+    {
+        var vm = new WebWidgetViewModel { Button = new DeckButton { Widget = WidgetTypes.Web }, Source = new Uri("https://example.org/") };
+        Assert.True(vm.IsInteracting);              // aucun premier toucher d'activation
+        Assert.False(vm.ShowTouchShield);
+        Assert.False(vm.ShowActiveRim);
+        Assert.False(vm.HasInteractHint);
+        Assert.True(Tile(WebInputModes.Default).IsInteracting);
     }
 
     [Fact]

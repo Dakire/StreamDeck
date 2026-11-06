@@ -121,8 +121,9 @@ public sealed partial class WebWidgetViewModel : WidgetTileViewModel
         }
     }
 
-    /// <summary>true si la page reçoit la souris, le doigt et le clavier (le cadre est activé).</summary>
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowTouchShield), nameof(ShowPassiveShield), nameof(InteractHint), nameof(HasInteractHint), nameof(ShowActiveRim))] bool _isInteracting;
+    /// <summary>true si la page reçoit la souris, le doigt et le clavier (le cadre est activé). Vrai d'emblée dans le mode par défaut (toucher direct).</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowTouchShield), nameof(ShowPassiveShield), nameof(InteractHint), nameof(HasInteractHint), nameof(ShowActiveRim))]
+    bool _isInteracting = WebInputModes.Default == WebInputModes.Interactive;
 
     /// <summary>Délai sans geste après lequel la page active redevient passive (le deck le fournit ; 30 s par défaut).</summary>
     public TimeSpan IdleExit { get; set; } = WebInputModes.IdleExit;

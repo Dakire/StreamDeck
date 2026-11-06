@@ -42,10 +42,16 @@ public partial class WebWidgetView : UserControl
         "if(t==='INPUT'){var k=(e.type||'text').toLowerCase();return !e.readOnly&&['button','submit','reset','checkbox','radio','range','color','file','image','hidden'].indexOf(k)<0}" +
         "return !!e.isContentEditable})();return [f,Date.now()-(window.__streamdakLastInput||0)]})()";
 
-    /// <summary>Note l'heure du dernier geste dans la page (souris, doigt, molette, clavier), pour terminer l'interaction après un moment sans geste.</summary>
+    /// <summary>
+    /// Note l'heure du dernier geste dans la page (souris, doigt, molette, clavier), pour terminer l'interaction après un moment sans geste. Le chargement n'est
+    /// pas un geste : un champ <c>autofocus</c> ne doit pas lancer la saisie (elle rend la fenêtre activable et prendrait le clavier de l'application active).
+    /// </summary>
     const string InputTrackerScript =
         "(function(){var m=function(){window.__streamdakLastInput=Date.now()};['pointerdown','pointermove','wheel','keydown','touchstart']" +
-        ".forEach(function(n){addEventListener(n,m,{capture:true,passive:true})});m()})()";
+        ".forEach(function(n){addEventListener(n,m,{capture:true,passive:true})})})()";
+
+    /// <summary>La saisie automatique ne démarre que si un champ a pris le focus dans ce délai après un geste dans la page (toucher, clic).</summary>
+    static readonly TimeSpan AutoTypingAfterGesture = TimeSpan.FromSeconds(5);
 
     WebWidgetViewModel? _vm;
     WebFrame? _frame;
@@ -323,7 +329,9 @@ public partial class WebWidgetView : UserControl
             if (inField)
             {
                 _idleTicks = 0;
-                if (!vm.IsTyping) { vm.AutoTyping = true; vm.TypingRequested?.Invoke(true); }
+                // Seulement après un geste récent dans la page : en toucher direct (défaut), la page est active en permanence et un champ « autofocus »
+                // ou un focus donné par script volerait sinon le clavier de l'application active
+                if (!vm.IsTyping && idleMs is { } since && since <= AutoTypingAfterGesture.TotalMilliseconds) { vm.AutoTyping = true; vm.TypingRequested?.Invoke(true); }
             }
             else if (vm is { IsTyping: true, AutoTyping: true } && ++_idleTicks >= FieldIdleTicks)
             {
