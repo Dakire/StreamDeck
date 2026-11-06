@@ -126,7 +126,7 @@ classDiagram
 | `Kind` | absent | `web` : la page affiche `Url` sur tout l'espace central, sans grille (les `Buttons` sont conservés, masqués). Absent ou inconnu : grille de boutons. |
 | `Url` | absent | Adresse `http` ou `https` d'une page `web`. Ignorée pour une grille. |
 | `Zoom` | absent (`100 %`) | Zoom d'une page `web`, en % (25 à 500). Absent à 100 %. |
-| `WebInput` | absent (`touch`) | Interaction d'une page `web` avec la souris et le doigt : `passive` (affichage seul), `touch` (toucher pour interagir, défaut, non écrit), `interactive` (la page reçoit tout). |
+| `WebInput` | absent (`interactive`) | Interaction d'une page `web` avec la souris et le doigt : `interactive` (toucher direct : la page reçoit le premier toucher ; défaut, non écrit, ADR 0037), `touch` (toucher pour activer, écrit), `passive` (affichage seul). Jusqu'à la 1.4.1, l'absence valait `touch`. |
 | `BadgeEnabled` | `true` | Affiche le badge de notifications de la page ; seul `false` est écrit (ADR 0022). |
 | `BadgeExcludeFromTotal` | absent | Exclut le badge de cette page du total de la pastille de la barre des tâches. |
 
@@ -146,7 +146,7 @@ classDiagram
 | `ImageFit` | absent | `cover` (remplit la touche, défaut) ou `contain` (image entière). |
 | `IsFolder`, `Children` | absents | Dossier et son contenu, sur 8 niveaux au maximum. |
 | `Widget` | absent | `clock`, `agenda`, `web`, `cpu` ou `ram` : le bouton est un widget (affichage, pas d'action). Identifiant inconnu : ignoré. |
-| `WidgetOptions` | absent | Réglages du widget : `seconds`, `hour12`, `date` (horloge), `count`, `days` (agenda), `url` (page web, http ou https), `zoom` (page web, 25 à 500), `source` (niveau audio : `sonar:game`, `windows:capture:Focusrite`, `discord:input`, `discord:output`), `shape` (niveau audio : `vertical` ou `horizontal`, absent = roue), `input` (page web : `passive`, `interactive` ; absent = toucher pour interagir), `sources` (mélangeur : cibles séparées par une virgule, absent = cinq canaux Sonar), `reset` (niveau audio et mélangeur : niveau de réinitialisation 0 à 100), et les réglages des widgets de données (`url`, `count`…). |
+| `WidgetOptions` | absent | Réglages du widget : `seconds`, `hour12`, `date` (horloge), `count`, `days` (agenda), `url` (page web, http ou https), `zoom` (page web, 25 à 500), `source` (niveau audio : `sonar:game`, `windows:capture:Focusrite`, `discord:input`, `discord:output`), `shape` (niveau audio : `vertical` ou `horizontal`, absent = roue), `input` (page web : `touch` pour « toucher pour activer », `passive` ; absent ou `interactive` = toucher direct, ADR 0037), `sources` (mélangeur : cibles séparées par une virgule, absent = cinq canaux Sonar), `reset` (niveau audio et mélangeur : niveau de réinitialisation 0 à 100), et les réglages des widgets de données (`url`, `count`…). |
 | `ColSpan`, `RowSpan` | absents (une case) | Largeur et hauteur d'un widget en cases (1 à 8). Les cases recouvertes doivent être vides. |
 | `GlobalHotkey` | absent | Raccourci clavier global qui déclenche le bouton depuis n'importe quelle application (un modificateur obligatoire, sauf F13 à F24). |
 

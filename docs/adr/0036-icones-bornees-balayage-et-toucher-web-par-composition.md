@@ -2,6 +2,7 @@
 
 - **Statut** : acceptée. Clé `SwipePagesDisabled` et hébergement par composition validés par l'utilisateur (5 novembre 2026). **Non vérifiée sur un écran tactile réel.**
 - **Date** : 5 novembre 2026.
+- §3 complété par l'ADR 0037 (toucher direct par défaut, focus clavier au clic, pointeur verrouillé, diagnostic du curseur).
 - Remplace la piste B de l'ADR 0032 (cadre désactivé par `EnableWindow`) pour la réception du toucher ; le reste de l'ADR 0032 (bouclier, liseré, fins d'interaction) est inchangé.
 
 ## 1. Icônes des applications et des sites

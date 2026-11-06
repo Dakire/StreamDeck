@@ -20,9 +20,9 @@ namespace StreamDak.Controls;
 /// Le cadre est rangé (<see cref="WebFramePool"/>) quand la tuile quitte l'écran et repris au retour : la page n'est pas rechargée.
 /// <para>
 /// Le cadre est rendu par composition (<see cref="DeckWebView"/>, ADR 0036) : aucune fenêtre Win32 sous le doigt, le toucher passe par le deck et arrive à la page
-/// comme un vrai toucher, sans souris synthétique ni curseur qui saute. Interaction (<see cref="WebInputModes"/>) : hors interaction, le cadre est désactivé
-/// (<c>IsEnabled</c> faux) et un bouton transparent posé au-dessus (mode tactile) ouvre l'interaction au premier toucher ; elle se termine seule après
-/// <see cref="WebInputModes.IdleExit"/> sans geste dans la page.
+/// comme un vrai toucher, sans souris synthétique ni curseur qui saute. Interaction (<see cref="WebInputModes"/>) : par défaut la page reçoit le premier toucher
+/// (ADR 0037). En mode « toucher pour activer », hors interaction, le cadre est désactivé (<c>IsEnabled</c> faux) et un bouton transparent posé au-dessus
+/// ouvre l'interaction ; elle se termine seule après <see cref="WebInputModes.IdleExit"/> sans geste dans la page.
 /// </para>
 /// </summary>
 public partial class WebWidgetView : UserControl

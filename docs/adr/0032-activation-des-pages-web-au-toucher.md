@@ -2,6 +2,7 @@
 
 - **Statut** : acceptée. **Non vérifiée sur un écran tactile réel** : les tests rendent les fenêtres hors écran et ne peuvent pas poser un doigt sur un cadre WebView2.
 - **Date** : 5 novembre 2026.
+- **Complétée par l'ADR 0037** (6 novembre 2026) : le mode par défaut devient le toucher direct (`interactive`) ; ce qui suit ne vaut plus que pour le mode `touch`, choisi explicitement.
 
 ## Contexte
 

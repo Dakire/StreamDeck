@@ -136,13 +136,15 @@ sur plusieurs cases (de 1 × 1 à 5 × 3, réglable dans les propriétés ; les 
   masque temporairement la page ; la page n'est **pas rechargée** quand tu changes de page du deck (le cadre est gardé, 6 au plus) ; **zoom** avec − / + / « 100 % » dans la barre, au pincement
 du doigt ou à Ctrl + molette, mémorisé. **Notifications, micro et caméra** sont autorisés aux pages `https` du même site que l'adresse saisie (rappels de
 Google Agenda, Meet) ; tout autre droit est refusé, et Windows doit aussi autoriser micro et caméra aux applications de bureau.
-**Interaction avec la souris et le doigt** (propriétés du widget, ou *Page* › *Interaction avec la page*) : *Toucher pour interagir* (défaut : la page s'affiche sans rien capter ; un
-toucher ou un clic l'ouvre à l'interaction, qui se termine seule après 30 s sans geste ou par le bouton *Interagir*), *Passive* (affichage seul ; bouton *Interagir* pour s'en servir) ou
-*Interactive* (la page reçoit tout, en permanence). Hors interaction, appui long et clic droit sur la page ouvrent le menu de la case ; en mode édition, la page ne capte jamais rien.
-Au doigt, la page se comporte comme dans Chrome (défilement, appui, pincement, appui long) **sans déplacer le curseur** : elle est rendue par composition et le deck lui transmet le
-toucher (ADR 0036). Le balayage des pages ne part jamais d'une page web : change de page par les onglets du dock.
-Une page activée porte un **liseré d'accent** ; elle redevient passive par un toucher hors de la tuile, au changement de page ou de dossier, ou après 30 s sans geste (ADR 0032). Le bouton *Interagir / Terminer* de la bande de commandes reste toujours touchable.
-Pendant l'interaction, la saisie au clavier démarre toute seule quand un champ de texte de la page a le focus (et rend le focus en le quittant) ; le bouton *Saisie au clavier* de la tuile la force. Le bouton *Retour* de la barre du cadre revient à
+**Interaction avec la souris et le doigt** (propriétés du widget, ou *Page* › *Interaction avec la page*) : *Toucher direct* (défaut : la page réagit **dès le premier toucher**, ADR 0037),
+*Toucher pour activer* (la page s'affiche sans rien capter ; un premier toucher ou un clic l'active, avec un **liseré d'accent** ; elle redevient inactive par un toucher hors de la tuile,
+au changement de page ou de dossier, ou après 30 s sans geste, ADR 0032 ; utile pour protéger la page d'un défilement accidentel) ou *Passive* (affichage seul ; bouton *Interagir* pour s'en servir).
+Hors interaction, appui long et clic droit sur la page ouvrent le menu de la case ; en mode édition, menu ou dialogue ouvert, la page ne capte jamais rien.
+Au doigt, la page se comporte comme dans Chrome (défilement, appui, pincement, appui long) : elle est rendue par composition et le deck lui transmet le
+toucher, sans souris synthétique ni `SetCursorPos` (ADR 0036). Le balayage des pages ne part jamais d'une page web : change de page par les onglets du dock ; la bande de commandes du cadre reste toujours touchable.
+La page ne prend jamais le clavier d'un simple clic, et un **verrouillage du pointeur** demandé par la page (jeux, visionneuses) est relâché aussitôt (ADR 0037).
+La saisie au clavier démarre toute seule quand un champ de texte de la page reçoit le focus **juste après un toucher ou un clic dans la page** (un champ `autofocus` ne prend pas le clavier)
+et rend le focus en le quittant ; le bouton *Saisie au clavier* de la tuile la force. Le bouton *Retour* de la barre du cadre revient à
   la page précédente (ou à la page de départ) ; un lien « nouvel onglet » vers un autre site (un document reçu dans Chat) s'ouvre dans le navigateur
   par défaut. Le bouton *Ouvrir dans le navigateur* de la barre du cadre ouvre l'adresse dans le navigateur par défaut ; si Google refuse la connexion dans un cadre intégré, la tuile le dit.
 
@@ -358,7 +360,7 @@ confirmation (en signalant les actions qui lancent des programmes ou des scripts
 **Thèmes** (Paramètres › Apparence) : Suivre Windows, Sombre, Clair, AMOLED et **TIXIA** (orange, fonds bruns chauds), avec aperçu ; six couleurs modifiables (accent, fond, surface, texte, succès, erreur), **Réinitialiser** par couleur ou pour toutes,
 aperçu en direct et avertissement si le contraste est insuffisant (clé `ThemeOverrides`, ADR 0034).
 
-**Toucher** (Paramètres › Toucher) : délai de fin d'interaction des pages web (`WebIdleExitSeconds`, 30 s par défaut) ; **balayer pour changer de page** (activé par défaut,
+**Toucher** (Paramètres › Toucher) : délai de fin d'activation des pages web réglées sur *Toucher pour activer* (`WebIdleExitSeconds`, 30 s par défaut) ; **balayer pour changer de page** (activé par défaut,
 `SwipePagesDisabled` pour le couper, ADR 0036) ; **déplacement de boutons par appui long** hors édition (activé par défaut, `LiftDragDisabled` pour le couper, durée `LiftDelayMs`) :
 la touche se soulève, puis se dépose sur une case, un dossier, un onglet de page ou la corbeille ; tenue près d'un bord de la fenêtre, elle change de page ; Échap annule (ADR 0033 et 0035).
 La barre du haut est la poignée de déplacement de la fenêtre ; en mode édition, le catalogue et l'inspecteur se redimensionnent depuis n'importe quel point de leur arête.
@@ -406,7 +408,7 @@ suivant.
 
 **Où trouver le journal ?**
 Dans `%APPDATA%\StreamDak\streamdak.log`. Le bouton Paramètres › « Ouvrir le dossier de configuration » y mène directement.
-Variables de diagnostic : `STREAMDAK_LOG_LEVEL=warning` (journal plus court ; `info` par défaut), `STREAMDAK_TOUCHLOG=1` (détail du toucher). Les étapes lentes
+Variables de diagnostic : `STREAMDAK_LOG_LEVEL=warning` (journal plus court ; `info` par défaut), `STREAMDAK_TOUCHLOG=1` (détail du toucher : position du doigt et du curseur à chaque appui, souris fabriquée par Windows depuis le doigt). Les étapes lentes
 sont consignées d'elles-mêmes : fermeture des paramètres (durée par étape), menu de case de plus de 50 ms, touches refusées par Windows.
 
 **Comment essayer sans risque ?**

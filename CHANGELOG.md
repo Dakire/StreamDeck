@@ -4,6 +4,21 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+Changement de la valeur par défaut d'une clé existante (validé par l'utilisateur le 2026-11-06) : `WebInput` d'une page et `input` d'un widget web, absents, valent
+désormais `interactive` (toucher direct) au lieu de `touch`. `touch` reste disponible et s'écrit explicitement. Aucune clé ajoutée, renommée ni supprimée.
+
+### Modifié
+- **Pages web : plus de premier toucher d'activation** (ADR 0037) : une page web (widget ou plein cadre) réagit dès le premier toucher. Le balayage ne change toujours pas de page
+  sur elle, les onglets du dock et la bande de commandes du cadre restent touchables, et le mode édition, un menu ou un dialogue la bloquent toujours. Le mode
+  *Toucher pour activer* (bouclier, liseré, fin après un délai) reste au choix dans les propriétés pour protéger une page du défilement accidentel.
+
+### Corrigé
+- **Pages web et clavier** : un clic de souris sur la page ne lui donne plus le focus clavier (le contrôle WebView2 le prenait à chaque clic, au risque d'activer le deck) ;
+  un champ `autofocus` ne lance plus la saisie au clavier sans toucher ni clic dans la page.
+- **Souris attrapée par une page web** : un verrouillage du pointeur (Pointer Lock API, jeux, visionneuses) est relâché aussitôt et journalisé ; Échap n'atteint jamais la page
+  dans le deck, la souris restait donc bloquée.
+- Diagnostic `STREAMDAK_TOUCHLOG=1` : position du doigt à côté de celle du curseur à chaque appui, et souris fabriquée par Windows depuis le doigt.
+
 ## [1.4.1] — 2026-11-05
 
 La 1.4.0 n'a pas été publiée (test de performance en échec sur le CI, sans lien avec l'application) : la 1.4.1 contient tout ce qui suit, avec un test de la suite corrigé.

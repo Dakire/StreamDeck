@@ -141,9 +141,10 @@ public partial class MainWindow
     readonly System.Collections.Generic.Dictionary<uint, (Controls.DeckWebView Frame, Controls.WebTouchPoint Last)> _webTouches = new();
 
     /// <summary>
-    /// Doigt sur une page web en interaction (cadre activé, bouclier retiré) : il est transmis à la page comme un vrai toucher, avec les données de Windows, et
-    /// ne passe ni par le test d'appui, ni par l'appui long, ni par le balayage des pages (la page garde son défilement). Retourne true si le message a été transmis.
-    /// Au repos, le bouclier transparent est au-dessus : le premier toucher active la page, comme avant (ADR 0032).
+    /// Doigt sur une page web en interaction (cadre activé) : il est transmis à la page comme un vrai toucher, avec les données de Windows, et ne passe ni par
+    /// le test d'appui, ni par l'appui long, ni par le balayage des pages (la page garde son défilement). Retourne true si le message a été transmis.
+    /// Par défaut la page est toujours en interaction : le premier toucher lui va (ADR 0037). En mode « toucher pour activer », au repos, le bouclier transparent
+    /// reçoit ce premier toucher (ADR 0032). Édition, menu ou dialogue ouverts : rien n'est transmis.
     /// </summary>
     internal bool RouteToWebFrame(int msg, Controls.WebTouchPoint p)
     {

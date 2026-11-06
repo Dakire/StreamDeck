@@ -7,8 +7,8 @@
     Widget page web : une bande de commandes (48 px, tactile) et la page dans un cadre WebView2 isolé, rendu par composition (DeckWebView, ADR 0036) :
     pas de fenêtre Win32 sous le doigt, le deck transmet le toucher à la page. MainViewModel masque encore le cadre sous un menu ou une boîte de dialogue
     (Suspended) : la page ne reçoit rien pendant ce temps.
-    Hors interaction (modes passif et tactile), le cadre est désactivé : la souris et le doigt arrivent aux éléments WPF posés au-dessus, le bouton
-    transparent du mode tactile ou la surface inerte du mode passif.
+    Par défaut (toucher direct, ADR 0037), la page reçoit le premier toucher. Hors interaction (modes « toucher pour activer » et passif), le cadre est
+    désactivé : la souris et le doigt arrivent aux éléments WPF posés au-dessus, le bouton transparent ou la surface inerte.
   -->
   <Border Background="{Binding Face.Background}" AutomationProperties.Name="{Binding AccessibleName}"
           Margin="{Binding DataContext.L.TilePad, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
