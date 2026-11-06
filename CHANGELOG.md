@@ -4,6 +4,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+### Corrigé
+- **Souris « attrapée » par une page web (Google Sheets)** (ADR 0037) : un bouton de la souris relâché hors du cadre n'arrivait jamais à la page, qui le croyait toujours
+  enfoncé (la sélection de cellules suivait la souris). Le cadre capture maintenant la souris du clic au relâchement, et la page reçoit le relâchement même si la capture est perdue.
+
 ## [1.5.0] — 2026-11-06
 
 Changement de la valeur par défaut d'une clé existante (validé par l'utilisateur le 2026-11-06) : `WebInput` d'une page et `input` d'un widget web, absents, valent

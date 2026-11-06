@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Interop;
 using StreamDak.Controls;
 using StreamDak.ViewModels;
@@ -170,6 +171,35 @@ public class WebTouchTests
             Assert.True(_host.Run(() => web.Focusable));
             _host.Run(() => vm.IsTyping = false);
             Assert.False(_host.Run(() => web.Focusable));
+        }
+        finally { _host.Run(window.Close); listener.Close(); }
+    }
+
+    /// <summary>
+    /// Vraie souris (événements WPF sans stylet, comme un clic) : enfoncée sur la page, elle est capturée par le cadre ; capture perdue avant le relâchement
+    /// (relâchée hors du cadre, autre fenêtre), la page reçoit quand même le relâchement : elle ne croit plus le bouton enfoncé (sélection de Google Sheets sans fin).
+    /// La capture ne dure que quelques millisecondes.
+    /// </summary>
+    [Fact]
+    public async Task AMouseButtonPressedOnThePageIsAlwaysReleasedForThePage()
+    {
+        var (window, _, web, listener) = await Open();
+        try
+        {
+            await Eval(web, "L.length=0");
+            MouseButtonEventArgs Args(RoutedEvent e) => new(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left) { RoutedEvent = e };
+            bool captured = _host.Run(() => { web.RaiseEvent(Args(Mouse.MouseDownEvent)); bool c = web.IsMouseCaptured; web.ReleaseMouseCapture(); return c; });
+            Assert.True(captured, "le cadre ne capture pas la souris enfoncée");
+            Assert.Equal(1, _host.Run(() => web.RecoveredReleases));
+            await Task.Delay(400);
+            string seen = await Eval(web, "JSON.stringify(L)");
+            Assert.Contains("mousedown", seen);
+            Assert.Contains("mouseup", seen);                                     // la page sait que le bouton est relâché
+
+            // Clic complet : capture prise puis rendue au relâchement, sans relâchement de secours
+            _host.Run(() => { web.RaiseEvent(Args(Mouse.MouseDownEvent)); web.RaiseEvent(Args(Mouse.MouseUpEvent)); });
+            Assert.False(_host.Run(() => web.IsMouseCaptured));
+            Assert.Equal(1, _host.Run(() => web.RecoveredReleases));
         }
         finally { _host.Run(window.Close); listener.Close(); }
     }

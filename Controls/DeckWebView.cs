@@ -131,8 +131,50 @@ public sealed class DeckWebView : WebView2CompositionControl
     // Souris fabriquée par WPF à partir du doigt ou du stylet : jamais envoyée à la page (seule la vraie souris l'est)
     /// <inheritdoc/>
     protected override void OnMouseMove(MouseEventArgs e) { if (e.StylusDevice != null) e.Handled = true; else base.OnMouseMove(e); }
+
+    /// <summary>Boutons de la vraie souris que la page croit enfoncés (envoyés « appuyés », pas encore « relâchés »).</summary>
+    readonly System.Collections.Generic.HashSet<MouseButton> _pressed = new();
+
+    /// <summary>Nombre de relâchements envoyés à la page faute d'en avoir reçu un (diagnostic et tests).</summary>
+    public int RecoveredReleases { get; private set; }
+
+    /// <summary>
+    /// Vraie souris enfoncée sur la page : le contrôle de base l'envoie à Chromium mais ne capture pas la souris (vérifié dans son IL), alors qu'en mode composition
+    /// c'est à l'hôte de le faire. Sans capture, un bouton relâché hors du cadre n'arrive jamais à la page : elle le croit toujours enfoncé (sélection de cellules
+    /// de Google Sheets qui suit la souris, glisser sans fin). La souris est donc capturée jusqu'au relâchement (ADR 0037). Capture WPF ordinaire, elle ne déplace
+    /// ni ne bloque le curseur.
+    /// </summary>
+    protected override void OnMouseDown(MouseButtonEventArgs e)
+    {
+        if (e.StylusDevice != null) { e.Handled = true; return; }
+        base.OnMouseDown(e);
+        _pressed.Add(e.ChangedButton);
+        if (!IsMouseCaptured) CaptureMouse();
+    }
+
     /// <inheritdoc/>
-    protected override void OnMouseDown(MouseButtonEventArgs e) { if (e.StylusDevice != null) e.Handled = true; else base.OnMouseDown(e); }
-    /// <inheritdoc/>
-    protected override void OnMouseUp(MouseButtonEventArgs e) { if (e.StylusDevice != null) e.Handled = true; else base.OnMouseUp(e); }
+    protected override void OnMouseUp(MouseButtonEventArgs e)
+    {
+        if (e.StylusDevice != null) { e.Handled = true; return; }
+        base.OnMouseUp(e);
+        _pressed.Remove(e.ChangedButton);
+        if (_pressed.Count == 0 && IsMouseCaptured) ReleaseMouseCapture();
+    }
+
+    /// <summary>
+    /// Capture perdue avant le relâchement (autre fenêtre, Alt+Tab, menu du deck, cadre masqué) : la page reçoit le relâchement de chaque bouton encore enfoncé,
+    /// par le chemin du contrôle lui-même. Aucune souris système n'est fabriquée.
+    /// </summary>
+    protected override void OnLostMouseCapture(MouseEventArgs e)
+    {
+        base.OnLostMouseCapture(e);
+        if (_pressed.Count == 0) return;
+        foreach (var button in new System.Collections.Generic.List<MouseButton>(_pressed))
+        {
+            RecoveredReleases++;
+            base.OnMouseUp(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, button) { RoutedEvent = Mouse.MouseUpEvent, Source = this });
+        }
+        _pressed.Clear();
+        Log.Info("Page web : bouton de la souris relâché pour la page (capture perdue avant le relâchement)");
+    }
 }

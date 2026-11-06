@@ -31,6 +31,7 @@ le premier toucher était déjà transmis tel quel.
 | `SendPointerInput` côté composition | Le deck n'envoie que des pointeurs `PT_TOUCH`. Les tests vérifient qu'aucun événement `:mouse` n'atteint la page. | Écartée. |
 | **Focus clavier sur clic de la vraie souris** | Le `OnMouseDown` de base de `WebView2CompositionControl` appelle `UIElement.Focus()`, puis `OnGotKeyboardFocus` et `CoreWebView2Controller.MoveFocus` (lu dans l'IL). Dans une fenêtre `WS_EX_NOACTIVATE`, le `SetFocus` de WPF peut activer la fenêtre. Le clic étant la dernière entrée, Windows l'autorise. | **Cause établie** pour le vol du clavier ; son effet sur matériel n'est pas mesuré. |
 | **Pointer Lock API** (jeux, visionneuses) | WebView2 ne propose pas ce droit dans `PermissionRequested`. Le deck ne prend jamais le clavier, donc Échap, le geste de sortie du navigateur, n'atteint jamais la page : le pointeur reste verrouillé. | Cause **plausible** de la « souris attrapée », non observée ici. |
+| **Bouton relâché hors du cadre** (ajout du 6 novembre, retour « Google Sheets attrape toujours la souris ») | `WebView2CompositionControl` envoie le bouton enfoncé à Chromium mais ne capture pas la souris : il ne gère ni `LostMouseCapture` ni la sortie du pointeur (IL). En mode composition, cette capture revient à l'hôte. Un relâchement hors du cadre n'arrive jamais : la page croit le bouton enfoncé et la sélection de Sheets suit la souris. | **Cause établie** par le code ; correspondance avec le symptôme sur matériel à confirmer. |
 | Curseur de la page (`CursorChanged` → `Cursor`) | Le contrôle applique la forme demandée par la page. `cursor: none` masque le curseur au-dessus du cadre, mais ne le déplace pas. | Explique un curseur invisible, pas un curseur qui bouge. |
 | `WM_MOUSEACTIVATE`, `WM_SETCURSOR`, script d'inactivité | Respectivement : renvoie `MA_NOACTIVATE` ; non géré par le deck ; lecture seule. | Écartées. |
 | Saisie automatique | En mode permanent, un champ `autofocus` de la page lançait la saisie : fenêtre activable et focus pris. | **Établie** (devenue critique avec le toucher direct par défaut). |
@@ -54,7 +55,10 @@ chaque appui et relâchement, la position du doigt à côté de celle du curseur
 4. **Saisie automatique** : elle ne démarre que si le champ a reçu le focus moins de 5 s après un geste dans la page. Le chargement de la page ne compte plus comme un geste.
 5. **Pointer Lock** : le relevé en lecture seule (toutes les 400 ms) indique aussi `document.pointerLockElement`. Un verrou vu est relâché (`exitPointerLock`, script de
    l'application) et journalisé. Une page qui en dépend (jeu) ne peut plus verrouiller le pointeur dans le deck : c'est voulu.
-6. Inchangés :
+6. **Bouton de la vraie souris** : `DeckWebView` capture la souris (capture WPF ordinaire) du premier bouton enfoncé au dernier relâché. Si la capture est perdue avant
+   (autre fenêtre, menu du deck, cadre masqué ou désactivé), la page reçoit le relâchement de chaque bouton encore enfoncé, par le chemin du contrôle lui-même.
+   Vérifié hors écran : capture prise, rendue au relâchement, et `mouseup` reçu par la page après une capture perdue.
+7. Inchangés :
    - `WS_EX_NOACTIVATE` et `WM_MOUSEACTIVATE` ;
    - aucun `SetCursorPos`, aucune souris injectée (`ArchitectureTests`) ;
    - profil isolé, aucun pont page → application (ADR 0029) ;
