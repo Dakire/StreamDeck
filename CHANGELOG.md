@@ -4,6 +4,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+## [1.5.2] — 2026-11-06
+
+### Modifié
+- **Deck plus économe** : une touche dont la face n'a pas changé (horloge, valeur d'intégration identique) n'est plus redessinée ; une touche n'est plus dessinée deux fois à son premier affichage ;
+  les onglets de pages ne sont recréés que si un badge de notifications change ; le minuteur de profil par application ne travaille plus quand aucun profil n'a de règle.
+- Code : barre d'état extraite en `StatusBarViewModel`, widgets sortis de `MainViewModel`, modèles de widgets sortis de `MainWindow.xaml`. Aucun changement de comportement ni de `config.json`.
+
 ## [1.5.1] — 2026-11-06
 
 ### Corrigé
