@@ -4,6 +4,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Les
 
 ## [Non publié]
 
+## [1.5.0] — 2026-11-06
+
 Changement de la valeur par défaut d'une clé existante (validé par l'utilisateur le 2026-11-06) : `WebInput` d'une page et `input` d'un widget web, absents, valent
 désormais `interactive` (toucher direct) au lieu de `touch`. `touch` reste disponible et s'écrit explicitement. Aucune clé ajoutée, renommée ni supprimée.
 
