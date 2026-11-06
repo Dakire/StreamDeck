@@ -46,6 +46,7 @@ public partial class MainViewModel : ObservableObject, INavigator
     readonly HashSet<MixerWidgetViewModel> _mixers = new();
     readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
     bool _integrationRefreshPending;
+    readonly object _refreshGate = new();
     static readonly TimeSpan StatusDelay = TimeSpan.FromSeconds(5);
     static readonly TimeSpan StatusActionDelay = TimeSpan.FromSeconds(8);
     Action? _statusAction;
@@ -170,7 +171,10 @@ public partial class MainViewModel : ObservableObject, INavigator
         _lastActive = _doc.Config.ActiveProfile;
         _lastPlacement = (_doc.Config.Monitor, _doc.Config.MonitorDevice, _doc.Config.Fullscreen, _doc.Config.AlwaysOnTop);
         _statusTimer.Tick += (_, _) => { _statusTimer.Stop(); SetStatus(null); };
-        _appTimer.Tick += (_, _) => LongTask.Run("Profil par application", PollForeground);
+        _appTimer.Tick += (_, _) =>
+        {
+            if (_autoProfile != null || _doc.Config.Profiles.Any(p => p.AppMatch != null)) LongTask.Run("Profil par application", PollForeground);
+        };
         _appTimer.Start();
         _engine.Context.Platform.Windows.ForegroundChanged += OnForegroundChanged;
         _liveTimer.Tick += (_, _) => LongTask.Run("Rafraîchissement des valeurs", RefreshLive);
@@ -1014,20 +1018,21 @@ public partial class MainViewModel : ObservableObject, INavigator
     /// <summary>Les intégrations notifient depuis leurs threads : on regroupe les changements et on redessine sur le thread d'interface.</summary>
     void QueueIntegrationRefresh()
     {
-        lock (_ui)
+        lock (_refreshGate)
         {
             if (_integrationRefreshPending) return;
             _integrationRefreshPending = true;
         }
         _ui.BeginInvoke(DispatcherPriority.Background, () =>
         {
-            lock (_ui) _integrationRefreshPending = false;
+            lock (_refreshGate) _integrationRefreshPending = false;
             foreach (var t in Tiles.OfType<DeckTileViewModel>())
                 if (t.Button is { IsFolder: false } b && (LabelTemplate.ValueKeys(b.Label).Count > 0 || b.Actions.Any(a => _integrations.Find(a.Type) != null) || NotificationSource(b) != null))
                     UpdateFace(t);
             foreach (var agenda in Tiles.OfType<AgendaWidgetViewModel>()) RefreshAgenda(agenda);
             foreach (var meter in Tiles.OfType<SystemMeterWidgetViewModel>()) RefreshSystem(meter);
-            if (CurrentProfile.Pages.Any(p => p.IsWeb)) BuildTabs();   // badges des pages web
+            // Badges des pages web : les onglets ne sont recréés que si un badge a réellement changé
+            if (CurrentProfile.Pages.Any(p => p.IsWeb) && TabBadgeSignature() != _tabBadges) BuildTabs();
             UpdateTotalUnread();
         });
     }
@@ -1081,8 +1086,16 @@ public partial class MainViewModel : ObservableObject, INavigator
         if (tile.RunState == TileRunState.Success) tile.RunState = TileRunState.Idle;
     }
 
+    string _tabBadges = "";
+
+    /// <summary>Badges que porteraient les onglets du profil affiché (pages visibles seulement).</summary>
+    string TabBadgeSignature() => string.Join('|', CurrentProfile.Pages
+        .Where(p => IsEdit || !p.Hidden)
+        .Select(p => p.IsWeb ? NotificationCountFor(p.Url, p.BadgeEnabled) ?? "" : ""));
+
     void BuildTabs()
     {
+        _tabBadges = TabBadgeSignature();
         Tabs.Clear();
         var pages = CurrentProfile.Pages;
         for (int i = 0; i < pages.Count; i++)

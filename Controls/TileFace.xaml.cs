@@ -43,6 +43,8 @@ public partial class TileFace : UserControl
 
     void Render()
     {
+        // Pas encore mesuré : SizeChanged suit toujours la première mise en page et redessine à la bonne taille (évite un dessin à 100 × 100 inutile)
+        if (ActualWidth <= 0 && ActualHeight <= 0 && !IsMeasureValid && Face is { IsBlank: false }) return;
         var f = Face;
         if (f == null || f.IsBlank)
         {

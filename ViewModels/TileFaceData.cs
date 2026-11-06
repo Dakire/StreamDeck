@@ -26,8 +26,30 @@ public enum TileKind
 }
 
 /// <summary>Tout ce qu'il faut pour dessiner la face d'un bouton (deck, éditeur, aperçu) : même rendu partout.</summary>
-public sealed class TileFaceData
+public sealed class TileFaceData : IEquatable<TileFaceData>
 {
+    /// <summary>
+    /// Égalité par contenu : une face recalculée à l'identique (horloge, valeur d'intégration inchangée) n'est pas republiée,
+    /// donc <see cref="Controls.TileFace"/> ne se redessine pas. Les pinceaux de couleur unie se comparent par couleur, les autres par référence (ils sont mis en cache).
+    /// </summary>
+    public bool Equals(TileFaceData? other) =>
+        other is not null && (ReferenceEquals(this, other) ||
+        (Label == other.Label && Icon == other.Icon && Symbol == other.Symbol && HasSymbol == other.HasSymbol && ShowTitle == other.ShowTitle
+        && TitleMode == other.TitleMode && IconImage == other.IconImage && IsFolder == other.IsFolder && IsBlank == other.IsBlank && Kind == other.Kind
+        && Steps == other.Steps && Badge == other.Badge && IsDisabled == other.IsDisabled && State == other.State && Unavailable == other.Unavailable
+        && Caption == other.Caption && Progress == other.Progress
+        && SameBrush(Foreground, other.Foreground) && SameBrush(LabelBrush, other.LabelBrush) && SameBrush(Background, other.Background)
+        && SameBrush(Border, other.Border) && SameBrush(Plate, other.Plate) && SameBrush(ImageBrush, other.ImageBrush)));
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as TileFaceData);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => HashCode.Combine(Label, Icon, Kind, Steps, Badge, State, Progress, IconImage);
+
+    static bool SameBrush(Brush? a, Brush? b) =>
+        ReferenceEquals(a, b) || (a is SolidColorBrush x && b is SolidColorBrush y && x.Color == y.Color && x.Opacity == y.Opacity);
+
     /// <summary>Titre affiché (modèles déjà remplacés).</summary>
     public string Label { get; init; } = "";
     /// <summary>Icône enregistrée (nom Fluent, emoji ou texte).</summary>
