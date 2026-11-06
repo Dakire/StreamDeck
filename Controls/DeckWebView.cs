@@ -49,6 +49,28 @@ public sealed class DeckWebView : WebView2CompositionControl
     public int ForwardedTouches { get; private set; }
 
     /// <summary>
+    /// Le contrôle de base donne le focus clavier au cadre à chaque clic de la vraie souris (<c>UIElement.Focus</c> dans <c>OnMouseDown</c>, puis
+    /// <c>MoveFocus</c> vers Chromium) : dans la fenêtre du deck, cela peut l'activer et retirer le clavier à l'application active (ADR 0037). Le cadre
+    /// n'accepte donc le focus que pendant la saisie au clavier (<see cref="AllowKeyboard"/>).
+    /// </summary>
+    public DeckWebView() => Focusable = false;
+
+    /// <summary>true pendant la saisie au clavier : le cadre peut prendre le focus. Le retirer rend aussi le focus logique.</summary>
+    public bool AllowKeyboard
+    {
+        get => Focusable;
+        set => Focusable = value;
+    }
+
+    /// <inheritdoc/>
+    protected override void OnGotKeyboardFocus(KeyboardFocusChangedEventArgs e)
+    {
+        // Diagnostic (ADR 0037) : le focus clavier n'est attendu que pendant la saisie ; journalisé pour le confirmer sur matériel
+        Log.Info($"Page web : focus clavier dans le cadre (saisie={AllowKeyboard}, fenêtre active={Window.GetWindow(this)?.IsActive})");
+        base.OnGotKeyboardFocus(e);
+    }
+
+    /// <summary>
     /// Transmet un contact du doigt à la page : position ramenée au coin haut gauche du cadre (pixels physiques), drapeaux d'origine. Un contact annulé par Windows
     /// (geste système, rejet de paume) est transmis comme un relâchement annulé. Faux si la page n'est pas prête ou si l'envoi échoue.
     /// </summary>

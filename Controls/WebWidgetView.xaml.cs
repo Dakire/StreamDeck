@@ -34,13 +34,20 @@ public partial class WebWidgetView : UserControl
     const int FieldIdleTicks = 3;
 
     /// <summary>
-    /// Relevé en lecture seule : [champ de texte qui a le focus (iframes de même origine comprises), millisecondes depuis le dernier geste dans la page].
+    /// Relevé en lecture seule : [champ de texte qui a le focus (iframes de même origine comprises), millisecondes depuis le dernier geste dans la page,
+    /// pointeur verrouillé par la page (Pointer Lock API)].
     /// </summary>
     const string FocusedFieldScript =
         "(function(){var f=(function(){var e=document.activeElement;for(var i=0;i<4&&e&&e.tagName==='IFRAME';i++){try{e=e.contentDocument.activeElement}catch(x){return false}}" +
         "if(!e)return false;var t=e.tagName;if(t==='TEXTAREA')return !e.readOnly;" +
         "if(t==='INPUT'){var k=(e.type||'text').toLowerCase();return !e.readOnly&&['button','submit','reset','checkbox','radio','range','color','file','image','hidden'].indexOf(k)<0}" +
-        "return !!e.isContentEditable})();return [f,Date.now()-(window.__streamdakLastInput||0)]})()";
+        "return !!e.isContentEditable})();return [f,Date.now()-(window.__streamdakLastInput||0),!!document.pointerLockElement]})()";
+
+    /// <summary>
+    /// Pointer Lock API : la page masque le curseur et le garde pour elle (jeux, visionneuses). Le deck ne prend jamais le clavier, Échap n'arrive donc jamais à la page
+    /// et la souris resterait attrapée : le verrou est relâché dès qu'il est vu (ADR 0037). Script exécuté par l'application, rien ne vient de la page.
+    /// </summary>
+    const string ExitPointerLockScript = "document.exitPointerLock&&document.exitPointerLock()";
 
     /// <summary>
     /// Note l'heure du dernier geste dans la page (souris, doigt, molette, clavier), pour terminer l'interaction après un moment sans geste. Le chargement n'est
@@ -106,6 +113,7 @@ public partial class WebWidgetView : UserControl
         // La saisie au clavier commence : le focus passe à la page (la fenêtre vient de devenir activable)
         if (e.PropertyName == nameof(WebWidgetViewModel.ZoomPercent) && Web != null && _vm != null) Web.ZoomFactor = _vm.ZoomPercent / 100.0;
         if (e.PropertyName == nameof(WebWidgetViewModel.IsInteracting) && _vm is { IsInteracting: true }) _lastGesture = Environment.TickCount64;
+        if (e.PropertyName == nameof(WebWidgetViewModel.IsTyping) && Web != null && _vm != null) Web.AllowKeyboard = _vm.IsTyping;
         if (e.PropertyName == nameof(WebWidgetViewModel.IsTyping) && _vm is { IsTyping: true })
             Dispatcher.BeginInvoke(DispatcherPriority.Input, () => { if (Web?.CoreWebView2 != null) Web.Focus(); });
     }
@@ -163,6 +171,7 @@ public partial class WebWidgetView : UserControl
         frame ??= new WebFrame { Web = new DeckWebView { DefaultBackgroundColor = System.Drawing.Color.Transparent }, Source = source };
         _frame = frame;
         frame.Vm = vm;
+        frame.Web.AllowKeyboard = vm.IsTyping;
         frame.Web.SetBinding(VisibilityProperty, new Binding(nameof(WebWidgetViewModel.ShowPage)) { Source = vm, Converter = new BooleanToVisibilityConverter() });
         frame.Web.SetBinding(IsEnabledProperty, new Binding(nameof(WebWidgetViewModel.IsInteracting)) { Source = vm });   // désactivé : ne capte plus rien
         _lastGesture = Environment.TickCount64;
@@ -318,7 +327,13 @@ public partial class WebWidgetView : UserControl
         try
         {
             // Délai maximal : une page figée ne doit pas garder le relevé « en cours » pour toujours (la fin d'interaction ne se déclencherait plus)
-            var (inField, idleMs) = ParsePoll(await core.ExecuteScriptAsync(FocusedFieldScript).WaitAsync(TimeSpan.FromSeconds(2)));
+            string reply = await core.ExecuteScriptAsync(FocusedFieldScript).WaitAsync(TimeSpan.FromSeconds(2));
+            var (inField, idleMs) = ParsePoll(reply);
+            if (ParsePointerLock(reply))
+            {
+                Log.Info("Widget page web : verrouillage du pointeur demandé par la page, relâché (la souris ne doit pas rester attrapée)");
+                _ = core.ExecuteScriptAsync(ExitPointerLockScript);
+            }
             if (idleMs is { } idle && idle < Environment.TickCount64 - _lastGesture) _lastGesture = Environment.TickCount64 - idle;
             if (!vm.IsAlwaysInteractive && !vm.IsTyping && Environment.TickCount64 - _lastGesture > vm.IdleExit.TotalMilliseconds)
             {
@@ -357,6 +372,18 @@ public partial class WebWidgetView : UserControl
             return (field, idle);
         }
         catch (System.Text.Json.JsonException) { return (false, null); }
+    }
+
+    /// <summary>Troisième valeur du relevé : true si la page tient le pointeur verrouillé ; un relevé illisible ou ancien compte comme « non ».</summary>
+    internal static bool ParsePointerLock(string json)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            return root.ValueKind == System.Text.Json.JsonValueKind.Array && root.GetArrayLength() >= 3 && root[2].ValueKind == System.Text.Json.JsonValueKind.True;
+        }
+        catch (System.Text.Json.JsonException) { return false; }
     }
 
     void OnUnloaded(object sender, RoutedEventArgs e)

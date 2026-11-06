@@ -379,18 +379,30 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, IShell
     // Diagnostic : STREAMDAK_TOUCHLOG=1 journalise les messages pointeur / souris et la position du curseur (streamdak.log)
     static readonly bool TouchTrace = Environment.GetEnvironmentVariable("STREAMDAK_TOUCHLOG") == "1";
 
+    static int _syntheticMoveBudget = 40;
+
+    /// <summary>
+    /// Diagnostic du curseur (ADR 0037) : pour un appui ou un relâchement du doigt, la position du doigt est écrite à côté de celle du curseur (égales : le
+    /// curseur a suivi le doigt) ; un déplacement de souris que Windows a fabriqué à partir du toucher (preuve d'une promotion en souris) est aussi écrit, en nombre limité.
+    /// </summary>
     static void TraceInput(int msg, IntPtr wParam)
     {
-        if (msg is 0x0200 or 0x0245) return;   // mouvements : des centaines de lignes qui noient le reste
-        string? name = msg switch { 0x0245 => "WM_POINTERUPDATE", 0x0246 => "WM_POINTERDOWN", 0x0247 => "WM_POINTERUP",
+        bool synthetic = msg is >= 0x0200 and <= 0x0202 && ((long)GetMessageExtraInfo() & 0xFFFFFF00) == 0xFF515700;
+        if (msg == 0x0245) return;                                                     // mouvements du doigt : des centaines de lignes qui noient le reste
+        if (msg == 0x0200 && (!synthetic || _syntheticMoveBudget-- <= 0)) return;      // souris réelle : rien ; souris fabriquée depuis le doigt : quelques lignes
+        string? name = msg switch { 0x0246 => "WM_POINTERDOWN", 0x0247 => "WM_POINTERUP",
             0x0200 => "WM_MOUSEMOVE", 0x0201 => "WM_LBUTTONDOWN", 0x0202 => "WM_LBUTTONUP", 0x0240 => "WM_TOUCH", _ => null };
         if (name == null) return;
         GetCursorPos(out var c);
         string detail = "";
         if (msg is >= 0x0245 and <= 0x0247)
-            detail = GetPointerType((uint)((long)wParam & 0xFFFF), out uint t) ? $" type={t}" : " type=?";
+        {
+            uint id = (uint)((long)wParam & 0xFFFF);
+            detail = GetPointerType(id, out uint t) ? $" type={t}" : " type=?";
+            if (GetPointerInfo(id, out var p)) detail += $" doigt=({p.ptPixelLocation.X},{p.ptPixelLocation.Y})";
+        }
         else
-            detail = ((long)GetMessageExtraInfo() & 0xFFFFFF00) == 0xFF515700 ? " depuis-tactile" : " souris-reelle";
+            detail = synthetic ? " depuis-tactile" : " souris-reelle";
         Log.Info($"[tactile] {name}{detail} curseur=({c.X},{c.Y})");
     }
 

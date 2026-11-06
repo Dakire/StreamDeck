@@ -132,6 +132,14 @@ public class WebInputModeCoreTests
     [InlineData("null", false, null)]
     [InlineData("pas du json", false, null)]
     public void ThePollReplyIsReadDefensively(string json, bool field, long? idle) => Assert.Equal((field, idle), WebWidgetView.ParsePoll(json));
+
+    [Theory]
+    [InlineData("[false,10,true]", true)] [InlineData("[true,10,false]", false)] [InlineData("[true,10]", false)] [InlineData("null", false)] [InlineData("pas du json", false)]
+    public void APointerLockIsReadFromThePoll(string json, bool locked)
+    {
+        Assert.Equal(locked, WebWidgetView.ParsePointerLock(json));
+        if (json.StartsWith('[')) Assert.Equal(json.StartsWith("[true", StringComparison.Ordinal), WebWidgetView.ParsePoll(json).InField);   // la troisième valeur ne gêne pas la lecture des deux premières
+    }
 }
 
 /// <summary>

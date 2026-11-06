@@ -157,6 +157,24 @@ public class WebTouchTests
     }
 
     [Fact]
+    public async Task TheFrameTakesTheKeyboardFocusOnlyWhileTyping()
+    {
+        var (window, vm, web, listener) = await Open();
+        try
+        {
+            // Le clic de la vraie souris appelle Focus() dans le contrôle de base : hors saisie, il doit échouer (le deck ne prend jamais le clavier)
+            Assert.False(_host.Run(() => web.Focusable));
+            Assert.False(_host.Run(() => web.Focus()));
+            Assert.False(_host.Run(() => web.IsKeyboardFocusWithin));
+            _host.Run(() => vm.IsTyping = true);                 // saisie au clavier (bouton ou champ touché) : le cadre peut prendre le focus
+            Assert.True(_host.Run(() => web.Focusable));
+            _host.Run(() => vm.IsTyping = false);
+            Assert.False(_host.Run(() => web.Focusable));
+        }
+        finally { _host.Run(window.Close); listener.Close(); }
+    }
+
+    [Fact]
     public async Task ALongPressGivesThePageItsContextMenuEvent()
     {
         var (window, _, web, listener) = await Open();
